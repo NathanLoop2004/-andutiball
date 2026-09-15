@@ -1,10 +1,11 @@
 {
-  "NombreHost": "🕸️ ÑandutíBall | Juegan Todos 🇵🇾",
+  "NombreHost": "🕸️ ÑandutíBall | Futsal 🇵🇾",
   "CantidadDeJugadores": 16,
-  "MapaPorDefecto": "Real Soccer",
-  "TiempoDeJuego": 5,
-  "LimiteDeGoles": 0,
-  "modoJueganTodos": true,
-  "modoJueganAlgunos": false,
-  "automatizadoActivado": false
+  "MapaPorDefecto": "Futsal x3",
+  "TiempoDeJuego": 3,
+  "LimiteDeGoles": 3,
+  "modoJueganTodos": false,
+  "modoJueganAlgunos": true,
+  "maxPlayersPerTeam": 3,
+  "automatizadoActivado": true
 }

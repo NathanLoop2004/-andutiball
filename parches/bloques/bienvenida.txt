@@ -1,0 +1,34 @@
+const MensajeDeBienvenida = [
+  `❋･ﾟ✧ 🕸️ ✧ﾟ･❋ ✺ ❋･ﾟ✧ 🕸️ ✧ﾟ･❋ ✺ ❋･ﾟ✧ 🕸️ ✧ﾟ･❋`,
+
+  `
+ ▄▀▄▀                                  ▄▀
+░█▄─░█ ─█▀▀█ ░█▄─░█ ░█▀▀▄ ░█─░█ ▀▀█▀▀ ▀█▀
+░█░█░█ ░█▄▄█ ░█░█░█ ░█─░█ ░█─░█ ─░█── ─█─
+░█──▀█ ░█─░█ ░█──▀█ ░█▄▄▀ ─▀▄▄▀ ─░█── ▄█▄`,
+
+  `
+░█▀▀█ ─█▀▀█ ░█─── ░█───
+░█▀▀▄ ░█▄▄█ ░█─── ░█───
+░█▄▄█ ░█─░█ ░█▄▄█ ░█▄▄█`,
+
+  `❋･ﾟ✧ 🕸️ ✧ﾟ･❋ ✺ ❋･ﾟ✧ 🕸️ ✧ﾟ･❋ ✺ ❋･ﾟ✧ 🕸️ ✧ﾟ･❋`,
+
+  `✺ 🎉 ¡Bienvenido/a a ÑandutíBall! 🇵🇾 🎉 ✺`,
+
+  `❂ Estás ingresando a un host de HaxBall de ÑandutíBall ⚙️ ❂`,
+
+  `🕸️ El host paraguayo de HaxBall, hecho por Jinder`,
+
+  `⚽ Mapas de Futsal, Real Soccer y muchas otras modalidades`,
+
+  `👕 Camisetas de todos los clubes paraguayos: Olimpia, Cerro, Libertad, Guaraní y muchos más`,
+
+  `👥 ¡Buscá equipo o armá el tuyo y jugá con la gente de la sala!`,
+
+  `❓ ¿Tenés dudas? Consultá a un administrador con !llamaradmins`,
+
+  `Para ver estadísticas usa: !me, !stats ID, !goleadores, !asistidores, !vallas-invictas, !mvp, !racha-historica, !racha-actual, !viciosos, !ganadores, !presencias`,
+
+  `Mide tu banana con 🍌: !memide | AVATAR ANIMADOS, EJEMPLOS: !avatar 😈,👿  | !avatar HO,LA | !avatar 🌑,🌒,🌓,🌔,🌕,🌖,🌗,🌘`
+];

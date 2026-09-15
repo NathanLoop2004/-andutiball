@@ -7,6 +7,8 @@
   "scripts": {
     "start": "node --env-file-if-exists=.env launcher.js",
     "check": "node --check script.js",
+    "prueba": "node pruebas/simulador.js",
+    "parchar": "node parches/aplicar.js",
     "tokens": "node get-tokens.js",
     "panel": "node --env-file-if-exists=.env panel/server.js"
   },

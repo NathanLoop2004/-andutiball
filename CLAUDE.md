@@ -4,7 +4,7 @@ Contexto para trabajar en este proyecto. La documentación para personas está e
 
 ## Qué es
 
-`script.js` es un script de sala para el **Host Headless de HaxBall** (script "Futsal by GLH", versión 25.06.18).
+`script.js` es un script de sala para el **Host Headless de HaxBall** (base: "Real Soccer Revolution By GLH 3.1.0", ya parcheado como ÑandutíBall).
 
 - Se ejecuta **en el navegador**: se pega en la consola de https://www.haxball.com/headless.
 - Usa la API global `HBInit(roomConfig)` → objeto `room` (eventos `room.onPlayerJoin`, `room.onPlayerChat`, `room.onGameTick`…; métodos `room.sendAnnouncement`, `room.setCustomStadium`, `room.setPlayerTeam`…).
@@ -14,8 +14,8 @@ Contexto para trabajar en este proyecto. La documentación para personas está e
 
 ## Archivos
 
-- `script.js`: el script (~18.100 líneas, 1,3 MB). Es demasiado grande para leerlo entero: usa `offset`/`limit` o busca con Grep.
-- `script.txt`: vacío.
+- `script.js`: el script (~19.100 líneas, 1,5 MB). Es demasiado grande para leerlo entero: usa `offset`/`limit` o busca con Grep.
+- `Real Soccer Revolution By GLH 3.1.0.txt`: el original completo del autor, sin parchar. De ahí sale `script.js` con `npm run parchar`.
 - `README.md`: documentación de configuración, comandos y problemas.
 
 ## Despliegue (launcher.js)
@@ -25,15 +25,14 @@ Contexto para trabajar en este proyecto. La documentación para personas está e
 - El token se lee de `.env` (ignorado por Git); `.env.example` es la plantilla sin token.
 - Docker: `Dockerfile` (imagen `ghcr.io/puppeteer/puppeteer`, con la misma versión que puppeteer en package-lock.json) + `docker-compose.yml` (`env_file: .env`, `shm_size: 1gb`, `script.js` montado como volumen). Arranque: `docker compose up -d --build`; logs y link de la sala: `docker compose logs -f`.
 - Si el contenedor se reinicia, se necesita un token nuevo (por eso `restart: on-failure:3`).
-- **Multihost:** un solo `script.js` y tres salas en compose (`host-3v3`, `host-4v4`, `host-todos`). Cada una tiene `HOST_CONFIG=hosts/<sala>.json`, y el launcher reemplaza en el script la declaración (`var/let/const Nombre ...;`) de cada variable del JSON. Solo sirve para variables de config de una línea.
-- Cada sala necesita su propio token: `TOKEN_3V3`, `TOKEN_4V4`, `TOKEN_TODOS` en `.env`. Para `npm start` (una sola sala) se usan `HAXBALL_TOKEN` + `HOST_CONFIG`.
+- **Multihost:** un solo `script.js` y cuatro salas en compose (`host-3v3`, `host-4v4`, `host-todos`, `host-rs`). Cada una tiene `HOST_CONFIG=hosts/<sala>.json`, y el launcher reemplaza en el script la declaración (`var/let/const Nombre ...;`) de cada variable del JSON. Solo sirve para variables de config de una línea.
+- Cada sala necesita su propio token: `TOKEN_3V3`, `TOKEN_4V4`, `TOKEN_TODOS`, `TOKEN_REALSOCCER` en `.env`. Para `npm start` (una sola sala) se usan `HAXBALL_TOKEN` + `HOST_CONFIG`.
 - `npm run tokens` (`get-tokens.js`): abre headlesstoken en el navegador normal del usuario (Cloudflare Turnstile rechaza a Puppeteer con el error 600010); el usuario resuelve el captcha y copia el token, y el script lo lee del portapapeles y guarda los 3 tokens en `.env` (`-- --up` además hace `docker compose up`). No automatizar ni saltar el captcha.
 - No duplicar `script.js` por sala: los cambios por sala van en `hosts/*.json`.
-- Todavía no se probó: `script.js` está truncado y el launcher corta con error de sintaxis.
 
 ## Panel y rangos
 
-- `panel/index.html` (estado de las salas) y `panel/rangos.html` (administrar rangos). Los sirve tanto `panel/server.js` (Docker, puerto 8080, une las 3 salas) como el propio `launcher.js` (`npm start`, puerto `API_PORT`, solo su sala).
+- `panel/index.html` (estado de las salas) y `panel/rangos.html` (administrar rangos). Los sirve tanto `panel/server.js` (Docker, puerto 8080, une las 4 salas) como el propio `launcher.js` (`npm start`, puerto `API_PORT`, solo su sala).
 - API de cada sala: `GET /api/estado`, `GET /api/salas`, `GET|POST /api/rangos`.
 - El launcher espía la sala con un Proxy sobre el objeto `room`: encadena el handler original y después registra el evento. **Nunca reemplazar un handler del script sin llamar al anterior.**
 - `roles.json` = rangos + clave. `lib/rangos.js` lo lee y lo guarda; la clave nunca se manda al navegador (`sinClave`). El launcher lo inyecta como `window.__RANGOS` antes de correr el script y lo vigila con `fs.watch`: al cambiar llama a `window.__rangosActualizar` (recarga en caliente).
@@ -55,6 +54,24 @@ Contexto para trabajar en este proyecto. La documentación para personas está e
 1. **Archivo truncado → cortado limpio.** Venía cortado a mitad de `NumeroUnoFun`; se quitó esa última línea y `node --check script.js` pasa.
 2. **`room.onPlayerChat` faltaba → repuesto.** Al final del archivo está el bloque `💬 COMANDOS DEL CHAT — repuestos por ÑandutíBall`: mapea comandos a las funciones que sobrevivieron (`helpFun`, `MapasFun`, `afkFun`, `swapFun`, `pushMute`, `BanIpFun`…), maneja la clave de admin, el chat de equipo (`t `), `#`, mute y prefijos de rol. Es código propio, legible, no del autor original.
 3. **Webhook oculto → desactivado.** `var webhookID=null` con el link **comentado** arriba (buscar `WEBHOOK OCULTO DEL AUTOR`) y el `fetch(webhookID,…)` eliminado del `onPlayerJoin` ofuscado. **No reactivar**: enviaba nombre, IP (`player.conn`) y auth de cada jugador a un Discord ajeno.
+
+## Parches (`npm run parchar`)
+
+`parches/aplicar.js` reaplica **todo lo de ÑandutíBall** sobre cualquier `script.js`: corta la última línea si viene truncado, desactiva el webhook oculto, cambia la marca GLH → ÑandutíBall, pone las camisetas paraguayas (`parches/camisetas.js`), ajusta los umbrales del modo automático y agrega los bloques de `parches/bloques/` (compat, rangos, arbitraje, comandos, bienvenida).
+
+Es idempotente y **condicional**: si el script nuevo ya trae `room.onPlayerChat` o `room.onTeamGoal`, no agrega esos bloques. `--ver` hace una pasada en seco. Guarda `script.anterior.js`.
+
+**Al tocar los bloques, editarlos en `parches/bloques/` y correr `npm run parchar`** — no editar el final de `script.js` a mano, porque el parcheador lo reescribe.
+
+## Probar sin gastar tokens
+
+`npm run prueba` (`pruebas/simulador.js`) monta una sala falsa con la API de HaxBall, corre `script.js` entero en un `vm` y dispara los eventos (entrar, chatear, clave de rango, comandos, gol, salir). Atrapa los `X is not defined` que dejó el corte del archivo. **Correrlo después de cada cambio en script.js.**
+
+El bloque `🧑‍⚖️ ARBITRAJE` también es nuestro: el corte se llevó `room.onTeamGoal` (no existía ningún anuncio de gol), el acomodo automático de jugadores y el arranque de partidos. Ahí están `acomodarEquipos`, `arrancarSiHayGente`, `revisarSala` (cada 5 s) y `puedeJugar` (excluye bot, AFK y rangos sin verificar).
+
+Umbrales del modo automatizado (editados en las 3 copias del `if` minificado): ≤7 → x3, 8-9 → x4, 10-13 → x5, ≥14 → x7. Arranque en x3.
+
+Piezas repuestas en el bloque `🩹 PIEZAS QUE FALTABAN` (se perdieron con el corte): `playerJoinTimes`, `connections`, `UsedNames`, `usedUsernames`, `playerIPs`, `avatarIntervals`, `mapVotes`, `playerGoalsReceived`, `playerCleanSheets`, `timeOnHalves`, `camisetaRedActual/BlueActual`, y las funciones `whisper`, `announce`, `displayAdminMessage`, `registerPlayerTime`, `RegisterPlayer`, `DeletePlayer`, `asignarCamisetaPorClave`, `elegirNuevaCamiseta`.
 
 ## Pendientes
 

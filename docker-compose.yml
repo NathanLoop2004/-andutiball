@@ -40,8 +40,16 @@ services:
     container_name: nandutiball-todos
     environment:
       HOST_CONFIG: hosts/todos.json
-      ROOM_NAME: Juegan Todos
+      ROOM_NAME: Futsal automático
       HAXBALL_TOKEN: ${TOKEN_TODOS:?Falta TOKEN_TODOS en .env}
+
+  host-rs:
+    <<: *haxball
+    container_name: nandutiball-realsoccer
+    environment:
+      HOST_CONFIG: hosts/realsoccer.json
+      ROOM_NAME: Real Soccer
+      HAXBALL_TOKEN: ${TOKEN_REALSOCCER:?Falta TOKEN_REALSOCCER en .env}
 
   panel:
     image: node:22-alpine
@@ -52,11 +60,11 @@ services:
       - "8080:8080"
     environment:
       PANEL_PORT: 8080
-      SALAS: "3v3|3v3|http://host-3v3:3000,4v4|4v4|http://host-4v4:3000,todos|Juegan Todos|http://host-todos:3000"
+      SALAS: "3v3|Futsal 3v3|http://host-3v3:3000,4v4|Futsal 4v4|http://host-4v4:3000,todos|Futsal automático|http://host-todos:3000,rs|Real Soccer|http://host-rs:3000"
     volumes:
       - ./panel:/app/panel:ro
       - ./lib:/app/lib:ro
       # Se escribe desde la pantalla de rangos, así que va sin :ro
       - ./roles.json:/app/roles.json
     restart: unless-stopped
-    depends_on: [host-3v3, host-4v4, host-todos]
+    depends_on: [host-3v3, host-4v4, host-todos, host-rs]

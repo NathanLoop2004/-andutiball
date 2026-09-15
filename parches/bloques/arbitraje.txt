@@ -1,0 +1,133 @@
+
+
+// ▇▇▇▇▇▇▇▇▇ 🧑‍⚖️ ARBITRAJE — repuesto por ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// El corte del archivo se llevó al árbitro: no quedó onTeamGoal (anuncio de goles), ni el
+// acomodo automático de jugadores, ni el arranque de los partidos. Esto lo repone.
+
+// ── ⚽ GOLES ──
+room.onTeamGoal = function (equipo) {
+	var esRed = equipo === 1;
+	var goleador = null;
+	var asistente = null;
+	var enContra = false;
+
+	if (typeof game !== "undefined" && game && game.lastKickerName) {
+		if (game.lastKickerTeam === equipo) {
+			goleador = game.lastKickerName;
+			if (game.secondLastKickerName && game.secondLastKickerTeam === equipo && game.secondLastKickerName !== goleador) {
+				asistente = game.secondLastKickerName;
+			}
+		} else {
+			goleador = game.lastKickerName;
+			enContra = true;
+		}
+	}
+
+	var marcador = room.getScores();
+	var texto;
+	if (!goleador) {
+		texto = (esRed ? "🔴" : "🔵") + " ⚽ ¡GOL de " + (esRed ? NombreEquipoRojo : NombreEquipoAzul) + "!";
+	} else if (enContra) {
+		texto = "❌⚽ ¡GOL EN CONTRA de " + goleador + "! " + (esRed ? "🔴" : "🔵");
+	} else {
+		texto = "🔥 ⚽ ¡GOL de " + goleador + "!" + (asistente ? " (👟 Asistencia: " + asistente + ")" : "") + " " + (esRed ? "🔴" : "🔵");
+	}
+	if (marcador) texto += "   [ " + marcador.red + " - " + marcador.blue + " ]";
+
+	room.sendAnnouncement(texto, null, esRed ? 0xFF5D5D : 0x18FDE8, "bold", 2);
+
+	// Estadísticas del partido (las usan la figura y los rankings)
+	if (goleador && !enContra) {
+		playerGoals[goleador] = (playerGoals[goleador] || 0) + 1;
+		if (asistente) playerAssists[asistente] = (playerAssists[asistente] || 0) + 1;
+		try { actualizarPuntos(goleador); if (asistente) actualizarPuntos(asistente); } catch (e) {}
+	}
+	try {
+		golesPartido.push({ equipo: equipo, goleador: goleador || "—", asistente: asistente });
+		goalAnnouncementsSum.push(texto);
+	} catch (e) {}
+	if (typeof game !== "undefined" && game) {
+		if (esRed) game.redScore = marcador ? marcador.red : game.redScore + 1;
+		else game.blueScore = marcador ? marcador.blue : game.blueScore + 1;
+	}
+};
+
+// ── 👥 ACOMODAR JUGADORES ──
+// Mete a los espectadores en Red y Blue. Respeta "Juegan Todos" y "Juegan Algunos".
+// Deja afuera al bot, a los AFK y a quien tenga rango sin poner la clave.
+function puedeJugar(jugador) {
+	if (jugador.id === 0) return false;
+	if (afkPlayerIDs.has(jugador.id)) return false;
+	if (typeof tieneRangoSinVerificar === "function" && tieneRangoSinVerificar(jugador)) return false;
+	return true;
+}
+
+function acomodarEquipos() {
+	if (!modoJueganTodos && !modoJueganAlgunos) return;
+
+	var jugadores = room.getPlayerList();
+	var red = jugadores.filter(function (j) { return j.team === 1; });
+	var blue = jugadores.filter(function (j) { return j.team === 2; });
+	var espectadores = jugadores.filter(function (j) { return j.team === 0 && puedeJugar(j); });
+	var tope = modoJueganAlgunos && maxPlayersPerTeam ? maxPlayersPerTeam : Infinity;
+
+	espectadores.forEach(function (jugador) {
+		if (red.length >= tope && blue.length >= tope) return;
+		if (red.length <= blue.length && red.length < tope) {
+			room.setPlayerTeam(jugador.id, 1);
+			red.push(jugador);
+		} else if (blue.length < tope) {
+			room.setPlayerTeam(jugador.id, 2);
+			blue.push(jugador);
+		}
+	});
+}
+
+// ── ▶️ ARRANCAR EL PARTIDO ──
+var arranqueProgramado = false;
+function arrancarSiHayGente() {
+	if (arranqueProgramado || room.getScores() !== null) return;
+	var jugadores = room.getPlayerList();
+	var red = jugadores.filter(function (j) { return j.team === 1; }).length;
+	var blue = jugadores.filter(function (j) { return j.team === 2; }).length;
+	if (red < 1 || blue < 1) return;
+
+	arranqueProgramado = true;
+	setTimeout(function () {
+		arranqueProgramado = false;
+		if (room.getScores() === null) {
+			room.startGame();
+			room.sendAnnouncement("▶️ ¡Arranca el partido!", null, 0x00FFBB, "bold", 2);
+		}
+	}, 3000);
+}
+
+function revisarSala() {
+	acomodarEquipos();
+	arrancarSiHayGente();
+}
+
+// Revisamos al entrar, al salir, al cambiar de equipo y cada 5 segundos
+(function () {
+	var anteriorJoin = room.onPlayerJoin;
+	room.onPlayerJoin = function (player) {
+		if (typeof anteriorJoin === "function") anteriorJoin(player);
+		setTimeout(revisarSala, 2500);
+	};
+
+	var anteriorLeave = room.onPlayerLeave;
+	room.onPlayerLeave = function (player) {
+		if (typeof anteriorLeave === "function") anteriorLeave(player);
+		setTimeout(revisarSala, 1500);
+	};
+
+	var anteriorStop = room.onGameStop;
+	room.onGameStop = function (byPlayer) {
+		if (typeof anteriorStop === "function") anteriorStop(byPlayer);
+		setTimeout(revisarSala, 4000);
+	};
+
+	setInterval(revisarSala, 5000);
+})();
+
+console.log("🧑‍⚖️ Arbitraje activo: goles, equipos y arranque automático");

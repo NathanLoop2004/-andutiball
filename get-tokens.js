@@ -15,7 +15,7 @@ const TOKEN_URL = "https://www.haxball.com/headlesstoken";
 // Por defecto pide los 3 tokens; con "--una" solo el de la sala de HOST_CONFIG (para npm start)
 const salaElegida = (process.env.HOST_CONFIG || "hosts/todos.json").replace(/^.*[\\/]/, "").replace(/\.json$/i, "");
 const claveDeLaSala = `TOKEN_${salaElegida.toUpperCase().replace(/[^A-Z0-9]/g, "_")}`;
-const TOKEN_KEYS = process.argv.includes("--una") ? [claveDeLaSala] : ["TOKEN_3V3", "TOKEN_4V4", "TOKEN_TODOS"];
+const TOKEN_KEYS = process.argv.includes("--una") ? [claveDeLaSala] : ["TOKEN_3V3", "TOKEN_4V4", "TOKEN_TODOS", "TOKEN_REALSOCCER"];
 const TOKEN_PATTERN = /thr1\.[A-Za-z0-9_\-.]+/;
 const ENV_PATH = path.join(__dirname, ".env");
 const WAIT_TIMEOUT_MS = 5 * 60 * 1000;

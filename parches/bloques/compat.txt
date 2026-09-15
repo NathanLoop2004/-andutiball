@@ -1,0 +1,129 @@
+
+
+// ▇▇▇▇▇▇▇▇▇ 🩹 PIEZAS QUE FALTABAN — repuestas por ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// Hacen falta solo si el script viene cortado y perdió estas variables y funciones.
+// Cada una se define ÚNICAMENTE si no existe ya: con el script completo, este bloque no hace nada.
+
+if (typeof playerJoinTimes === "undefined") window.playerJoinTimes = {};      // id -> hora de entrada
+if (typeof connections === "undefined") window.connections = [];              // [id, conn] de cada jugador
+if (typeof UsedNames === "undefined") window.UsedNames = [];                  // nicks ya usados por IP
+if (typeof usedUsernames === "undefined") window.usedUsernames = {};
+if (typeof playerIPs === "undefined") window.playerIPs = [];                  // [{ nickname, ip, id }]
+if (typeof avatarIntervals === "undefined") window.avatarIntervals = {};      // avatares animados
+if (typeof mapVotes === "undefined") window.mapVotes = {};                    // votaciones de mapa
+if (typeof playerGoalsReceived === "undefined") window.playerGoalsReceived = {};
+if (typeof playerCleanSheets === "undefined") window.playerCleanSheets = {};
+if (typeof timeOnHalves === "undefined" || !Array.isArray(timeOnHalves)) window.timeOnHalves = [0, 0];
+// El script solo crea ballCarrying al arrancar un partido: si alguien cambia de equipo antes, falla
+if (typeof ballCarrying === "undefined") window.ballCarrying = new Map();
+
+// Camisetas en uso (modo Gana Sigue)
+if (typeof camisetaRedActual === "undefined") window.camisetaRedActual = "oli/titular/red";
+if (typeof camisetaBlueActual === "undefined") window.camisetaBlueActual = "cer/titular/blue";
+
+// Mensaje privado a un jugador; lo usa el saludo de bienvenida
+if (typeof whisper === "undefined") {
+	window.whisper = function (mensaje, idJugador, color, estilo, sonido) {
+		room.sendAnnouncement(mensaje, idJugador, color, estilo || "normal", sonido === undefined ? 0 : sonido);
+	};
+}
+
+// Anuncio para toda la sala
+if (typeof announce === "undefined") {
+	window.announce = function (mensaje, color, estilo, sonido) {
+		room.sendAnnouncement(mensaje, null, color === undefined ? 0xFFD100 : color, estilo || "normal", sonido === undefined ? 0 : sonido);
+	};
+}
+
+// Suma el tiempo jugado: al entrar a un equipo arranca el reloj, al salir lo acumula
+if (typeof registerPlayerTime === "undefined") {
+	window.registerPlayerTime = function (idJugador, equipo) {
+		if (typeof playerMatchTime === "undefined") return;
+		if (!playerMatchTime[idJugador]) playerMatchTime[idJugador] = { joinTime: 0, totalTime: 0 };
+		var datos = playerMatchTime[idJugador];
+		var ahora = Date.now();
+		if (equipo !== 0) {
+			datos.joinTime = ahora;
+		} else if (datos.joinTime) {
+			datos.totalTime += ahora - datos.joinTime;
+			datos.joinTime = 0;
+		}
+	};
+}
+
+// Guarda la IP de quien entra y la borra cuando se va (la usan !banip y los avisos a Discord)
+if (typeof RegisterPlayer === "undefined") {
+	window.RegisterPlayer = function (player) {
+		if (!player || !player.conn) return;
+		var ip = decryptHex(player.conn);
+		var repetido = playerIPs.some(function (x) { return x.nickname === player.name && x.ip === ip; });
+		if (!repetido) playerIPs.push({ nickname: player.name, ip: ip, id: player.id });
+	};
+}
+
+if (typeof DeletePlayer === "undefined") {
+	window.DeletePlayer = function (idJugador) {
+		window.playerIPs = playerIPs.filter(function (x) { return x.id !== idJugador; });
+		delete playerJoinTimes[idJugador];
+		if (typeof playerMatchTime !== "undefined") delete playerMatchTime[idJugador];
+	};
+}
+
+// Avisa que no hay ningún administrador en la sala (como mucho una vez por minuto)
+if (typeof displayAdminMessage === "undefined") {
+	window.ultimoAvisoAdmin = 0;
+	window.displayAdminMessage = function () {
+		var hayAdmin = room.getPlayerList().some(function (j) { return j.admin && j.id !== 0; });
+		if (hayAdmin || Date.now() - window.ultimoAvisoAdmin < 60000) return;
+		window.ultimoAvisoAdmin = Date.now();
+		room.sendAnnouncement("👤 No hay ningún administrador en la sala.", null, 0xFFD100, "small", 0);
+	};
+}
+
+// Pone en la cancha la camiseta guardada bajo esa clave (ej. "oli/titular/red")
+if (typeof asignarCamisetaPorClave === "undefined") {
+	window.asignarCamisetaPorClave = function (clave) {
+		var datos = camisetasEquipos[clave];
+		if (!datos) return;
+		var colores = parseColors(datos.codigo);
+		var equipo = clave.indexOf("/red") !== -1 ? 1 : 2;
+		room.setTeamColors(equipo, colores.angle, colores.textColor, colores.colors);
+		if (equipo === 1) {
+			redAngle = colores.angle; redTextColor = colores.textColor; redColor = colores.colors;
+			teamRed = datos.nombreEquipo;
+		} else {
+			blueAngle = colores.angle; blueTextColor = colores.textColor; blueColor = colores.colors;
+			teamBlue = datos.nombreEquipo;
+		}
+	};
+}
+
+// Elige otra camiseta para ese equipo, distinta de la actual y del club rival
+if (typeof elegirNuevaCamiseta === "undefined") {
+	window.elegirNuevaCamiseta = function (claveActual, equipo, claveRival) {
+		var clubRival = claveRival ? String(claveRival).split("/")[0] : "";
+		var opciones = [];
+		for (var clave in camisetasEquipos) {
+			if (clave.indexOf("/" + equipo) === -1) continue;
+			if (clave === claveActual) continue;
+			if (clave.split("/")[0] === clubRival) continue;
+			opciones.push(clave);
+		}
+		if (!opciones.length) return claveActual;
+		return opciones[Math.floor(Math.random() * opciones.length)];
+	};
+}
+
+// Al entrar, anotamos la hora, la conexión y la IP (solo si el script no lo hace ya)
+if (typeof playerJoinTimes !== "undefined" && !window.__anotamosEntradas) {
+	window.__anotamosEntradas = true;
+	(function () {
+		var anteriorJoin = room.onPlayerJoin;
+		room.onPlayerJoin = function (player) {
+			if (!playerJoinTimes[player.id]) playerJoinTimes[player.id] = Date.now();
+			if (!connections.some(function (c) { return c[0] === player.id; })) connections.push([player.id, player.conn]);
+			RegisterPlayer(player);
+			if (typeof anteriorJoin === "function") anteriorJoin(player);
+		};
+	})();
+}

@@ -16,7 +16,7 @@
 Sala de HaxBall con bot árbitro, basada en la
 [Headless Host API](https://github.com/haxball/haxball-issues/wiki/Headless-Host).
 Trae 35 mapas, camisetas de todos los clubes paraguayos, estadísticas, moderación
-automática y avisos a Discord. Puede levantar **3 salas a la vez** (3v3, 4v4 y Juegan Todos).
+automática y avisos a Discord. Puede levantar **4 salas a la vez**: tres de Futsal y una de Real Soccer.
 
 > ⚠️ **Leé [Problemas conocidos](#️-problemas-conocidos).** El `script.js` original venía
 > **cortado** y con un **webhook oculto**: los dos están arreglados, pero hay cosas que faltan.
@@ -27,11 +27,11 @@ automática y avisos a Discord. Puede levantar **3 salas a la vez** (3v3, 4v4 y 
 
 | Archivo | Para qué |
 |---|---|
-| `script.js` | El script de la sala (~18.100 líneas). Se ejecuta dentro de HaxBall. |
+| `script.js` | El script de la sala (~19.100 líneas). Se ejecuta dentro de HaxBall. |
 | `launcher.js` | Abre la sala con Puppeteer y le aplica la configuración de cada host. |
 | `get-tokens.js` | Consigue los tokens y los guarda en `.env`. |
-| `hosts/*.json` | Diferencias de cada sala (3v3, 4v4, todos). |
-| `docker-compose.yml`, `Dockerfile` | Las 3 salas en Docker. |
+| `hosts/*.json` | Diferencias de cada sala (3v3, 4v4, automático, Real Soccer). |
+| `docker-compose.yml`, `Dockerfile` | Las 4 salas en Docker. |
 | `.env` | Tus tokens. |
 | `CLAUDE.md` | Notas técnicas para seguir trabajando en el proyecto. |
 
@@ -39,17 +39,17 @@ automática y avisos a Discord. Puede levantar **3 salas a la vez** (3v3, 4v4 y 
 
 ## ▶️ Cómo levantar las salas
 
-### Con Docker (las 3 salas)
+### Con Docker (las 4 salas)
 
 ```powershell
 npm install                  # una sola vez
-npm run tokens -- --up       # saca los 3 tokens y levanta todo
+npm run tokens -- --up       # saca los 4 tokens y levanta todo
 docker compose logs -f       # muestra los links de las salas
 docker compose down          # cierra todo
 ```
 
 `npm run tokens` abre la página de tokens en tu navegador. Resolvés el captcha, copiás el token
-con Ctrl+C y el script lo guarda solo. Repite 3 veces, una por sala.
+con Ctrl+C y el script lo guarda solo. Repite 4 veces, una por sala.
 
 Para no tener que seleccionar el texto, instalá el marcador de [bookmarklet.js](bookmarklet.js):
 después del captcha, un clic copia el token. El captcha siempre lo resolvés vos.
@@ -69,7 +69,7 @@ jugadores, el mapa, el marcador y el link para entrar. Adentro tiene 5 pestañas
 (chat, entradas, salidas, goles y expulsiones en vivo), **Jugadores**, **Bans**, **Roles** y
 **Config**. Se actualiza cada 2 segundos.
 
-- Con Docker, las 3 salas juntas: <http://localhost:8080>
+- Con Docker, las 4 salas juntas: <http://localhost:8080>
 - Con `npm start`, esa sala sola: <http://localhost:3000>
 
 Los bans que lista son los de la sesión en curso: HaxBall no permite pedirle la lista guardada.
@@ -104,6 +104,31 @@ Entrá a <https://www.haxball.com/headless>, abrí la consola (`F12`), pegá el 
 > 🔑 Los tokens de HaxBall **vencen a los pocos minutos** y cada sala necesita el suyo.
 > Sacá tokens nuevos justo antes de arrancar: <https://www.haxball.com/headlesstoken>
 
+### 🧪 Probar sin gastar un token
+
+```powershell
+npm run prueba
+```
+
+Monta una sala falsa, corre el script entero y simula jugadores que entran, escriben la clave del
+rango, usan comandos, hacen un gol y se van. Sirve para cazar errores antes de abrir la sala de
+verdad. Conviene correrlo cada vez que se toca `script.js`.
+
+### 🩹 Si reemplazás `script.js` por otro
+
+Todo lo de ÑandutíBall (marca, camisetas paraguayas, rangos, arbitraje, webhook desactivado)
+está guardado como parches. Después de poner un `script.js` nuevo:
+
+```powershell
+npm run parchar -- --ver    # muestra qué haría, sin tocar nada
+npm run parchar             # lo aplica (guarda copia en script.anterior.js)
+npm run prueba              # comprueba que quedó sano
+```
+
+El parcheador es cuidadoso: si el script nuevo ya trae su propio chat (`onPlayerChat`) o su
+propio árbitro (`onTeamGoal`), **no los pisa** y avisa que los saltó. También arregla solo el
+archivo si viene cortado a la mitad.
+
 ### 🔴 Si el token falla
 
 La sala avisa sola. Si a los 40 segundos no salió el link, mira la página y te dice qué pasó:
@@ -122,15 +147,32 @@ El tiempo de espera se cambia con `ESPERA_LINK_MS` (por defecto 40000).
 
 ---
 
-## 🏠 Las 3 salas
+## 🏠 Las 4 salas
+
+Tres son de **Futsal** y una aparte es de **Real Soccer**, que es otro juego: cancha grande,
+saques de banda, córners y saques de arco.
 
 | Sala | Archivo | Jugadores | Mapa | Tiempo / Goles | Modo |
 |---|---|---|---|---|---|
-| **3v3** | `hosts/3v3.json` | 12 | Futsal x3 | 3 min / 3 | Juegan Algunos, 3 por equipo |
-| **4v4** | `hosts/4v4.json` | 14 | Futsal x4 | 4 min / 3 | Juegan Algunos, 4 por equipo |
-| **Juegan Todos** | `hosts/todos.json` | 16 | Real Soccer | 5 min / sin límite | Juegan Todos |
+| **Futsal 3v3** | `hosts/3v3.json` | 12 | Futsal x3 | 3 min / 3 | 3 por equipo |
+| **Futsal 4v4** | `hosts/4v4.json` | 14 | Futsal x4 | 4 min / 3 | 4 por equipo |
+| **Futsal automático** | `hosts/todos.json` | 16 | Futsal x3 → x4 → x5 → x7 | según el mapa | Automático |
+| **Real Soccer** | `hosts/realsoccer.json` | 16 | Real Soccer | 6 min / sin límite | Juegan Todos |
 
-Las tres usan el mismo `script.js`. Para cambiar algo de una sola, editá su JSON con cualquier
+La sala **Futsal automático** arranca en **Futsal x3** y va cambiando de cancha sola según
+cuánta gente esté jugando (sin contar a los AFK ni al bot):
+
+| Jugadores | Mapa | Por equipo | Goles | Minutos |
+|---|---|---|---|---|
+| hasta 7 | Futsal x3 | 3 | 3 | 3 |
+| 8 o 9 | Futsal x4 | 4 | 3 | 4 |
+| 10 a 13 | Futsal x5 | 5 | 3 | 4 |
+| 14 o más | Futsal x7 | 7 | 3 | 5 |
+
+El cambio solo ocurre en los primeros 30 segundos del partido (`tiempoLimiteCambio`), para no
+cortar un partido empezado.
+
+Las cuatro usan el mismo `script.js`. Para cambiar algo de una sola, editá su JSON con cualquier
 variable del inicio del script. Por ejemplo `"powerShotMode": true` o `"PasswordDelHost": "123"`.
 Después basta con `docker compose restart`.
 
