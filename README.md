@@ -46,7 +46,7 @@ automática y avisos a Discord. Puede levantar **4 salas a la vez**: tres de Fut
 ```powershell
 npm install            # una sola vez
 npm run tokens         # los 4 tokens
-npm run todas          # levanta las 4 salas + el panel
+npm start              # levanta las 4 salas + el panel
 ```
 
 Los links de las 4 van apareciendo en la terminal, cada uno con el nombre de su sala adelante.
@@ -69,13 +69,14 @@ con Ctrl+C y el script lo guarda solo. Repite 4 veces, una por sala.
 Para no tener que seleccionar el texto, instalá el marcador de [bookmarklet.js](bookmarklet.js):
 después del captcha, un clic copia el token. El captcha siempre lo resolvés vos.
 
-### Una sola sala, sin Docker
+### Una sola sala
 
 ```powershell
-npm start        # usa HAXBALL_TOKEN y HOST_CONFIG de .env
+npm start 4v4          # 3v3 · 4v4 · todos · realsoccer
+npm run tokens -- --una  # si te falta el token de esa sala
 ```
 
-Levanta la sala **y su panel** en <http://localhost:3000> (cambiá el puerto con `API_PORT`).
+La sala levanta con su panel. Si el nombre está mal escrito, te dice cuáles hay.
 
 ### 🖥️ El panel
 
@@ -88,7 +89,7 @@ Se actualiza cada 2 segundos **sin moverte de donde estabas leyendo**: solo sigu
 mensaje si ya estabas abajo del todo, y si no cambió nada no redibuja.
 
 - Con Docker, las 4 salas juntas: <http://localhost:8080>
-- Con `npm start`, esa sala sola: <http://localhost:3000>
+- Con `npm start 4v4` (una sola sala), su panel en <http://localhost:8080> también
 
 Los bans que lista son los de la sesión en curso: HaxBall no permite pedirle la lista guardada.
 

@@ -13,6 +13,30 @@ const { leerRoles } = require("./lib/roles");
 const { ARCHIVO: ARCHIVO_RANGOS, leerRangos, guardarRangos, sinClave } = require("./lib/rangos");
 const { leerElo, guardarElo, aplicarPartido, ranking, paraLaSala, DIVISIONES } = require("./lib/elo");
 
+// Qué sala levantar: "npm start 3v3" pesa más que el HOST_CONFIG del .env.
+// Sin argumento, usa el .env; si tampoco está, la sala de futsal automático.
+{
+  const pedida = (process.argv[2] || "").trim().toLowerCase();
+  if (pedida) {
+    // "todas" es el comando de las 4 salas, no una sala: avisamos en vez de abrir una sola
+    if (["todas", "todo", "all", "4", "cuatro"].includes(pedida)) {
+      console.error(`\n❌ "${pedida}" no es una sala.`);
+      console.error("   👉 Para levantar las 4 juntas:  npm run todas");
+      console.error("   👉 Para una sola:               npm start 3v3 | 4v4 | todos | realsoccer\n");
+      process.exit(1);
+    }
+    const archivo = path.join(__dirname, "hosts", `${pedida}.json`);
+    if (!fs.existsSync(archivo)) {
+      const disponibles = fs.readdirSync(path.join(__dirname, "hosts")).filter((a) => a.endsWith(".json")).map((a) => a.replace(/\.json$/, ""));
+      console.error(`\n❌ No existe la sala "${pedida}".`);
+      console.error(`   Salas disponibles: ${disponibles.join(" · ")}`);
+      console.error("   👉 Para levantar las 4 juntas:  npm run todas\n");
+      process.exit(1);
+    }
+    process.env.HOST_CONFIG = `hosts/${pedida}.json`;
+  }
+}
+
 // El token sale de HAXBALL_TOKEN o, si no está, del TOKEN_* que corresponde a esta sala
 const salaElegida = (process.env.HOST_CONFIG || "").replace(/^.*[\\/]/, "").replace(/\.json$/i, "");
 const tokenDeLaSala = salaElegida ? process.env[`TOKEN_${salaElegida.toUpperCase().replace(/[^A-Z0-9]/g, "_")}`] : "";
@@ -172,6 +196,16 @@ const api = http.createServer((req, res) => {
 
   res.statusCode = 404;
   res.end("not found");
+});
+api.on("error", (error) => {
+  if (error.code === "EADDRINUSE") {
+    console.error(`\n❌ El puerto ${PUERTO_API} ya está ocupado: seguramente tenés otra sala abierta.`);
+    console.error(`   👉 Levantá esta en otro puerto:  $env:API_PORT=3001; npm start ${salaElegida || ""}`.trimEnd());
+    console.error("   👉 O levantá las 4 juntas:        npm run todas\n");
+  } else {
+    console.error("❌ No se pudo abrir el panel:", error.message);
+  }
+  process.exit(1);
 });
 api.listen(PUERTO_API, () => console.log(`🖥️  Panel de esta sala en http://localhost:${PUERTO_API}`));
 

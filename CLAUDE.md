@@ -28,7 +28,9 @@ Contexto para trabajar en este proyecto. La documentación para personas está e
 - **Multihost:** un solo `script.js` y cuatro salas en compose (`host-3v3`, `host-4v4`, `host-todos`, `host-rs`). Cada una tiene `HOST_CONFIG=hosts/<sala>.json`, y el launcher reemplaza en el script la declaración (`var/let/const Nombre ...;`) de cada variable del JSON. Solo sirve para variables de config de una línea.
 - Cada sala necesita su propio token: `TOKEN_3V3`, `TOKEN_4V4`, `TOKEN_TODOS`, `TOKEN_REALSOCCER` en `.env`. Para `npm start` (una sola sala) se usan `HAXBALL_TOKEN` + `HOST_CONFIG`.
 - `npm run tokens` (`get-tokens.js`): abre headlesstoken en el navegador normal del usuario (Cloudflare Turnstile rechaza a Puppeteer con el error 600010); el usuario resuelve el captcha y copia el token, y el script lo lee del portapapeles y guarda los 3 tokens en `.env` (`-- --up` además hace `docker compose up`). No automatizar ni saltar el captcha.
-- `npm run todas` (`todas.js`): levanta las 4 salas + el panel en un solo comando, sin Docker. Un proceso hijo por sala (puertos 3001-3004) y el panel en 8080; prefija la salida con el nombre de cada sala y corta todo con Ctrl+C. Es la forma práctica en la PC del usuario, que no tiene Docker.
+- **`npm start` = `todas.js`**: sin argumentos levanta las 4 salas + el panel (un proceso hijo por sala, puertos 3001-3004, panel en 8080, prefija la salida con el nombre de cada sala, Ctrl+C corta todo). Con argumento (`npm start 4v4`) levanta solo esa. `npm run todas` es alias. Es la forma práctica acá, porque el usuario no tiene Docker.
+- `npm run sala 4v4` llama directo a `launcher.js` (una sala, sin el panel unificado). `launcher.js` también acepta el nombre de sala como argumento y avisa si el puerto está ocupado.
+- **Cuidado con los nombres**: la sala de futsal automático se llama `todos` (hosts/todos.json) y el comando de las 4 era `todas`. Por eso `npm start` sin argumentos levanta las 4: el usuario escribió `npm start todos` esperando las 4 y le salió una sola.
 - No duplicar `script.js` por sala: los cambios por sala van en `hosts/*.json`.
 
 ## Panel y rangos

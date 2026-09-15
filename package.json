@@ -5,7 +5,7 @@
   "description": "Host de HaxBall ÑandutíBall ejecutado con Puppeteer",
   "main": "launcher.js",
   "scripts": {
-    "start": "node --env-file-if-exists=.env launcher.js",
+    "start": "node --env-file-if-exists=.env todas.js",
     "todas": "node --env-file-if-exists=.env todas.js",
     "check": "node --check script.js",
     "prueba": "node pruebas/simulador.js",
@@ -15,7 +15,8 @@
     "tokens": "node get-tokens.js",
     "panel": "node --env-file-if-exists=.env panel/server.js",
     "prueba-turnos": "node pruebas/turnos.js",
-    "prueba-elo": "node pruebas/elo.js && node pruebas/elo-integracion.js"
+    "prueba-elo": "node pruebas/elo.js && node pruebas/elo-integracion.js",
+    "sala": "node --env-file-if-exists=.env launcher.js"
   },
   "dependencies": {
     "puppeteer": "^23.0.0"
