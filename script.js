@@ -157,11 +157,11 @@ var CantidadCambiarTamano = 1;
 // ▇▇▇▇▇▇▇ ⚽👕 CAMISETAS POR DEFECTO ⚽👕 ▇▇▇▇▇▇▇
 
 // CAMISETA EQUIPO RED 🔴
-var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA
+var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
 var NombreEquipoRojo = "OLIMPIA";
 
 // CAMISETA EQUIPO BLUE 🔵
-var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO
+var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
 var NombreEquipoAzul = "CERRO PORTEÑO";
 
 
@@ -169,7 +169,7 @@ var NombreEquipoAzul = "CERRO PORTEÑO";
 // ▇▇▇▇▇▇▇ 🚫 RESTRICCIONES DE ACCESO 🚫 ▇▇▇▇▇▇▇
 
 // 🤖 ACTIVAR reCAPTCHA PARA ENTRAR
-var ActivarReCaptcha = true;
+var ActivarReCaptcha = false;
 // true = Los jugadores deben resolver CAPTCHA (No soy un robot) para entrar
 // false = Los jugadores entran sin CAPTCHA
 
@@ -19035,14 +19035,73 @@ if (typeof playerJoinTimes !== "undefined" && !window.__anotamosEntradas) {
 	})();
 }
 
+// Árbitro autónomo: acomoda espectadores en Red/Blue y arranca el partido si hay gente.
+// El árbitro del autor solo mueve dentro de onGameTick — sin partido corriendo no acomoda a nadie.
+if (!window.__arbitroAutonomo) {
+	window.__arbitroAutonomo = true;
 
-// ▇▇▇▇▇▇▇▇▇ 🎖️ RANGOS CON CLAVE — ÑandutíBall ▇▇▇▇▇▇▇▇▇
-// Los jugadores con rango (OWNER, CO-OWNER, ...) tienen que escribir la clave para poder jugar.
-// Mientras no la escriban quedan como espectadores y en AFK. El resto de la gente entra normal.
-// Los rangos y la clave salen de roles.json (se editan desde el panel, sin reiniciar la sala).
+	window.__acomodarSala = function () {
+		if (typeof room === "undefined") return;
+		var jugadores = room.getPlayerList().filter(function (p) { return p.id !== 0; });
+		if (!jugadores.length) return;
+
+		var libre = function (p) {
+			if (typeof afkPlayerIDs !== "undefined" && afkPlayerIDs.has && afkPlayerIDs.has(p.id)) return false;
+			if (typeof rangosVerificados !== "undefined" && typeof tieneRangoSinVerificar === "function" && tieneRangoSinVerificar(p)) return false;
+			return true;
+		};
+
+		var red = jugadores.filter(function (p) { return p.team === 1 && libre(p); });
+		var blue = jugadores.filter(function (p) { return p.team === 2 && libre(p); });
+		var espectadores = jugadores.filter(function (p) { return p.team === 0 && libre(p); });
+
+		var jueganTodos = typeof modoJueganTodos !== "undefined" && modoJueganTodos;
+		var jueganAlgunos = typeof modoJueganAlgunos !== "undefined" && modoJueganAlgunos;
+		var tope = typeof maxPlayersPerTeam === "number" && maxPlayersPerTeam > 0 ? maxPlayersPerTeam : 99;
+
+		for (var i = 0; i < espectadores.length; i++) {
+			var esp = espectadores[i];
+			if (jueganTodos) {
+				room.setPlayerTeam(esp.id, red.length <= blue.length ? 1 : 2);
+				if (red.length <= blue.length) red.push(esp); else blue.push(esp);
+				continue;
+			}
+			if (!jueganAlgunos) break;
+			if (red.length < tope && red.length <= blue.length) { room.setPlayerTeam(esp.id, 1); red.push(esp); }
+			else if (blue.length < tope) { room.setPlayerTeam(esp.id, 2); blue.push(esp); }
+			else break;
+		}
+
+		var partido = room.getScores();
+		if (!partido && red.length >= 1 && blue.length >= 1) {
+			try { room.startGame(); } catch (e) { /* la sala aún no está lista */ }
+		}
+	};
+
+	// Al entrar, lo acomoda al toque (sin esperar el intervalo).
+	(function () {
+		var anteriorJoin = room.onPlayerJoin;
+		room.onPlayerJoin = function (player) {
+			if (typeof anteriorJoin === "function") anteriorJoin(player);
+			setTimeout(window.__acomodarSala, 300);
+		};
+		var anteriorLeave = room.onPlayerLeave;
+		room.onPlayerLeave = function (player) {
+			if (typeof anteriorLeave === "function") anteriorLeave(player);
+			setTimeout(window.__acomodarSala, 300);
+		};
+	})();
+
+	setInterval(window.__acomodarSala, 2000);
+}
+
+
+// ▇▇▇▇▇▇▇▇▇ 🎖️ RANGOS — ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// Si el nick del jugador coincide con uno de los rangos de roles.json, le damos su rango
+// automáticamente (admin si corresponde). No se pide clave: basta con tener el nick.
 
 var RANGOS = window.__RANGOS || { clave: "", roles: [] };
-var rangosVerificados = {};   // id del jugador -> true cuando ya puso la clave
+var rangosVerificados = {};   // se sigue exportando para el árbitro, pero ya no se usa como bloqueo
 
 // El panel avisa por acá cuando se cambian los rangos
 window.__rangosActualizar = function (datos) {
@@ -19060,65 +19119,27 @@ function rangoDelNombre(nombre) {
 	return null;
 }
 
-function tieneRangoSinVerificar(player) {
-	return Boolean(rangoDelNombre(player.name)) && !rangosVerificados[player.id];
-}
+// Compatibilidad: otros bloques preguntan si el rango está "sin verificar". Ahora nunca lo está.
+function tieneRangoSinVerificar(player) { return false; }
 
-function pedirClave(player) {
-	if (rangosVerificados[player.id]) return;   // ya puso la clave
+function aplicarRango(player) {
 	var rol = rangoDelNombre(player.name);
 	if (!rol) return;
-	room.sendAnnouncement("🎖️ Detectamos tu rango: " + rol.nombre, player.id, 0xFFD100, "bold", 2);
-	room.sendAnnouncement("🔐 Escribí la clave en el chat y dale Enter para poder jugar.", player.id, 0xFFD100, "bold", 0);
-	room.sendAnnouncement("💤 Mientras tanto quedás como espectador y en AFK.", player.id, 0x93A1B0, "small", 0);
-	afkPlayerIDs.add(player.id);
-	if (player.team !== 0) room.setPlayerTeam(player.id, 0);
-}
-
-function verificarRango(player) {
-	var rol = rangoDelNombre(player.name);
 	rangosVerificados[player.id] = true;
-	afkPlayerIDs.delete(player.id);
-	if (rol && rol.admin) room.setPlayerAdmin(player.id, true);
-	room.sendAnnouncement("✅ Clave correcta. ¡Bienvenido, " + rol.nombre + " " + player.name + "!", null, 0x2ECC71, "bold", 2);
+	if (rol.admin) room.setPlayerAdmin(player.id, true);
+	room.sendAnnouncement("🎖️ Bienvenido, " + rol.nombre + " " + player.name + "!", null, 0x2ECC71, "bold", 2);
 }
 
-// Al entrar: si tiene rango, le pedimos la clave (sin pisar lo que ya hacía el script)
 (function () {
 	var anteriorJoin = room.onPlayerJoin;
 	room.onPlayerJoin = function (player) {
 		if (typeof anteriorJoin === "function") anteriorJoin(player);
-		if (rangoDelNombre(player.name)) setTimeout(function () { pedirClave(player); }, 1500);
+		if (rangoDelNombre(player.name)) setTimeout(function () { aplicarRango(player); }, 800);
 	};
 
 	var anteriorLeave = room.onPlayerLeave;
 	room.onPlayerLeave = function (player) {
 		if (typeof anteriorLeave === "function") anteriorLeave(player);
 		delete rangosVerificados[player.id];
-	};
-
-	// La clave se escribe en el chat. Nos colgamos del chat del script sin reemplazarlo.
-	// (Si el script no trae chat propio, el bloque de comandos hace esta misma revisión.)
-	var anteriorChat = room.onPlayerChat;
-	room.onPlayerChat = function (player, message) {
-		if (tieneRangoSinVerificar(player)) {
-			if (RANGOS.clave && String(message).trim() === RANGOS.clave) {
-				verificarRango(player);
-			} else {
-				room.sendAnnouncement("🔐 Escribí la clave de tu rango para poder jugar.", player.id, 0xFF4444, "bold", 2);
-			}
-			return false;   // nadie más ve la clave
-		}
-		return typeof anteriorChat === "function" ? anteriorChat(player, message) : true;
-	};
-
-	// Si todavía no puso la clave, no puede entrar a la cancha
-	var anteriorTeam = room.onPlayerTeamChange;
-	room.onPlayerTeamChange = function (player, porQuien) {
-		if (typeof anteriorTeam === "function") anteriorTeam(player, porQuien);
-		if (player.team !== 0 && tieneRangoSinVerificar(player)) {
-			room.setPlayerTeam(player.id, 0);
-			room.sendAnnouncement("🔐 Primero escribí la clave de tu rango para poder jugar.", player.id, 0xFF4444, "bold", 2);
-		}
 	};
 })();

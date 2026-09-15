@@ -28,6 +28,7 @@ Contexto para trabajar en este proyecto. La documentación para personas está e
 - **Multihost:** un solo `script.js` y cuatro salas en compose (`host-3v3`, `host-4v4`, `host-todos`, `host-rs`). Cada una tiene `HOST_CONFIG=hosts/<sala>.json`, y el launcher reemplaza en el script la declaración (`var/let/const Nombre ...;`) de cada variable del JSON. Solo sirve para variables de config de una línea.
 - Cada sala necesita su propio token: `TOKEN_3V3`, `TOKEN_4V4`, `TOKEN_TODOS`, `TOKEN_REALSOCCER` en `.env`. Para `npm start` (una sola sala) se usan `HAXBALL_TOKEN` + `HOST_CONFIG`.
 - `npm run tokens` (`get-tokens.js`): abre headlesstoken en el navegador normal del usuario (Cloudflare Turnstile rechaza a Puppeteer con el error 600010); el usuario resuelve el captcha y copia el token, y el script lo lee del portapapeles y guarda los 3 tokens en `.env` (`-- --up` además hace `docker compose up`). No automatizar ni saltar el captcha.
+- `npm run todas` (`todas.js`): levanta las 4 salas + el panel en un solo comando, sin Docker. Un proceso hijo por sala (puertos 3001-3004) y el panel en 8080; prefija la salida con el nombre de cada sala y corta todo con Ctrl+C. Es la forma práctica en la PC del usuario, que no tiene Docker.
 - No duplicar `script.js` por sala: los cambios por sala van en `hosts/*.json`.
 
 ## Panel y rangos
@@ -49,11 +50,15 @@ Contexto para trabajar en este proyecto. La documentación para personas está e
 | 1226 – 17935 | Mapas `.hbs` como template strings, una función `getXxxMap()` por mapa |
 | 17936 – final | Lógica minificada en líneas muy largas: creación de sala, clase `Game`, webhooks, stats, AFK, mute, bans, funciones de comandos (`helpFun`, `afkFun`…) |
 
-## Estado del script (ya arreglado)
+## Estado del script
 
-1. **Archivo truncado → cortado limpio.** Venía cortado a mitad de `NumeroUnoFun`; se quitó esa última línea y `node --check script.js` pasa.
-2. **`room.onPlayerChat` faltaba → repuesto.** Al final del archivo está el bloque `💬 COMANDOS DEL CHAT — repuestos por ÑandutíBall`: mapea comandos a las funciones que sobrevivieron (`helpFun`, `MapasFun`, `afkFun`, `swapFun`, `pushMute`, `BanIpFun`…), maneja la clave de admin, el chat de equipo (`t `), `#`, mute y prefijos de rol. Es código propio, legible, no del autor original.
-3. **Webhook oculto → desactivado.** `var webhookID=null` con el link **comentado** arriba (buscar `WEBHOOK OCULTO DEL AUTOR`) y el `fetch(webhookID,…)` eliminado del `onPlayerJoin` ofuscado. **No reactivar**: enviaba nombre, IP (`player.conn`) y auth de cada jugador a un Discord ajeno.
+Desde el 15/09/2026 la base es **"Real Soccer Revolution By GLH 3.1.0"**: viene completo y válido, con `onGameTick` (motor de Real Soccer), `onTeamGoal`, `onPlayerChat`, `onPositionsReset`, `onTeamVictory` y `onGamePause/Unpause`. Reemplazó al archivo truncado anterior, al que le faltaban el árbitro y los comandos.
+
+Sobre esa base, `npm run parchar` aplica lo de ÑandutíBall. Como el script ya trae su chat y su árbitro, el parcheador **salta** los bloques `💬 COMANDOS DEL CHAT` y `🧑‍⚖️ ARBITRAJE` (quedan en `parches/bloques/` por si vuelve a hacer falta).
+
+**Webhook oculto → desactivado** en cada parcheo: `var webhookID=null` con el link comentado arriba (buscar `WEBHOOK OCULTO DEL AUTOR`) y el `fetch(webhookID,…)` fuera del `onPlayerJoin` ofuscado. **No reactivar**: enviaba nombre, IP (`player.conn`) y auth de cada jugador a un Discord ajeno.
+
+Handlers ofuscados de esta versión: `0x1cb` onRoomLink · `0x1bc` onStadiumChange · `0x12f` onPlayerJoin · `0x138` onPlayerTeamChange · `0x19c` onGameTick.
 
 ## Parches (`npm run parchar`)
 
@@ -75,11 +80,11 @@ Piezas repuestas en el bloque `🩹 PIEZAS QUE FALTABAN` (se perdieron con el co
 
 ## Pendientes
 
-- **Comandos sin recuperar** (sus funciones estaban en el pedazo perdido): estadísticas (`!me`, `!stats`, `!goleadores`, `!mvp`, rachas…), `!avatar`, `!size`, `!memide`, votaciones (`!expulsar`, `!admin`), `!llamaradmins`, `!votarmapa`, `!ofi`, `!firmar`. Están listados en `ComandosFaltantes` y la sala avisa que no existen. Para tenerlos hace falta el `script.js` completo del autor.
-- `MensajeDeBienvenida`, `MaximoJugadoresPorIp` y `NicknamesPROHIBIDOS` siguen declarados pero sin usar (el `onPlayerJoin` ofuscado no los aplica).
-- **Webhooks reales en texto plano** en las líneas 238–290, y `webhookPass` (sin uso).
+- **Anuncios de gol groseros**: el script original trae ~15 mensajes subidos de tono ("orto", "rosca"…). Pendiente decidir si se reemplazan.
+- **Webhooks reales en texto plano** al inicio del archivo, y `webhookPass` (sin uso). Son del autor original.
 - `ClaveParaSerAdmin = "!axeso5"`: débil y visible.
-- `roomPassword = ClaveParaSerAdmin` no se usa y confunde.
+- La clave de rangos está en texto plano en `roles.json`, que se sube a Git; el panel no pide autenticación.
+- Fallo del script original: `ballCarrying` solo existe tras el primer `onGameStart`; el bloque compat le pone una red de seguridad.
 
 ## Cómo hacer cambios
 

@@ -44,6 +44,39 @@ const servidor = http.createServer(async (req, res) => {
     return;
   }
 
+  // Kick / Ban: /api/kick/<clave-de-sala> y /api/ban/<clave-de-sala>
+  const accion = req.url.match(/^\/api\/(kick|ban)\/([^/?]+)/);
+  if (req.method === "POST" && accion) {
+    const [, tipo, claveSala] = accion;
+    const sala = SALAS.find((s) => s.clave === claveSala);
+    if (!sala) {
+      res.statusCode = 404;
+      res.setHeader("Content-Type", "application/json; charset=utf-8");
+      res.end(JSON.stringify({ ok: false, error: "sala no encontrada" }));
+      return;
+    }
+    let cuerpo = "";
+    req.on("data", (c) => (cuerpo += c));
+    req.on("end", async () => {
+      try {
+        const respuesta = await fetch(`${sala.url}/api/${tipo}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: cuerpo || "{}",
+        });
+        const texto = await respuesta.text();
+        res.statusCode = respuesta.status;
+        res.setHeader("Content-Type", "application/json; charset=utf-8");
+        res.end(texto);
+      } catch (error) {
+        res.statusCode = 502;
+        res.setHeader("Content-Type", "application/json; charset=utf-8");
+        res.end(JSON.stringify({ ok: false, error: error.message }));
+      }
+    });
+    return;
+  }
+
   // Rangos: se leen y se guardan en roles.json, que las salas vigilan
   if (req.url.startsWith("/api/rangos")) {
     res.setHeader("Content-Type", "application/json; charset=utf-8");

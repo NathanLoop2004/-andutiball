@@ -39,6 +39,19 @@ automática y avisos a Discord. Puede levantar **4 salas a la vez**: tres de Fut
 
 ## ▶️ Cómo levantar las salas
 
+### Las 4 salas de una (sin Docker)
+
+```powershell
+npm install            # una sola vez
+npm run tokens         # los 4 tokens
+npm run todas          # levanta las 4 salas + el panel
+```
+
+Los links de las 4 van apareciendo en la terminal, cada uno con el nombre de su sala adelante.
+El panel con las cuatro queda en <http://localhost:8080>. Se corta todo junto con `Ctrl+C`.
+
+Cada sala usa su propio puerto: 3001 (3v3), 3002 (4v4), 3003 (automático) y 3004 (Real Soccer).
+
 ### Con Docker (las 4 salas)
 
 ```powershell
@@ -292,37 +305,25 @@ Para agregar un club, copiá una entrada de `camisetasEquipos` (línea 688) con 
 
 ## ⚠️ Problemas conocidos
 
-### 1. ✅ El archivo estaba cortado — arreglado a medias
-El `script.js` que llegó terminaba a mitad de una línea y ni siquiera era JavaScript válido.
-Se quitó esa línea incompleta (la función `NumeroUnoFun`, con símbolos raros del "1").
-
-También faltaba **todo `room.onPlayerChat`**, así que ningún comando funcionaba. Al final del
-archivo hay un bloque nuevo, **💬 COMANDOS DEL CHAT — repuestos por ÑandutíBall**, que vuelve a
-conectar los comandos con las funciones que sí quedaron en el archivo.
-
-**Comandos que NO se pudieron recuperar**, porque sus funciones estaban en el pedazo perdido:
-
-```
-!me  !stats  !goleadores  !asistidores  !vallas-invictas  !mvp  !racha-historica
-!racha-actual  !viciosos  !ganadores  !presencias  !memide  !avatar  !size
-!expulsar  !admin (votación)  !llamaradmins  !votarmapa  !ofi  !firmar
-```
-
-Si alguien los escribe, la sala avisa que no están disponibles. Para tenerlos hay que conseguir
-el `script.js` completo del autor.
+### 1. ✅ El script completo — resuelto
+La primera versión que teníamos venía cortada y sin árbitro ni comandos. Ahora la base es
+**Real Soccer Revolution By GLH 3.1.0**, que está completa: trae el motor de Real Soccer
+(saques, córners, tiempo añadido), los anuncios de gol, las estadísticas y todos los comandos.
 
 ### 2. ✅ Webhook oculto — desactivado
-En el bloque ofuscado había un webhook de Discord escondido: el `onPlayerJoin` mandaba ahí el
-**nombre, la IP y el auth** de cada jugador que entraba, a un servidor que no es nuestro.
+El script del autor manda el **nombre, la IP y el auth** de cada jugador que entra a un Discord
+que no es nuestro. `npm run parchar` lo desactiva: buscá `WEBHOOK OCULTO DEL AUTOR` en
+`script.js` y vas a ver el link comentado, al lado de `var webhookID=null`. **No lo reactives.**
 
-Ya no envía nada. Buscá `WEBHOOK OCULTO DEL AUTOR` en `script.js`: el link quedó **comentado**
-ahí, junto a `var webhookID=null`, para acordarse de qué era. **No hay que volver a activarlo.**
+### 3. 🟠 Anuncios de gol groseros
+El script trae unos 15 mensajes de gol subidos de tono. Si la sala es para jugar con cualquiera,
+conviene cambiarlos.
 
-### 3. 🟠 Webhooks reales en el código
-Las URLs de webhook del inicio (líneas 238–290) son reales y son del autor original: cualquiera
-con el archivo puede escribir en esos canales de Discord. Reemplazalas por las tuyas o vaciálas.
+### 4. 🟠 Webhooks del autor en el código
+Las URLs de webhook del inicio son reales y son del autor original: cualquiera con el archivo
+puede escribir en esos canales de Discord. Reemplazalas por las tuyas o vaciálas.
 
-### 4. 🟡 Detalles
+### 5. 🟡 Detalles
 - `ClaveParaSerAdmin` viene como `"!axeso5"`: es fácil de adivinar.
-- `.env` y `.env.example` tienen tokens y **sí se suben a Git**.
-- Casi toda la lógica está minificada en líneas de miles de caracteres.
+- `.env`, `.env.example` y `roles.json` tienen tokens y la clave de rangos, y **sí se suben a Git**.
+- El panel no pide usuario ni contraseña: no lo publiques en internet.

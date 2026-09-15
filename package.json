@@ -6,6 +6,7 @@
   "main": "launcher.js",
   "scripts": {
     "start": "node --env-file-if-exists=.env launcher.js",
+    "todas": "node --env-file-if-exists=.env todas.js",
     "check": "node --check script.js",
     "prueba": "node pruebas/simulador.js",
     "parchar": "node parches/aplicar.js",

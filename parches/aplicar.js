@@ -148,6 +148,7 @@ if (iniBienvenida === -1) {
 // ─────────────────────────────────────────────────────────────
 reemplazar("⚙️ Bot visible", "var BotVisible = false;", "var BotVisible = true;", "var BotVisible = true;");
 reemplazar("⚙️ Nombre del bot", '"🚩 Árbitro Bot 🤖"', '"🚩 Ñandu Bot 🤖"', "Ñandu Bot");
+reemplazar("⚙️ reCAPTCHA desactivado", "var ActivarReCaptcha = true;", "var ActivarReCaptcha = false;", "var ActivarReCaptcha = false;");
 
 // ─────────────────────────────────────────────────────────────
 // 4. Camisetas paraguayas

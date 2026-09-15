@@ -127,3 +127,63 @@ if (typeof playerJoinTimes !== "undefined" && !window.__anotamosEntradas) {
 		};
 	})();
 }
+
+// Árbitro autónomo: acomoda espectadores en Red/Blue y arranca el partido si hay gente.
+// El árbitro del autor solo mueve dentro de onGameTick — sin partido corriendo no acomoda a nadie.
+if (!window.__arbitroAutonomo) {
+	window.__arbitroAutonomo = true;
+
+	window.__acomodarSala = function () {
+		if (typeof room === "undefined") return;
+		var jugadores = room.getPlayerList().filter(function (p) { return p.id !== 0; });
+		if (!jugadores.length) return;
+
+		var libre = function (p) {
+			if (typeof afkPlayerIDs !== "undefined" && afkPlayerIDs.has && afkPlayerIDs.has(p.id)) return false;
+			if (typeof rangosVerificados !== "undefined" && typeof tieneRangoSinVerificar === "function" && tieneRangoSinVerificar(p)) return false;
+			return true;
+		};
+
+		var red = jugadores.filter(function (p) { return p.team === 1 && libre(p); });
+		var blue = jugadores.filter(function (p) { return p.team === 2 && libre(p); });
+		var espectadores = jugadores.filter(function (p) { return p.team === 0 && libre(p); });
+
+		var jueganTodos = typeof modoJueganTodos !== "undefined" && modoJueganTodos;
+		var jueganAlgunos = typeof modoJueganAlgunos !== "undefined" && modoJueganAlgunos;
+		var tope = typeof maxPlayersPerTeam === "number" && maxPlayersPerTeam > 0 ? maxPlayersPerTeam : 99;
+
+		for (var i = 0; i < espectadores.length; i++) {
+			var esp = espectadores[i];
+			if (jueganTodos) {
+				room.setPlayerTeam(esp.id, red.length <= blue.length ? 1 : 2);
+				if (red.length <= blue.length) red.push(esp); else blue.push(esp);
+				continue;
+			}
+			if (!jueganAlgunos) break;
+			if (red.length < tope && red.length <= blue.length) { room.setPlayerTeam(esp.id, 1); red.push(esp); }
+			else if (blue.length < tope) { room.setPlayerTeam(esp.id, 2); blue.push(esp); }
+			else break;
+		}
+
+		var partido = room.getScores();
+		if (!partido && red.length >= 1 && blue.length >= 1) {
+			try { room.startGame(); } catch (e) { /* la sala aún no está lista */ }
+		}
+	};
+
+	// Al entrar, lo acomoda al toque (sin esperar el intervalo).
+	(function () {
+		var anteriorJoin = room.onPlayerJoin;
+		room.onPlayerJoin = function (player) {
+			if (typeof anteriorJoin === "function") anteriorJoin(player);
+			setTimeout(window.__acomodarSala, 300);
+		};
+		var anteriorLeave = room.onPlayerLeave;
+		room.onPlayerLeave = function (player) {
+			if (typeof anteriorLeave === "function") anteriorLeave(player);
+			setTimeout(window.__acomodarSala, 300);
+		};
+	})();
+
+	setInterval(window.__acomodarSala, 2000);
+}

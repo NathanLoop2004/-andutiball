@@ -76,6 +76,7 @@ const agregarMensaje = (tipo, texto, datos = {}) => {
 
 // El mismo servidor sirve la API y el panel, así "npm start" no necesita otra terminal.
 const paginaPanel = path.join(__dirname, "panel", "index.html");
+let framePagina = null;   // asignado cuando la sala está lista, lo usa /api/kick y /api/ban
 
 const api = http.createServer((req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -84,6 +85,32 @@ const api = http.createServer((req, res) => {
   if (req.url.startsWith("/api/estado")) {
     res.setHeader("Content-Type", "application/json; charset=utf-8");
     res.end(JSON.stringify(estado));
+    return;
+  }
+
+  // Kick / Ban desde el panel
+  if (req.method === "POST" && (req.url.startsWith("/api/kick") || req.url.startsWith("/api/ban"))) {
+    const banear = req.url.startsWith("/api/ban");
+    let cuerpo = "";
+    req.on("data", (c) => (cuerpo += c));
+    req.on("end", async () => {
+      try {
+        const { id, motivo } = JSON.parse(cuerpo || "{}");
+        if (!Number.isInteger(id)) throw new Error("Falta el id del jugador");
+        if (!framePagina) throw new Error("La sala todavía no está lista");
+        const razon = String(motivo || (banear ? "Baneado desde el panel" : "Expulsado desde el panel")).slice(0, 100);
+        await framePagina.evaluate((idJugador, razonTexto, esBan) => {
+          if (window.__sala && typeof window.__sala.kickPlayer === "function") {
+            window.__sala.kickPlayer(idJugador, razonTexto, esBan);
+          }
+        }, id, razon, banear);
+        res.setHeader("Content-Type", "application/json; charset=utf-8");
+        res.end(JSON.stringify({ ok: true }));
+      } catch (error) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ ok: false, error: error.message }));
+      }
+    });
     return;
   }
 
@@ -140,17 +167,41 @@ const api = http.createServer((req, res) => {
 api.listen(PUERTO_API, () => console.log(`🖥️  Panel de esta sala en http://localhost:${PUERTO_API}`));
 
 (async () => {
+  // PROXY opcional: si esta sala tiene PROXY_<CLAVE> en .env, Chrome sale por ese proxy.
+  // Sin PROXY, sale por la IP local. Sirve para no chocar con el límite de HaxBall.
+  const claveProxy = salaElegida ? `PROXY_${salaElegida.toUpperCase().replace(/[^A-Z0-9]/g, "_")}` : "";
+  const urlProxyRaw = (process.env.HAXBALL_PROXY || (claveProxy ? process.env[claveProxy] : "") || "").trim();
+
+  let proxyParaChrome = "";
+  let credencialesProxy = null;
+  if (urlProxyRaw) {
+    const m = urlProxyRaw.match(/^(https?|socks5?):\/\/(?:([^:@]+):([^@]+)@)?([^\s]+)$/i);
+    if (!m) {
+      console.error(`❌ ${claveProxy || "HAXBALL_PROXY"} inválido. Formato esperado: http://usuario:clave@ip:puerto`);
+      process.exit(1);
+    }
+    proxyParaChrome = `${m[1]}://${m[4]}`;
+    if (m[2] && m[3]) credencialesProxy = { username: m[2], password: m[3] };
+  }
+
+  const argsChrome = [
+    "--no-sandbox",
+    "--disable-setuid-sandbox",
+    "--disable-features=WebRtcHideLocalIpsWithMdns",
+  ];
+  if (proxyParaChrome) {
+    argsChrome.push(`--proxy-server=${proxyParaChrome}`);
+    console.log(`🌐 Esta sala sale por proxy: ${proxyParaChrome}${credencialesProxy ? " (con usuario)" : ""}`);
+  }
+
   const browser = await puppeteer.launch({
     headless: true,
-    args: [
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      // Sin esto WebRTC oculta la IP real y los jugadores no pueden conectarse
-      "--disable-features=WebRtcHideLocalIpsWithMdns",
-    ],
+    args: argsChrome,
   });
 
   const page = await browser.newPage();
+
+  if (credencialesProxy) await page.authenticate(credencialesProxy);
 
   page.on("console", (msg) => console.log(`[sala] ${msg.text()}`));
   page.on("pageerror", (error) => console.error(`[sala][error] ${error.message}`));
@@ -159,6 +210,7 @@ api.listen(PUERTO_API, () => console.log(`🖥️  Panel de esta sala en http://
 
   // El HBInit real vive dentro del iframe de la página headless
   const frame = page.frames().find((f) => f.url().includes("html5.haxball.com")) || page.mainFrame();
+  framePagina = frame;   // habilita /api/kick y /api/ban desde el panel
   await frame.waitForFunction("typeof HBInit === 'function'", { timeout: 30000 });
 
   // Puente: la página deja los eventos en una cola y Node la vacía cada segundo.
@@ -226,6 +278,7 @@ api.listen(PUERTO_API, () => console.log(`🖥️  Panel de esta sala en http://
     const originalHBInit = window.HBInit;
     window.HBInit = (config) => {
       const sala = originalHBInit({ ...config, token });
+      window.__sala = sala;   // el panel puede pedir kick/ban desde acá
 
       // Estado de jugadores y marcador, una vez por segundo
       setInterval(() => {
