@@ -37,7 +37,7 @@ Contexto para trabajar en este proyecto. La documentación para personas está e
 - API de cada sala: `GET /api/estado`, `GET /api/salas`, `GET|POST /api/rangos`.
 - El launcher espía la sala con un Proxy sobre el objeto `room`: encadena el handler original y después registra el evento. **Nunca reemplazar un handler del script sin llamar al anterior.**
 - `roles.json` = rangos + clave. `lib/rangos.js` lo lee y lo guarda; la clave nunca se manda al navegador (`sinClave`). El launcher lo inyecta como `window.__RANGOS` antes de correr el script y lo vigila con `fs.watch`: al cambiar llama a `window.__rangosActualizar` (recarga en caliente).
-- El bloque `🎖️ RANGOS CON CLAVE` del script exige la clave a los nicks con rango: quedan espectadores + AFK hasta escribirla.
+- El bloque `🎖️ RANGOS` del script le da el rango (y el admin si corresponde) a quien entre con un nick de `roles.json`. Ya no se pide clave.
 
 ## Estructura de script.js
 
@@ -67,6 +67,50 @@ Handlers ofuscados de esta versión: `0x1cb` onRoomLink · `0x1bc` onStadiumChan
 Es idempotente y **condicional**: si el script nuevo ya trae `room.onPlayerChat` o `room.onTeamGoal`, no agrega esos bloques. `--ver` hace una pasada en seco. Guarda `script.anterior.js`.
 
 **Al tocar los bloques, editarlos en `parches/bloques/` y correr `npm run parchar`** — no editar el final de `script.js` a mano, porque el parcheador lo reescribe.
+
+
+## Mapas propios de futsal
+
+`npm run generar-mapas` (`mapas/generar.js`) copia los mapas de futsal del autor desde `script.js`, les cambia el nombre y les deja la **pelota amarilla lisa** (saca las pintitas negras de la pelota "oveja"). Escribe `mapas/nanduti-futsal-x{3,4,5,7}.hbs`.
+
+**Cuidado con los joints**: el template ata las pintitas a la pelota con joints. Si se borran los discos sin borrar esos joints, quedan atando la pelota a los postes del arco y la cancha se vuelve injugable — y `npm run prueba-mapas` lo da por bueno igual, porque HaxBall acepta el mapa. `pintarPelota()` borra discos y joints juntos y reindexa.
+
+El parcheador inyecta los `.hbs` como `function getFutx3Map()` etc. **al final** de `script.js`: en JS gana la última declaración, así que pisan a las del autor sin editarlas. Orden: `npm run generar-mapas` y después `npm run parchar`.
+
+Probar sin abrir sala: `node pruebas/render.js mapas/nanduti-futsal-x3.hbs vista.png [logo]` dibuja el mapa como imagen.
+
+## Selección por turnos
+
+Bloque `🎽 SELECCIÓN POR TURNOS` (`parches/bloques/turnos.txt`). Los dos primeros espectadores pasan solos como capitanes y después se elige alternando: el capitán del equipo de turno escribe el número del jugador en el chat (o `!elegir 7`). Si no elige en `SegundosParaElegir`, elige el bot.
+
+Se prende con `"SeleccionPorTurnos": true` en `hosts/*.json`, y **exige** `modoJueganTodos`, `modoJueganAlgunos` y `automatizadoActivado` en `false`: si el script acomoda jugadores por su cuenta, se pisan entre sí. Está activo en 3v3 y 4v4.
+
+`npm run prueba-turnos [hosts/4v4.json]` lo prueba con 8 jugadores simulados. El test **respeta los tiempos** de los setTimeout: si se corren todos de golpe, dispara el reloj de "elige el bot" y nunca se prueba la elección a mano.
+
+
+## ELO (lib/elo.js)
+
+Puntaje por jugador, guardado en `datos/elo.json` **del lado de Node** (no en localStorage): así sobrevive al cierre de la sala y **las 4 salas comparten la tabla**. La clave es `auth:<PublicID>` y cae a `nick:<nombre>` solo si no hay auth.
+
+Circuito: el bloque `📊 ELO Y DIVISIONES` del script anota quién está en cancha al arrancar, y al terminar empuja `{tipo:"elo-partido", red, blue, ganador, goles}` a `window.__panelCola`. El launcher la vacía, llama a `aplicarPartido()`, guarda, y le devuelve la tabla a la página con `window.__eloActualizar()`. También anuncia los cambios en la sala.
+
+Fórmula Elo clásica por equipos: se compara el promedio de cada lado, K=32 (48 en los primeros 10 partidos). Es de suma cero. Divisiones en `DIVISIONES` (Novato → Leyenda).
+
+API: `GET /api/elo`. El panel lo muestra en la pestaña **ELO** (también viene en `/api/estado` como `estado.elo`).
+
+`npm run prueba-elo` corre el cálculo (`pruebas/elo.js`) y el circuito completo (`pruebas/elo-integracion.js`, con `ELO_FILE` a un archivo temporal para no pisar la tabla real).
+
+## Sin límite de espectadores
+
+Dos parches, porque el script original echaba gente que solo miraba:
+- `LugaresReservados = 0`: con la sala casi llena, `verificarReserva()` le ponía **contraseña** a la sala.
+- `LimiteMaximoDeJugadoresAFK = 99`: `checkAutoKickAFKs()` echaba a todos los AFK de golpe, y un espectador cuenta como AFK a los 5 minutos.
+
+El cupo de las 4 salas es 30 (`CantidadDeJugadores` en `hosts/*.json`), el máximo de HaxBall.
+
+## Panel: no redibujar de más
+
+`pintarSala()` calcula una **firma** del HTML y si no cambió no toca el DOM (si no, parpadea y se cierra el menú de kick/ban). Cuando sí redibuja, guarda `scrollTop` antes y lo restaura después: sin eso, cada refresco de 2 s mandaba al usuario arriba de todo. Solo salta al último mensaje si ya estaba abajo del todo.
 
 ## Probar sin gastar tokens
 

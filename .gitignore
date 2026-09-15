@@ -1,1 +1,4 @@
 node_modules/
+
+# La tabla de ELO se genera sola al jugar
+datos/elo.json

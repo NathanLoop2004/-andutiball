@@ -33,6 +33,8 @@ automática y avisos a Discord. Puede levantar **4 salas a la vez**: tres de Fut
 | `hosts/*.json` | Diferencias de cada sala (3v3, 4v4, automático, Real Soccer). |
 | `docker-compose.yml`, `Dockerfile` | Las 4 salas en Docker. |
 | `.env` | Tus tokens. |
+| `mapas/` | Los mapas de futsal propios y el generador. |
+| `datos/elo.json` | Los puntajes de los jugadores (se crea solo). |
 | `CLAUDE.md` | Notas técnicas para seguir trabajando en el proyecto. |
 
 ---
@@ -78,9 +80,12 @@ Levanta la sala **y su panel** en <http://localhost:3000> (cambiá el puerto con
 ### 🖥️ El panel
 
 Muestra una tarjeta por sala, con luz **verde si está encendida** y **roja si no**, más los
-jugadores, el mapa, el marcador y el link para entrar. Adentro tiene 5 pestañas: **Mensajes**
-(chat, entradas, salidas, goles y expulsiones en vivo), **Jugadores**, **Bans**, **Roles** y
-**Config**. Se actualiza cada 2 segundos.
+jugadores, el mapa, el marcador y el link para entrar. Adentro tiene pestañas: **Cancha** (quién
+está en cada equipo), **Mensajes** (chat, entradas, salidas, goles y expulsiones en vivo),
+**Jugadores**, **ELO**, **Bans**, **Roles** y **Config**.
+
+Se actualiza cada 2 segundos **sin moverte de donde estabas leyendo**: solo sigue al último
+mensaje si ya estabas abajo del todo, y si no cambió nada no redibuja.
 
 - Con Docker, las 4 salas juntas: <http://localhost:8080>
 - Con `npm start`, esa sala sola: <http://localhost:3000>
@@ -89,25 +94,18 @@ Los bans que lista son los de la sesión en curso: HaxBall no permite pedirle la
 
 ---
 
-## 🎖️ Rangos con clave
+## 🎖️ Rangos
 
-Los jugadores con rango (OWNER, CO-OWNER, HOSTER…) tienen que **escribir una clave en el chat**
-para poder jugar. Mientras no la escriban quedan como **espectadores y en AFK**. La gente sin
-rango entra normal, sin que se le pida nada.
+Si alguien entra con un nick que figura en [roles.json](roles.json), la sala le pone su rango
+automáticamente (OWNER, CO-OWNER, HOSTER…) y le da admin si ese rol lo tiene. No se pide clave.
 
-Cómo funciona cuando entra alguien con rango:
+Se administra desde **la pantalla de rangos del panel** (<http://localhost:8080/rangos>):
+agregar o quitar nicks y decidir qué rol da admin. **Los cambios se aplican al toque en las
+salas encendidas, sin reiniciarlas.**
 
-1. La sala le avisa en privado: *"Detectamos tu rango: 👑 OWNER"*.
-2. Escribe la clave en el chat y da Enter. El mensaje no lo ve nadie más.
-3. Sale del AFK, puede entrar a la cancha y —si el rol lo da— queda como administrador.
-4. Si intenta pasar a Red o Blue antes, la sala lo devuelve a espectadores.
-
-La configuración vive en [roles.json](roles.json) y se edita desde **la pantalla de rangos del
-panel** (<http://localhost:8080/rangos>): agregar o quitar nicks, decidir qué rol da admin y
-cambiar la clave. **Los cambios se aplican al toque en las salas encendidas, sin reiniciarlas.**
-
-> ⚠️ La clave está en texto plano en `roles.json`, y ese archivo se sube a Git. El panel tampoco
-> pide usuario ni contraseña: no publiques el puerto 8080 en internet.
+> ⚠️ El rango va por nick, y en HaxBall los nicks no son únicos: cualquiera puede ponerse
+> "Jinder" y quedar de admin. El panel tampoco pide usuario ni contraseña: no publiques el
+> puerto 8080 en internet.
 
 ### A mano, sin instalar nada
 
@@ -120,11 +118,13 @@ Entrá a <https://www.haxball.com/headless>, abrí la consola (`F12`), pegá el 
 ### 🧪 Probar sin gastar un token
 
 ```powershell
-npm run prueba
+npm run prueba           # la sala entera: entrar, chatear, comandos, gol, salir
+npm run prueba-turnos    # los capitanes eligiendo por turnos
+npm run prueba-elo       # el cálculo de puntajes y el circuito completo
+npm run prueba-mapas     # HaxBall valida los 4 mapas
 ```
 
-Monta una sala falsa, corre el script entero y simula jugadores que entran, escriben la clave del
-rango, usan comandos, hacen un gol y se van. Sirve para cazar errores antes de abrir la sala de
+Monta una sala falsa, corre el script entero y simula jugadores que entran, usan comandos, hacen un gol y se van. Sirve para cazar errores antes de abrir la sala de
 verdad. Conviene correrlo cada vez que se toca `script.js`.
 
 ### 🩹 Si reemplazás `script.js` por otro
@@ -167,8 +167,8 @@ saques de banda, córners y saques de arco.
 
 | Sala | Archivo | Jugadores | Mapa | Tiempo / Goles | Modo |
 |---|---|---|---|---|---|
-| **Futsal 3v3** | `hosts/3v3.json` | 12 | Futsal x3 | 3 min / 3 | 3 por equipo |
-| **Futsal 4v4** | `hosts/4v4.json` | 14 | Futsal x4 | 4 min / 3 | 4 por equipo |
+| **Futsal 3v3** | `hosts/3v3.json` | 12 | Futsal x3 | 3 min / 3 | Se elige por turnos |
+| **Futsal 4v4** | `hosts/4v4.json` | 14 | Futsal x4 | 4 min / 3 | Se elige por turnos |
 | **Futsal automático** | `hosts/todos.json` | 16 | Futsal x3 → x4 → x5 → x7 | según el mapa | Automático |
 | **Real Soccer** | `hosts/realsoccer.json` | 16 | Real Soccer | 6 min / sin límite | Juegan Todos |
 
@@ -190,6 +190,82 @@ variable del inicio del script. Por ejemplo `"powerShotMode": true` o `"Password
 Después basta con `docker compose restart`.
 
 ---
+
+
+## 🎽 Cómo se arman los equipos (3v3 y 4v4)
+
+En esas dos salas el bot **ya no acomoda a todos de una**: los equipos se eligen por turnos.
+
+1. Los dos primeros espectadores pasan solos a Red y Blue: son los **capitanes**.
+2. El bot avisa de quién es el turno y lista a los espectadores con su número.
+3. El capitán escribe **el número** en el chat (por ejemplo `7`) o `!elegir 7`.
+4. Se alterna: Red elige uno, después Blue, hasta llenar los dos equipos.
+
+Si el capitán no elige en 25 segundos, elige el bot y la ronda sigue. Los admins también pueden
+elegir. Con `!turno` se vuelve a mostrar el cartel.
+
+Se prende por sala con `"SeleccionPorTurnos": true` en `hosts/*.json`. La sala **Futsal automático**
+y la de **Real Soccer** siguen llenando los equipos solas.
+
+## 🗺️ Mapas propios de futsal
+
+Las salas de futsal usan mapas nuestros: la misma cancha y la misma física del original, con el
+nombre de ÑandutíBall y la **pelota amarilla lisa** (sin las pintitas negras).
+
+```powershell
+npm run generar-mapas    # escribe mapas/*.hbs
+npm run parchar          # los mete en script.js
+npm run prueba-mapas     # HaxBall los valida
+```
+
+Para ver un mapa sin abrir una sala: `node pruebas/render.js mapas/nanduti-futsal-x3.hbs vista.png`
+
+## 📊 ELO y divisiones
+
+Cada jugador tiene un **puntaje** que sube si gana y baja si pierde. Ese puntaje lo ubica en una
+división, así se ve de una quién recién empieza y quién juega bien.
+
+| División | Desde | | División | Desde |
+|---|---|---|---|---|
+| 🥉 Novato | 0 | | 🟠 Crack | 1350 |
+| 🟢 Amateur | 900 | | 🔴 Pro | 1500 |
+| 🔵 Regular | 1050 | | 🏆 Leyenda | 1700 |
+| 🟣 Avanzado | 1200 | | | |
+
+Todos arrancan en **1000**. Al terminar cada partido, el bot reparte los puntos y avisa en la sala:
+
+```
+📊 Jinder +18 · Chelato +18 · Romerito -18 · Kuñataí -18
+⬆️ Jinder ahora es 🔴 Pro
+```
+
+**Cómo se reparten:** se compara el promedio de puntaje de cada equipo. Ganarle a un equipo mejor
+que el tuyo suma más, y perder contra uno peor descuenta más. Un empate contra alguien de menos
+puntaje también te hace bajar. Los primeros 10 partidos mueven más el puntaje, para ubicar rápido
+al que recién llega.
+
+**Comandos:** `!elo` (el tuyo o el de otro: `!elo Jinder`) · `!top` (los 10 mejores) · `!divisiones`
+
+El puntaje va por **auth** (el Public ID de HaxBall, que no se puede falsear), no por nick: si
+alguien se cambia el nombre, su puntaje lo sigue. Se guarda en `datos/elo.json` del lado de Node,
+así sobrevive a que se cierre la sala, y **las 4 salas comparten la misma tabla**.
+
+En el panel hay una pestaña **ELO** con la tabla completa: puesto, división, puntos, partidos
+jugados y el historial de ganados-empatados-perdidos.
+
+
+## 👀 Sin límite de espectadores
+
+Las salas admiten **30 personas**, el máximo que permite HaxBall, y **nadie que solo mire va a
+ser echado**. Para eso se sacaron dos cosas del script original:
+
+- **Lugares reservados:** cuando la sala se llenaba casi del todo, el script le ponía **contraseña**
+  y no entraba nadie más. Ahora `LugaresReservados` va en 0.
+- **Expulsión por AFK:** echaba de golpe a todos los AFK cuando eran 4 o más, y alguien que solo
+  mira cuenta como AFK a los 5 minutos. Ahora ese límite está en 99, así que no echa a nadie.
+
+Los jugadores que estén AFK **dentro de la cancha** se siguen mandando a espectadores, que es lo
+que corresponde para que no traben el partido.
 
 ## ⚽ Camisetas paraguayas
 
@@ -282,6 +358,9 @@ Para agregar un club, copiá una entrada de `camisetasEquipos` (línea 688) con 
 | Comando | Uso |
 |---|---|
 | `!help` | Lista de comandos |
+| `!elo`, `!elo NOMBRE` | Tu puntaje y división, o el de otro |
+| `!top` | Los 10 mejores del ranking |
+| `!divisiones` | Qué puntaje hace falta para cada división |
 | `t mensaje` | Chat privado con tu equipo |
 | `!afk`, `!afks` | Ponerse AFK / ver quién está AFK |
 | `!me`, `!stats ID` | Estadísticas |

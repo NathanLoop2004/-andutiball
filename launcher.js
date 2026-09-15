@@ -11,6 +11,7 @@ const path = require("path");
 const puppeteer = require("puppeteer");
 const { leerRoles } = require("./lib/roles");
 const { ARCHIVO: ARCHIVO_RANGOS, leerRangos, guardarRangos, sinClave } = require("./lib/rangos");
+const { leerElo, guardarElo, aplicarPartido, ranking, paraLaSala, DIVISIONES } = require("./lib/elo");
 
 // El token sale de HAXBALL_TOKEN o, si no está, del TOKEN_* que corresponde a esta sala
 const salaElegida = (process.env.HOST_CONFIG || "").replace(/^.*[\\/]/, "").replace(/\.json$/i, "");
@@ -59,6 +60,8 @@ const estado = {
   config: hostConfig,
   roles: leerRoles(roomScript),
   rangos: sinClave(leerRangos()),
+  elo: ranking(leerElo(), 50),
+  divisiones: DIVISIONES,
   encendida: false,
   problema: null,
   link: null,
@@ -111,6 +114,12 @@ const api = http.createServer((req, res) => {
         res.end(JSON.stringify({ ok: false, error: error.message }));
       }
     });
+    return;
+  }
+
+  if (req.url.startsWith("/api/elo")) {
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.end(JSON.stringify({ divisiones: DIVISIONES, ranking: ranking(leerElo(), 200) }));
     return;
   }
 
@@ -203,7 +212,16 @@ api.listen(PUERTO_API, () => console.log(`🖥️  Panel de esta sala en http://
 
   if (credencialesProxy) await page.authenticate(credencialesProxy);
 
-  page.on("console", (msg) => console.log(`[sala] ${msg.text()}`));
+  // Filtramos ruido: los webhooks del autor original (Discord ajenos) devuelven 404 constantes.
+  const ruido = [
+    /Failed to load resource.*status of 404/i,
+    /MONITOR: Boletero/i,
+  ];
+  page.on("console", (msg) => {
+    const texto = msg.text();
+    if (ruido.some((r) => r.test(texto))) return;
+    console.log(`[sala] ${texto}`);
+  });
   page.on("pageerror", (error) => console.error(`[sala][error] ${error.message}`));
 
   await page.goto("https://www.haxball.com/headless", { waitUntil: "networkidle2" });
@@ -258,13 +276,47 @@ api.listen(PUERTO_API, () => console.log(`🖥️  Panel de esta sala en http://
         estado.partido.red = evento.red;
         estado.partido.blue = evento.blue;
         break;
+      case "elo-partido":
+        procesarPartidoElo(evento);
+        break;
     }
   };
 
+  // Resultado de un partido: actualiza el ELO, lo guarda y le devuelve la tabla a la sala
+  const procesarPartidoElo = (evento) => {
+    const tabla = leerElo();
+    const cambios = aplicarPartido(tabla, evento);
+    if (!cambios.length) return;
+    guardarElo(tabla);
+    estado.elo = ranking(tabla, 50);
+
+    frame.evaluate((datos) => window.__eloActualizar && window.__eloActualizar(datos), paraLaSala(tabla)).catch(() => {});
+
+    const resumen = cambios
+      .sort((a, b) => b.delta - a.delta)
+      .map((c) => `${c.nombre} ${c.delta >= 0 ? "+" : ""}${c.delta}`)
+      .join(" · ");
+    agregarMensaje("elo", `Puntajes: ${resumen}`);
+    console.log(`📊 ELO actualizado — ${resumen}`);
+
+    // Los que cambiaron de división se anuncian en la sala
+    const anuncios = cambios
+      .filter((c) => c.subio || c.bajo)
+      .map((c) => `${c.subio ? "⬆️" : "⬇️"} ${c.nombre} ahora es ${c.division.emoji} ${c.division.nombre}`);
+    const lineas = [`📊 ${resumen}`, ...anuncios];
+    frame
+      .evaluate((textos) => {
+        if (!window.__sala) return;
+        for (const t of textos) window.__sala.sendAnnouncement(t, null, 0xFFD100, "bold", 0);
+      }, lineas)
+      .catch(() => {});
+  };
+
   // Los rangos y su clave viajan a la página antes de correr el script
-  await frame.evaluate((rangos) => {
+  await frame.evaluate((rangos, elo) => {
     window.__RANGOS = rangos;
-  }, leerRangos());
+    window.__ELO = elo;
+  }, leerRangos(), paraLaSala(leerElo()));
 
   // Envuelve HBInit: agrega el token y engancha el puente del panel sin tocar el script
   await frame.evaluate((token) => {

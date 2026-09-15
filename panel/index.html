@@ -99,6 +99,14 @@
   .bolita { cursor: pointer; }
   .bolita:hover .circulo { filter: brightness(1.15); }
   .menu-bolita { position: fixed; background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 8px; padding: 4px; box-shadow: 0 6px 20px rgba(0,0,0,0.5); z-index: 100; display: flex; gap: 4px; }
+
+  /* Tabla de ELO */
+  .escala { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+  table.elo td { vertical-align: middle; }
+  table.elo .pos { color: var(--suave); width: 28px; }
+  table.elo .ge { color: var(--suave); font-variant-numeric: tabular-nums; }
+  .barra-celda { width: 30%; min-width: 70px; }
+  .barra { display: block; height: 7px; border-radius: 4px; opacity: 0.75; }
 </style>
 </head>
 <body>
@@ -117,6 +125,7 @@ const VISTAS = [
   { id: "cancha", nombre: "Cancha" },
   { id: "mensajes", nombre: "Mensajes" },
   { id: "jugadores", nombre: "Jugadores" },
+  { id: "elo", nombre: "ELO" },
   { id: "bans", nombre: "Bans" },
   { id: "roles", nombre: "Roles" },
   { id: "config", nombre: "Config" },
@@ -125,7 +134,8 @@ const VISTAS = [
 let salas = [];
 let salaAbierta = null;          // clave de la sala elegida
 let vistaAbierta = "cancha";     // pestaña de adentro
-let pegadoAbajo = true;          // si el log sigue el final
+let ultimaFirma = "";            // para no redibujar si nada cambió
+let cambioDeVista = false;       // true cuando el usuario cambia de pestaña o de sala
 
 const esc = (t) => String(t ?? "").replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]));
 const hora = (iso) => (iso ? new Date(iso).toLocaleTimeString("es-PY", { hour12: false }) : "");
@@ -143,7 +153,7 @@ function pintarTabs() {
   document.querySelectorAll("[data-sala]").forEach((b) =>
     b.addEventListener("click", () => {
       salaAbierta = b.dataset.sala;
-      pegadoAbajo = true;
+      cambioDeVista = true;
       pintarTabs();
       pintarSala();
     })
@@ -171,7 +181,7 @@ function pintarSala() {
       ].join("")
     : `<span class="chip alerta">${esc(e.problema || "esperando el link de la sala…")}</span>`;
 
-  caja.innerHTML = `
+  const html = `
     <div class="datos">${chips}</div>
     <div class="vistas">
       ${VISTAS.map((v) => `<button data-vista="${v.id}" aria-selected="${v.id === vistaAbierta}">${v.nombre}</button>`).join("")}
@@ -179,10 +189,25 @@ function pintarSala() {
     <div class="vista" id="vista">${sala.ok ? contenido(vistaAbierta, e) : `<div class="vacio">No se pudo conectar con esta sala.</div>`}</div>
   `;
 
+  // Si no cambió nada, no tocamos el DOM: así no parpadea ni se cierra el menú de kick/ban
+  const firma = salaAbierta + "|" + vistaAbierta + "|" + html;
+  if (firma === ultimaFirma) return;
+  ultimaFirma = firma;
+
+  // Guardamos dónde estaba mirando el usuario antes de redibujar.
+  // Sin esto, cada actualización lo mandaba de vuelta arriba del todo.
+  const vistaVieja = document.getElementById("vista");
+  const scrollPrevio = vistaVieja ? vistaVieja.scrollTop : 0;
+  const estabaAbajo = vistaVieja
+    ? vistaVieja.scrollTop + vistaVieja.clientHeight >= vistaVieja.scrollHeight - 30
+    : true;
+
+  caja.innerHTML = html;
+
   caja.querySelectorAll("[data-vista]").forEach((b) =>
     b.addEventListener("click", () => {
       vistaAbierta = b.dataset.vista;
-      pegadoAbajo = true;
+      cambioDeVista = true;
       pintarSala();
     })
   );
@@ -200,11 +225,16 @@ function pintarSala() {
     })
   );
 
+  // Volvemos a dejarlo donde estaba. Solo seguimos al último mensaje si ya estaba abajo del todo.
   const vista = document.getElementById("vista");
-  if (vistaAbierta === "mensajes" && pegadoAbajo) vista.scrollTop = vista.scrollHeight;
-  vista.addEventListener("scroll", () => {
-    pegadoAbajo = vista.scrollTop + vista.clientHeight >= vista.scrollHeight - 30;
-  });
+  if (cambioDeVista) {
+    vista.scrollTop = vistaAbierta === "mensajes" ? vista.scrollHeight : 0;
+    cambioDeVista = false;
+  } else if (estabaAbajo && vistaAbierta === "mensajes") {
+    vista.scrollTop = vista.scrollHeight;
+  } else {
+    vista.scrollTop = scrollPrevio;
+  }
 }
 
 function abrirMenuBolita(elemento, idJugador, nombre) {
@@ -291,6 +321,38 @@ function contenido(vista, e) {
             </td></tr>`
         )
         .join("")}</table>`;
+  }
+
+  if (vista === "elo") {
+    const ranking = e.elo || [];
+    const divisiones = e.divisiones || [];
+    const escala = divisiones.length
+      ? `<div class="escala">${divisiones
+          .map((d) => `<span class="chip" style="border-color:#${d.color}55;color:#${d.color}">${d.emoji} ${esc(d.nombre)} · ${d.desde}+</span>`)
+          .join("")}</div>`
+      : "";
+    if (!ranking.length) {
+      return escala + `<div class="vacio">Todavía no hay partidos jugados. El puntaje arranca en 1000 y se mueve al terminar cada partido.</div>`;
+    }
+    // La barra muestra qué tan cerca está del tope de la tabla
+    const tope = Math.max(...ranking.map((f) => f.elo), 1);
+    return (
+      escala +
+      `<table class="elo"><tr><th>#</th><th>Jugador</th><th>División</th><th>Puntos</th><th>PJ</th><th>G-E-P</th><th></th></tr>
+      ${ranking
+        .map(
+          (f, i) => `<tr>
+            <td class="pos">${i + 1}</td>
+            <td>${esc(f.nombre)}</td>
+            <td style="color:#${f.division.color}">${f.division.emoji} ${esc(f.division.nombre)}</td>
+            <td><b>${f.elo}</b></td>
+            <td>${f.partidos}</td>
+            <td class="ge">${f.ganados}-${f.empatados}-${f.perdidos}</td>
+            <td class="barra-celda"><span class="barra" style="width:${Math.round((f.elo / tope) * 100)}%;background:#${f.division.color}"></span></td>
+          </tr>`
+        )
+        .join("")}</table>`
+    );
   }
 
   if (vista === "bans") {

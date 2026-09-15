@@ -1,0 +1,133 @@
+
+
+// ▇▇▇▇▇▇▇▇▇ 📊 ELO Y DIVISIONES — ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// Cada jugador tiene un puntaje que sube si gana y baja si pierde, y ese puntaje lo ubica en
+// una división (Novato, Amateur, Regular, Avanzado, Crack, Pro, Leyenda).
+//
+// La cuenta la hace Node (lib/elo.js), no la sala: acá solo avisamos quién juega y quién ganó,
+// y mostramos lo que Node nos devuelve. Así el puntaje sobrevive a que se cierre la sala y las
+// 4 salas comparten la misma tabla.
+//
+// Comandos: !elo (el propio o el de otro) · !top (los 10 mejores) · !divisiones
+
+var ELO = window.__ELO || {};          // nick en minúscula -> { elo, partidos, division, emoji }
+var eloDelPartido = null;              // quiénes estaban jugando cuando arrancó
+
+window.__eloActualizar = function (datos) {
+	ELO = datos || {};
+};
+
+// El launcher deja acá los avisos que tiene que procesar Node
+function avisarAlPanel(evento) {
+	try {
+		window.__panelCola = window.__panelCola || [];
+		window.__panelCola.push(evento);
+	} catch (e) {}
+}
+
+function fichaElo(nombre) {
+	return ELO[String(nombre).toLowerCase()] || null;
+}
+
+function textoElo(nombre) {
+	var f = fichaElo(nombre);
+	if (!f) return nombre + " todavía no jugó ningún partido (arranca en 1000).";
+	return f.emoji + " " + nombre + " — " + f.elo + " pts · " + f.division + " · " + f.partidos + " partidos";
+}
+
+// Los que están en la cancha cuando arranca el partido son los que después suman o pierden
+function jugadoresEnCancha() {
+	var salida = { red: [], blue: [] };
+	room.getPlayerList().forEach(function (j) {
+		if (j.id === 0) return;
+		if (j.team === 1) salida.red.push({ nombre: j.name, auth: playerAuths[j.id] || null });
+		if (j.team === 2) salida.blue.push({ nombre: j.name, auth: playerAuths[j.id] || null });
+	});
+	return salida;
+}
+
+(function () {
+	// ── Al entrar, le mostramos su división ──
+	var anteriorJoin = room.onPlayerJoin;
+	room.onPlayerJoin = function (player) {
+		if (typeof anteriorJoin === "function") anteriorJoin(player);
+		setTimeout(function () {
+			var f = fichaElo(player.name);
+			if (f) {
+				room.sendAnnouncement("📊 Tu puntaje: " + f.emoji + " " + f.elo + " pts (" + f.division + ")", player.id, 0xFFD100, "bold", 0);
+			} else {
+				room.sendAnnouncement("📊 Sos nuevo acá: arrancás con 1000 pts. Escribí !elo para verlo.", player.id, 0xFFD100, "small", 0);
+			}
+		}, 2500);
+	};
+
+	// ── Al arrancar, anotamos quiénes juegan ──
+	var anteriorStart = room.onGameStart;
+	room.onGameStart = function (byPlayer) {
+		if (typeof anteriorStart === "function") anteriorStart(byPlayer);
+		eloDelPartido = jugadoresEnCancha();
+	};
+
+	// ── Al terminar, le pasamos el resultado a Node ──
+	var anteriorStop = room.onGameStop;
+	room.onGameStop = function (byPlayer) {
+		var marcador = room.getScores();
+		if (eloDelPartido && marcador && (eloDelPartido.red.length && eloDelPartido.blue.length)) {
+			var ganador = marcador.red > marcador.blue ? 1 : marcador.blue > marcador.red ? 2 : 0;
+			avisarAlPanel({
+				tipo: "elo-partido",
+				red: eloDelPartido.red,
+				blue: eloDelPartido.blue,
+				ganador: ganador,
+				goles: typeof playerGoals !== "undefined" ? playerGoals : {},
+			});
+		}
+		eloDelPartido = null;
+		if (typeof anteriorStop === "function") anteriorStop(byPlayer);
+	};
+
+	// ── Comandos ──
+	var anteriorChat = room.onPlayerChat;
+	room.onPlayerChat = function (player, message) {
+		var texto = String(message).trim();
+		var bajo = texto.toLowerCase();
+
+		if (bajo === "!elo" || bajo.indexOf("!elo ") === 0) {
+			var quien = bajo === "!elo" ? player.name : texto.slice(5).trim();
+			room.sendAnnouncement("📊 " + textoElo(quien), player.id, 0xFFD100, "bold", 0);
+			return false;
+		}
+
+		if (bajo === "!top") {
+			var lista = Object.keys(ELO)
+				.map(function (k) { return ELO[k]; })
+				.filter(function (f) { return f && f.partidos > 0; })
+				.sort(function (a, b) { return b.elo - a.elo; })
+				.slice(0, 10);
+			if (!lista.length) {
+				room.sendAnnouncement("📊 Todavía no hay partidos jugados.", player.id, 0xFFD100, "small", 0);
+				return false;
+			}
+			room.sendAnnouncement("🏆 TOP 10 — ÑandutíBall", player.id, 0xFFD100, "bold", 2);
+			for (var i = 0; i < lista.length; i++) {
+				room.sendAnnouncement(
+					"   " + (i + 1) + ". " + lista[i].emoji + " " + lista[i].nombre + " — " + lista[i].elo + " pts (" + lista[i].division + ")",
+					player.id, 0xFFFFFF, "small", 0
+				);
+			}
+			return false;
+		}
+
+		if (bajo === "!divisiones") {
+			room.sendAnnouncement(
+				"📊 DIVISIONES:  🥉 Novato (0) · 🟢 Amateur (900) · 🔵 Regular (1050) · 🟣 Avanzado (1200) · 🟠 Crack (1350) · 🔴 Pro (1500) · 🏆 Leyenda (1700)",
+				player.id, 0xFFD100, "small", 0
+			);
+			return false;
+		}
+
+		return typeof anteriorChat === "function" ? anteriorChat(player, message) : true;
+	};
+
+	console.log("📊 Sistema de ELO activo");
+})();

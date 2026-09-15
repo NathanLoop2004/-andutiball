@@ -149,6 +149,48 @@ if (iniBienvenida === -1) {
 reemplazar("⚙️ Bot visible", "var BotVisible = false;", "var BotVisible = true;", "var BotVisible = true;");
 reemplazar("⚙️ Nombre del bot", '"🚩 Árbitro Bot 🤖"', '"🚩 Ñandu Bot 🤖"', "Ñandu Bot");
 reemplazar("⚙️ reCAPTCHA desactivado", "var ActivarReCaptcha = true;", "var ActivarReCaptcha = false;", "var ActivarReCaptcha = false;");
+reemplazar("⚙️ Cambio de mapa siempre (aunque el partido esté avanzado)", "var tiempoLimiteCambio = 30;", "var tiempoLimiteCambio = 99999;", "var tiempoLimiteCambio = 99999;");
+
+// Sin límite para los que miran:
+// · LugaresReservados hacía que, con la sala casi llena, el script le pusiera CONTRASEÑA
+//   y ya no entrara nadie más.
+// · LimiteMaximoDeJugadoresAFK echaba a todos los AFK de golpe, y un espectador que solo
+//   mira cuenta como AFK a los 5 minutos.
+reemplazar("👀 Sin lugares reservados (la sala no se cierra sola)", "var LugaresReservados = 2;", "var LugaresReservados = 0;", "var LugaresReservados = 0;");
+reemplazar("👀 No echar a los espectadores por AFK", "const LimiteMaximoDeJugadoresAFK = 4;", "const LimiteMaximoDeJugadoresAFK = 99;", "const LimiteMaximoDeJugadoresAFK = 99;");
+
+// ─────────────────────────────────────────────────────────────
+// 3.5. Mapas propios de futsal (mapas/*.hbs, hechos con npm run generar-mapas)
+// Se agregan como funciones al final: en JS gana la última declaración con ese nombre,
+// así que reemplazan a las del autor sin tocar su código.
+// ─────────────────────────────────────────────────────────────
+const MAPAS_PROPIOS = [
+  { archivo: "nanduti-futsal-x3.hbs", funcion: "getFutx3Map" },
+  { archivo: "nanduti-futsal-x4.hbs", funcion: "getFutx4Map" },
+  { archivo: "nanduti-futsal-x5.hbs", funcion: "getFutx5Map" },
+  { archivo: "nanduti-futsal-x7.hbs", funcion: "getFutx7Map" },
+];
+let bloqueMapas = "";
+{
+  const disponibles = MAPAS_PROPIOS.filter((m) => fs.existsSync(path.join(RAIZ, "mapas", m.archivo)));
+  if (!disponibles.length) {
+    saltados.push("🗺️ Mapas propios de futsal (no hay .hbs: corré npm run generar-mapas)");
+  } else {
+    bloqueMapas =
+      "\n\n// ▇▇▇▇▇▇▇▇▇ 🗺️ MAPAS DE FUTSAL DE ÑANDUTÍBALL ▇▇▇▇▇▇▇▇▇\n" +
+      "// Generados con 'npm run generar-mapas' a partir de los mapas del autor: misma cancha\n" +
+      "// y misma física, con el nombre nuestro y la pelota amarilla lisa.\n" +
+      "// Van al final a propósito: así pisan a las funciones originales sin editarlas.\n" +
+      disponibles
+        .map((m) => {
+          const json = fs.readFileSync(path.join(RAIZ, "mapas", m.archivo), "utf8");
+          return `function ${m.funcion}() {\n\treturn ${JSON.stringify(json)};\n}`;
+        })
+        .join("\n") +
+      "\nconsole.log(\"🗺️ Mapas de futsal de ÑandutíBall cargados\");\n";
+    hechos.push(`🗺️ Mapas propios de futsal (${disponibles.length})`);
+  }
+}
 
 // ─────────────────────────────────────────────────────────────
 // 4. Camisetas paraguayas
@@ -189,7 +231,7 @@ reemplazar(
 // ─────────────────────────────────────────────────────────────
 const BLOQUES = [
   { archivo: "compat.txt", marca: "🩹 PIEZAS QUE FALTABAN", nombre: "🩹 Piezas que faltaban", siFalta: () => true },
-  { archivo: "rangos.txt", marca: "🎖️ RANGOS CON CLAVE", nombre: "🎖️ Rangos con clave", siFalta: () => true },
+  { archivo: "rangos.txt", marca: "🎖️ RANGOS", nombre: "🎖️ Rangos por nick", siFalta: () => true },
   {
     archivo: "arbitraje.txt",
     marca: "🧑‍⚖️ ARBITRAJE",
@@ -202,6 +244,9 @@ const BLOQUES = [
     nombre: "💬 Comandos del chat",
     siFalta: (s) => !/room\.onPlayerChat\s*=/.test(s),
   },
+  { archivo: "turnos.txt", marca: "🎽 SELECCIÓN POR TURNOS", nombre: "🎽 Selección por turnos", siFalta: () => true },
+  { archivo: "elo.txt", marca: "📊 ELO Y DIVISIONES", nombre: "📊 ELO y divisiones", siFalta: () => true },
+  { contenido: bloqueMapas, marca: "🗺️ MAPAS DE FUTSAL", nombre: null, siFalta: () => Boolean(bloqueMapas) },
 ];
 
 // Sacamos nuestros bloques viejos antes de volver a escribirlos
@@ -218,8 +263,9 @@ for (const bloque of BLOQUES) {
     saltados.push(`${bloque.nombre} (el script ya lo trae)`);
     continue;
   }
-  script = script.trimEnd() + "\n" + fs.readFileSync(path.join(__dirname, "bloques", bloque.archivo), "utf8");
-  hechos.push(bloque.nombre);
+  const texto = bloque.contenido !== undefined ? bloque.contenido : fs.readFileSync(path.join(__dirname, "bloques", bloque.archivo), "utf8");
+  script = script.trimEnd() + "\n" + texto;
+  if (bloque.nombre) hechos.push(bloque.nombre);   // los mapas ya se anotaron más arriba
 }
 
 // ─────────────────────────────────────────────────────────────
