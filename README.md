@@ -1,131 +1,160 @@
-# Script de Host de HaxBall (GLH – "Futsal by GLH")
+# 🕸️ ÑandutíBall — Host de HaxBall
 
-Script para crear una **sala (host) de HaxBall con bot árbitro**, basado en la
-[Headless Host API](https://github.com/haxball/haxball-issues/wiki/Headless-Host) de HaxBall.
-Versión indicada en el código: `25.06.18`.
+```
+ ▄▀▄▀                                  ▄▀
+░█▄─░█ ─█▀▀█ ░█▄─░█ ░█▀▀▄ ░█─░█ ▀▀█▀▀ ▀█▀
+░█░█░█ ░█▄▄█ ░█░█░█ ░█─░█ ░█─░█ ─░█── ─█─
+░█──▀█ ░█─░█ ░█──▀█ ░█▄▄▀ ─▀▄▄▀ ─░█── ▄█▄
 
-> ⚠️ **Lee primero la sección [Problemas encontrados](#️-problemas-encontrados-en-la-revisión).**
-> El archivo está **incompleto** (no funciona tal cual) y tiene un **webhook oculto** que
-> envía datos de los jugadores a un tercero.
+░█▀▀█ ─█▀▀█ ░█─── ░█───
+░█▀▀▄ ░█▄▄█ ░█─── ░█───
+░█▄▄█ ░█─░█ ░█▄▄█ ░█▄▄█
+```
+
+**El host paraguayo de HaxBall, hecho por Jinder** 🇵🇾
+
+Sala de HaxBall con bot árbitro, basada en la
+[Headless Host API](https://github.com/haxball/haxball-issues/wiki/Headless-Host).
+Trae 35 mapas, camisetas de todos los clubes paraguayos, estadísticas, moderación
+automática y avisos a Discord. Puede levantar **3 salas a la vez** (3v3, 4v4 y Juegan Todos).
+
+> ⚠️ **Antes de usarlo, lee [Problemas conocidos](#️-problemas-conocidos).**
+> El `script.js` está **incompleto** y tiene un **webhook oculto** que envía datos de los jugadores.
 
 ---
 
 ## 📁 Archivos
 
-| Archivo      | Contenido |
-|--------------|-----------|
-| `script.js`  | El script completo (~18.100 líneas, 1,3 MB). |
-| `script.txt` | Vacío. |
+| Archivo | Para qué |
+|---|---|
+| `script.js` | El script de la sala (~18.100 líneas). Se ejecuta dentro de HaxBall. |
+| `launcher.js` | Abre la sala con Puppeteer y le aplica la configuración de cada host. |
+| `get-tokens.js` | Consigue los tokens y los guarda en `.env`. |
+| `hosts/*.json` | Diferencias de cada sala (3v3, 4v4, todos). |
+| `docker-compose.yml`, `Dockerfile` | Las 3 salas en Docker. |
+| `.env` | Tus tokens. |
+| `CLAUDE.md` | Notas técnicas para seguir trabajando en el proyecto. |
 
 ---
 
-## ▶️ Cómo se usa
+## ▶️ Cómo levantar las salas
 
-1. Entra a <https://www.haxball.com/headless>.
-2. Abre la consola del navegador (`F12` → pestaña *Console*).
-3. Pega el contenido de `script.js` y pulsa Enter.
-4. Resuelve el captcha si lo pide. En la consola aparece el **link de la sala**
-   (y, si hay webhook configurado, también se publica en Discord).
-5. Deja la pestaña abierta: si la cierras, la sala se cierra.
+### Con Docker (las 3 salas)
 
-Las estadísticas se guardan en el `localStorage` del navegador, así que se conservan entre
-reinicios mientras uses el mismo navegador.
+```powershell
+npm install                  # una sola vez
+npm run tokens -- --up       # saca los 3 tokens y levanta todo
+docker compose logs -f       # muestra los links de las salas
+docker compose down          # cierra todo
+```
+
+`npm run tokens` abre la página de tokens en tu navegador. Resolvés el captcha, copiás el token
+con Ctrl+C y el script lo guarda solo. Repite 3 veces, una por sala.
+
+### Una sola sala, sin Docker
+
+```powershell
+npm start        # usa HAXBALL_TOKEN y HOST_CONFIG de .env
+```
+
+### A mano, sin instalar nada
+
+Entrá a <https://www.haxball.com/headless>, abrí la consola (`F12`), pegá el contenido de
+`script.js` y dale Enter.
+
+> 🔑 Los tokens de HaxBall **vencen a los pocos minutos** y cada sala necesita el suyo.
+> Sacá tokens nuevos justo antes de arrancar: <https://www.haxball.com/headlesstoken>
 
 ---
 
-## 🗺️ Estructura del archivo
+## 🏠 Las 3 salas
 
-| Líneas aprox. | Sección |
-|---------------|---------|
-| 1 – 620       | **Configuración editable** (todo lo que normalmente cambias). |
-| 620 – 1115    | Variables internas, camisetas de equipos, códigos de banderas, coordenadas por país. |
-| 1119 – 1145   | **Bloque ofuscado** (`_0x24f1`, `_0x2ffa`…): textos, un mapa y un webhook escondido. |
-| 1145 – 1225   | Utilidades: `decryptHex` (convierte `player.conn` en IP), validación de admins. |
-| 1226 – 17935  | **Mapas** (`.hbs` embebidos como texto): una función `getXxxMap()` por mapa. |
-| 17936 – final | **Lógica del bot** (minificada en líneas muy largas): creación de la sala, clase `Game` (saques, córners, arco en Real Soccer), webhooks, estadísticas, AFK, mute, baneos, comandos. |
+| Sala | Archivo | Jugadores | Mapa | Tiempo / Goles | Modo |
+|---|---|---|---|---|---|
+| **3v3** | `hosts/3v3.json` | 12 | Futsal x3 | 3 min / 3 | Juegan Algunos, 3 por equipo |
+| **4v4** | `hosts/4v4.json` | 14 | Futsal x4 | 4 min / 3 | Juegan Algunos, 4 por equipo |
+| **Juegan Todos** | `hosts/todos.json` | 16 | Real Soccer | 5 min / sin límite | Juegan Todos |
+
+Las tres usan el mismo `script.js`. Para cambiar algo de una sola, editá su JSON con cualquier
+variable del inicio del script. Por ejemplo `"powerShotMode": true` o `"PasswordDelHost": "123"`.
+Después basta con `docker compose restart`.
 
 ---
 
-## ⚙️ Configuración (inicio del archivo)
+## ⚽ Camisetas paraguayas
+
+El script trae las camisetas de los **28 clubes profesionales** más la Selección.
+
+**Primera División:** Olimpia · Cerro Porteño · Libertad · Guaraní · Nacional · Sportivo Luqueño ·
+Recoleta · Rubio Ñu · Sportivo Trinidense · Sportivo Ameliano · Sportivo San Lorenzo · 2 de Mayo
+
+**División Intermedia:** 12 de Junio · 3 de Noviembre · Atlético Tembetary · Benjamín Aceval ·
+Deportivo Capiatá · Deportivo Santaní · Encarnación FC · Fernando de la Mora · General Caballero JLM ·
+Guaireña · Independiente CG · Paraguarí · Resistencia · Sol de América · Sportivo Carapeguá · Tacuary
+
+Con `!clubcolors` las camisetas cambian solas en cada partido: hay 28 cruces armados, y el
+superclásico **Olimpia vs Cerro** es el que más sale. Cuando se enfrentan dos camisetas parecidas
+(Olimpia vs Nacional, Guaraní vs Luqueño…), el equipo azul cambia automáticamente.
+
+Para agregar un club, copiá una entrada de `camisetasEquipos` (línea 688) con el formato
+`/colors <equipo> <ángulo> <color del número> <franja1> <franja2> <franja3>`.
+
+---
+
+## ⚙️ Configuración (inicio de `script.js`)
 
 ### Sala
-| Variable | Qué hace | Valor actual |
-|---|---|---|
-| `NombreHost` | Nombre de la sala | `▶️▶️🟦🟩 UNETE Y JUEGA …` |
-| `VisibilidadDelHost` | `true` pública / `false` privada | `true` |
-| `CantidadDeJugadores` | Máximo de jugadores (1–30) | `16` |
-| `PasswordDelHost` | Contraseña de la sala (`null` = sin contraseña) | `null` |
-| `ReiniciarStats` | `"Si"` borra las estadísticas al iniciar | `"No"` |
-| `UbicacionDelHost` / `BanderaDelHost` | Ubicación y bandera que muestra la sala | `myubication` / `Germany` |
-| `ActivarReCaptcha` | Pedir captcha a quien entra | `true` |
+| Variable | Qué hace |
+|---|---|
+| `NombreHost` | Nombre de la sala (lo pisa el JSON de cada host) |
+| `VisibilidadDelHost` | `true` pública / `false` privada |
+| `CantidadDeJugadores` | Máximo de jugadores (1–30) |
+| `PasswordDelHost` | Contraseña de la sala (`null` = sin contraseña) |
+| `ReiniciarStats` | `"Si"` borra las estadísticas al iniciar |
+| `UbicacionDelHost`, `BanderaDelHost` | Ubicación y bandera que muestra la sala |
+| `ActivarReCaptcha` | Pedir captcha a quien entra |
 
 ### Administración
 | Variable | Qué hace |
 |---|---|
-| `ClaveParaSerAdmin` | Palabra que, escrita en el chat, da admin (actual: `!axeso5`). **Cámbiala.** |
-| `ListaDeAdmins` | Admins por `auth` (Public ID de haxball.com/playerauth) y nicks permitidos. |
-| `contrasena`, `LugaresReservados` | Lugares reservados para admins. |
-| `NickNamesRol1..10`, `NombreROL1..10`, `ColorDelChatROL1..10` | Roles con prefijo y color en el chat (OWNER, CO-OWNER, HOSTER…). |
-| `ListaDeJogadores` | Jugadores registrados (auth + nicks). Ahora solo tiene ejemplos (`authid_jugador1`…). |
-
-### Bot
-`BotVisible` (si el bot aparece como jugador), `NombreBot`, `StatusBot` (`"activo"` / `"afk"`).
+| `ClaveParaSerAdmin` | Palabra que, escrita en el chat, da admin. **Cambiala** |
+| `ListaDeAdmins` | Admins por `auth` (de haxball.com/playerauth) y nicks |
+| `contrasena`, `LugaresReservados` | Lugares reservados para admins |
+| `NickNamesRol1..10`, `NombreROL1..10` | Roles con prefijo y color en el chat |
+| `ListaDeJogadores` | Jugadores registrados |
 
 ### Juego
 | Variable | Qué hace |
 |---|---|
-| `MapaPorDefecto` | Mapa al iniciar (`"Real Soccer"`). Ver lista de mapas abajo. |
-| `TiempoDeJuego`, `LimiteDeGoles` | Minutos y goles por partido (`5`, `0` = sin límite). |
-| `TamanoMinimoPermitido`, `TamanoMaximoPermitido`, `CantidadCambiarTamano` | Límites del comando `!size`. |
-| `camisetaRed`, `camisetaBlue`, `NombreEquipoRojo/Azul` | Camisetas por defecto (formato `/colors`). |
-| `PelotaRS`, `PotenciaPowerShotRS`, `PelotaFutsal`, `PotenciaPowerShot`, `TipoPelotaFutsal` | Color y potencia de la pelota. |
+| `MapaPorDefecto` | Mapa al iniciar |
+| `TiempoDeJuego`, `LimiteDeGoles` | Minutos y goles por partido |
+| `camisetaRed`, `camisetaBlue` | Camisetas por defecto (Olimpia y Cerro) |
+| `TamanoMinimoPermitido`, `TamanoMaximoPermitido` | Límites de `!size` |
+| `PelotaRS`, `PotenciaPowerShot`, `TipoPelotaFutsal` | Color y potencia de la pelota |
 
-### Modos de juego (`true` / `false`)
-| Variable | Modo |
-|---|---|
-| `autoBalanceEnabled` | Equilibra la cantidad de jugadores por equipo. |
-| `ganasigueEnabled` | Gana sigue: el ganador se queda, entran espectadores. |
-| `CamisetasGanaSigue` | El ganador conserva la camiseta. |
-| `cambioCami` | Cambia camisetas al azar en cada partido. |
-| `modoJueganTodos` / `modoJueganAlgunos` + `maxPlayersPerTeam` | Mete a todos / a N por equipo automáticamente. |
-| `powerShotMode`, `JabulaniMode`, `combaMode` | Disparo potente, potente con comba, solo comba. |
-| `GolDeOroActivado` | Gol de oro en empate. |
-| `FairPlayActivado` | Modo fair play. |
-| `automatizadoActivado` | Cambia el mapa solo según la cantidad de jugadores (usa `TiempoFutsalxN` / `GolesFutsalxN`). |
+### Modos de juego
+`autoBalanceEnabled` (equilibrar equipos) · `ganasigueEnabled` (gana sigue) ·
+`CamisetasGanaSigue` · `cambioCami` (camisetas al azar) · `modoJueganTodos` /
+`modoJueganAlgunos` + `maxPlayersPerTeam` · `powerShotMode`, `JabulaniMode`, `combaMode` ·
+`GolDeOroActivado` · `FairPlayActivado` · `automatizadoActivado` (cambia el mapa según cuántos hay)
 
 ### Moderación
 | Variable | Qué hace |
 |---|---|
-| `LimiteMaximoDeJugadoresAFK`, `SegundosPermitidosAFK`, `MinutosPermitidosAFK` | Expulsión de AFK (15 s en cancha, 5 min en espectadores). |
-| `MaximoJugadoresPorIp` | Jugadores por misma IP. |
-| `PaisesProhibidos` | Países expulsados al entrar (actual: EE. UU. y Reino Unido). |
-| `IpPlayers`, `MensajeBaneoPorIp` | IPs baneadas. |
-| `NicknamesPROHIBIDOS` | Nicks no permitidos (`@everyone`, `@here`, `@`). |
-| `MESSAGE_COOLDOWN`, `SPAM_LIMIT`, `COOLDOWN_TIME`, `KICK_THRESHOLD` | Anti-spam del chat. |
-| `PorcentajeDeVotosBan/Admin`, `MIN_PLAYERS_FOR_*_VOTE`, `DURACION_VOTACION`, `COOLDOWN_COMANDOS` | Votaciones para expulsar o dar admin. |
-| `maxAttempts`, `interval`, `cooldownTime` | Límite de kicks/bans seguidos por admin (anti-abuso). |
-| `MostrarIps` | Mostrar IPs a los admins al entrar alguien. |
+| `LimiteMaximoDeJugadoresAFK`, `SegundosPermitidosAFK`, `MinutosPermitidosAFK` | Expulsión de AFK |
+| `MaximoJugadoresPorIp` | Jugadores por misma IP |
+| `PaisesProhibidos`, `IpPlayers`, `NicknamesPROHIBIDOS` | Bloqueos de acceso |
+| `MESSAGE_COOLDOWN`, `SPAM_LIMIT`, `KICK_THRESHOLD` | Anti-spam del chat |
+| `PorcentajeDeVotosBan/Admin`, `DURACION_VOTACION` | Votaciones |
 
-### Anuncios
-`MensajeDeBienvenida` (lista de mensajes al entrar), `Anuncio` / `Anuncio2` (con minuto, segundo, color y tipo de letra),
-`DiscordLink`, `YoutubeLink`, `TwitchLink`, `ChallongeLink`, `regla1..5`.
-
-### 🌐 Webhooks de Discord
-| Variable | Qué envía |
-|---|---|
-| `AnuncioHostAbierto` + `MensajeHostAbierto`, `TagHostAbierto` | Aviso de sala abierta con su link. |
-| `WebhookGrabaciones`, `WebhookGrabacionesSalaCompleta`, `GrabarTodo` | Replays `.hbr2` y resumen de cada partido (o de toda la sesión). |
-| `WebhookParaLlamarAdmins`, `RolAdminHost`, `tiempoEsperaAdminsEnMinutos` | Llamado a admins desde la sala. |
-| `AnuncioKicksBans` | Registro de kicks y bans. |
-| `webhookMensajesJugadores` | Chat de los jugadores. |
-| `webhookBoletero` | Entradas y salidas (con cola y límite para no saturar Discord). |
-| `webhookEstadisticasJugadores` | Estadísticas. |
-| `WebhookParaFirmar` | Firmas en partidos oficiales. |
-| `webhookIPJugadores` | IP del jugador al salir. |
+### Webhooks de Discord
+`AnuncioHostAbierto` (aviso de sala abierta) · `WebhookGrabaciones` (replays y resúmenes) ·
+`WebhookParaLlamarAdmins` · `AnuncioKicksBans` · `webhookMensajesJugadores` (chat) ·
+`webhookBoletero` (entradas y salidas) · `webhookEstadisticasJugadores` · `webhookIPJugadores`
 
 ---
 
-## 🏟️ Mapas incluidos (comando para cargarlo)
+## 🏟️ Mapas
 
 - **Real Soccer:** `!rs`, `!rs2`, `!rsevo`, `!rsoveja`, `!minirs`, `!entrenamiento`
 - **Futsal:** `!futx2`, `!futx3`, `!futx4`, `!futx5`, `!futx5cesped`, `!futx7`, `!realfutsal`, `!entrenamientofutsal`
@@ -142,77 +171,45 @@ reinicios mientras uses el mismo navegador.
 ### Jugadores
 | Comando | Uso |
 |---|---|
-| `!help` | Lista de comandos. |
-| `t mensaje` | Chat privado con tu equipo. |
-| `!afk`, `!afks` | Ponerse AFK / ver quién está AFK. |
-| `!me`, `!stats ID` | Estadísticas propias o de otro. |
-| `!goleadores`, `!asistidores`, `!vallas-invictas`, `!mvp`, `!racha-historica`, `!racha-actual`, `!viciosos`, `!ganadores`, `!presencias` | Rankings. |
-| `!size N` | Cambia tu tamaño (dentro de los límites). |
-| `!avatar a,b,c` | Avatar animado. |
-| `!expulsar ID`, `!admin` | Votación para expulsar / para dar admin. `#` en el chat muestra los IDs. |
-| `!nv` | Salir de la sala. |
-| `!reglamento`, `!fixture`, `!resultados`, `!tutorial` | Info de torneo y del script. |
+| `!help` | Lista de comandos |
+| `t mensaje` | Chat privado con tu equipo |
+| `!afk`, `!afks` | Ponerse AFK / ver quién está AFK |
+| `!me`, `!stats ID` | Estadísticas |
+| `!goleadores`, `!asistidores`, `!vallas-invictas`, `!mvp`, `!racha-actual`, `!viciosos`, `!ganadores` | Rankings |
+| `!size N`, `!avatar a,b,c` | Tamaño y avatar animado |
+| `!expulsar ID`, `!admin` | Votaciones (`#` muestra los IDs) |
+| `!nv` | Salir de la sala |
 
 ### Admins
 | Comando | Uso |
 |---|---|
-| `!rr` / `!swap` / `!random` | Reiniciar partido / intercambiar equipos / equipos al azar. |
-| `!bb` | Sacar a todos a espectadores. |
-| `!mute ID`, `!unmute ID`, `!silenciar`, `!desilenciar`, `!unmuteall` | Silenciar jugadores o la sala. |
-| `!banip IP`, `!unbanip IP`, `!unbanallips`, `!clearbans` | Baneos. |
-| `!kickafks` | Expulsar a los AFK. |
-| `!set_password clave`, `!clear_password` | Contraseña de la sala. |
-| `!ganasigue`, `!juegantodos`, `!juegan N`, `!juegan-off`, `!auto_balance`, `!equilibrar`, `!automatizado` | Activar/desactivar modos. |
-| `!powershot`, `!goldeoro`, `!fairplay` | Reglas especiales. |
-| `!camisetas`, `!clubcolors`, `!swapcolors` | Camisetas. |
-| `!publicidad`, `!minutos`, `!minutosllamada` | Anuncios y tiempos. |
-| `!ofi` | Partido oficial. |
+| `!rr`, `!swap`, `!random`, `!bb` | Reiniciar, intercambiar, mezclar, sacar a todos |
+| `!mute ID`, `!unmute ID`, `!silenciar`, `!unmuteall` | Silenciar |
+| `!banip IP`, `!unbanip IP`, `!clearbans`, `!kickafks` | Expulsiones |
+| `!set_password clave`, `!clear_password` | Contraseña |
+| `!ganasigue`, `!juegantodos`, `!juegan N`, `!auto_balance`, `!automatizado` | Modos |
+| `!powershot`, `!goldeoro`, `!fairplay` | Reglas especiales |
+| `!camisetas`, `!clubcolors`, `!swapcolors` | Camisetas |
 
 ---
 
-## ⚠️ Problemas encontrados en la revisión
+## ⚠️ Problemas conocidos
 
-### 1. 🔴 El archivo está cortado: no funciona tal como está
-El archivo termina en medio de `NumeroUnoFun` (línea 18106), con un texto sin cerrar.
-`node --check script.js` da `SyntaxError: Invalid or unexpected token`, así que al pegarlo en la
-consola **no se ejecuta nada**.
+### 1. 🔴 El `script.js` está cortado
+Termina a mitad de `NumeroUnoFun` (línea 18290) y `node --check script.js` da
+`SyntaxError`. Falta la parte que lee el chat (`onPlayerChat`), así que **ningún comando
+funciona** y la sala no arranca. Hay que conseguir el archivo completo desde la fuente original.
 
-Además falta todo lo que venía después:
-- **No hay `room.onPlayerChat`**: ningún comando funciona. `helpFun`, `afkFun` y las demás funciones de comandos existen, pero nadie las llama.
-- **No hay un `onPlayerJoin` normal**: `MensajeDeBienvenida`, `MaximoJugadoresPorIp` y `NicknamesPROHIBIDOS` se declaran pero no se usan en ningún lado.
+### 2. 🔴 Webhook oculto que envía datos de los jugadores
+En el bloque ofuscado (líneas 1119–1145) hay un webhook de Discord escondido. El `onPlayerJoin`
+—que también está ofuscado— manda ahí el **nombre, la IP y el auth** de cada jugador que entra.
+Ese webhook no es tuyo. Conviene borrar ese `fetch` o reescribir el `onPlayerJoin` sin ofuscar.
 
-➡️ Consigue el archivo completo desde la fuente original. Probablemente se cortó al copiarlo.
+### 3. 🟠 Webhooks reales en el código
+Las URLs de webhook del inicio son reales: cualquiera con el archivo puede escribir en esos
+canales de Discord. Reemplazalas por las tuyas.
 
-### 2. 🔴 Webhook oculto que envía datos de los jugadores a un tercero
-En el bloque ofuscado (líneas 1119–1143) hay una URL de webhook escondida:
-`https://discord.com/api/webhooks/816061374504763402/...`
-
-El único `onPlayerJoin` del script está ofuscado. Cada vez que alguien entra, envía a ese webhook:
-
-```
-**NombreJugador -** [conn] - [auth]
-```
-
-`conn` es la **IP del jugador** en hexadecimal y `auth` su **Public ID**. Tú no controlas ese webhook,
-así que las IPs de tus jugadores le llegan al autor del script sin aviso.
-
-También hay otra URL sin uso (`webhookPass`, línea 18050) y una `superAdminCode` sin uso.
-
-➡️ Si vas a usar el script, **quita ese envío** (el `fetch(webhookID, ...)` dentro de
-`room[_0x3c81f9(0x12f)]`) o reescribe el `onPlayerJoin` sin ofuscar.
-
-### 3. 🟠 Webhooks reales escritos en el código
-Todas las URLs de webhook del inicio (`AnuncioKicksBans`, `webhookBoletero`, `webhookIPJugadores`, etc.)
-son reales. Cualquiera que tenga el archivo puede escribir en esos canales de Discord.
-➡️ Reemplázalas por webhooks tuyos y no compartas el archivo con ellas puestas.
-
-### 4. 🟠 Datos personales
-El script guarda y reenvía IPs (`webhookIPJugadores`, `MostrarIps`) y todo el chat (`webhookMensajesJugadores`).
-Si no lo necesitas, deja esas URLs vacías.
-
-### 5. 🟡 Detalles menores
-- `ClaveParaSerAdmin = "!axeso5"` aparece en la lista de comandos y es fácil de adivinar. Cámbiala.
-- En la línea 17937 se asigna `roomPassword = ClaveParaSerAdmin`. La variable no se usa (la sala usa `PasswordDelHost`), pero confunde.
-- `PaisesProhibidos` va en minúsculas (`"united states"`), mientras que el comentario del ejemplo usa mayúsculas (`"Argentina"`). Revisa que coincida con el formato que compara el código.
-- `ListaDeJogadores` solo tiene datos de ejemplo.
-- Casi toda la lógica está minificada en líneas de miles de caracteres, lo que hace difícil mantenerla. Conviene formatearla (por ejemplo con Prettier) antes de modificarla.
+### 4. 🟡 Detalles
+- `ClaveParaSerAdmin` viene como `"!axeso5"`: es fácil de adivinar.
+- `.env` y `.env.example` tienen tokens y **sí se suben a Git**.
+- Casi toda la lógica está minificada en líneas de miles de caracteres.
