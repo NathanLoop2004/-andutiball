@@ -1,0 +1,15 @@
+{
+  "name": "nandutiball-host",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Host de HaxBall ÑandutíBall ejecutado con Puppeteer",
+  "main": "launcher.js",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env launcher.js",
+    "check": "node --check script.js",
+    "tokens": "node get-tokens.js"
+  },
+  "dependencies": {
+    "puppeteer": "^23.0.0"
+  }
+}

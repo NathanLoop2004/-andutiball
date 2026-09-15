@@ -157,12 +157,12 @@ var CantidadCambiarTamano = 1;
 // ▇▇▇▇▇▇▇ ⚽👕 CAMISETAS POR DEFECTO ⚽👕 ▇▇▇▇▇▇▇
 
 // CAMISETA EQUIPO RED 🔴
-var camisetaRed = "/colors red 66 FFA649 DE0019 B80017 820217";
-var NombreEquipoRojo = "RED";
+var camisetaRed = "/colors red 90 FFFFFF FFFFFF 000000 FFFFFF"; // OLIMPIA
+var NombreEquipoRojo = "OLIMPIA";
 
 // CAMISETA EQUIPO BLUE 🔵
-var camisetaBlue = "/colors blue 55 c1ff00 052647 005DB3 03B2F0";
-var NombreEquipoAzul = "BLUE";
+var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO
+var NombreEquipoAzul = "CERRO PORTEÑO";
 
 
 
@@ -425,9 +425,9 @@ const MinutosPermitidosAFK = 5;  // Establece el tiempo permitido en minutos par
 
 // ▇▇▇▇▇▇▇▇▇ 🌐👥 REDES SOCIALES ▇▇▇▇▇▇▇▇▇
 
-const DiscordLink = "discord.gg/tDEUbJU8QB";	// Link de tu Servidor de Discord
-const YoutubeLink = "youtube.com/@GrandesLigasHaxBall"; 	// Link de tu canal de Youtube
-const TwitchLink = "twitch.tv/stefano365p";	// Link de tu canal de Twitch
+const DiscordLink = "";	// Link de tu Servidor de Discord
+const YoutubeLink = ""; 	// Link de tu canal de Youtube
+const TwitchLink = "";	// Link de tu canal de Twitch
 
 
 // ▇▇▇▇▇▇▇ 📍 UBICACIÓN DEL HOST ▇▇▇▇▇▇▇
@@ -686,97 +686,267 @@ const reemplazosEmoji = {
 // ▇▇▇▇▇▇▇ ⚽👕 AÑADIR CAMISETAS DE EQUIPOS ⚽👕 ▇▇▇▇▇▇▇
 
 var camisetasEquipos = {
-    // RIVER PLATE
-    "riv/titular/red": {
-        codigo: "/colors red 30 231F20 FFFFFF EE1B2C FFFFFF",
-        nombreEquipo: "RIVER PLATE"
+    // CLUB OLIMPIA (Decano)
+    "oli/titular/red": {
+        codigo: "/colors red 90 000000 FFFFFF 000000 FFFFFF",
+        nombreEquipo: "OLIMPIA"
     },
-    "boc/titular/blue": {
-        codigo: "/colors blue 90 FFFFFF 033F86 FAB900 033F86",
-        nombreEquipo: "BOCA JUNIORS"
+    "oli/titular/blue": {
+        codigo: "/colors blue 90 000000 FFFFFF 000000 FFFFFF",
+        nombreEquipo: "OLIMPIA"
     },
-    // NACIONAL (UY)
+    // CERRO PORTEÑO (Azulgrana)
+    "cer/titular/red": {
+        codigo: "/colors red 0 FFFFFF 002D72 D71920 002D72",
+        nombreEquipo: "CERRO PORTEÑO"
+    },
+    "cer/titular/blue": {
+        codigo: "/colors blue 0 FFFFFF 002D72 D71920 002D72",
+        nombreEquipo: "CERRO PORTEÑO"
+    },
+    // CLUB LIBERTAD (Gumarelo)
+    "lib/titular/red": {
+        codigo: "/colors red 0 FFD100 000000 FFFFFF 000000",
+        nombreEquipo: "LIBERTAD"
+    },
+    "lib/titular/blue": {
+        codigo: "/colors blue 0 FFD100 000000 FFFFFF 000000",
+        nombreEquipo: "LIBERTAD"
+    },
+    // CLUB GUARANÍ (Aborigen)
+    "gua/titular/red": {
+        codigo: "/colors red 0 000000 000000 FFD100 000000",
+        nombreEquipo: "GUARANÍ"
+    },
+    "gua/titular/blue": {
+        codigo: "/colors blue 0 000000 000000 FFD100 000000",
+        nombreEquipo: "GUARANÍ"
+    },
+    // CLUB NACIONAL (Academia)
+    "nac/titular/red": {
+        codigo: "/colors red 0 009B48 FFFFFF 009B48 FFFFFF",
+        nombreEquipo: "NACIONAL"
+    },
     "nac/titular/blue": {
-        codigo: "/colors blue 55 d0142c 003895 FFFFFF 003895",
-        nombreEquipo: "NACIONAL (UY)"
+        codigo: "/colors blue 0 009B48 FFFFFF 009B48 FFFFFF",
+        nombreEquipo: "NACIONAL"
     },
-    // PEÑAROL
-    "pen/titular/red": {
-        codigo: "/colors red 180 ffffff FFCA00 000000 FFCA00",
-        nombreEquipo: "PEÑAROL"
+    // SPORTIVO LUQUEÑO (Auriazul)
+    "luq/titular/red": {
+        codigo: "/colors red 0 0033A0 0033A0 FFD100 0033A0",
+        nombreEquipo: "SP. LUQUEÑO"
     },
-    "rac/titular/blue": {
-        codigo: "/colors blue 180 002942 00A5E3 FFFFFF 00A5E3",
-        nombreEquipo: "RACING CLUB"
+    "luq/titular/blue": {
+        codigo: "/colors blue 0 0033A0 0033A0 FFD100 0033A0",
+        nombreEquipo: "SP. LUQUEÑO"
     },
-    // INDEPENDIENTE
-    "ind/titular/red": {
-        codigo: "/colors red 60 FFFFFF EC1C24",
-        nombreEquipo: "INDEPENDIENTE"
+    // RECOLETA FC (El Canario)
+    "rec/titular/red": {
+        codigo: "/colors red 0 000000 FFE500 FFE500 FFE500",
+        nombreEquipo: "RECOLETA"
     },
-    // NEWELL'S OLD BOYS
-    "nob/titular/red": {
-        codigo: "/colors red 180 ffffff 000000 BF0311",
-        nombreEquipo: "NEWELLS"
+    "rec/titular/blue": {
+        codigo: "/colors blue 0 000000 FFE500 FFE500 FFE500",
+        nombreEquipo: "RECOLETA"
     },
-    "cen/titular/blue": {
-        codigo: "/colors blue 180 ffffff FCD724 0D3E66 FCD724",
-        nombreEquipo: "ROSARIO CENTRAL"
+    // CLUB RUBIO ÑU (Albiverde)
+    "rno/titular/red": {
+        codigo: "/colors red 0 FFFFFF 009B48 FFFFFF 009B48",
+        nombreEquipo: "RUBIO ÑU"
     },
-    // BARCELONA FC
-    "bar/titular/red": {
-        codigo: "/colors red 180 F5B606 011EDE C80056",
-        nombreEquipo: "BARCELONA FC"
+    "rno/titular/blue": {
+        codigo: "/colors blue 0 FFFFFF 009B48 FFFFFF 009B48",
+        nombreEquipo: "RUBIO ÑU"
     },
-    "rma/titular/blue": {
-        codigo: "/colors blue 73 005ca7 FFC10A FFFFFF FFFFFF",
-        nombreEquipo: "REAL MADRID"
+    // SPORTIVO TRINIDENSE (Franja amarilla)
+    "tri/titular/red": {
+        codigo: "/colors red 90 FCD116 0A2472 FCD116 0A2472",
+        nombreEquipo: "SP. TRINIDENSE"
     },
-    // SAN LORENZO
-    "slo/titular/red": {
-        codigo: "/colors red 180 FFFFFF E9282D 1D3B56 E9282D",
-        nombreEquipo: "SAN LORENZO"
+    "tri/titular/blue": {
+        codigo: "/colors blue 90 FCD116 0A2472 FCD116 0A2472",
+        nombreEquipo: "SP. TRINIDENSE"
     },
-    "int/titular/blue": {
-        codigo: "/colors blue 180 FFFFFF 00239C 000000 00239C",
-        nombreEquipo: "INTER MILAN"
+    // SPORTIVO AMELIANO (V azul)
+    "ame/titular/red": {
+        codigo: "/colors red 90 1D4E9E FFFFFF 1D4E9E FFFFFF",
+        nombreEquipo: "AMELIANO"
     },
-    // AC MILAN
-    "acm/titular/red": {
-        codigo: "/colors red 180 FFFFFF DF061B 000000 DF061B",
-        nombreEquipo: "AC MILAN"
+    "ame/titular/blue": {
+        codigo: "/colors blue 90 1D4E9E FFFFFF 1D4E9E FFFFFF",
+        nombreEquipo: "AMELIANO"
     },
-    // BAYERN DE MUNICH
-    "fcb/titular/red": {
-        codigo: "/colors red 90 FFFFFF DC052D ED0038 ED0038",
-        nombreEquipo: "BAYERN DE MUNICH"
+    // SPORTIVO SAN LORENZO (Rayadita)
+    "san/titular/red": {
+        codigo: "/colors red 0 000000 D71920 FFFFFF D71920",
+        nombreEquipo: "SP. SAN LORENZO"
     },
-    "bvb/titular/blue": {
-        codigo: "/colors blue 90 1d1d1b 1d1d1b fad515 fad515",
-        nombreEquipo: "BORUSSIA DORTMUND"
+    "san/titular/blue": {
+        codigo: "/colors blue 0 000000 D71920 FFFFFF D71920",
+        nombreEquipo: "SP. SAN LORENZO"
     },
-
-    // MANCHESTER UNITED
-    "mun/titular/red": {
-        codigo: "/colors red 90 FFFFFF D90119 C7011A AB0918",
-        nombreEquipo: "MANCHESTER UNITED"
+    // SPORTIVO 2 DE MAYO (Albiazul)
+    "dma/titular/red": {
+        codigo: "/colors red 0 FFD100 003DA5 FFFFFF 003DA5",
+        nombreEquipo: "2 DE MAYO"
     },
-    // MANCHESTER CITY
-    "mci/titular/blue": {
-        codigo: "/colors blue 55 ffffff 6DACDF",
-        nombreEquipo: "MANCHESTER CITY"
+    "dma/titular/blue": {
+        codigo: "/colors blue 0 FFD100 003DA5 FFFFFF 003DA5",
+        nombreEquipo: "2 DE MAYO"
     },
-    // INTER MIAMI
-    "mia/titular/red": {
-        codigo: "/colors red 60 000000 F7B6CC",
-        nombreEquipo: "INTER MIAMI"
+    // CLUB 12 DE JUNIO (León del Chaco)
+    "doj/titular/red": {
+        codigo: "/colors red 90 FCD000 0A3A82 FCD000 0A3A82",
+        nombreEquipo: "12 DE JUNIO"
     },
-    // AL-NASSR
-    "nas/titular/blue": {
-        codigo: "/colors blue 15 30457C FCE501 FCE501 081C4E",
-        nombreEquipo: "AL-NASSR"
+    "doj/titular/blue": {
+        codigo: "/colors blue 90 FCD000 0A3A82 FCD000 0A3A82",
+        nombreEquipo: "12 DE JUNIO"
     },
-
+    // CLUB 3 DE NOVIEMBRE (Trico)
+    "tno/titular/red": {
+        codigo: "/colors red 0 FFFFFF D52B1E FFFFFF 002E7A",
+        nombreEquipo: "3 DE NOVIEMBRE"
+    },
+    "tno/titular/blue": {
+        codigo: "/colors blue 0 FFFFFF D52B1E FFFFFF 002E7A",
+        nombreEquipo: "3 DE NOVIEMBRE"
+    },
+    // ATLÉTICO TEMBETARY (Rojiverde)
+    "tem/titular/red": {
+        codigo: "/colors red 0 FFFFFF D71920 009B48 D71920",
+        nombreEquipo: "TEMBETARY"
+    },
+    "tem/titular/blue": {
+        codigo: "/colors blue 0 FFFFFF D71920 009B48 D71920",
+        nombreEquipo: "TEMBETARY"
+    },
+    // CLUB BENJAMÍN ACEVAL (Blanquirrojo)
+    "ace/titular/red": {
+        codigo: "/colors red 0 D71920 FFFFFF D71920 FFFFFF",
+        nombreEquipo: "BENJAMÍN ACEVAL"
+    },
+    "ace/titular/blue": {
+        codigo: "/colors blue 0 D71920 FFFFFF D71920 FFFFFF",
+        nombreEquipo: "BENJAMÍN ACEVAL"
+    },
+    // DEPORTIVO CAPIATÁ (Bastonero)
+    "cap/titular/red": {
+        codigo: "/colors red 0 FFFFFF 003DA5 F9D616 003DA5",
+        nombreEquipo: "DEP. CAPIATÁ"
+    },
+    "cap/titular/blue": {
+        codigo: "/colors blue 0 FFFFFF 003DA5 F9D616 003DA5",
+        nombreEquipo: "DEP. CAPIATÁ"
+    },
+    // DEPORTIVO SANTANÍ (Blanco y negro)
+    "sni/titular/red": {
+        codigo: "/colors red 90 FFFFFF 000000 FFFFFF 000000",
+        nombreEquipo: "DEP. SANTANÍ"
+    },
+    "sni/titular/blue": {
+        codigo: "/colors blue 90 FFFFFF 000000 FFFFFF 000000",
+        nombreEquipo: "DEP. SANTANÍ"
+    },
+    // ENCARNACIÓN FC (Albirrojo)
+    "enc/titular/red": {
+        codigo: "/colors red 90 FFFFFF D71920 FFFFFF D71920",
+        nombreEquipo: "ENCARNACIÓN"
+    },
+    "enc/titular/blue": {
+        codigo: "/colors blue 90 FFFFFF D71920 FFFFFF D71920",
+        nombreEquipo: "ENCARNACIÓN"
+    },
+    // CLUB FERNANDO DE LA MORA (Piel roja)
+    "fdm/titular/red": {
+        codigo: "/colors red 0 FFFFFF E1000F E1000F FFFFFF",
+        nombreEquipo: "FDO. DE LA MORA"
+    },
+    "fdm/titular/blue": {
+        codigo: "/colors blue 0 FFFFFF E1000F E1000F FFFFFF",
+        nombreEquipo: "FDO. DE LA MORA"
+    },
+    // GENERAL CABALLERO JLM (El Rojo)
+    "gca/titular/red": {
+        codigo: "/colors red 0 FFFFFF E1000F E1000F E1000F",
+        nombreEquipo: "GRAL. CABALLERO JLM"
+    },
+    "gca/titular/blue": {
+        codigo: "/colors blue 0 FFFFFF E1000F E1000F E1000F",
+        nombreEquipo: "GRAL. CABALLERO JLM"
+    },
+    // GUAIREÑA FC (Albiceleste)
+    "gui/titular/red": {
+        codigo: "/colors red 0 003DA5 FFFFFF 6CA9DD FFFFFF",
+        nombreEquipo: "GUAIREÑA"
+    },
+    "gui/titular/blue": {
+        codigo: "/colors blue 0 003DA5 FFFFFF 6CA9DD FFFFFF",
+        nombreEquipo: "GUAIREÑA"
+    },
+    // INDEPENDIENTE FBC de Campo Grande
+    "inc/titular/red": {
+        codigo: "/colors red 0 003DA5 FFFFFF 003DA5 FFFFFF",
+        nombreEquipo: "INDEPENDIENTE CG"
+    },
+    "inc/titular/blue": {
+        codigo: "/colors blue 0 003DA5 FFFFFF 003DA5 FFFFFF",
+        nombreEquipo: "INDEPENDIENTE CG"
+    },
+    // PARAGUARÍ AC (Rojo)
+    "pgi/titular/red": {
+        codigo: "/colors red 0 FFFFFF C8102E C8102E C8102E",
+        nombreEquipo: "PARAGUARÍ"
+    },
+    "pgi/titular/blue": {
+        codigo: "/colors blue 0 FFFFFF C8102E C8102E C8102E",
+        nombreEquipo: "PARAGUARÍ"
+    },
+    // RESISTENCIA SC (Triángulo Rojo)
+    "res/titular/red": {
+        codigo: "/colors red 0 FFFFFF 5AB1E5 5AB1E5 5AB1E5",
+        nombreEquipo: "RESISTENCIA"
+    },
+    "res/titular/blue": {
+        codigo: "/colors blue 0 FFFFFF 5AB1E5 5AB1E5 5AB1E5",
+        nombreEquipo: "RESISTENCIA"
+    },
+    // CLUB SOL DE AMÉRICA (Danzarín)
+    "sol/titular/red": {
+        codigo: "/colors red 0 FFFFFF 1B3D8F 1B3D8F 1B3D8F",
+        nombreEquipo: "SOL DE AMÉRICA"
+    },
+    "sol/titular/blue": {
+        codigo: "/colors blue 0 FFFFFF 1B3D8F 1B3D8F 1B3D8F",
+        nombreEquipo: "SOL DE AMÉRICA"
+    },
+    // SPORTIVO CARAPEGUÁ (Potro)
+    "car/titular/red": {
+        codigo: "/colors red 90 D71920 FFFFFF D71920 FFFFFF",
+        nombreEquipo: "SP. CARAPEGUÁ"
+    },
+    "car/titular/blue": {
+        codigo: "/colors blue 90 D71920 FFFFFF D71920 FFFFFF",
+        nombreEquipo: "SP. CARAPEGUÁ"
+    },
+    // CLUB TACUARY (Franja negra)
+    "tac/titular/red": {
+        codigo: "/colors red 0 000000 FFFFFF 000000 FFFFFF",
+        nombreEquipo: "TACUARY"
+    },
+    "tac/titular/blue": {
+        codigo: "/colors blue 0 000000 FFFFFF 000000 FFFFFF",
+        nombreEquipo: "TACUARY"
+    },
+    // SELECCIÓN PARAGUAYA (Albirroja)
+    "par/titular/red": {
+        codigo: "/colors red 0 002E7A D52B1E FFFFFF D52B1E",
+        nombreEquipo: "PARAGUAY"
+    },
+    "par/titular/blue": {
+        codigo: "/colors blue 0 002E7A D52B1E FFFFFF D52B1E",
+        nombreEquipo: "PARAGUAY"
+    },
 };
 
 
@@ -18025,13 +18195,25 @@ return posiblesFiguras[0]}
 function getFiguraDelPartido(){let posiblesFiguras=obtenerFigurasBase();let figura=calcularFigura(posiblesFiguras);playerFiguraCount[figura]=(playerFiguraCount[figura]||0)+1;localStorage.setItem('playerFiguraCount',JSON.stringify(playerFiguraCount));return figura}
 function getFiguraDelPartido2(){let posiblesFiguras=obtenerFigurasBase();return calcularFigura(posiblesFiguras)}
 function enviarAnuncioFiguraDelPartido(figuraDelPartido){room.sendAnnouncement(`🌟 FIGURA DEL PARTIDO: ${figuraDelPartido}`,null,0xFFD700,'bold',1)}
-var opciones=[{partido:function(){redAngle=180;redTextColor=0xf5b606;redColor=[0x011ede,0xc80056];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="BARCELONA";blueAngle=73;blueTextColor=0x0f2145;blueColor=[0xffc10a,0xffffff,0xffffff];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="REAL MADRID"},demanda:1400},{partido:function(){redAngle=30;redTextColor=0x231f20;redColor=[0xffffff,0xee1b2c,0xffffff];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="RIVER PLATE";blueAngle=90;blueTextColor=0xFFFFFF;blueColor=[0x033f86,0xfab900,0x033f86];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="BOCA JRS."},demanda:1600},{partido:function(){redAngle=90;redTextColor=0xffffff;redColor=[0xE20E0E];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="MANCHESTER UNITED";blueAngle=90;blueTextColor=0xffffff;blueColor=[0x6CABDD];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="MANCHESTER CITY"},demanda:470},{partido:function(){redAngle=90;redTextColor=0xFFFFFF;redColor=[0xdc052d,0xed0038,0xed0038];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="BAYERN  DE MUNICH";blueAngle=90;blueTextColor=0x1d1d1b;blueColor=[0x1d1d1b,0xfad515,0xfad515];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="BORUSSIA DORTMUND"},demanda:470},{partido:function(){redAngle=180;redTextColor=0xffffff;redColor=[0xC90016,0x000000,0xC90016];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="AC MILAN";blueAngle=180;blueTextColor=0xFFFFFF;blueColor=[0x004D98,0x000000,0x004D98];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="INTER MILAN"},demanda:480},{partido:function(){redAngle=180;redTextColor=0x00a032;redColor=[0xffcd00];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="BRASIL";blueAngle=180;blueTextColor=0x1e2930;blueColor=[0x98cef0,0xffffff,0x98cef0];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="ARGENTINA"},demanda:600},{partido:function(){redAngle=60;redTextColor=0xffffff;redColor=[0xec1c24];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="INDEPENDIENTE";blueAngle=90;blueTextColor=0xFFFFFF;blueColor=[0x033f86,0xfab900,0x033f86];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="BOCA JRS."},demanda:525},{partido:function(){redAngle=180;redTextColor=0x2B3A85;redColor=[0xea1420,0xffffff,0xea1420];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="ATLÉTICO MADRID";blueAngle=64;blueTextColor=0x014c9d;blueColor=[0xfbc201,0xffffff,0xffffff];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="REAL MADRID"},demanda:320},{partido:function(){redAngle=60;redTextColor=0xffffff;redColor=[0xec1c24];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="INDEPENDIENTE";blueAngle=180;blueTextColor=0x002942;blueColor=[0x00a5e3,0xFFFFFF,0x00a5e3];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="RACING"},demanda:600},{partido:function(){redAngle=0;redTextColor=0xffffff;redColor=[0xee1d23,0x000000];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="NEWELLS";blueAngle=180;blueTextColor=0xFFFFFF;blueColor=[0xfcd828,0x144178,0xfcd828];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="ROSARIO CENTRAL"},demanda:550},{partido:function(){redAngle=180;redTextColor=0x1e2930;redColor=[0xffffff,0x98cef0,0xffffff];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="ARGENTINA";blueAngle=90;blueTextColor=0x000000;blueColor=[0x55B5E5];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="URUGUAY"},demanda:600},{partido:function(){redAngle=180;redTextColor=0xFFFFFF;redColor=[0xffca00,0x000000,0xffca00];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="PEÑAROL";blueAngle=55;blueTextColor=0xd0142c;blueColor=[0x003895,0xFFFFFF,0x003895];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="NACIONAL (UY)"},demanda:1500},{partido:function(){redAngle=90;redTextColor=0xffffff;redColor=[0xdd0125,0x211f25,0xdd0125];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="FLAMENGO";blueAngle=90;blueTextColor=0xFFFFFF;blueColor=[0x006337,0x00713d,0x00713d];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="PALMEIRAS"},demanda:550},{partido:function(){redAngle=130;redTextColor=0xf9cd39;redColor=[0xa92121,0xa92121,0x01553e];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="PORTUGAL";blueAngle=180;blueTextColor=0x1e2930;blueColor=[0x98cef0,0xffffff,0x98cef0];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="ARGENTINA"},demanda:550},{partido:function(){redAngle=15;redTextColor=0x000000;redColor=[0xFCB2CB];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="INTER MIAMI";blueAngle=15;blueTextColor=0x30457C;blueColor=[0xFCE501,0xFCE501,0x081C4E];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="AL-NASSR"},demanda:600},{partido:function(){redAngle=180;redTextColor=0xFFFFFF;redColor=[0x781e2a,0x2a673e,0x781e2a];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="FLUMINENSE";blueAngle=90;blueTextColor=0xFFFFFF;blueColor=[0x033f86,0xfab900,0x033f86];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="BOCA JRS."},demanda:415},{partido:function(){redAngle=90;redTextColor=0xFFFFFF;redColor=[0x000000,0xdd0000,0xffce00];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="ALEMANIA";blueAngle=180;blueTextColor=0x1e2930;blueColor=[0x98cef0,0xffffff,0x98cef0];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="ARGENTINA"},demanda:470},{partido:function(){redAngle=90;redTextColor=0xffffff;redColor=[0xdd0125,0x211f25,0xdd0125];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="FLAMENGO";blueAngle=30;blueTextColor=0x231f20;blueColor=[0xffffff,0xee1b2c,0xffffff];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="RIVER PLATE"},demanda:450},];function toggleSwapColors(){cambioCami=!cambioCami;if(cambioCami){room.sendAnnouncement("🔄👕 Cambio de Camisetas Automático ACTIVADO ✅",null,0x00ff5e,"bold",2)}else{room.sendAnnouncement("🔄👕 Cambio de Camisetas Automático DESACTIVADO ❌",null,0xff363e,"bold",2)}}
+var opciones=[{partido:function(){redAngle=90;redTextColor=0x000000;redColor=[0xFFFFFF,0x000000,0xFFFFFF];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="OLIMPIA";blueAngle=0;blueTextColor=0xFFFFFF;blueColor=[0x002D72,0xD71920,0x002D72];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="CERRO PORTEÑO"},demanda:1800},{partido:function(){redAngle=0;redTextColor=0xFFFFFF;redColor=[0x002D72,0xD71920,0x002D72];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="CERRO PORTEÑO";blueAngle=90;blueTextColor=0x000000;blueColor=[0xFFFFFF,0x000000,0xFFFFFF];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="OLIMPIA"},demanda:1600},{partido:function(){redAngle=0;redTextColor=0xFFD100;redColor=[0x000000,0xFFFFFF,0x000000];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="LIBERTAD";blueAngle=0;blueTextColor=0xFFFFFF;blueColor=[0x002D72,0xD71920,0x002D72];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="CERRO PORTEÑO"},demanda:900},{partido:function(){redAngle=90;redTextColor=0x000000;redColor=[0xFFFFFF,0x000000,0xFFFFFF];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="OLIMPIA";blueAngle=0;blueTextColor=0x000000;blueColor=[0x000000,0xFFD100,0x000000];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="GUARANÍ"},demanda:800},{partido:function(){redAngle=0;redTextColor=0xFFFFFF;redColor=[0x002D72,0xD71920,0x002D72];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="CERRO PORTEÑO";blueAngle=0;blueTextColor=0x0033A0;blueColor=[0x0033A0,0xFFD100,0x0033A0];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="SP. LUQUEÑO"},demanda:700},{partido:function(){redAngle=0;redTextColor=0x000000;redColor=[0x000000,0xFFD100,0x000000];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="GUARANÍ";blueAngle=0;blueTextColor=0x000000;blueColor=[0xFFE500,0xFFE500,0xFFE500];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="RECOLETA"},demanda:650},{partido:function(){redAngle=0;redTextColor=0x0033A0;redColor=[0x0033A0,0xFFD100,0x0033A0];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="SP. LUQUEÑO";blueAngle=90;blueTextColor=0x000000;blueColor=[0xFFFFFF,0x000000,0xFFFFFF];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="OLIMPIA"},demanda:600},{partido:function(){redAngle=0;redTextColor=0x009B48;redColor=[0xFFFFFF,0x009B48,0xFFFFFF];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="NACIONAL";blueAngle=0;blueTextColor=0xFFFFFF;blueColor=[0x002D72,0xD71920,0x002D72];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="CERRO PORTEÑO"},demanda:600},{partido:function(){redAngle=90;redTextColor=0x000000;redColor=[0xFFFFFF,0x000000,0xFFFFFF];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="OLIMPIA";blueAngle=0;blueTextColor=0xFFFFFF;blueColor=[0x1B3D8F,0x1B3D8F,0x1B3D8F];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="SOL DE AMÉRICA"},demanda:550},{partido:function(){redAngle=0;redTextColor=0xFFFFFF;redColor=[0x002D72,0xD71920,0x002D72];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="CERRO PORTEÑO";blueAngle=0;blueTextColor=0xFFFFFF;blueColor=[0x009B48,0xFFFFFF,0x009B48];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="RUBIO ÑU"},demanda:500},{partido:function(){redAngle=0;redTextColor=0xFFD100;redColor=[0x000000,0xFFFFFF,0x000000];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="LIBERTAD";blueAngle=0;blueTextColor=0x003DA5;blueColor=[0xFFFFFF,0x6CA9DD,0xFFFFFF];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="GUAIREÑA"},demanda:500},{partido:function(){redAngle=0;redTextColor=0x000000;redColor=[0xD71920,0xFFFFFF,0xD71920];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="SP. SAN LORENZO";blueAngle=0;blueTextColor=0xFFFFFF;blueColor=[0x002D72,0xD71920,0x002D72];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="CERRO PORTEÑO"},demanda:450},{partido:function(){redAngle=90;redTextColor=0xFCD116;redColor=[0x0A2472,0xFCD116,0x0A2472];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="SP. TRINIDENSE";blueAngle=90;blueTextColor=0x000000;blueColor=[0xFFFFFF,0x000000,0xFFFFFF];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="OLIMPIA"},demanda:450},{partido:function(){redAngle=0;redTextColor=0x0033A0;redColor=[0x0033A0,0xFFD100,0x0033A0];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="SP. LUQUEÑO";blueAngle=0;blueTextColor=0xFFD100;blueColor=[0x000000,0xFFFFFF,0x000000];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="LIBERTAD"},demanda:420},{partido:function(){redAngle=0;redTextColor=0x002E7A;redColor=[0xD52B1E,0xFFFFFF,0xD52B1E];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="PARAGUAY";blueAngle=0;blueTextColor=0xFFFFFF;blueColor=[0x002D72,0xD71920,0x002D72];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="CERRO PORTEÑO"},demanda:500},{partido:function(){redAngle=0;redTextColor=0x002E7A;redColor=[0xD52B1E,0xFFFFFF,0xD52B1E];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="PARAGUAY";blueAngle=0;blueTextColor=0xFFFFFF;blueColor=[0x1B3D8F,0x1B3D8F,0x1B3D8F];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="SOL DE AMÉRICA"},demanda:400},{partido:function(){redAngle=0;redTextColor=0x000000;redColor=[0xFFE500,0xFFE500,0xFFE500];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="RECOLETA";blueAngle=0;blueTextColor=0xFFFFFF;blueColor=[0x002D72,0xD71920,0x002D72];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="CERRO PORTEÑO"},demanda:400},{partido:function(){redAngle=0;redTextColor=0xFFFFFF;redColor=[0xD71920,0x009B48,0xD71920];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="TEMBETARY";blueAngle=0;blueTextColor=0x003DA5;blueColor=[0xFFFFFF,0x6CA9DD,0xFFFFFF];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="GUAIREÑA"},demanda:380},{partido:function(){redAngle=0;redTextColor=0xFFD100;redColor=[0x003DA5,0xFFFFFF,0x003DA5];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="2 DE MAYO";blueAngle=0;blueTextColor=0x000000;blueColor=[0x000000,0xFFD100,0x000000];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="GUARANÍ"},demanda:380},{partido:function(){redAngle=0;redTextColor=0xFFFFFF;redColor=[0x003DA5,0xF9D616,0x003DA5];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="DEP. CAPIATÁ";blueAngle=0;blueTextColor=0xFFD100;blueColor=[0x000000,0xFFFFFF,0x000000];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="LIBERTAD"},demanda:360},{partido:function(){redAngle=90;redTextColor=0x1D4E9E;redColor=[0xFFFFFF,0x1D4E9E,0xFFFFFF];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="AMELIANO";blueAngle=0;blueTextColor=0xFFFFFF;blueColor=[0x002D72,0xD71920,0x002D72];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="CERRO PORTEÑO"},demanda:360},{partido:function(){redAngle=0;redTextColor=0x003DA5;redColor=[0xFFFFFF,0x6CA9DD,0xFFFFFF];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="GUAIREÑA";blueAngle=0;blueTextColor=0xFFFFFF;blueColor=[0xE1000F,0xE1000F,0xE1000F];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="GRAL. CABALLERO JLM"},demanda:340},{partido:function(){redAngle=90;redTextColor=0xD71920;redColor=[0xFFFFFF,0xD71920,0xFFFFFF];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="SP. CARAPEGUÁ";blueAngle=0;blueTextColor=0xFFFFFF;blueColor=[0x1B3D8F,0x1B3D8F,0x1B3D8F];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="SOL DE AMÉRICA"},demanda:320},{partido:function(){redAngle=90;redTextColor=0xFFFFFF;redColor=[0xD71920,0xFFFFFF,0xD71920];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="ENCARNACIÓN";blueAngle=0;blueTextColor=0x000000;blueColor=[0x000000,0xFFD100,0x000000];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="GUARANÍ"},demanda:320},{partido:function(){redAngle=0;redTextColor=0x000000;redColor=[0xFFFFFF,0x000000,0xFFFFFF];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="TACUARY";blueAngle=0;blueTextColor=0xFFFFFF;blueColor=[0x002D72,0xD71920,0x002D72];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="CERRO PORTEÑO"},demanda:300},{partido:function(){redAngle=0;redTextColor=0xFFFFFF;redColor=[0x5AB1E5,0x5AB1E5,0x5AB1E5];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="RESISTENCIA";blueAngle=0;blueTextColor=0x000000;blueColor=[0x000000,0xFFD100,0x000000];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="GUARANÍ"},demanda:300},{partido:function(){redAngle=0;redTextColor=0x009B48;redColor=[0xFFFFFF,0x009B48,0xFFFFFF];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="NACIONAL";blueAngle=0;blueTextColor=0xFFFFFF;blueColor=[0xD71920,0x009B48,0xD71920];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="TEMBETARY"},demanda:300},{partido:function(){redAngle=90;redTextColor=0x000000;redColor=[0xFFFFFF,0x000000,0xFFFFFF];room.setTeamColors(1,redAngle,redTextColor,redColor);teamRed="OLIMPIA";blueAngle=0;blueTextColor=0xFFFFFF;blueColor=[0x5AB1E5,0x5AB1E5,0x5AB1E5];room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamBlue="RESISTENCIA"},demanda:300},];function toggleSwapColors(){cambioCami=!cambioCami;if(cambioCami){room.sendAnnouncement("🔄👕 Cambio de Camisetas Automático ACTIVADO ✅",null,0x00ff5e,"bold",2)}else{room.sendAnnouncement("🔄👕 Cambio de Camisetas Automático DESACTIVADO ❌",null,0xff363e,"bold",2)}}
 var lastFiveGames=[];function shuffleOptions(){let weightedOptions=[];opciones.forEach(option=>{for(let i=0;i<option.demanda;i++){weightedOptions.push(option)}});let selectedOption=null;do{weightedOptions.sort(function(){return 0.5-Math.random()});weightedOptions.sort(function(){return 0.5-Math.random()});selectedOption=weightedOptions[0]}while(lastFiveGames.includes(selectedOption)&&lastFiveGames.length>=5);selectedOption.partido();lastFiveGames.push(selectedOption);if(lastFiveGames.length>5){lastFiveGames.shift()}}
 function swapTeamColors(){if(cambioCami){shuffleOptions();let selectedOption=lastFiveGames[lastFiveGames.length-1];selectedOption.partido()}}
-var playerCurrentMatchTime={};var matchStartTime=Date.now();let TiempodeIniciodePartido=0;let lastKnownMatchTime=0;let currentRedScore=0;let currentBlueScore=0;let TiempoCumplidoGanaSigue=!1;let ultimaPosicionXPelota=0;let partidoEmpatado=!1;var gameRestarting=!1;room.onGameStart=function(byPlayer){TiempoCumplidoGanaSigue=!1;ultimaPosicionXPelota=0;partidoEmpatado=!1;const scores=room.getScores();if(scores)duracionPartido=scores.timeLimit;lastKnownMatchTime=0;playerMatchTime={};room.getPlayerList().forEach(player=>{if(player.team!==0){playerMatchTime[player.id]={joinTime:0,totalTime:0}}});currentRedScore=0;currentBlueScore=0;if(CamisetasGanaSigue){if((camisetaRedActual==="riv/titular/red"&&camisetaBlueActual==="rma/titular/blue")||(camisetaRedActual==="rma/titular/red"&&camisetaBlueActual==="riv/titular/blue")){camisetaBlueActual=elegirNuevaCamiseta(camisetaBlueActual,"blue",camisetaRedActual)}
-if((camisetaRedActual==="pen/titular/red"&&camisetaBlueActual==="cen/titular/blue")||(camisetaRedActual==="cen/titular/red"&&camisetaBlueActual==="pen/titular/blue")){camisetaBlueActual=elegirNuevaCamiseta(camisetaBlueActual,"blue",camisetaRedActual)}
-if((camisetaRedActual==="pen/titular/red"&&camisetaBlueActual==="bvb/titular/blue")||(camisetaRedActual==="bvb/titular/red"&&camisetaBlueActual==="pen/titular/blue")){camisetaBlueActual=elegirNuevaCamiseta(camisetaBlueActual,"blue",camisetaRedActual)}
-if((camisetaRedActual==="pen/titular/red"&&camisetaBlueActual==="nas/titular/blue")||(camisetaRedActual==="nas/titular/red"&&camisetaBlueActual==="pen/titular/blue")){camisetaBlueActual=elegirNuevaCamiseta(camisetaBlueActual,"blue",camisetaRedActual)}
+var playerCurrentMatchTime={};var matchStartTime=Date.now();let TiempodeIniciodePartido=0;let lastKnownMatchTime=0;let currentRedScore=0;let currentBlueScore=0;let TiempoCumplidoGanaSigue=!1;let ultimaPosicionXPelota=0;let partidoEmpatado=!1;var gameRestarting=!1;room.onGameStart=function(byPlayer){TiempoCumplidoGanaSigue=!1;ultimaPosicionXPelota=0;partidoEmpatado=!1;const scores=room.getScores();if(scores)duracionPartido=scores.timeLimit;lastKnownMatchTime=0;playerMatchTime={};room.getPlayerList().forEach(player=>{if(player.team!==0){playerMatchTime[player.id]={joinTime:0,totalTime:0}}});currentRedScore=0;currentBlueScore=0;if(CamisetasGanaSigue){if((camisetaRedActual==="oli/titular/red"&&camisetaBlueActual==="nac/titular/blue")||(camisetaRedActual==="nac/titular/red"&&camisetaBlueActual==="oli/titular/blue")){camisetaBlueActual=elegirNuevaCamiseta(camisetaBlueActual,"blue",camisetaRedActual)}
+if((camisetaRedActual==="oli/titular/red"&&camisetaBlueActual==="tac/titular/blue")||(camisetaRedActual==="tac/titular/red"&&camisetaBlueActual==="oli/titular/blue")){camisetaBlueActual=elegirNuevaCamiseta(camisetaBlueActual,"blue",camisetaRedActual)}
+if((camisetaRedActual==="oli/titular/red"&&camisetaBlueActual==="ame/titular/blue")||(camisetaRedActual==="ame/titular/red"&&camisetaBlueActual==="oli/titular/blue")){camisetaBlueActual=elegirNuevaCamiseta(camisetaBlueActual,"blue",camisetaRedActual)}
+if((camisetaRedActual==="oli/titular/red"&&camisetaBlueActual==="gui/titular/blue")||(camisetaRedActual==="gui/titular/red"&&camisetaBlueActual==="oli/titular/blue")){camisetaBlueActual=elegirNuevaCamiseta(camisetaBlueActual,"blue",camisetaRedActual)}
+if((camisetaRedActual==="oli/titular/red"&&camisetaBlueActual==="inc/titular/blue")||(camisetaRedActual==="inc/titular/red"&&camisetaBlueActual==="oli/titular/blue")){camisetaBlueActual=elegirNuevaCamiseta(camisetaBlueActual,"blue",camisetaRedActual)}
+if((camisetaRedActual==="oli/titular/red"&&camisetaBlueActual==="car/titular/blue")||(camisetaRedActual==="car/titular/red"&&camisetaBlueActual==="oli/titular/blue")){camisetaBlueActual=elegirNuevaCamiseta(camisetaBlueActual,"blue",camisetaRedActual)}
+if((camisetaRedActual==="lib/titular/red"&&camisetaBlueActual==="gua/titular/blue")||(camisetaRedActual==="gua/titular/red"&&camisetaBlueActual==="lib/titular/blue")){camisetaBlueActual=elegirNuevaCamiseta(camisetaBlueActual,"blue",camisetaRedActual)}
+if((camisetaRedActual==="lib/titular/red"&&camisetaBlueActual==="sni/titular/blue")||(camisetaRedActual==="sni/titular/red"&&camisetaBlueActual==="lib/titular/blue")){camisetaBlueActual=elegirNuevaCamiseta(camisetaBlueActual,"blue",camisetaRedActual)}
+if((camisetaRedActual==="gua/titular/red"&&camisetaBlueActual==="luq/titular/blue")||(camisetaRedActual==="luq/titular/red"&&camisetaBlueActual==="gua/titular/blue")){camisetaBlueActual=elegirNuevaCamiseta(camisetaBlueActual,"blue",camisetaRedActual)}
+if((camisetaRedActual==="san/titular/red"&&camisetaBlueActual==="enc/titular/blue")||(camisetaRedActual==="enc/titular/red"&&camisetaBlueActual==="san/titular/blue")){camisetaBlueActual=elegirNuevaCamiseta(camisetaBlueActual,"blue",camisetaRedActual)}
+if((camisetaRedActual==="san/titular/red"&&camisetaBlueActual==="ace/titular/blue")||(camisetaRedActual==="ace/titular/red"&&camisetaBlueActual==="san/titular/blue")){camisetaBlueActual=elegirNuevaCamiseta(camisetaBlueActual,"blue",camisetaRedActual)}
+if((camisetaRedActual==="car/titular/red"&&camisetaBlueActual==="ace/titular/blue")||(camisetaRedActual==="ace/titular/red"&&camisetaBlueActual==="car/titular/blue")){camisetaBlueActual=elegirNuevaCamiseta(camisetaBlueActual,"blue",camisetaRedActual)}
+if((camisetaRedActual==="fdm/titular/red"&&camisetaBlueActual==="gca/titular/blue")||(camisetaRedActual==="gca/titular/red"&&camisetaBlueActual==="fdm/titular/blue")){camisetaBlueActual=elegirNuevaCamiseta(camisetaBlueActual,"blue",camisetaRedActual)}
+if((camisetaRedActual==="gca/titular/red"&&camisetaBlueActual==="pgi/titular/blue")||(camisetaRedActual==="pgi/titular/red"&&camisetaBlueActual==="gca/titular/blue")){camisetaBlueActual=elegirNuevaCamiseta(camisetaBlueActual,"blue",camisetaRedActual)}
+if((camisetaRedActual==="sol/titular/red"&&camisetaBlueActual==="cer/titular/blue")||(camisetaRedActual==="cer/titular/red"&&camisetaBlueActual==="sol/titular/blue")){camisetaBlueActual=elegirNuevaCamiseta(camisetaBlueActual,"blue",camisetaRedActual)}
+if((camisetaRedActual==="tri/titular/red"&&camisetaBlueActual==="dma/titular/blue")||(camisetaRedActual==="dma/titular/red"&&camisetaBlueActual==="tri/titular/blue")){camisetaBlueActual=elegirNuevaCamiseta(camisetaBlueActual,"blue",camisetaRedActual)}
 asignarCamisetaPorClave(camisetaRedActual);asignarCamisetaPorClave(camisetaBlueActual);room.sendAnnouncement("⚽ Cambio automático de camisetas aplicado en inicio de partido",null,0x00FFFF,"bold",2)}
 cantidadDeCambios={};playerCurrentMatchTime={};room.getPlayerList().forEach(player=>{if(player.team!==0){playerCurrentMatchTime[player.id]={joinTime:Date.now(),totalTime:0}}});if(gameRestarting)return;game=new Game();matchStartTime=Date.now();playerCurrentMatchTime={};room.getPlayerList().forEach(player=>{if(player.team!==0){playerCurrentMatchTime[player.id]={joinTime:Date.now(),totalTime:0}}});swapTeamColors();ArqueroRED=null;ArqueroBLUE=null;goalAnnouncementsSum=[];if(!GrabarTodo){room.sendAnnouncement("🎮 La partida está siendo grabada. 🎥");room.startRecording()}
 posesionEquipoA=0;posesionEquipoB=0;let players=room.getPlayerList();let redTeam=players.filter(p=>p.team===1);let blueTeam=players.filter(p=>p.team===2);let redPlayers=redTeam.map(p=>`${p.name}`);let bluePlayers=blueTeam.map(p=>`${p.name}`);room.sendAnnouncement(`Formación `+teamRed+`: `+` ${redPlayers.join(' - ')}`,null,0xd28e9b,'bold',1);room.sendAnnouncement(`Formación `+teamBlue+`: `+` ${bluePlayers.join(' - ')}`,null,0x8ed2cc,'bold',1);tookASize={};[redTeam,blueTeam]=whichTeam();ballCarrying=initBallCarrying(redTeam,blueTeam);timeOnHalves=[0,0];isTimeAddedShownseis=!1;DetenerAnuncio=!1;DetenerAviso=!1;DetenerAviso2=!1;ReiniciarStatsEnCero=!1;var _0xefa5db=_0x3c81f9;if(RSRMap==!1){game=new Game()}

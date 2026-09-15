@@ -1,0 +1,11 @@
+{
+  "NombreHost": "🕸️ ÑandutíBall | 4v4 🇵🇾",
+  "CantidadDeJugadores": 14,
+  "MapaPorDefecto": "Futsal x4",
+  "TiempoDeJuego": 4,
+  "LimiteDeGoles": 3,
+  "modoJueganTodos": false,
+  "modoJueganAlgunos": true,
+  "maxPlayersPerTeam": 4,
+  "automatizadoActivado": false
+}

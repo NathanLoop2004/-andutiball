@@ -18,6 +18,19 @@ Contexto para trabajar en este proyecto. La documentación para personas está e
 - `script.txt`: vacío.
 - `README.md`: documentación de configuración, comandos y problemas.
 
+## Despliegue (launcher.js)
+
+- `launcher.js` + `package.json`: Puppeteer abre `haxball.com/headless`, envuelve `HBInit` para agregar `token` y ejecuta `script.js`.
+- El token se pasa por la variable de entorno `HAXBALL_TOKEN` (de https://www.haxball.com/headlesstoken). **Vence a los pocos minutos** y solo sirve para crear la sala: hay que pedir uno nuevo en cada arranque. Nunca guardarlo en archivos del repositorio.
+- El token se lee de `.env` (ignorado por Git); `.env.example` es la plantilla sin token.
+- Docker: `Dockerfile` (imagen `ghcr.io/puppeteer/puppeteer`, con la misma versión que puppeteer en package-lock.json) + `docker-compose.yml` (`env_file: .env`, `shm_size: 1gb`, `script.js` montado como volumen). Arranque: `docker compose up -d --build`; logs y link de la sala: `docker compose logs -f`.
+- Si el contenedor se reinicia, se necesita un token nuevo (por eso `restart: on-failure:3`).
+- **Multihost:** un solo `script.js` y tres salas en compose (`host-3v3`, `host-4v4`, `host-todos`). Cada una tiene `HOST_CONFIG=hosts/<sala>.json`, y el launcher reemplaza en el script la declaración (`var/let/const Nombre ...;`) de cada variable del JSON. Solo sirve para variables de config de una línea.
+- Cada sala necesita su propio token: `TOKEN_3V3`, `TOKEN_4V4`, `TOKEN_TODOS` en `.env`. Para `npm start` (una sola sala) se usan `HAXBALL_TOKEN` + `HOST_CONFIG`.
+- `npm run tokens` (`get-tokens.js`): abre headlesstoken en el navegador normal del usuario (Cloudflare Turnstile rechaza a Puppeteer con el error 600010); el usuario resuelve el captcha y copia el token, y el script lo lee del portapapeles y guarda los 3 tokens en `.env` (`-- --up` además hace `docker compose up`). No automatizar ni saltar el captcha.
+- No duplicar `script.js` por sala: los cambios por sala van en `hosts/*.json`.
+- Todavía no se probó: `script.js` está truncado y el launcher corta con error de sintaxis.
+
 ## Estructura de script.js
 
 | Líneas aprox. | Sección |

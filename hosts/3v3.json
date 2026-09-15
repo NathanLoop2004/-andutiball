@@ -1,0 +1,11 @@
+{
+  "NombreHost": "🕸️ ÑandutíBall | 3v3 🇵🇾",
+  "CantidadDeJugadores": 12,
+  "MapaPorDefecto": "Futsal x3",
+  "TiempoDeJuego": 3,
+  "LimiteDeGoles": 3,
+  "modoJueganTodos": false,
+  "modoJueganAlgunos": true,
+  "maxPlayersPerTeam": 3,
+  "automatizadoActivado": false
+}

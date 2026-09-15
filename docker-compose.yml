@@ -1,0 +1,40 @@
+# Tres salas con la misma imagen y el mismo script.js; cada una con su configuración (hosts/*.json)
+# y su propio token (cada sala necesita un token distinto, ver .env).
+
+x-haxball: &haxball
+  build: .
+  image: nandutiball-host
+  init: true
+  # Chrome necesita más memoria compartida que los 64 MB por defecto
+  shm_size: 1gb
+  # El token vence en minutos: reintentar infinito con un token vencido no sirve de nada
+  restart: on-failure:3
+  volumes:
+    # Editar script.js o hosts/*.json sin reconstruir la imagen (basta con: docker compose restart)
+    - ./script.js:/home/pptruser/app/script.js:ro
+    - ./hosts:/home/pptruser/app/hosts:ro
+  # En un VPS Linux, la red del host facilita las conexiones WebRTC de los jugadores.
+  # Descomentar si los jugadores no pueden entrar a la sala:
+  # network_mode: host
+
+services:
+  host-3v3:
+    <<: *haxball
+    container_name: nandutiball-3v3
+    environment:
+      HOST_CONFIG: hosts/3v3.json
+      HAXBALL_TOKEN: ${TOKEN_3V3:?Falta TOKEN_3V3 en .env}
+
+  host-4v4:
+    <<: *haxball
+    container_name: nandutiball-4v4
+    environment:
+      HOST_CONFIG: hosts/4v4.json
+      HAXBALL_TOKEN: ${TOKEN_4V4:?Falta TOKEN_4V4 en .env}
+
+  host-todos:
+    <<: *haxball
+    container_name: nandutiball-todos
+    environment:
+      HOST_CONFIG: hosts/todos.json
+      HAXBALL_TOKEN: ${TOKEN_TODOS:?Falta TOKEN_TODOS en .env}
