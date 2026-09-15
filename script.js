@@ -19345,7 +19345,8 @@ function revisarTurnos() {
 //
 // Comandos: !elo (el propio o el de otro) · !top (los 10 mejores) · !divisiones
 
-var ELO = window.__ELO || {};          // nick en minúscula -> { elo, partidos, division, emoji }
+var ColorearNombrePorElo = true;       // el nombre en el chat sale del color de su división
+var ELO = window.__ELO || {};          // nick en minúscula -> { elo, partidos, division, emoji, color }
 var eloDelPartido = null;              // quiénes estaban jugando cuando arrancó
 
 window.__eloActualizar = function (datos) {
@@ -19421,11 +19422,39 @@ function jugadoresEnCancha() {
 		if (typeof anteriorStop === "function") anteriorStop(byPlayer);
 	};
 
-	// ── Comandos ──
+	// ── Comandos y color del nombre en el chat ──
 	var anteriorChat = room.onPlayerChat;
 	room.onPlayerChat = function (player, message) {
 		var texto = String(message).trim();
 		var bajo = texto.toLowerCase();
+
+		// El nombre sale con el color de su división.
+		// No reescribimos el chat: dejamos que el script arme su mensaje (con los prefijos de
+		// rango, el mute, los comandos) y le cambiamos el color al vuelo. Así no perdemos nada.
+		if (ColorearNombrePorElo && bajo.charAt(0) !== "!") {
+			var ficha = fichaElo(player.name);
+			if (ficha && typeof ficha.color === "number") {
+				var enviarOriginal = room.sendAnnouncement;
+				room.sendAnnouncement = function (aviso, idJugador, color, estilo, sonido) {
+					// ¿Este anuncio es el mensaje de chat de este jugador? Lleva su nombre y su texto.
+					var esSuMensaje =
+						(idJugador === null || idJugador === undefined) &&
+						typeof aviso === "string" &&
+						aviso.indexOf(player.name) !== -1 &&
+						aviso.indexOf(texto) !== -1;
+					if (esSuMensaje) {
+						aviso = ficha.emoji + " " + aviso;
+						color = ficha.color;
+					}
+					return enviarOriginal.call(room, aviso, idJugador, color, estilo, sonido);
+				};
+				try {
+					return typeof anteriorChat === "function" ? anteriorChat(player, message) : true;
+				} finally {
+					room.sendAnnouncement = enviarOriginal;   // siempre lo devolvemos como estaba
+				}
+			}
+		}
 
 		if (bajo === "!elo" || bajo.indexOf("!elo ") === 0) {
 			var quien = bajo === "!elo" ? player.name : texto.slice(5).trim();

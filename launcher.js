@@ -305,11 +305,18 @@ api.listen(PUERTO_API, () => console.log(`🖥️  Panel de esta sala en http://
         estado.partido.enJuego = evento.enJuego;
         agregarMensaje("partido", evento.enJuego ? "Arrancó el partido" : "Terminó el partido");
         break;
-      case "jugadores":
-        estado.jugadores = evento.jugadores;
+      case "jugadores": {
+        // Le pegamos a cada jugador su puntaje y división, para que el panel
+        // pueda pintar el nombre con el color que le corresponde
+        const tablaElo = paraLaSala(leerElo());
+        estado.jugadores = evento.jugadores.map((j) => {
+          const ficha = tablaElo[String(j.nombre).toLowerCase()];
+          return ficha ? { ...j, elo: ficha.elo, division: ficha.division, emoji: ficha.emoji, color: ficha.color } : j;
+        });
         estado.partido.red = evento.red;
         estado.partido.blue = evento.blue;
         break;
+      }
       case "elo-partido":
         procesarPartidoElo(evento);
         break;

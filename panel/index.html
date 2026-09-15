@@ -140,6 +140,11 @@ let cambioDeVista = false;       // true cuando el usuario cambia de pestaña o 
 const esc = (t) => String(t ?? "").replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]));
 const hora = (iso) => (iso ? new Date(iso).toLocaleTimeString("es-PY", { hour12: false }) : "");
 const viva = (s) => s.ok && s.estado.encendida;
+// Nombre pintado con el color de su división de ELO (y su emoji si lo tiene)
+const nombreConElo = (j) =>
+  typeof j.color === "number"
+    ? `<span style="color:#${j.color.toString(16).padStart(6, "0")}" title="${esc(j.division)} · ${j.elo} pts">${j.emoji || ""} ${esc(j.nombre)}</span>`
+    : esc(j.nombre);
 
 function pintarTabs() {
   document.getElementById("salasTabs").innerHTML = salas
@@ -279,7 +284,7 @@ function contenido(vista, e) {
       const inicial = esc((j.nombre || "?").trim().charAt(0).toUpperCase() || "?");
       return `<div class="bolita" data-jugador="${j.id}" data-nombre="${esc(j.nombre)}" title="Click para expulsar o banear a ${esc(j.nombre)}">
         <div class="circulo ${clase}">${inicial}${j.admin ? '<span class="corona">👑</span>' : ""}</div>
-        <div class="nombre">${esc(j.nombre)}</div>
+        <div class="nombre">${nombreConElo(j)}</div>
       </div>`;
     };
     const lado = (titulo, jugadores, clase, extraClase) =>
@@ -312,7 +317,7 @@ function contenido(vista, e) {
     return `<table><tr><th>ID</th><th>Nombre</th><th>Equipo</th><th>Admin</th><th>Acciones</th></tr>
       ${e.jugadores
         .map(
-          (j) => `<tr><td>${j.id}</td><td>${esc(j.nombre)}</td>
+          (j) => `<tr><td>${j.id}</td><td>${nombreConElo(j)}</td>
             <td class="eq-${j.equipo}">${j.equipo === 1 ? "🔴 Red" : j.equipo === 2 ? "🔵 Blue" : "👁️ Espectador"}</td>
             <td>${j.admin ? "👑" : ""}</td>
             <td class="acciones">
