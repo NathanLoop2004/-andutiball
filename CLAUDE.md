@@ -100,6 +100,8 @@ Fórmula Elo clásica por equipos: se compara el promedio de cada lado, K=32 (48
 
 API: `GET /api/elo`. El panel lo muestra en la pestaña **ELO** (también viene en `/api/estado` como `estado.elo`).
 
+**Color del nombre**: en el chat NO reescribimos el mensaje. Se envuelve `room.sendAnnouncement` solo mientras corre el handler del script, se detecta el anuncio que lleva el nombre + el texto del jugador, y se le cambia el color y se le agrega el emoji. Así se conservan los prefijos de rango, el mute y los comandos del autor. Se apaga con `ColorearNombrePorElo`. En el panel, el launcher le pega `elo/division/emoji/color` a cada jugador del evento `jugadores` y `nombreConElo()` los pinta.
+
 `npm run prueba-elo` corre el cálculo (`pruebas/elo.js`) y el circuito completo (`pruebas/elo-integracion.js`, con `ELO_FILE` a un archivo temporal para no pisar la tabla real).
 
 ## Sin límite de espectadores

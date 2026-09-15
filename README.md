@@ -245,6 +245,16 @@ que el tuyo suma más, y perder contra uno peor descuenta más. Un empate contra
 puntaje también te hace bajar. Los primeros 10 partidos mueven más el puntaje, para ubicar rápido
 al que recién llega.
 
+**En el chat, el nombre sale con el color de su división** y con su emoji adelante:
+
+```
+🔴 【👑】 Jinder :    dale que ganamos
+🥉 【🔵】 Pynandi :   recién arranco
+```
+
+En el panel pasa lo mismo: los nombres de la pestaña **Cancha** y de **Jugadores** van pintados
+con el color de su división. Si pasás el mouse por encima te dice el puntaje.
+
 **Comandos:** `!elo` (el tuyo o el de otro: `!elo Jinder`) · `!top` (los 10 mejores) · `!divisiones`
 
 El puntaje va por **auth** (el Public ID de HaxBall, que no se puede falsear), no por nick: si

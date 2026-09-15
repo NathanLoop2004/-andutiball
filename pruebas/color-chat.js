@@ -8,7 +8,21 @@ const path = require("path");
 const vm = require("vm");
 
 const RAIZ = path.join(__dirname, "..");
+
+// Tabla propia, para no depender de la de verdad ni pisarla
+const os = require("os");
+const ARCHIVO_PRUEBA = path.join(os.tmpdir(), "elo-color-" + Date.now() + ".json");
+process.env.ELO_FILE = ARCHIVO_PRUEBA;
 const elo = require("../lib/elo");
+{
+  const tabla = {};
+  for (const [nombre, puntaje] of [["Jinder", 1620], ["Novato", 850]]) {
+    const f = elo.fichaDe(tabla, { nombre, auth: "a" + nombre });
+    f.elo = puntaje;
+    f.partidos = 20;
+  }
+  elo.guardarElo(tabla);
+}
 
 const anuncios = [];
 const errores = [];
@@ -110,5 +124,6 @@ revisar(anuncios.filter((a) => a.msg.includes("hola")).length === 1, "el mensaje
 
 console.log("");
 if (errores.length) console.log("⚠️ errores: " + [...new Set(errores)].join(" | "));
-if (fallos.length || errores.length) { console.log(`❌ ${fallos.length + errores.length} problema(s)`); process.exit(1); }
+if (fallos.length || errores.length) { try { fs.unlinkSync(ARCHIVO_PRUEBA); } catch {} console.log(`❌ ${fallos.length + errores.length} problema(s)`); process.exit(1); }
+fs.unlinkSync(ARCHIVO_PRUEBA);
 console.log("✅ El nombre sale con el color de su división\n");
