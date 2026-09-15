@@ -1,0 +1,12 @@
+{
+  "clave": "Borjaelias2004",
+  "roles": [
+    { "id": "rol1", "nombre": "🗦👑🗧 OWNER", "admin": true, "nicks": ["Jinder"] },
+    { "id": "rol2", "nombre": "🤝 CO-OWNER", "admin": true, "nicks": [] },
+    { "id": "rol3", "nombre": "🌐 HOSTER", "admin": true, "nicks": [] },
+    { "id": "rol4", "nombre": "🛠️ AYUDANTE", "admin": true, "nicks": [] },
+    { "id": "rol5", "nombre": "🔧 SUBAYUDANTE", "admin": false, "nicks": [] },
+    { "id": "rol6", "nombre": "🧉 COLABORADOR", "admin": false, "nicks": [] },
+    { "id": "rol7", "nombre": "💡 ASISTENTE", "admin": false, "nicks": [] }
+  ]
+}

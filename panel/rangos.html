@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ÑandutíBall — Rangos</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --fondo: #0f1419; --tarjeta: #171d24; --borde: #262f3a; --texto: #e7edf3;
+    --suave: #93a1b0; --verde: #2ecc71; --rojo: #e74c3c; --acento: #ffd100;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--fondo); color: var(--texto); font: 14px/1.5 system-ui, "Segoe UI", sans-serif; padding: 16px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: var(--suave); font-size: 13px; margin-bottom: 16px; }
+  a.volver { color: var(--acento); text-decoration: none; }
+  .caja { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 12px; padding: 14px; margin-bottom: 16px; max-width: 760px; }
+  .caja h2 { font-size: 15px; margin: 0 0 10px; }
+  label { display: block; color: var(--suave); font-size: 12px; margin-bottom: 4px; }
+  input[type=text], input[type=password] { background: #101720; border: 1px solid var(--borde); color: var(--texto); border-radius: 8px; padding: 7px 10px; font: inherit; width: 100%; max-width: 320px; }
+  button { background: #1f2a36; border: 1px solid var(--borde); color: var(--texto); border-radius: 8px; padding: 7px 12px; font: inherit; cursor: pointer; }
+  button:hover { border-color: var(--acento); }
+  button.guardar { background: var(--acento); color: #14181d; border-color: var(--acento); font-weight: 600; }
+  button.quitar { background: none; border: 0; color: var(--rojo); padding: 0 2px; cursor: pointer; font-size: 15px; line-height: 1; }
+  .rol { border-top: 1px solid var(--borde); padding: 12px 0; }
+  .rol:first-of-type { border-top: 0; }
+  .rol .titulo { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .rol .titulo b { font-size: 15px; }
+  .etiqueta { font-size: 11px; color: var(--suave); border: 1px solid var(--borde); border-radius: 999px; padding: 1px 8px; }
+  .etiqueta.admin { color: var(--acento); border-color: #4a412a; }
+  .nicks { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+  .nick { display: flex; align-items: center; gap: 6px; background: #101720; border: 1px solid var(--borde); border-radius: 999px; padding: 3px 6px 3px 11px; }
+  .agregar { display: flex; gap: 6px; flex-wrap: wrap; }
+  .agregar input { max-width: 220px; }
+  .vacio { color: var(--suave); font-size: 13px; }
+  .aviso { margin-top: 10px; font-size: 13px; min-height: 20px; }
+  .ok { color: var(--verde); } .mal { color: var(--rojo); }
+  .nota { color: var(--suave); font-size: 12px; margin-top: 8px; }
+</style>
+</head>
+<body>
+<h1>🎖️ Rangos</h1>
+<div class="sub"><a class="volver" href="/">← volver al panel</a> · los cambios se aplican en las salas encendidas sin reiniciarlas</div>
+
+<div class="caja">
+  <h2>🔐 Clave para jugar</h2>
+  <label for="clave">Los jugadores con rango tienen que escribirla en el chat para salir de espectadores</label>
+  <input type="password" id="clave" placeholder="dejar vacío para no cambiarla" autocomplete="new-password">
+  <div class="nota" id="estadoClave"></div>
+</div>
+
+<div class="caja">
+  <h2>👥 Roles y jugadores</h2>
+  <div id="roles"></div>
+  <div style="margin-top:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+    <button class="guardar" id="guardar">Guardar cambios</button>
+    <button id="recargar">Descartar</button>
+    <span class="aviso" id="aviso"></span>
+  </div>
+</div>
+
+<script>
+let datos = { roles: [], tieneClave: false };
+
+const esc = (t) => String(t ?? "").replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
+
+function pintar() {
+  document.getElementById("estadoClave").textContent = datos.tieneClave
+    ? "Ya hay una clave puesta. Escribí una nueva solo si querés cambiarla."
+    : "⚠️ No hay ninguna clave puesta: los rangos entran sin que se les pida nada.";
+
+  document.getElementById("roles").innerHTML = datos.roles
+    .map(
+      (rol, i) => `
+      <div class="rol">
+        <div class="titulo">
+          <b>${esc(rol.nombre)}</b>
+          ${rol.admin ? '<span class="etiqueta admin">da admin</span>' : '<span class="etiqueta">sin admin</span>'}
+          <button data-admin="${i}">${rol.admin ? "quitar admin" : "dar admin"}</button>
+        </div>
+        <div class="nicks">
+          ${
+            rol.nicks.length
+              ? rol.nicks.map((n, j) => `<span class="nick">${esc(n)} <button class="quitar" data-quitar="${i}-${j}" title="quitar">×</button></span>`).join("")
+              : '<span class="vacio">Nadie en este rol.</span>'
+          }
+        </div>
+        <div class="agregar">
+          <input type="text" placeholder="nick exacto del jugador" data-input="${i}">
+          <button data-agregar="${i}">Agregar</button>
+        </div>
+      </div>`
+    )
+    .join("");
+
+  document.querySelectorAll("[data-agregar]").forEach((b) =>
+    b.addEventListener("click", () => {
+      const i = +b.dataset.agregar;
+      const input = document.querySelector(`[data-input="${i}"]`);
+      const nick = input.value.trim();
+      if (!nick) return;
+      if (!datos.roles[i].nicks.includes(nick)) datos.roles[i].nicks.push(nick);
+      input.value = "";
+      pintar();
+    })
+  );
+  document.querySelectorAll("[data-input]").forEach((input) =>
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") document.querySelector(`[data-agregar="${input.dataset.input}"]`).click();
+    })
+  );
+  document.querySelectorAll("[data-quitar]").forEach((b) =>
+    b.addEventListener("click", () => {
+      const [i, j] = b.dataset.quitar.split("-").map(Number);
+      datos.roles[i].nicks.splice(j, 1);
+      pintar();
+    })
+  );
+  document.querySelectorAll("[data-admin]").forEach((b) =>
+    b.addEventListener("click", () => {
+      const i = +b.dataset.admin;
+      datos.roles[i].admin = !datos.roles[i].admin;
+      pintar();
+    })
+  );
+}
+
+async function cargar() {
+  const res = await fetch("/api/rangos", { cache: "no-store" });
+  datos = await res.json();
+  document.getElementById("clave").value = "";
+  pintar();
+}
+
+document.getElementById("guardar").addEventListener("click", async () => {
+  const aviso = document.getElementById("aviso");
+  const clave = document.getElementById("clave").value;
+  try {
+    const res = await fetch("/api/rangos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ roles: datos.roles, clave }),
+    });
+    if (!res.ok) throw new Error((await res.json()).error || "error al guardar");
+    datos = await res.json();
+    document.getElementById("clave").value = "";
+    pintar();
+    aviso.className = "aviso ok";
+    aviso.textContent = "✅ Guardado y aplicado en las salas encendidas.";
+  } catch (error) {
+    aviso.className = "aviso mal";
+    aviso.textContent = "❌ " + error.message;
+  }
+  setTimeout(() => (aviso.textContent = ""), 4000);
+});
+
+document.getElementById("recargar").addEventListener("click", cargar);
+cargar();
+</script>
+</body>
+</html>

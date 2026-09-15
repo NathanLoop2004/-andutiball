@@ -31,6 +31,14 @@ Contexto para trabajar en este proyecto. La documentación para personas está e
 - No duplicar `script.js` por sala: los cambios por sala van en `hosts/*.json`.
 - Todavía no se probó: `script.js` está truncado y el launcher corta con error de sintaxis.
 
+## Panel y rangos
+
+- `panel/index.html` (estado de las salas) y `panel/rangos.html` (administrar rangos). Los sirve tanto `panel/server.js` (Docker, puerto 8080, une las 3 salas) como el propio `launcher.js` (`npm start`, puerto `API_PORT`, solo su sala).
+- API de cada sala: `GET /api/estado`, `GET /api/salas`, `GET|POST /api/rangos`.
+- El launcher espía la sala con un Proxy sobre el objeto `room`: encadena el handler original y después registra el evento. **Nunca reemplazar un handler del script sin llamar al anterior.**
+- `roles.json` = rangos + clave. `lib/rangos.js` lo lee y lo guarda; la clave nunca se manda al navegador (`sinClave`). El launcher lo inyecta como `window.__RANGOS` antes de correr el script y lo vigila con `fs.watch`: al cambiar llama a `window.__rangosActualizar` (recarga en caliente).
+- El bloque `🎖️ RANGOS CON CLAVE` del script exige la clave a los nicks con rango: quedan espectadores + AFK hasta escribirla.
+
 ## Estructura de script.js
 
 | Líneas aprox. | Sección |
@@ -42,13 +50,19 @@ Contexto para trabajar en este proyecto. La documentación para personas está e
 | 1226 – 17935 | Mapas `.hbs` como template strings, una función `getXxxMap()` por mapa |
 | 17936 – final | Lógica minificada en líneas muy largas: creación de sala, clase `Game`, webhooks, stats, AFK, mute, bans, funciones de comandos (`helpFun`, `afkFun`…) |
 
-## Problemas conocidos (pendientes)
+## Estado del script (ya arreglado)
 
-1. **Archivo truncado.** Se corta en `NumeroUnoFun` (línea 18106) y `node --check` falla. Faltan `room.onPlayerChat` (ningún comando se ejecuta) y un `onPlayerJoin` legible. `MensajeDeBienvenida`, `MaximoJugadoresPorIp` y `NicknamesPROHIBIDOS` están declarados pero sin usar. Hace falta el archivo completo.
-2. **Webhook oculto.** El único `onPlayerJoin` está ofuscado (`room[_0x3c81f9(0x12f)]`, cerca de la línea 17970). Hace `fetch(webhookID, …)` a `discord.com/api/webhooks/816061374504763402/…` con nombre, `conn` (IP en hex) y `auth` de cada jugador. Hay que quitarlo.
-3. **Webhooks reales en texto plano** en las líneas 234–291, y además `webhookPass` (línea 18050), que no se usa.
-4. `ClaveParaSerAdmin = "!axeso5"`: débil y visible.
-5. `roomPassword = ClaveParaSerAdmin` (línea 17937) no se usa y confunde.
+1. **Archivo truncado → cortado limpio.** Venía cortado a mitad de `NumeroUnoFun`; se quitó esa última línea y `node --check script.js` pasa.
+2. **`room.onPlayerChat` faltaba → repuesto.** Al final del archivo está el bloque `💬 COMANDOS DEL CHAT — repuestos por ÑandutíBall`: mapea comandos a las funciones que sobrevivieron (`helpFun`, `MapasFun`, `afkFun`, `swapFun`, `pushMute`, `BanIpFun`…), maneja la clave de admin, el chat de equipo (`t `), `#`, mute y prefijos de rol. Es código propio, legible, no del autor original.
+3. **Webhook oculto → desactivado.** `var webhookID=null` con el link **comentado** arriba (buscar `WEBHOOK OCULTO DEL AUTOR`) y el `fetch(webhookID,…)` eliminado del `onPlayerJoin` ofuscado. **No reactivar**: enviaba nombre, IP (`player.conn`) y auth de cada jugador a un Discord ajeno.
+
+## Pendientes
+
+- **Comandos sin recuperar** (sus funciones estaban en el pedazo perdido): estadísticas (`!me`, `!stats`, `!goleadores`, `!mvp`, rachas…), `!avatar`, `!size`, `!memide`, votaciones (`!expulsar`, `!admin`), `!llamaradmins`, `!votarmapa`, `!ofi`, `!firmar`. Están listados en `ComandosFaltantes` y la sala avisa que no existen. Para tenerlos hace falta el `script.js` completo del autor.
+- `MensajeDeBienvenida`, `MaximoJugadoresPorIp` y `NicknamesPROHIBIDOS` siguen declarados pero sin usar (el `onPlayerJoin` ofuscado no los aplica).
+- **Webhooks reales en texto plano** en las líneas 238–290, y `webhookPass` (sin uso).
+- `ClaveParaSerAdmin = "!axeso5"`: débil y visible.
+- `roomPassword = ClaveParaSerAdmin` no se usa y confunde.
 
 ## Cómo hacer cambios
 

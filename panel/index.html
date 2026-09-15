@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ÑandutíBall — Panel</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --fondo: #0f1419;
+    --tarjeta: #171d24;
+    --borde: #262f3a;
+    --texto: #e7edf3;
+    --suave: #93a1b0;
+    --verde: #2ecc71;
+    --rojo: #e74c3c;
+    --acento: #ffd100;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--fondo); color: var(--texto); font: 14px/1.5 system-ui, "Segoe UI", sans-serif; padding: 16px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: var(--suave); margin-bottom: 16px; font-size: 13px; }
+  .salas { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); }
+  .sala { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 12px; overflow: hidden; }
+  .cab { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--borde); }
+  .luz { width: 12px; height: 12px; border-radius: 50%; flex: none; background: var(--rojo); box-shadow: 0 0 8px var(--rojo); }
+  .luz.on { background: var(--verde); box-shadow: 0 0 8px var(--verde); }
+  .cab b { flex: 1; font-size: 15px; }
+  .cab .estado { font-size: 12px; color: var(--suave); }
+  .datos { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 14px; border-bottom: 1px solid var(--borde); }
+  .chip { background: #101720; border: 1px solid var(--borde); border-radius: 999px; padding: 3px 9px; font-size: 12px; color: var(--suave); }
+  .chip b { color: var(--texto); font-weight: 600; }
+  .chip.alerta { color: #ffb4ab; border-color: #5a2a25; background: #2a1512; }
+  .tabs { display: flex; gap: 4px; padding: 8px 10px 0; flex-wrap: wrap; }
+  .tabs button { background: none; border: 1px solid transparent; color: var(--suave); padding: 6px 10px; border-radius: 8px 8px 0 0; cursor: pointer; font: inherit; font-size: 13px; }
+  .tabs button[aria-selected="true"] { color: var(--texto); background: #101720; border-color: var(--borde); border-bottom-color: #101720; }
+  .panel { background: #101720; margin: 0 10px 10px; border: 1px solid var(--borde); border-radius: 0 8px 8px 8px; height: 320px; overflow: auto; padding: 10px; }
+  .linea { display: flex; gap: 8px; padding: 3px 0; border-bottom: 1px solid #161d26; font-size: 13px; }
+  .linea:last-child { border-bottom: 0; }
+  .hora { color: #5d6b7a; font-variant-numeric: tabular-nums; flex: none; }
+  .quien { color: var(--acento); }
+  .tipo-entra .txt { color: var(--verde); }
+  .tipo-sale .txt { color: var(--suave); }
+  .tipo-ban .txt, .tipo-kick .txt { color: var(--rojo); }
+  .tipo-gol .txt { color: var(--acento); }
+  .vacio { color: var(--suave); padding: 12px 2px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: var(--suave); font-weight: 500; padding: 4px 6px; border-bottom: 1px solid var(--borde); }
+  td { padding: 4px 6px; border-bottom: 1px solid #161d26; }
+  .eq-1 { color: #ff8d8d; } .eq-2 { color: #63f2ff; } .eq-0 { color: var(--suave); }
+  a { color: var(--acento); }
+  .pie { color: var(--suave); font-size: 12px; margin-top: 16px; }
+</style>
+</head>
+<body>
+<h1>🕸️ ÑandutíBall — Panel</h1>
+<div class="sub"><a href="/rangos">🎖️ Administrar rangos y clave →</a></div>
+<div class="sub" id="sub">Cargando…</div>
+<div class="salas" id="salas"></div>
+<div class="pie">Se actualiza cada 2 segundos · hecho por Jinder</div>
+
+<script>
+const PESTANAS = [
+  { id: "mensajes", nombre: "Mensajes" },
+  { id: "jugadores", nombre: "Jugadores" },
+  { id: "bans", nombre: "Bans" },
+  { id: "roles", nombre: "Roles" },
+  { id: "config", nombre: "Config" },
+];
+const elegidas = {};      // sala -> pestaña abierta
+const scrollAbajo = {};   // sala -> si el log está pegado abajo
+
+const esc = (t) => String(t ?? "").replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]));
+const hora = (iso) => (iso ? new Date(iso).toLocaleTimeString("es-PY", { hour12: false }) : "");
+
+function render(salas) {
+  const cont = document.getElementById("salas");
+  const encendidas = salas.filter((s) => s.ok && s.estado.encendida).length;
+  document.getElementById("sub").textContent = `${encendidas} de ${salas.length} salas encendidas`;
+
+  for (const sala of salas) {
+    let card = document.getElementById("sala-" + sala.clave);
+    if (!card) {
+      card = document.createElement("div");
+      card.className = "sala";
+      card.id = "sala-" + sala.clave;
+      cont.appendChild(card);
+      elegidas[sala.clave] = "mensajes";
+    }
+    pintar(card, sala);
+  }
+}
+
+function pintar(card, sala) {
+  const e = sala.estado;
+  const viva = sala.ok && e.encendida;
+  const abierta = elegidas[sala.clave] || "mensajes";
+
+  const chips = viva
+    ? [
+        `<span class="chip">👥 <b>${e.jugadores.length}</b>/${e.config.CantidadDeJugadores ?? "?"}</span>`,
+        `<span class="chip">🗺️ <b>${esc(e.config.MapaPorDefecto ?? "—")}</b></span>`,
+        `<span class="chip">⚽ <b>${e.partido.red}</b> - <b>${e.partido.blue}</b></span>`,
+        e.partido.enJuego ? `<span class="chip">▶️ en juego</span>` : `<span class="chip">⏸️ parado</span>`,
+        e.link ? `<span class="chip"><a href="${esc(e.link)}" target="_blank" rel="noopener">abrir sala ↗</a></span>` : "",
+      ].join("")
+    : `<span class="chip alerta">${esc(sala.ok ? e.problema || "esperando el link de la sala…" : "no responde: " + sala.error)}</span>`;
+
+  card.innerHTML = `
+    <div class="cab">
+      <span class="luz ${viva ? "on" : ""}"></span>
+      <b>${esc(sala.nombre)}</b>
+      <span class="estado">${viva ? "ENCENDIDA" : "APAGADA"}</span>
+    </div>
+    <div class="datos">${chips}</div>
+    <div class="tabs">
+      ${PESTANAS.map((p) => `<button data-sala="${sala.clave}" data-tab="${p.id}" aria-selected="${p.id === abierta}">${p.nombre}</button>`).join("")}
+    </div>
+    <div class="panel" id="panel-${sala.clave}">${sala.ok ? contenido(abierta, e) : `<div class="vacio">No se pudo conectar con esta sala (${esc(sala.error)}).</div>`}</div>
+  `;
+
+  card.querySelectorAll(".tabs button").forEach((b) =>
+    b.addEventListener("click", () => {
+      elegidas[sala.clave] = b.dataset.tab;
+      pintar(card, sala);
+    })
+  );
+
+  if (abierta === "mensajes") {
+    const p = card.querySelector(".panel");
+    if (scrollAbajo[sala.clave] !== false) p.scrollTop = p.scrollHeight;
+    p.addEventListener("scroll", () => {
+      scrollAbajo[sala.clave] = p.scrollTop + p.clientHeight >= p.scrollHeight - 30;
+    });
+  }
+}
+
+function contenido(tab, e) {
+  if (tab === "mensajes") {
+    if (!e.mensajes.length) return `<div class="vacio">Todavía no hay mensajes.</div>`;
+    return e.mensajes
+      .map(
+        (m) => `<div class="linea tipo-${esc(m.tipo)}">
+            <span class="hora">${hora(m.hora)}</span>
+            ${m.tipo === "chat" ? `<span class="quien">${esc(m.jugador)}:</span>` : ""}
+            <span class="txt">${esc(m.texto)}</span>
+          </div>`
+      )
+      .join("");
+  }
+
+  if (tab === "jugadores") {
+    if (!e.jugadores.length) return `<div class="vacio">No hay nadie en la sala.</div>`;
+    return `<table><tr><th>ID</th><th>Nombre</th><th>Equipo</th><th>Admin</th></tr>
+      ${e.jugadores
+        .map(
+          (j) => `<tr><td>${j.id}</td><td>${esc(j.nombre)}</td>
+            <td class="eq-${j.equipo}">${j.equipo === 1 ? "🔴 Red" : j.equipo === 2 ? "🔵 Blue" : "👁️ Espectador"}</td>
+            <td>${j.admin ? "👑" : ""}</td></tr>`
+        )
+        .join("")}</table>`;
+  }
+
+  if (tab === "bans") {
+    if (!e.bans.length) return `<div class="vacio">No hay baneados en esta sesión.</div>`;
+    return `<table><tr><th>Hora</th><th>Jugador</th><th>Motivo</th><th>Por</th></tr>
+      ${e.bans
+        .map((b) => `<tr><td>${hora(b.hora)}</td><td>${esc(b.jugador)}</td><td>${esc(b.motivo || "—")}</td><td>${esc(b.por)}</td></tr>`)
+        .join("")}</table>`;
+  }
+
+  if (tab === "roles") {
+    const r = e.roles;
+    const roles = r.roles.length
+      ? `<table><tr><th>Rol</th><th>Jugadores</th></tr>
+         ${r.roles.map((x) => `<tr><td>${esc(x.nombre)}</td><td>${esc(x.nicks.join(", "))}</td></tr>`).join("")}</table>`
+      : `<div class="vacio">No hay roles cargados en el script.</div>`;
+    const admins = r.admins.length
+      ? `<table><tr><th>Auth</th><th>Nicks</th></tr>
+         ${r.admins.map((a) => `<tr><td>${esc(a.auth || "—")}</td><td>${esc(a.nicks.join(", "))}</td></tr>`).join("")}</table>`
+      : `<div class="vacio">No hay admins fijos cargados.</div>`;
+    return `<b>Roles</b>${roles}<br><b>Admins fijos</b>${admins}
+      <div class="vacio">Clave para ser admin: <b>${esc(r.claveAdmin || "—")}</b> · jugadores registrados: ${r.registrados}</div>`;
+  }
+
+  const filas = Object.entries(e.config);
+  if (!filas.length) return `<div class="vacio">Esta sala usa la configuración por defecto del script.</div>`;
+  return `<table><tr><th>Variable</th><th>Valor</th></tr>
+    ${filas.map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(JSON.stringify(v))}</td></tr>`).join("")}</table>`;
+}
+
+async function actualizar() {
+  try {
+    const res = await fetch("/api/salas", { cache: "no-store" });
+    const datos = await res.json();
+    render(datos.salas);
+  } catch {
+    document.getElementById("sub").textContent = "No se pudo hablar con el panel.";
+  }
+}
+
+actualizar();
+setInterval(actualizar, 2000);
+</script>
+</body>
+</html>

@@ -13,5 +13,8 @@ RUN npm ci --omit=dev
 
 COPY --chown=pptruser:pptruser launcher.js script.js ./
 COPY --chown=pptruser:pptruser hosts ./hosts
+COPY --chown=pptruser:pptruser lib ./lib
+
+EXPOSE 3000
 
 CMD ["node", "launcher.js"]

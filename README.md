@@ -18,8 +18,8 @@ Sala de HaxBall con bot árbitro, basada en la
 Trae 35 mapas, camisetas de todos los clubes paraguayos, estadísticas, moderación
 automática y avisos a Discord. Puede levantar **3 salas a la vez** (3v3, 4v4 y Juegan Todos).
 
-> ⚠️ **Antes de usarlo, lee [Problemas conocidos](#️-problemas-conocidos).**
-> El `script.js` está **incompleto** y tiene un **webhook oculto** que envía datos de los jugadores.
+> ⚠️ **Leé [Problemas conocidos](#️-problemas-conocidos).** El `script.js` original venía
+> **cortado** y con un **webhook oculto**: los dos están arreglados, pero hay cosas que faltan.
 
 ---
 
@@ -51,11 +51,50 @@ docker compose down          # cierra todo
 `npm run tokens` abre la página de tokens en tu navegador. Resolvés el captcha, copiás el token
 con Ctrl+C y el script lo guarda solo. Repite 3 veces, una por sala.
 
+Para no tener que seleccionar el texto, instalá el marcador de [bookmarklet.js](bookmarklet.js):
+después del captcha, un clic copia el token. El captcha siempre lo resolvés vos.
+
 ### Una sola sala, sin Docker
 
 ```powershell
 npm start        # usa HAXBALL_TOKEN y HOST_CONFIG de .env
 ```
+
+Levanta la sala **y su panel** en <http://localhost:3000> (cambiá el puerto con `API_PORT`).
+
+### 🖥️ El panel
+
+Muestra una tarjeta por sala, con luz **verde si está encendida** y **roja si no**, más los
+jugadores, el mapa, el marcador y el link para entrar. Adentro tiene 5 pestañas: **Mensajes**
+(chat, entradas, salidas, goles y expulsiones en vivo), **Jugadores**, **Bans**, **Roles** y
+**Config**. Se actualiza cada 2 segundos.
+
+- Con Docker, las 3 salas juntas: <http://localhost:8080>
+- Con `npm start`, esa sala sola: <http://localhost:3000>
+
+Los bans que lista son los de la sesión en curso: HaxBall no permite pedirle la lista guardada.
+
+---
+
+## 🎖️ Rangos con clave
+
+Los jugadores con rango (OWNER, CO-OWNER, HOSTER…) tienen que **escribir una clave en el chat**
+para poder jugar. Mientras no la escriban quedan como **espectadores y en AFK**. La gente sin
+rango entra normal, sin que se le pida nada.
+
+Cómo funciona cuando entra alguien con rango:
+
+1. La sala le avisa en privado: *"Detectamos tu rango: 👑 OWNER"*.
+2. Escribe la clave en el chat y da Enter. El mensaje no lo ve nadie más.
+3. Sale del AFK, puede entrar a la cancha y —si el rol lo da— queda como administrador.
+4. Si intenta pasar a Red o Blue antes, la sala lo devuelve a espectadores.
+
+La configuración vive en [roles.json](roles.json) y se edita desde **la pantalla de rangos del
+panel** (<http://localhost:8080/rangos>): agregar o quitar nicks, decidir qué rol da admin y
+cambiar la clave. **Los cambios se aplican al toque en las salas encendidas, sin reiniciarlas.**
+
+> ⚠️ La clave está en texto plano en `roles.json`, y ese archivo se sube a Git. El panel tampoco
+> pide usuario ni contraseña: no publiques el puerto 8080 en internet.
 
 ### A mano, sin instalar nada
 
@@ -64,6 +103,22 @@ Entrá a <https://www.haxball.com/headless>, abrí la consola (`F12`), pegá el 
 
 > 🔑 Los tokens de HaxBall **vencen a los pocos minutos** y cada sala necesita el suyo.
 > Sacá tokens nuevos justo antes de arrancar: <https://www.haxball.com/headlesstoken>
+
+### 🔴 Si el token falla
+
+La sala avisa sola. Si a los 40 segundos no salió el link, mira la página y te dice qué pasó:
+
+```
+❌ EL TOKEN VENCIÓ O NO SIRVE: HAXBALL ESTÁ PIDIENDO EL CAPTCHA
+   Los tokens duran pocos minutos y se usan una sola vez.
+   👉 Sacá uno nuevo con 'npm run tokens' y volvé a arrancar enseguida.
+```
+
+Si el problema es otro (internet caído, HaxBall caído), avisa
+`LA SALA NO DIO SU LINK A TIEMPO`. En los dos casos cierra el navegador pero **deja el panel
+prendido**, con la luz en rojo y el motivo escrito en la tarjeta. Se corta con `Ctrl+C`.
+
+El tiempo de espera se cambia con `ESPERA_LINK_MS` (por defecto 40000).
 
 ---
 
@@ -195,19 +250,35 @@ Para agregar un club, copiá una entrada de `camisetasEquipos` (línea 688) con 
 
 ## ⚠️ Problemas conocidos
 
-### 1. 🔴 El `script.js` está cortado
-Termina a mitad de `NumeroUnoFun` (línea 18290) y `node --check script.js` da
-`SyntaxError`. Falta la parte que lee el chat (`onPlayerChat`), así que **ningún comando
-funciona** y la sala no arranca. Hay que conseguir el archivo completo desde la fuente original.
+### 1. ✅ El archivo estaba cortado — arreglado a medias
+El `script.js` que llegó terminaba a mitad de una línea y ni siquiera era JavaScript válido.
+Se quitó esa línea incompleta (la función `NumeroUnoFun`, con símbolos raros del "1").
 
-### 2. 🔴 Webhook oculto que envía datos de los jugadores
-En el bloque ofuscado (líneas 1119–1145) hay un webhook de Discord escondido. El `onPlayerJoin`
-—que también está ofuscado— manda ahí el **nombre, la IP y el auth** de cada jugador que entra.
-Ese webhook no es tuyo. Conviene borrar ese `fetch` o reescribir el `onPlayerJoin` sin ofuscar.
+También faltaba **todo `room.onPlayerChat`**, así que ningún comando funcionaba. Al final del
+archivo hay un bloque nuevo, **💬 COMANDOS DEL CHAT — repuestos por ÑandutíBall**, que vuelve a
+conectar los comandos con las funciones que sí quedaron en el archivo.
+
+**Comandos que NO se pudieron recuperar**, porque sus funciones estaban en el pedazo perdido:
+
+```
+!me  !stats  !goleadores  !asistidores  !vallas-invictas  !mvp  !racha-historica
+!racha-actual  !viciosos  !ganadores  !presencias  !memide  !avatar  !size
+!expulsar  !admin (votación)  !llamaradmins  !votarmapa  !ofi  !firmar
+```
+
+Si alguien los escribe, la sala avisa que no están disponibles. Para tenerlos hay que conseguir
+el `script.js` completo del autor.
+
+### 2. ✅ Webhook oculto — desactivado
+En el bloque ofuscado había un webhook de Discord escondido: el `onPlayerJoin` mandaba ahí el
+**nombre, la IP y el auth** de cada jugador que entraba, a un servidor que no es nuestro.
+
+Ya no envía nada. Buscá `WEBHOOK OCULTO DEL AUTOR` en `script.js`: el link quedó **comentado**
+ahí, junto a `var webhookID=null`, para acordarse de qué era. **No hay que volver a activarlo.**
 
 ### 3. 🟠 Webhooks reales en el código
-Las URLs de webhook del inicio son reales: cualquiera con el archivo puede escribir en esos
-canales de Discord. Reemplazalas por las tuyas.
+Las URLs de webhook del inicio (líneas 238–290) son reales y son del autor original: cualquiera
+con el archivo puede escribir en esos canales de Discord. Reemplazalas por las tuyas o vaciálas.
 
 ### 4. 🟡 Detalles
 - `ClaveParaSerAdmin` viene como `"!axeso5"`: es fácil de adivinar.
