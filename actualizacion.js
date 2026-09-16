@@ -14,21 +14,31 @@ const ActualizacionModel = require("./models/ActualizacionModel");
 const { cerrarBase } = require("./services/ConexionBase");
 
 const args = process.argv.slice(2);
-const sacarBandera = (nombre) => {
+
+// --enviar, --lista y --commit son interruptores: no llevan valor. Ojo con mezclarlos:
+// si se los trata como "toman el que sigue", se comen el texto de la novedad.
+const sacarInterruptor = (nombre) => {
   const i = args.indexOf(nombre);
-  if (i === -1) return null;
-  const valor = args[i + 1] && !args[i + 1].startsWith("--") ? args.splice(i, 2)[1] : (args.splice(i, 1), true);
-  return valor;
+  if (i === -1) return false;
+  args.splice(i, 1);
+  return true;
+};
+
+// --titulo sí lleva valor
+const sacarValor = (nombre) => {
+  const i = args.indexOf(nombre);
+  if (i === -1 || !args[i + 1] || args[i + 1].startsWith("--")) return null;
+  return args.splice(i, 2)[1];
 };
 
 const fecha = (d) => new Date(d).toLocaleString("es-PY", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 const ICONO = { pendiente: "🕗", enviada: "✅", error: "❌" };
 
 (async () => {
-  const enviar = Boolean(sacarBandera("--enviar"));
-  const lista = Boolean(sacarBandera("--lista"));
-  const titulo = sacarBandera("--titulo");
-  const esCommit = Boolean(sacarBandera("--commit"));
+  const enviar = sacarInterruptor("--enviar");
+  const lista = sacarInterruptor("--lista");
+  const esCommit = sacarInterruptor("--commit");
+  const titulo = sacarValor("--titulo");
 
   if (lista) {
     for (const a of (await ActualizacionModel.listar({ limite: 20 })).reverse()) {
@@ -44,7 +54,7 @@ const ICONO = { pendiente: "🕗", enviada: "✅", error: "❌" };
   if (mensaje) {
     const guardada = await ActualizacionModel.crear({
       mensaje,
-      titulo: typeof titulo === "string" ? titulo : null,
+      titulo: titulo || null,
       origen: esCommit ? "commit" : "manual",
       commit: esCommit ? await hashDelUltimoCommit() : null,
     });
