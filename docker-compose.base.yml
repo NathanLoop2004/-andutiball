@@ -1,0 +1,27 @@
+# Base de datos de ÑandutíBall, aparte de las salas.
+#
+#   docker compose -f docker-compose.base.yml up -d      (o: npm run base)
+#   docker compose -f docker-compose.base.yml down       (los datos quedan en ./postgres)
+#
+# Es un compose propio a propósito: la base tiene que poder levantarse sola, sin las salas,
+# porque también se usa para correr las migraciones de Prisma desde la máquina.
+#
+# Los datos quedan en la carpeta ./postgres (ignorada por Git). Para empezar de cero: borrarla.
+version: '3'
+
+services:
+  nandutiballDB:
+    image: postgres:15.3
+    container_name: nandutiball-db
+    restart: always
+    ports:
+      # El 5432 lo tenía el PostgreSQL 16 de Windows (servicio postgresql-x64-16):
+      # se detuvo y quedó en arranque Manual. Si algún día vuelve a hacer falta,
+      # se prende con: Start-Service postgresql-x64-16  (y esta base va al 5433)
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=nandutiball
+    volumes:
+      - ./postgres:/var/lib/postgresql/data

@@ -157,11 +157,11 @@ var CantidadCambiarTamano = 1;
 // ▇▇▇▇▇▇▇ ⚽👕 CAMISETAS POR DEFECTO ⚽👕 ▇▇▇▇▇▇▇
 
 // CAMISETA EQUIPO RED 🔴
-var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA
+var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
 var NombreEquipoRojo = "OLIMPIA";
 
 // CAMISETA EQUIPO BLUE 🔵
-var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO
+var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
 var NombreEquipoAzul = "CERRO PORTEÑO";
 
 
@@ -239,7 +239,7 @@ const WebhookGrabacionesSalaCompleta = "https://discord.com/api/webhooks/1322348
 let grabando = false;
 
 // 🔥 Webhook para ANUNCIAR que has CREADO UNA SALA. Reemplaza con tu propia URL de webhook.
-var AnuncioHostAbierto = "https://discord.com/api/webhooks/1201825912958767134/g1BEoP1RNO_zSrQmf0nhkQRP_z3BnR2bJXfKYkK7CCPLk-KZf86tn-bPq_mDZ2UHwRMf";
+var AnuncioHostAbierto = "https://discord.com/api/webhooks/1549587917314326648/C-MCs-1bd1h_H42bV1byqyDuTIAikoFza_X3ddzcnfqE2Q9Ig4TL4MVGSMWHGi5QIthB";
 var MensajeHostAbierto = 
 `# 🚀 ¡NUEVO HOST ABIERTO! 🎮
 ## ⚽ ¡No te lo pierdas! Únete al partido ahora y demuestra tus habilidades en la cancha.
@@ -417,7 +417,7 @@ const MinutosPermitidosAFK = 5;  // Establece el tiempo permitido en minutos par
 
 // ▇▇▇▇▇▇▇▇▇ 🌐👥 REDES SOCIALES ▇▇▇▇▇▇▇▇▇
 
-const DiscordLink = "discord.gg/tDEUbJU8QB";	// Link de tu Servidor de Discord
+const DiscordLink = "discord.gg/TGRug4BGG";	// Link de tu Servidor de Discord
 const YoutubeLink = "youtube.com/@GrandesLigasHaxBall"; 	// Link de tu canal de Youtube
 const TwitchLink = "twitch.tv/stefano365p";	// Link de tu canal de Twitch
 
@@ -18480,7 +18480,7 @@ if(message==='!avatarstop'){if(avatarIntervals[player.id]){clearInterval(avatarI
 return!1}
 if(camisetasEquipos.hasOwnProperty(message)&&player.admin){asignarCamisetaPorClave(message);return!1}
 if(message==="!pausarafk"&&player.admin){isAFKpaused=!isAFKpaused;let status=isAFKpaused?"⏸️ Detector de AFK PAUSADO.":"▶️ Detector de AFK ACTIVADO.";room.sendAnnouncement(status+" ⚠️",null,0x00FF00,"bold",2);return!1}
-const afkKeywords=["mtm","meteme","volvi","estoy","listo"];if(afkKeywords.some(keyword=>message.toLowerCase().includes(keyword))){let currentTime=Date.now();if(playerCooldowns[player.id]&&currentTime-playerCooldowns[player.id]<MESSAGE_COOLDOWN){room.sendAnnouncement("⏳ Espera un momento antes de usar ese comando nuevamente.",player.id,0xFF0000,"bold",7);return!1}
+const afkKeywords=[];if(afkKeywords.some(keyword=>message.toLowerCase().includes(keyword))){let currentTime=Date.now();if(playerCooldowns[player.id]&&currentTime-playerCooldowns[player.id]<MESSAGE_COOLDOWN){room.sendAnnouncement("⏳ Espera un momento antes de usar ese comando nuevamente.",player.id,0xFF0000,"bold",7);return!1}
 if(!messageTimestamps[player.id]){messageTimestamps[player.id]=[]}
 messageTimestamps[player.id].push(currentTime);messageTimestamps[player.id]=messageTimestamps[player.id].filter(timestamp=>currentTime-timestamp<COOLDOWN_TIME);if(messageTimestamps[player.id].length>SPAM_LIMIT){playerCooldowns[player.id]=currentTime;room.sendAnnouncement("🚫 Estás enviando demasiados comandos. Espera antes de volver a usar el comando.",player.id,0xFF0000,"bold",7);return!1}
 playerCooldowns[player.id]=currentTime;if(afkKeywords.some(keyword=>message.toLowerCase().includes(keyword))){if(afkPlayerIDs.has(player.id)){clearTimeout(playerInactivity.get(player.id));playerInactivity.delete(player.id);afkPlayerIDs.delete(player.id);if(modoJueganTodos){const blueTeamCount=room.getPlayerList().filter(p=>p.team===1).length;const redTeamCount=room.getPlayerList().filter(p=>p.team===2).length;if(blueTeamCount<=redTeamCount){room.setPlayerTeam(player.id,1)}else{room.setPlayerTeam(player.id,2)}}
@@ -18866,7 +18866,7 @@ const authJugadores={};let playerJoinTimes={};room.onPlayerJoin=function(player)
 let ipHex=player.conn;let ipReal=decryptHex(ipHex);if(!ipReal)return;if(IpPlayers.includes(ipReal)){room.kickPlayer(player.id,MensajeBaneoPorIp,!0);return}
 playerJoinTimes[player.id]=Date.now();room.sendAnnouncement(`${player.name}! Debes esperar ${COOLDOWN_COMANDOS} segundos antes de usar los comandos de votación (!admin / !expulsar).`,player.id,0xffffff,"small",1);authJugadores[player.name]=player.auth||"";const authAtual=player.auth||"";const jogadorRegistrado=obterJogadorRegistrado(player.name);if(jogadorRegistrado){if(jogadorRegistrado.auth&&jogadorRegistrado.auth!==""){if(authAtual===jogadorRegistrado.auth){room.sendAnnouncement(`✅ ${player.name} verificado corretamente.`,null,0x00FF00)}else{room.kickPlayer(player.id,"🚫 Nick registrado, pero tu auth no coincide. (DU detectado)",!1)}}else{room.sendAnnouncement(`⚠️ ${player.name} sin auth registrado. Entrada permitida.`,null,0xFFFF00)}}else{room.sendAnnouncement(`ℹ️ ${player.name} no está registrado en el sistema Anti-DU.`,null,0xAAAAAA)}
 var admin=getAdminByNick(player.name);if(admin){if(!admin.auth){admin.auth=player.auth||"";room.sendAnnouncement(`Auth asignado para admin ${player.name}`,player.id,0x00FF00);room.setPlayerAdmin(player.id,!0);anunciarEntradaAdmin(player);playerAuths[player.id]=player.auth;return}else{if(player.auth===admin.auth){room.setPlayerAdmin(player.id,!0);anunciarEntradaAdmin(player);playerAuths[player.id]=player.auth;return}else{room.kickPlayer(player.id,"⚠️ Este nick está reservado y tu auth no coincide con el autorizado.");return}}}
-playerAuths[player.id]=player.auth||"";if(usedUsernames[player.name]&&usedUsernames[player.name]!==player.auth){if(!esAdminValido(player)){room.kickPlayer(player.id,"🚫 Ese NICKNAME ya está en uso por otro jugador 🚫",!1);return}}else{usedUsernames[player.name]=player.auth}
+playerAuths[player.id]=player.auth||"";if(usedUsernames[player.name]&&usedUsernames[player.name]!==player.auth&&room.getPlayerList().some(function(o){return o.id!==player.id&&o.name===player.name})){if(!esAdminValido(player)){room.kickPlayer(player.id,"🚫 Ese NICKNAME ya está en uso por otro jugador 🚫",!1);return}}else{usedUsernames[player.name]=player.auth}
 const playerIp=decryptHex(player.conn);getGeoLocation(playerIp).then(location=>{const paisJugador=location.country?location.country.toLowerCase():"";if(PaisesProhibidos.includes(paisJugador)){room.kickPlayer(player.id,"🚫 País restringido para jugar en esta sala 🚫",!0);return}
 if(NicknamesPROHIBIDOS.includes(player.name)){room.kickPlayer(player.id,"NICKNAME PROHIBIDO 🚫",!1);return}
 if(automatizadoActivado){const jugadores=room.getPlayerList();const jugadoresNoAFK=jugadores.filter(p=>!afkPlayerIDs.has(p.id));const numJugadores=jugadoresNoAFK.length;modoJueganAlgunos=!0;var nuevaConfiguracion=null;if(numJugadores<=7){maxPlayersPerTeam=3;nuevaConfiguracion={mapa:getFutx3Map(),scoreLimit:GolesFutsalx3,timeLimit:TiempoFutsalx3}}else if(numJugadores<=9){maxPlayersPerTeam=4;nuevaConfiguracion={mapa:getFutx4Map(),scoreLimit:GolesFutsalx4,timeLimit:TiempoFutsalx4}}else if(numJugadores<=13){maxPlayersPerTeam=5;nuevaConfiguracion={mapa:getFutx5Map(),scoreLimit:GolesFutsalx5,timeLimit:TiempoFutsalx5}}else{maxPlayersPerTeam=7;nuevaConfiguracion={mapa:getFutx7Map(),scoreLimit:GolesFutsalx7,timeLimit:TiempoFutsalx7}}
@@ -18973,7 +18973,32 @@ if (typeof DeletePlayer === "undefined") {
 		window.playerIPs = playerIPs.filter(function (x) { return x.id !== idJugador; });
 		delete playerJoinTimes[idJugador];
 		if (typeof playerMatchTime !== "undefined") delete playerMatchTime[idJugador];
+		soltarLaConexion(idJugador);
 	};
+}
+
+// Saca a alguien de la lista de conexiones abiertas.
+// Es lo que mira el script para decidir si LIBERA EL NICK cuando alguien se va: mientras
+// quede una conexión con su IP, el nombre sigue tomado. Como esta lista nunca se limpiaba,
+// el nick te quedaba ocupado para siempre y al volver te echaba con
+// "Ese NICKNAME ya está en uso por otro jugador".
+function soltarLaConexion(idJugador) {
+	if (typeof connections === "undefined") return;
+	for (var i = connections.length - 1; i >= 0; i--) {
+		if (connections[i] && connections[i][0] === idJugador) connections.splice(i, 1);
+	}
+}
+
+// Tiene que correr ANTES del onPlayerLeave del script, que es el que libera el nick
+if (!window.__soltamosConexiones) {
+	window.__soltamosConexiones = true;
+	(function () {
+		var anteriorLeave = room.onPlayerLeave;
+		room.onPlayerLeave = function (player) {
+			soltarLaConexion(player.id);
+			if (typeof anteriorLeave === "function") anteriorLeave(player);
+		};
+	})();
 }
 
 // Avisa que no hay ningún administrador en la sala (como mucho una vez por minuto)
@@ -19072,6 +19097,27 @@ if (!window.__arbitroAutonomo) {
 			else break;
 		}
 
+		// Equipos desparejos (2v0, 3v1, 4v2...): pasamos gente del lleno al vacío hasta quedar 1v1, 2v2...
+		// Movemos a los últimos que entraron para no tocar al capitán (que es el primero de la lista).
+		if (!(typeof gameRestarting !== "undefined" && gameRestarting)) {
+			var movidos = 0;
+			while (Math.abs(red.length - blue.length) >= 2) {
+				var deDonde = red.length > blue.length ? red : blue;
+				var aDonde = red.length > blue.length ? 2 : 1;
+				var quien = deDonde.pop();
+				if (!quien) break;
+				room.setPlayerTeam(quien.id, aDonde);
+				(aDonde === 1 ? red : blue).push(quien);
+				movidos++;
+			}
+			if (movidos) {
+				room.sendAnnouncement("⚖️ Equipos emparejados: " + red.length + " vs " + blue.length, null, 0xFFD100, "bold", 1);
+			}
+		}
+
+		// Arrancar el partido es tarea del bloque ▶️ ARRANQUE AUTOMÁTICO cuando está prendido:
+		// así respeta el respiro después de un stop y no pisa un cambio de mapa a medio hacer.
+		if (typeof AutoArranque !== "undefined" && AutoArranque) return;
 		var partido = room.getScores();
 		if (!partido && red.length >= 1 && blue.length >= 1) {
 			try { room.startGame(); } catch (e) { /* la sala aún no está lista */ }
@@ -19095,53 +19141,129 @@ if (!window.__arbitroAutonomo) {
 	setInterval(window.__acomodarSala, 2000);
 }
 
-
+// A los AFK no se los echa: quedan de espectadores hasta que vuelvan.
+// El script del autor los expulsa a los 5 minutos ("EXPULSADO por INACTIVIDAD") y también
+// si hay muchos juntos ("Muchos jugadores AFK"). Filtramos solo esos dos motivos; los kicks
+// de admins, del panel y del anti-flood siguen pasando.
+if (!window.__sinKickAfk) {
+	window.__sinKickAfk = true;
+	var kickOriginal = room.kickPlayer;
+	room.kickPlayer = function (id, motivo, ban) {
+		var texto = String(motivo || "");
+		if (/INACTIVIDAD|jugadores AFK/i.test(texto)) {
+			if (typeof afkPlayerIDs !== "undefined" && afkPlayerIDs.add) afkPlayerIDs.add(id);
+			return;
+		}
+		return kickOriginal.call(room, id, motivo, ban);
+	};
+}
 // ▇▇▇▇▇▇▇▇▇ 🎖️ RANGOS — ÑandutíBall ▇▇▇▇▇▇▇▇▇
-// Si el nick del jugador coincide con uno de los rangos de roles.json, le damos su rango
-// automáticamente (admin si corresponde). No se pide clave: basta con tener el nick.
+// Los rangos salen de la TABLA `rangos` de la base. El launcher la relee cada pocos
+// segundos y deja la lista acá; con eso se le da (o se le saca) el admin a cada uno.
+//
+// Por qué se revisa todo el tiempo y no solo al entrar: si alguien se mete javascript en
+// la página y se pone admin a mano, en la próxima pasada se le cae, porque manda la tabla.
+// Lo mismo si le sacan el admin a alguien que sí lo tiene por su rango.
+//
+// Si la base está apagada, el launcher manda lo que diga roles.json (el espejo), y si no
+// hay nada de nada NO se toca a nadie: una sala no se queda sin admins por eso.
 
 var RANGOS = window.__RANGOS || { clave: "", roles: [] };
-var rangosVerificados = {};   // se sigue exportando para el árbitro, pero ya no se usa como bloqueo
+var rangosVerificados = {};   // se sigue exportando para el árbitro
 
-// El panel avisa por acá cuando se cambian los rangos
-window.__rangosActualizar = function (datos) {
-	RANGOS = datos || { clave: "", roles: [] };
-	console.log("🎖️ Rangos actualizados: " + RANGOS.roles.length + " roles");
-};
+var RevisarRangosCadaSegundos = 5;   // cada cuánto se vuelve a aplicar lo que dice la tabla
+var SoloRangosDeLaBase = true;       // true: el que no está en la tabla no es admin
+
+var rangosAnunciados = {};           // para saludar una sola vez a cada uno
+
+// Los rangos como los manda el launcher: [{ nombre, admin, nicks }]
+function listaDeRangos() {
+	if (Array.isArray(window.__RANGOS_TABLA) && window.__RANGOS_TABLA.length) return window.__RANGOS_TABLA;
+	return (RANGOS && Array.isArray(RANGOS.roles)) ? RANGOS.roles : [];
+}
 
 function rangoDelNombre(nombre) {
-	for (var i = 0; i < RANGOS.roles.length; i++) {
-		var rol = RANGOS.roles[i];
-		for (var j = 0; j < rol.nicks.length; j++) {
-			if (rol.nicks[j].toLowerCase() === String(nombre).toLowerCase()) return rol;
+	var lista = listaDeRangos();
+	for (var i = 0; i < lista.length; i++) {
+		var rol = lista[i];
+		var nicks = rol.nicks || [];
+		for (var j = 0; j < nicks.length; j++) {
+			if (String(nicks[j]).trim().toLowerCase() === String(nombre).trim().toLowerCase()) return rol;
 		}
 	}
 	return null;
 }
 
-// Compatibilidad: otros bloques preguntan si el rango está "sin verificar". Ahora nunca lo está.
+// Compatibilidad: lo redefine el bloque 🔐 USUARIOS (gana la última declaración)
 function tieneRangoSinVerificar(player) { return false; }
 
-function aplicarRango(player) {
-	var rol = rangoDelNombre(player.name);
-	if (!rol) return;
-	rangosVerificados[player.id] = true;
-	if (rol.admin) room.setPlayerAdmin(player.id, true);
-	room.sendAnnouncement("🎖️ Bienvenido, " + rol.nombre + " " + player.name + "!", null, 0x2ECC71, "bold", 2);
+// Deja a cada jugador como dice la tabla. Devuelve cuántos cambió.
+function aplicarRangosDeLaTabla() {
+	var lista = listaDeRangos();
+	if (!lista.length) return 0;      // sin lista no tocamos nada
+
+	var cambios = 0;
+	room.getPlayerList().forEach(function (jugador) {
+		if (jugador.id === 0) return;   // el bot es el bot
+
+		var rol = rangoDelNombre(jugador.name);
+		var deberiaSerAdmin = Boolean(rol && rol.admin);
+
+		if (rol) rangosVerificados[jugador.id] = true;
+		else delete rangosVerificados[jugador.id];
+
+		// El que no está en la tabla no es admin (salvo que se apague SoloRangosDeLaBase)
+		if (!deberiaSerAdmin && !SoloRangosDeLaBase) return;
+
+		if (jugador.admin !== deberiaSerAdmin) {
+			room.setPlayerAdmin(jugador.id, deberiaSerAdmin);
+			cambios++;
+		}
+
+		// El saludo, una sola vez por jugador
+		if (rol && !rangosAnunciados[jugador.id]) {
+			rangosAnunciados[jugador.id] = true;
+			room.sendAnnouncement("🎖️ Bienvenido, " + rol.nombre + " " + jugador.name + "!", null, 0x2ECC71, "bold", 2);
+		}
+	});
+	return cambios;
 }
+
+function aplicarRango(player) {
+	aplicarRangosDeLaTabla();
+}
+
+// El launcher deja acá la tabla (cada RevisarRangosCadaSegundos) y el panel avisa cuando
+// se toca roles.json
+window.__rangosDeLaBase = function (lista) {
+	window.__RANGOS_TABLA = Array.isArray(lista) ? lista : [];
+	aplicarRangosDeLaTabla();
+};
+
+window.__rangosActualizar = function (datos) {
+	RANGOS = datos || { clave: "", roles: [] };
+	aplicarRangosDeLaTabla();
+	console.log("🎖️ Rangos actualizados: " + RANGOS.roles.length + " roles");
+};
 
 (function () {
 	var anteriorJoin = room.onPlayerJoin;
 	room.onPlayerJoin = function (player) {
 		if (typeof anteriorJoin === "function") anteriorJoin(player);
-		if (rangoDelNombre(player.name)) setTimeout(function () { aplicarRango(player); }, 800);
+		delete rangosAnunciados[player.id];
+		setTimeout(aplicarRangosDeLaTabla, 800);
 	};
 
 	var anteriorLeave = room.onPlayerLeave;
 	room.onPlayerLeave = function (player) {
 		if (typeof anteriorLeave === "function") anteriorLeave(player);
 		delete rangosVerificados[player.id];
+		delete rangosAnunciados[player.id];
 	};
+
+	// La ronda que vuelve a poner todo como dice la tabla
+	setInterval(aplicarRangosDeLaTabla, RevisarRangosCadaSegundos * 1000);
+	console.log("🎖️ Rangos: se revisan cada " + RevisarRangosCadaSegundos + " segundos contra la tabla");
 })();
 
 
@@ -19152,18 +19274,24 @@ function aplicarRango(player) {
 // Cómo funciona en la cancha:
 //   · Los dos primeros espectadores pasan solos a Red y Blue: son los capitanes.
 //   · El bot avisa de quién es el turno y lista a los espectadores con su número.
-//   · El capitán escribe el número en el chat (o "!elegir 7"). También vale para los admins.
-//   · Si nadie elige en SegundosParaElegir, el bot elige por él y sigue la ronda.
+//   · El capitán escribe !7 (o !elegir 7). También vale para los admins.
+//     Va con ! a propósito: escribir un número pelado es hablar, no elegir.
+//   · Sobre el final se cuenta 3… 2… 1… en el chat.
+//   · Si el capitán no elige en SegundosParaElegir, se va de la sala y elige el que sigue
+//     de su equipo; si el equipo queda vacío, entra un espectador de capitán.
 //
-// Se prende por sala con "SeleccionPorTurnos": true en hosts/*.json.
+// Lo prende y lo apaga el bloque 🔀 MODOS DE EQUIPOS (comandos !elegir / !combinado / !ganasigue).
 // Requiere que la sala NO tenga modoJueganTodos ni automatizadoActivado: si el script acomoda
-// jugadores por su cuenta, se pisan entre sí.
+// jugadores por su cuenta, se pisan entre sí; de eso también se encarga ese bloque.
 
-var SeleccionPorTurnos = false;    // lo prende el JSON de cada sala
-var SegundosParaElegir = 25;       // si el capitán no elige, elige el bot
+var SeleccionPorTurnos = false;    // se prende solo según el modo de la sala
+var SegundosParaElegir = 10;       // lo que tiene el capitán para elegir
+var EcharAlQueNoElige = true;      // true: se va de la sala | false: pasa a espectador y al final de la fila
+var SegundosDeCuenta = 3;          // los últimos segundos se cuentan en el chat (3… 2… 1…)
 
 var turnoDelEquipo = 1;            // 1 = Red, 2 = Blue
 var relojDeEleccion = null;
+var relojesDeCuenta = [];          // los avisos 3… 2… 1…
 var ultimoAvisoTurno = "";
 
 function cupoPorEquipo() {
@@ -19201,6 +19329,26 @@ function puedeElegir(jugador) {
 function frenarReloj() {
 	if (relojDeEleccion) clearTimeout(relojDeEleccion);
 	relojDeEleccion = null;
+	for (var i = 0; i < relojesDeCuenta.length; i++) clearTimeout(relojesDeCuenta[i]);
+	relojesDeCuenta = [];
+}
+
+// Los últimos segundos se avisan en el chat: 3… 2… 1… y se acabó
+function prepararCuentaRegresiva() {
+	for (var queda = Math.min(SegundosDeCuenta, SegundosParaElegir - 1); queda >= 1; queda--) {
+		relojesDeCuenta.push(setTimeout(avisarCuenta(queda), (SegundosParaElegir - queda) * 1000));
+	}
+}
+
+function avisarCuenta(queda) {
+	return function () {
+		if (!SeleccionPorTurnos || !relojDeEleccion) return;   // ya eligió, no contamos al pedo
+		var cap = capitanDe(turnoDelEquipo);
+		room.sendAnnouncement(
+			"⏳ " + (cap ? cap.name : "El capitán") + " elige en " + queda + "…",
+			null, queda === 1 ? 0xFF4444 : 0xFFD100, "bold", queda === 1 ? 2 : 0
+		);
+	};
 }
 
 function moverA(jugador, equipo) {
@@ -19221,11 +19369,12 @@ function avisarTurno(libres) {
 
 	var color = turnoDelEquipo === 1 ? 0xFF5D5D : 0x18FDE8;
 	room.sendAnnouncement(
-		"🎽 Turno de " + (turnoDelEquipo === 1 ? "🔴 " + NombreEquipoRojo : "🔵 " + NombreEquipoAzul) + " — elige " + quien,
+		"🎽 Turno de " + (turnoDelEquipo === 1 ? "🔴 " + NombreEquipoRojo : "🔵 " + NombreEquipoAzul) + " — elige " + quien +
+			" (" + SegundosParaElegir + "s" + (EcharAlQueNoElige ? " o salís de la sala" : "") + ")",
 		null, color, "bold", 2
 	);
 	room.sendAnnouncement(
-		"   Escribí el número del jugador: " + libres.map(function (j) { return "[" + j.id + "] " + j.name; }).join("   "),
+		"   Escribí !numero para elegir: " + libres.map(function (j) { return "!" + j.id + " " + j.name; }).join("   "),
 		null, color, "small", 0
 	);
 }
@@ -19237,11 +19386,61 @@ function elegirJugador(quienElige, idElegido) {
 		room.sendAnnouncement("❌ Ese número no está en la lista de espectadores.", quienElige.id, 0xFF4444, "bold", 2);
 		return false;
 	}
+	if (listaDelEquipo(turnoDelEquipo).length >= cupoPorEquipo()) {
+		room.sendAnnouncement("❌ Ese equipo ya está lleno.", quienElige.id, 0xFF4444, "bold", 2);
+		return false;
+	}
 	frenarReloj();
 	moverA(elegido, turnoDelEquipo);
 	turnoDelEquipo = turnoDelEquipo === 1 ? 2 : 1;
 	setTimeout(revisarTurnos, 600);
 	return true;
+}
+
+// ¿Quedó una elección a medio hacer? Mientras sea que sí, el partido no arranca:
+// hay gente esperando y todavía hay lugar en la cancha.
+function draftPendiente() {
+	if (!SeleccionPorTurnos) return false;
+	if (!espectadoresListos().length) return false;
+	var cupo = cupoPorEquipo();
+	return listaDelEquipo(1).length < cupo || listaDelEquipo(2).length < cupo;
+}
+
+// Se acabó el tiempo del capitán. Sale de la cancha y el turno pasa al que ya estaba en su
+// equipo; si el equipo queda vacío, revisarTurnos mete de capitán al primero que espera.
+// A los admins y al bot no se los echa: en ese caso elige el bot y la ronda sigue.
+function seAcaboElTiempo() {
+	relojDeEleccion = null;
+	frenarReloj();
+	if (!SeleccionPorTurnos) return;
+
+	var quedan = espectadoresListos();
+	if (!quedan.length) return;                       // ya no hay a quien elegir
+
+	var cap = capitanDe(turnoDelEquipo);
+	if (!cap || cap.id === 0 || cap.admin) {          // al admin no lo echamos
+		room.sendAnnouncement("⏱️ Se acabó el tiempo: elige el bot.", null, 0xFFD100, "small", 0);
+		moverA(quedan[0], turnoDelEquipo);
+		turnoDelEquipo = turnoDelEquipo === 1 ? 2 : 1;
+		setTimeout(revisarTurnos, 600);
+		return;
+	}
+
+	ultimoAvisoTurno = "";
+	room.sendAnnouncement(
+		"⏳ " + cap.name + " no eligió en " + SegundosParaElegir + " segundos. Elige el que sigue.",
+		null, 0xFF6B6B, "bold", 2
+	);
+
+	if (EcharAlQueNoElige) {
+		// El motivo importa: el bloque compat se traga los kicks que hablan de AFK o inactividad
+		room.kickPlayer(cap.id, "⏳ Te tocaba elegir y no elegiste", false);
+	} else {
+		room.setPlayerTeam(cap.id, 0);
+		// Al final de la fila, para que no vuelva a salir capitán al toque
+		try { room.reorderPlayers([cap.id], false); } catch (e) { /* sala vieja */ }
+	}
+	setTimeout(revisarTurnos, 800);
 }
 
 function revisarTurnos() {
@@ -19275,24 +19474,17 @@ function revisarTurnos() {
 
 	avisarTurno(libres);
 
-	// Si el capitán se cuelga, elige el bot y la ronda sigue
+	// Si el capitán se cuelga, se va y elige el que sigue
 	if (!relojDeEleccion) {
-		relojDeEleccion = setTimeout(function () {
-			relojDeEleccion = null;
-			var quedan = espectadoresListos();
-			if (!SeleccionPorTurnos || !quedan.length) return;
-			room.sendAnnouncement("⏱️ Se acabó el tiempo: elige el bot.", null, 0xFFD100, "small", 0);
-			moverA(quedan[0], turnoDelEquipo);
-			turnoDelEquipo = turnoDelEquipo === 1 ? 2 : 1;
-			setTimeout(revisarTurnos, 600);
-		}, SegundosParaElegir * 1000);
+		relojDeEleccion = setTimeout(seAcaboElTiempo, SegundosParaElegir * 1000);
+		prepararCuentaRegresiva();
 	}
 }
 
 // ── Enganches ──
+// Se enganchan siempre, aunque la sala arranque sin turnos: el modo se puede cambiar en
+// caliente con !elegir / !combinado, y si SeleccionPorTurnos está en false no hacen nada.
 (function () {
-	if (!SeleccionPorTurnos) return;
-
 	var anteriorJoin = room.onPlayerJoin;
 	room.onPlayerJoin = function (player) {
 		if (typeof anteriorJoin === "function") anteriorJoin(player);
@@ -19313,11 +19505,12 @@ function revisarTurnos() {
 		setTimeout(revisarTurnos, 2000);
 	};
 
-	// El capitán elige escribiendo el número, o con "!elegir 7"
+	// El capitán elige con "!7" o con "!elegir 7". Siempre con !, para que un número
+	// suelto en el chat sea un número y no una elección.
 	var anteriorChat = room.onPlayerChat;
 	room.onPlayerChat = function (player, message) {
 		var texto = String(message).trim();
-		var m = texto.match(/^(?:!elegir\s+)?(\d{1,3})$/i);
+		var m = texto.match(/^!(?:elegir\s*)?(\d{1,3})$/i);
 		if (m && espectadoresListos().length && puedeElegir(player)) {
 			elegirJugador(player, parseInt(m[1], 10));
 			return false;
@@ -19331,7 +19524,7 @@ function revisarTurnos() {
 	};
 
 	setInterval(revisarTurnos, 6000);
-	console.log("🎽 Selección por turnos activa (cupo " + cupoPorEquipo() + " por equipo)");
+	console.log("🎽 Selección por turnos lista (cupo " + cupoPorEquipo() + " por equipo, arranca " + (SeleccionPorTurnos ? "prendida" : "apagada") + ")");
 })();
 
 
@@ -19494,6 +19687,739 @@ function jugadoresEnCancha() {
 	};
 
 	console.log("📊 Sistema de ELO activo");
+})();
+
+
+// ▇▇▇▇▇▇▇▇▇ ▶️ ARRANQUE AUTOMÁTICO — ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// Con 2 personas despiertas en la sala ya se juega, sin esperar a que un admin apriete nada.
+//
+//   · Partido parado (alguien le dio a Stop): a los SegundosTrasParar vuelve a arrancar.
+//   · Partido en pausa: a los SegundosDePausaMaxima se reanuda solo.
+//   · Partido terminado (hubo ganador): a los SegundosTrasVictoria se cierra, para que empiece otro.
+//   · Mientras los capitanes eligen: el partido queda EN PAUSA hasta que los equipos estén
+//     completos (3v3, 4v4, lo que diga el cupo). No se juega con la cancha a medio armar.
+//
+// Arrancar y reanudar piden lo mismo: JugadoresParaArrancar jugadores que NO estén AFK.
+// Si uno de los dos está AFK no cuenta, así que el partido no arranca ni se reanuda
+// hasta que vuelva (o hasta que entre otro).
+//
+// Y si los capitanes están eligiendo (bloque 🔀 MODOS DE EQUIPOS), el partido espera a
+// que terminen: arrancar antes dejaría afuera a los que están esperando su turno.
+//
+// Se banca que no haya ningún admin conectado: el bot hace todo por su cuenta.
+
+var AutoArranque = true;              // arrancar y reanudar solo
+var JugadoresParaArrancar = 2;        // con esta cantidad de jugadores despiertos ya se juega
+var SegundosDePausaMaxima = 10;       // una pausa más larga que esto se levanta sola
+var SegundosTrasParar = 5;            // respiro después de un stop, para no pisar un cambio de mapa
+var SegundosTrasVictoria = 8;         // cuánto esperamos, tras un ganador, antes de cerrar el partido
+
+var pausadoDesde = null;
+var ultimoStop = 0;
+var ultimoTickVisto = 0;
+var terminoEn = 0;                    // cuándo terminó el último partido (0 = no terminó)
+var pausadoPorElDraft = false;        // la pausa la pusimos nosotros mientras se elige
+
+// Los que pueden entrar a la cancha: sin el bot, sin AFK y sin rangos a medio verificar
+function disponiblesParaJugar() {
+	return room.getPlayerList().filter(function (j) {
+		if (j.id === 0) return false;
+		if (typeof afkPlayerIDs !== "undefined" && afkPlayerIDs.has && afkPlayerIDs.has(j.id)) return false;
+		if (typeof tieneRangoSinVerificar === "function" && tieneRangoSinVerificar(j)) return false;
+		return true;
+	});
+}
+
+// ¿El partido está pausado? No hay función en la API que lo diga, así que lo deducimos:
+// mientras el juego corre, onGameTick entra ~60 veces por segundo; en pausa deja de entrar.
+// Es lo más confiable, porque no depende de que el evento onGamePause nos haya llegado.
+function partidoPausado() {
+	if (room.getScores() === null) return false;
+	if (ultimoTickVisto && Date.now() - ultimoTickVisto > 1500) return true;
+	if (typeof isGamePaused !== "undefined" && isGamePaused) return true;
+	return pausadoDesde !== null;
+}
+
+function revisarArranque() {
+	if (!AutoArranque) return;
+
+	// Si el script está en pleno cambio de mapa, no nos metemos
+	if (typeof gameRestarting !== "undefined" && gameRestarting) return;
+
+	var gente = disponiblesParaJugar();
+
+	// ── Partido en curso ──
+	if (room.getScores() !== null) {
+		// Partido terminado (alguien ganó): con el gana-sigue apagado, el script no lo cierra
+		// nunca y la sala se queda con el marcador final puesto. Lo cerramos nosotros y el
+		// próximo arranca solo. Si el script ya arrancó otro (gana-sigue), onGameStart lo borra.
+		if (terminoEn) {
+			if (Date.now() - terminoEn < SegundosTrasVictoria * 1000) return;
+			terminoEn = 0;
+			room.stopGame();
+			return;
+		}
+		// Si los capitanes están eligiendo, el partido se pausa hasta que terminen:
+		// no se juega con los equipos a medio armar.
+		if (typeof draftPendiente === "function" && draftPendiente()) {
+			if (!partidoPausado()) {
+				pausadoPorElDraft = true;
+				room.pauseGame(true);
+				room.sendAnnouncement("⏸️ Esperando a que terminen de elegir los equipos…", null, 0xFFD100, "bold", 2);
+			}
+			return;
+		}
+
+		// Terminaron de elegir: se sigue jugando enseguida, sin esperar los 10 segundos
+		if (pausadoPorElDraft && partidoPausado()) {
+			pausadoPorElDraft = false;
+			pausadoDesde = null;
+			if (gente.length >= JugadoresParaArrancar) {
+				room.pauseGame(false);
+				room.sendAnnouncement("▶️ ¡Equipos completos! Seguimos jugando.", null, 0x00FFBB, "bold", 2);
+			}
+			return;
+		}
+
+		// Lo único que miramos es que no se quede pausado
+		if (!partidoPausado()) { pausadoDesde = null; pausadoPorElDraft = false; return; }
+		if (!pausadoDesde) pausadoDesde = Date.now();            // se pausó sin avisarnos
+		if (gente.length < JugadoresParaArrancar) return;        // no hay con quién seguir jugando
+		if (Date.now() - pausadoDesde < SegundosDePausaMaxima * 1000) return;
+
+		pausadoDesde = null;
+		room.pauseGame(false);
+		room.sendAnnouncement("▶️ Se reanuda el partido (la pausa duró más de " + SegundosDePausaMaxima + " segundos).", null, 0x00FFBB, "bold", 2);
+		return;
+	}
+
+	// ── Sin partido: arrancamos si hay gente suficiente ──
+	pausadoDesde = null;
+	if (Date.now() - ultimoStop < SegundosTrasParar * 1000) return;
+	if (gente.length < JugadoresParaArrancar) return;
+
+	var red = gente.filter(function (j) { return j.team === 1; });
+	var blue = gente.filter(function (j) { return j.team === 2; });
+
+	// Si falta gente en la cancha, la acomodamos.
+	// Con la selección por turnos activa no tocamos nada: de eso se encarga el draft.
+	if ((!red.length || !blue.length) && !(typeof SeleccionPorTurnos !== "undefined" && SeleccionPorTurnos)) {
+		var libres = gente.filter(function (j) { return j.team === 0; });
+		for (var i = 0; i < libres.length; i++) {
+			if (!red.length) { room.setPlayerTeam(libres[i].id, 1); red.push(libres[i]); continue; }
+			if (!blue.length) { room.setPlayerTeam(libres[i].id, 2); blue.push(libres[i]); continue; }
+			break;
+		}
+	}
+
+	if (!red.length || !blue.length) return;   // todavía no hay uno de cada lado
+
+	// Si sobra gente y los capitanes todavía están eligiendo, el partido espera:
+	// arrancar ahora dejaría afuera a los que están esperando su turno.
+	if (typeof draftPendiente === "function" && draftPendiente()) return;
+
+	room.startGame();
+	room.sendAnnouncement("▶️ ¡Arranca el partido!", null, 0x00FFBB, "bold", 2);
+}
+
+(function () {
+	// Latido del partido: nos dice si sigue corriendo o quedó en pausa
+	var anteriorTick = room.onGameTick;
+	room.onGameTick = function () {
+		ultimoTickVisto = Date.now();
+		if (typeof anteriorTick === "function") return anteriorTick.apply(this, arguments);
+	};
+
+	var anteriorPause = room.onGamePause;
+	room.onGamePause = function (byPlayer) {
+		if (typeof anteriorPause === "function") anteriorPause(byPlayer);
+		pausadoDesde = Date.now();
+	};
+
+	var anteriorUnpause = room.onGameUnpause;
+	room.onGameUnpause = function (byPlayer) {
+		if (typeof anteriorUnpause === "function") anteriorUnpause(byPlayer);
+		pausadoDesde = null;
+		ultimoTickVisto = Date.now();
+	};
+
+	var anteriorStop = room.onGameStop;
+	room.onGameStop = function (byPlayer) {
+		if (typeof anteriorStop === "function") anteriorStop(byPlayer);
+		pausadoDesde = null;
+		ultimoTickVisto = 0;
+		terminoEn = 0;
+		ultimoStop = Date.now();
+	};
+
+	var anteriorVictoria = room.onTeamVictory;
+	room.onTeamVictory = function (scores) {
+		if (typeof anteriorVictoria === "function") anteriorVictoria(scores);
+		terminoEn = Date.now();
+	};
+
+	var anteriorStart = room.onGameStart;
+	room.onGameStart = function (byPlayer) {
+		if (typeof anteriorStart === "function") anteriorStart(byPlayer);
+		pausadoDesde = null;
+		terminoEn = 0;
+		ultimoTickVisto = Date.now();
+	};
+
+	var anteriorJoin = room.onPlayerJoin;
+	room.onPlayerJoin = function (player) {
+		if (typeof anteriorJoin === "function") anteriorJoin(player);
+		setTimeout(revisarArranque, 3000);
+	};
+
+	setInterval(revisarArranque, 2000);
+	console.log("▶️ Arranque automático activo (con " + JugadoresParaArrancar + " jugadores despiertos, pausa máxima " + SegundosDePausaMaxima + "s)");
+})();
+
+
+// ▇▇▇▇▇▇▇▇▇ 🔀 MODOS DE EQUIPOS — ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// Tres formas de armar los equipos, que un admin cambia desde el chat:
+//
+//   !ganasigue   El bot arma los equipos y el que gana se queda; el que pierde sale.
+//   !elegir      Siempre eligen los capitanes por turnos. El partido no arranca
+//                hasta que terminen de elegir.
+//   !combinado   Si no sobra nadie, el bot arma y arranca solo.
+//                Si hay más gente de la que entra en la cancha, eligen los capitanes
+//                y el partido NO arranca hasta que terminen.
+//
+//   !modo        Dice qué modo está puesto (lo puede escribir cualquiera).
+//
+// Con "config" (el valor de fábrica) este bloque no toca nada y manda lo que diga
+// hosts/*.json. Las salas de Futsal x3 y x4 vienen en "combinado".
+
+var ModoDeEquipos = "config";        // "config" | "ganasigue" | "elegir" | "combinado"
+var RearmarConEleccion = true;       // al terminar un partido, si hay gente esperando, se vuelve a elegir
+
+var MODOS_DE_EQUIPOS = {
+	ganasigue: {
+		nombre: "🏆 GANA SIGUE",
+		explicacion: "El bot arma los equipos y el que gana se queda en la cancha.",
+	},
+	elegir: {
+		nombre: "🎽 ELEGIR",
+		explicacion: "Los capitanes eligen por turnos y el partido espera a que terminen.",
+	},
+	combinado: {
+		nombre: "🔀 COMBINADO",
+		explicacion: "Si no sobra nadie, arranca solo; si hay gente esperando, eligen los capitanes.",
+	},
+	config: {
+		nombre: "⚙️ EL DE LA SALA",
+		explicacion: "Manda la configuración de la sala; el modo no toca nada.",
+	},
+};
+
+// ¿Hay más gente despierta de la que entra en la cancha?
+function hayJugadoresDeMas() {
+	var cupo = typeof cupoPorEquipo === "function" ? cupoPorEquipo() : (typeof maxPlayersPerTeam === "number" && maxPlayersPerTeam > 0 ? maxPlayersPerTeam : 3);
+	return disponiblesParaJugar().length > cupo * 2;
+}
+
+// Deja los interruptores del script como los pide el modo.
+// Durante un partido no reacomodamos nada (salvo que un admin lo pida): se mueve gente en pleno juego.
+function aplicarModoDeEquipos(forzar) {
+	if (ModoDeEquipos === "config") return;
+	if (!forzar && room.getScores() !== null) return;
+
+	if (ModoDeEquipos === "ganasigue") {
+		SeleccionPorTurnos = false;
+		ganasigueEnabled = true;
+		// El gana-sigue necesita los equipos armados: si la sala no acomoda sola, la ponemos a acomodar
+		if (!modoJueganTodos) modoJueganAlgunos = true;
+		return;
+	}
+
+	// Los dos modos con elección no se bancan que el script acomode jugadores por su cuenta
+	var conEleccion = ModoDeEquipos === "elegir" || hayJugadoresDeMas();
+	SeleccionPorTurnos = conEleccion;
+	ganasigueEnabled = false;
+	modoJueganTodos = false;
+	modoJueganAlgunos = !conEleccion;
+	automatizadoActivado = false;
+}
+
+function nombreDelModo(modo) {
+	return (MODOS_DE_EQUIPOS[modo] || MODOS_DE_EQUIPOS.config).nombre;
+}
+
+function contarModo(destino) {
+	var info = MODOS_DE_EQUIPOS[ModoDeEquipos] || MODOS_DE_EQUIPOS.config;
+	room.sendAnnouncement("🔀 Modo de equipos: " + info.nombre, destino, 0xFFD100, "bold", 0);
+	room.sendAnnouncement("   " + info.explicacion, destino, 0xFFD100, "small", 0);
+	if (ModoDeEquipos === "combinado") {
+		room.sendAnnouncement(
+			"   Ahora mismo: " + (SeleccionPorTurnos ? "sobra gente, eligen los capitanes 🎽" : "no sobra nadie, arranca solo ▶️"),
+			destino, 0xFFD100, "small", 0
+		);
+	}
+	room.sendAnnouncement("   Los admins lo cambian con !ganasigue · !elegir · !combinado", destino, 0xFFD100, "small", 0);
+}
+
+function cambiarModoDeEquipos(modo, quien) {
+	ModoDeEquipos = modo;
+	aplicarModoDeEquipos(true);
+	room.sendAnnouncement("🔀 " + quien + " puso el modo " + nombreDelModo(modo), null, 0xFFD100, "bold", 2);
+	room.sendAnnouncement("   " + MODOS_DE_EQUIPOS[modo].explicacion, null, 0xFFD100, "small", 0);
+	if (typeof ultimoAvisoTurno !== "undefined") ultimoAvisoTurno = "";
+	if (typeof revisarTurnos === "function") setTimeout(revisarTurnos, 500);
+	if (typeof revisarArranque === "function") setTimeout(revisarArranque, 900);
+}
+
+// Terminó el partido: si hay gente esperando y el modo es con elección, se vacía la cancha
+// y se vuelve a elegir. Los que acaban de jugar pasan al final de la fila (reorderPlayers),
+// así los capitanes salen de entre los que estaban esperando.
+function rearmarTrasElPartido() {
+	if (!RearmarConEleccion) return;
+	if (ModoDeEquipos !== "elegir" && ModoDeEquipos !== "combinado") return;
+	if (typeof espectadoresListos !== "function" || !espectadoresListos().length) return;
+	if (ModoDeEquipos === "combinado" && !hayJugadoresDeMas()) return;
+
+	var jugaron = room.getPlayerList().filter(function (j) { return j.team !== 0 && j.id !== 0; });
+	if (!jugaron.length) return;
+
+	// Deja los interruptores como los pide la elección. Es a la fuerza porque el partido que
+	// terminó sigue "en curso" hasta que se lo cierra, y si no el bot vuelve a llenar la cancha.
+	aplicarModoDeEquipos(true);
+	SeleccionPorTurnos = true;
+	try { room.reorderPlayers(jugaron.map(function (j) { return j.id; }), false); } catch (e) { /* sala vieja */ }
+	jugaron.forEach(function (j) { room.setPlayerTeam(j.id, 0); });
+	if (typeof ultimoAvisoTurno !== "undefined") ultimoAvisoTurno = "";
+	room.sendAnnouncement("🎽 Hay gente esperando: se vuelven a elegir los equipos.", null, 0xFFD100, "bold", 2);
+	if (typeof revisarTurnos === "function") setTimeout(revisarTurnos, 800);
+}
+
+(function () {
+	var anteriorChat = room.onPlayerChat;
+	room.onPlayerChat = function (player, message) {
+		var texto = String(message).trim().toLowerCase();
+
+		if (texto === "!modo" || texto === "!modos") { contarModo(player.id); return false; }
+
+		var pedido = null;
+		if (texto === "!ganasigue") pedido = "ganasigue";
+		else if (texto === "!elegir" || texto === "!turnos") pedido = "elegir";
+		else if (texto === "!combinado" || texto === "!mixto") pedido = "combinado";
+		if (!pedido) return typeof anteriorChat === "function" ? anteriorChat(player, message) : true;
+
+		if (!player.admin) {
+			room.sendAnnouncement("🔒 Solo los admins cambian el modo de equipos. Con !modo ves cuál está puesto.", player.id, 0xFF4444, "bold", 2);
+			return false;
+		}
+		if (pedido === ModoDeEquipos) {
+			room.sendAnnouncement("ℹ️ El modo " + nombreDelModo(pedido) + " ya estaba puesto.", player.id, 0xFFD100, "bold", 0);
+			return false;
+		}
+		cambiarModoDeEquipos(pedido, player.name);
+		return false;
+	};
+
+	// Al entrar o salir gente cambia si sobra o no sobra, así que revisamos ahí mismo
+	var anteriorJoin = room.onPlayerJoin;
+	room.onPlayerJoin = function (player) {
+		if (typeof anteriorJoin === "function") anteriorJoin(player);
+		aplicarModoDeEquipos(false);
+	};
+
+	var anteriorLeave = room.onPlayerLeave;
+	room.onPlayerLeave = function (player) {
+		if (typeof anteriorLeave === "function") anteriorLeave(player);
+		aplicarModoDeEquipos(false);
+	};
+
+	var anteriorVictoria = room.onTeamVictory;
+	room.onTeamVictory = function (scores) {
+		if (typeof anteriorVictoria === "function") anteriorVictoria(scores);
+		setTimeout(rearmarTrasElPartido, 3500);
+	};
+
+	setInterval(function () { aplicarModoDeEquipos(false); }, 2000);
+	aplicarModoDeEquipos(true);
+	console.log("🔀 Modo de equipos: " + nombreDelModo(ModoDeEquipos) + " (!ganasigue · !elegir · !combinado · !modo)");
+})();
+
+
+// ▇▇▇▇▇▇▇▇▇ 🔐 USUARIOS Y CLAVES — ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// Cada usuario tiene su clave atada a su nombre, para que nadie le use el nick.
+//
+//   · Si el nombre con el que entrás ESTÁ registrado → se te pide la clave (!clave ...).
+//     Hasta que la pongas mirás de afuera: no entrás a la cancha ni te eligen.
+//   · Si NO está registrado → jugás normal, y cada MinutosEntreAvisosDeRegistro te aparece
+//     un cartelito para que te crees el usuario con !registrar ...
+//
+// La base la maneja Node (el launcher): acá no hay Postgres. El puente es el mismo que usa
+// el ELO — se deja el pedido en window.__panelCola y el launcher contesta llamando a
+// window.__usuarioRespuesta(). Los nombres registrados llegan en window.__USUARIOS.
+//
+// Si no hay launcher o la base está apagada, window.__USUARIOS queda vacío y NO se le pide
+// clave a nadie: la sala nunca se traba por culpa de la base.
+
+var PedirClaveAUsuarios = true;
+var MinutosEntreAvisosDeRegistro = 2;
+var SegundosParaPonerLaClave = 90;     // si no la pone, se lo echa (puede volver a entrar)
+
+var usuariosRegistrados = [];          // los nicks que tienen clave
+var usuariosVerificados = {};          // id del jugador → true cuando puso bien la clave
+var relojesDeClave = {};               // id → el timeout de los 90 segundos
+
+function esUsuarioRegistrado(nombre) {
+	var buscado = String(nombre || "").trim().toLowerCase();
+	for (var i = 0; i < usuariosRegistrados.length; i++) {
+		if (String(usuariosRegistrados[i]).trim().toLowerCase() === buscado) return true;
+	}
+	return false;
+}
+
+// Le falta poner la clave: está registrado y todavía no la puso
+function leFaltaLaClave(jugador) {
+	if (!PedirClaveAUsuarios || !jugador || jugador.id === 0) return false;
+	if (usuariosVerificados[jugador.id]) return false;
+	return esUsuarioRegistrado(jugador.name);
+}
+
+// Los demás bloques (arranque, turnos, modos) ya preguntan por esta función para saber a
+// quién no meter en la cancha. Antes siempre devolvía false; ahora también tapa al que
+// entró con un nombre registrado y todavía no puso la clave.
+function tieneRangoSinVerificar(player) {
+	return leFaltaLaClave(player);
+}
+
+function pedirLaClave(jugador) {
+	room.sendAnnouncement("🔐 " + jugador.name + " está registrado. Poné tu clave para jugar:", jugador.id, 0xFFD100, "bold", 2);
+	room.sendAnnouncement("      !clave tu-contraseña", jugador.id, 0xFFD100, "bold", 0);
+	room.sendAnnouncement("   Mientras tanto podés mirar y chatear. Si el nombre no es tuyo, entrá con otro.", jugador.id, 0x93A1B0, "small", 0);
+	room.setPlayerTeam(jugador.id, 0);
+
+	if (relojesDeClave[jugador.id]) clearTimeout(relojesDeClave[jugador.id]);
+	relojesDeClave[jugador.id] = setTimeout(function () {
+		var sigue = room.getPlayer(jugador.id);
+		if (sigue && leFaltaLaClave(sigue)) {
+			room.kickPlayer(jugador.id, "🔐 Ese nombre tiene clave y no la pusiste", false);
+		}
+	}, SegundosParaPonerLaClave * 1000);
+}
+
+// Le avisa al que no tiene usuario que se lo puede crear
+function avisarQueSeRegistre() {
+	if (!PedirClaveAUsuarios) return;
+	room.getPlayerList().forEach(function (jugador) {
+		if (jugador.id === 0 || esUsuarioRegistrado(jugador.name)) return;
+		room.sendAnnouncement("📝 " + jugador.name + ", guardá tu nombre para que nadie más lo use:", jugador.id, 0x00C853, "bold", 1);
+		room.sendAnnouncement("      !registrar tu-contraseña", jugador.id, 0x00C853, "bold", 0);
+	});
+}
+
+// ── El puente con el launcher ──
+// Se deja el pedido en la cola y el launcher contesta por window.__usuarioRespuesta
+function pedirleALaBase(accion, jugador, clave, claveNueva) {
+	if (typeof window === "undefined" || !window.__panelCola) {
+		room.sendAnnouncement("⚠️ Ahora mismo no se puede consultar la base de usuarios.", jugador.id, 0xFF4444, "bold", 2);
+		return;
+	}
+	window.__panelCola.push({
+		tipo: "usuario",
+		accion: accion,
+		id: jugador.id,
+		nick: jugador.name,
+		auth: jugador.auth || null,
+		clave: clave,
+		claveNueva: claveNueva || null,
+	});
+}
+
+// El launcher llama acá con la respuesta
+window.__usuarioRespuesta = function (respuesta) {
+	var jugador = room.getPlayer(respuesta.id);
+	if (!jugador) return;
+
+	if (respuesta.accion === "verificar") {
+		if (respuesta.ok) {
+			usuariosVerificados[jugador.id] = true;
+			if (relojesDeClave[jugador.id]) { clearTimeout(relojesDeClave[jugador.id]); delete relojesDeClave[jugador.id]; }
+			room.sendAnnouncement("✅ ¡Bienvenido de vuelta, " + jugador.name + "! Ya podés jugar.", null, 0x00C853, "bold", 2);
+		} else if (respuesta.motivo === "clave-mal") {
+			room.sendAnnouncement("❌ Esa no es la clave. Probá de nuevo: !clave tu-contraseña", jugador.id, 0xFF4444, "bold", 2);
+		} else {
+			room.sendAnnouncement("ℹ️ Ese nombre todavía no tiene clave. Creála con: !registrar tu-contraseña", jugador.id, 0xFFD100, "bold", 2);
+		}
+		return;
+	}
+
+	if (respuesta.accion === "registrar") {
+		if (respuesta.ok) {
+			usuariosVerificados[jugador.id] = true;
+			if (usuariosRegistrados.indexOf(jugador.name) === -1) usuariosRegistrados.push(jugador.name);
+			room.sendAnnouncement("✅ Listo " + jugador.name + ", tu nombre quedó guardado con tu clave.", jugador.id, 0x00C853, "bold", 2);
+			room.sendAnnouncement("   La próxima vez que entres te la va a pedir: !clave tu-contraseña", jugador.id, 0x93A1B0, "small", 0);
+		} else {
+			room.sendAnnouncement("❌ No se pudo: " + (respuesta.motivo || "probá con otra clave"), jugador.id, 0xFF4444, "bold", 2);
+		}
+		return;
+	}
+
+	if (respuesta.accion === "cambiar") {
+		room.sendAnnouncement(respuesta.ok ? "✅ Clave cambiada." : "❌ No se pudo: " + (respuesta.motivo || ""), jugador.id, respuesta.ok ? 0x00C853 : 0xFF4444, "bold", 2);
+	}
+};
+
+// El launcher deja acá la lista de nombres registrados y la va actualizando
+window.__usuariosActualizar = function (nicks) {
+	usuariosRegistrados = Array.isArray(nicks) ? nicks : [];
+	room.getPlayerList().forEach(function (jugador) {
+		if (leFaltaLaClave(jugador) && !relojesDeClave[jugador.id]) pedirLaClave(jugador);
+	});
+};
+
+(function () {
+	if (typeof window !== "undefined" && Array.isArray(window.__USUARIOS)) usuariosRegistrados = window.__USUARIOS;
+
+	var anteriorJoin = room.onPlayerJoin;
+	room.onPlayerJoin = function (jugador) {
+		if (typeof anteriorJoin === "function") anteriorJoin(jugador);
+		delete usuariosVerificados[jugador.id];
+		if (leFaltaLaClave(jugador)) setTimeout(function () { pedirLaClave(jugador); }, 1200);
+	};
+
+	var anteriorLeave = room.onPlayerLeave;
+	room.onPlayerLeave = function (jugador) {
+		if (typeof anteriorLeave === "function") anteriorLeave(jugador);
+		delete usuariosVerificados[jugador.id];
+		if (relojesDeClave[jugador.id]) { clearTimeout(relojesDeClave[jugador.id]); delete relojesDeClave[jugador.id]; }
+	};
+
+	// Al que le falta la clave no lo dejamos entrar a la cancha
+	var anteriorCambio = room.onPlayerTeamChange;
+	room.onPlayerTeamChange = function (jugador, porQuien) {
+		if (typeof anteriorCambio === "function") anteriorCambio(jugador, porQuien);
+		if (jugador.team !== 0 && leFaltaLaClave(jugador)) {
+			room.setPlayerTeam(jugador.id, 0);
+			room.sendAnnouncement("🔐 Primero poné tu clave: !clave tu-contraseña", jugador.id, 0xFFD100, "bold", 2);
+		}
+	};
+
+	var anteriorChat = room.onPlayerChat;
+	room.onPlayerChat = function (jugador, mensaje) {
+		var texto = String(mensaje).trim();
+		var partes = texto.split(/\s+/);
+		var comando = partes[0].toLowerCase();
+
+		if (comando === "!clave" || comando === "!login") {
+			if (partes.length < 2) {
+				room.sendAnnouncement("🔐 Se usa así: !clave tu-contraseña", jugador.id, 0xFFD100, "bold", 2);
+			} else {
+				pedirleALaBase("verificar", jugador, partes.slice(1).join(" "));
+			}
+			return false;
+		}
+
+		if (comando === "!registrar" || comando === "!registro") {
+			if (partes.length < 2) {
+				room.sendAnnouncement("📝 Se usa así: !registrar tu-contraseña", jugador.id, 0x00C853, "bold", 2);
+			} else if (esUsuarioRegistrado(jugador.name) && !usuariosVerificados[jugador.id]) {
+				room.sendAnnouncement("🔐 Ese nombre ya tiene clave. Poné la tuya con: !clave tu-contraseña", jugador.id, 0xFFD100, "bold", 2);
+			} else {
+				pedirleALaBase("registrar", jugador, partes.slice(1).join(" "));
+			}
+			return false;
+		}
+
+		if (comando === "!cambiarclave") {
+			if (partes.length < 3) {
+				room.sendAnnouncement("🔐 Se usa así: !cambiarclave la-vieja la-nueva", jugador.id, 0xFFD100, "bold", 2);
+			} else {
+				pedirleALaBase("cambiar", jugador, partes[1], partes[2]);
+			}
+			return false;
+		}
+
+		return typeof anteriorChat === "function" ? anteriorChat(jugador, mensaje) : true;
+	};
+
+	setInterval(avisarQueSeRegistre, MinutosEntreAvisosDeRegistro * 60 * 1000);
+	console.log("🔐 Usuarios y claves: se pide clave a los registrados, y se invita a registrarse cada " + MinutosEntreAvisosDeRegistro + " minutos");
+})();
+
+
+// ▇▇▇▇▇▇▇▇▇ 📣 AVISO DE SALA ABIERTA — ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// Cuando HaxBall entrega el link de la sala (onRoomLink), se avisa al Discord con una
+// tarjeta (embed): nombre de la sala, mapa, cupo, modo y el botón para entrar.
+//
+// Pisa a sendLinkToDiscord() del autor, que mandaba el link a SU webhook en texto pelado.
+// En JS gana la última declaración de una función, así que esta se usa en todos lados
+// sin tocar el onRoomLink ofuscado.
+//
+// ⚠️ El webhook es una llave: cualquiera que lo tenga puede escribir en ese canal.
+// Si se filtra, se borra el webhook en Discord (Editar canal → Integraciones) y se pone el nuevo acá.
+
+var AvisoSalaAbierta = true;          // false para no avisar nada
+var WebhookSalaAbierta = "https://discord.com/api/webhooks/1549587917314326648/C-MCs-1bd1h_H42bV1byqyDuTIAikoFza_X3ddzcnfqE2Q9Ig4TL4MVGSMWHGi5QIthB";
+var DiscordDeLaSala = "https://discord.gg/TGRug4BGG";
+var TagSalaAbierta = "@here";         // "@here", "@everyone", un ID de rol, o "" para no avisar a nadie
+var NombreDelAvisador = "ÑandutíBall 🇵🇾";
+var ColorSalaAbierta = 0x00C853;      // el color de la barra lateral de la tarjeta
+
+// ── La plantilla ──
+// Podés usar {sala} {link} {mapa} {cupo} {modo} {ubicacion} {discord} en cualquiera de estos textos.
+var TituloSalaAbierta = "🟢 ¡{sala} está abierta!";
+var MensajeSalaAbierta = "⚽ Ya se puede entrar a jugar. ¡Te esperamos en la cancha!";
+var BotonSalaAbierta = "👉 **[ENTRAR A LA SALA]({link})**";
+var PieSalaAbierta = "ÑandutíBall 🇵🇾 · {discord}";
+
+// ── El cartelito del Discord en el chat de la sala ──
+var AvisoDiscordEnElChat = true;      // false para no invitar al Discord en el chat
+var MinutosEntreAvisos = 3;           // cada cuánto sale el cartelito
+var MensajeDiscordEnElChat = [
+	"💬 ¿Buscás equipo, torneos o querés pasar tus quejas? Entrá al Discord de ÑandutíBall 🇵🇾",
+	"🔗 {discord}",
+];
+
+// Si el lanzador puso WEBHOOK_SALA_ABIERTA en .env, ese manda (la llave no queda en el repo)
+if (typeof window !== "undefined" && window.__WEBHOOK_SALA) WebhookSalaAbierta = window.__WEBHOOK_SALA;
+
+var ultimoLinkAvisado = null;
+
+function datosDeLaSala(link) {
+	var modo = "—";
+	if (typeof nombreDelModo === "function" && typeof ModoDeEquipos !== "undefined" && ModoDeEquipos !== "config") {
+		modo = nombreDelModo(ModoDeEquipos);
+	} else if (typeof modoJueganTodos !== "undefined" && modoJueganTodos) {
+		modo = "Juegan todos";
+	} else if (typeof automatizadoActivado !== "undefined" && automatizadoActivado) {
+		modo = "Automático";
+	}
+	return {
+		"{sala}": typeof NombreHost !== "undefined" ? NombreHost : "HaxBall",
+		"{link}": link || "",
+		"{mapa}": typeof MapaPorDefecto !== "undefined" ? MapaPorDefecto : (typeof currentMap !== "undefined" ? currentMap : "—"),
+		"{cupo}": typeof CantidadDeJugadores !== "undefined" ? String(CantidadDeJugadores) : "—",
+		"{modo}": modo,
+		"{ubicacion}": typeof countryOfHost !== "undefined" ? countryOfHost : "—",
+		"{discord}": DiscordDeLaSala,
+	};
+}
+
+function completarPlantilla(texto, datos) {
+	var salida = String(texto || "");
+	for (var marca in datos) {
+		if (Object.prototype.hasOwnProperty.call(datos, marca)) salida = salida.split(marca).join(datos[marca]);
+	}
+	return salida;
+}
+
+// "@here" y "@everyone" van tal cual; cualquier otra cosa se toma como ID de rol
+function mencionSalaAbierta() {
+	var tag = String(TagSalaAbierta || "").trim();
+	if (!tag) return "";
+	if (tag === "@here" || tag === "@everyone") return tag;
+	return "<@&" + tag.replace(/[<@&>]/g, "") + ">";
+}
+
+function avisarSalaAbierta(link) {
+	if (!AvisoSalaAbierta || !WebhookSalaAbierta || !link) return;
+	if (link === ultimoLinkAvisado) return;      // el mismo link no se avisa dos veces
+	ultimoLinkAvisado = link;
+
+	var datos = datosDeLaSala(link);
+	var cuerpo = {
+		username: NombreDelAvisador,
+		content: mencionSalaAbierta(),
+		embeds: [{
+			title: completarPlantilla(TituloSalaAbierta, datos),
+			url: link,
+			description: completarPlantilla(MensajeSalaAbierta, datos) + "\n\n" + completarPlantilla(BotonSalaAbierta, datos),
+			color: ColorSalaAbierta,
+			fields: [
+				{ name: "⚽ Mapa", value: datos["{mapa}"], inline: true },
+				{ name: "🔀 Modo", value: datos["{modo}"], inline: true },
+				{ name: "👥 Cupo", value: datos["{cupo}"] + " jugadores", inline: true },
+				{ name: "📍 Ubicación", value: datos["{ubicacion}"], inline: true },
+				{ name: "🔗 Link", value: link, inline: false },
+			],
+			footer: { text: completarPlantilla(PieSalaAbierta, datos) },
+			timestamp: new Date().toISOString(),
+		}],
+	};
+
+	try {
+		var xhr = new XMLHttpRequest();
+		xhr.open("POST", WebhookSalaAbierta);
+		xhr.setRequestHeader("Content-type", "application/json");
+		xhr.send(JSON.stringify(cuerpo));
+		console.log("📣 Aviso de sala abierta enviado al Discord");
+	} catch (e) {
+		console.log("📣 No se pudo avisar al Discord: " + e.message);
+	}
+}
+
+// Esta pisa a la del autor (que mandaba el link a su propio webhook).
+// El texto que arma el script no nos sirve: usamos roomLink, que ya está puesto.
+function sendLinkToDiscord(mensajeDelAutor) {
+	var link = typeof roomLink !== "undefined" && roomLink ? roomLink : null;
+	if (!link) {
+		var encontrado = String(mensajeDelAutor || "").match(/https?:\/\/\S*haxball\.com\/play\S*/);
+		if (encontrado) link = encontrado[0];
+	}
+	avisarSalaAbierta(link);
+}
+
+// Invita al Discord en el chat de la sala. Con la sala vacía no habla solo.
+function avisarDiscordEnElChat() {
+	if (!AvisoDiscordEnElChat) return;
+	if (!room.getPlayerList().filter(function (j) { return j.id !== 0; }).length) return;
+
+	var datos = datosDeLaSala(typeof roomLink !== "undefined" ? roomLink : "");
+	for (var i = 0; i < MensajeDiscordEnElChat.length; i++) {
+		room.sendAnnouncement(completarPlantilla(MensajeDiscordEnElChat[i], datos), null, 0x5865F2, "bold", i === 0 ? 1 : 0);
+	}
+}
+
+// Red de seguridad: si el onRoomLink del autor cambiara y no llamara a sendLinkToDiscord,
+// el aviso sale igual desde acá.
+(function () {
+	var anteriorLink = room.onRoomLink;
+	room.onRoomLink = function (url) {
+		if (typeof anteriorLink === "function") anteriorLink(url);
+		avisarSalaAbierta(url);
+	};
+
+	if (AvisoDiscordEnElChat) {
+		setInterval(avisarDiscordEnElChat, MinutosEntreAvisos * 60 * 1000);
+		console.log("📣 Invitación al Discord en el chat cada " + MinutosEntreAvisos + " minutos");
+	}
+})();
+
+
+// ▇▇▇▇▇▇▇▇▇ 🤫 COMANDOS SIN ECO — ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// Lo que empieza con "!" es un comando: se ejecuta, pero NO se muestra en el chat.
+// Así nadie ve tu clave cuando escribís "!clave loquesea", ni se llena la sala de
+// comandos de los demás.
+//
+// Va último a propósito: envuelve a todos los demás handlers, los deja hacer su trabajo
+// y después se queda con el mensaje.
+//
+// Lo que NO es comando sigue saliendo normal, incluidas las formas de hablar del script:
+// "t mensaje" (a tu equipo), "ac mensaje" (entre admins) y "@@nick mensaje" (privado).
+
+var MostrarComandosEnElChat = false;   // true para volver a verlos (como antes)
+
+(function () {
+	var anteriorChat = room.onPlayerChat;
+	room.onPlayerChat = function (jugador, mensaje) {
+		var esComando = String(mensaje).trim().charAt(0) === "!";
+
+		var respuesta = typeof anteriorChat === "function" ? anteriorChat(jugador, mensaje) : true;
+
+		// Si alguno de los handlers ya dijo que no se muestre, se respeta
+		if (respuesta === false) return false;
+		if (esComando && !MostrarComandosEnElChat) return false;
+		return respuesta;
+	};
+
+	console.log("🤫 Los comandos (!) no se muestran en el chat");
 })();
 
 

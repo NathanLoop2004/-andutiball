@@ -1,0 +1,187 @@
+
+
+// ▇▇▇▇▇▇▇▇▇ ▶️ ARRANQUE AUTOMÁTICO — ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// Con 2 personas despiertas en la sala ya se juega, sin esperar a que un admin apriete nada.
+//
+//   · Partido parado (alguien le dio a Stop): a los SegundosTrasParar vuelve a arrancar.
+//   · Partido en pausa: a los SegundosDePausaMaxima se reanuda solo.
+//   · Partido terminado (hubo ganador): a los SegundosTrasVictoria se cierra, para que empiece otro.
+//   · Mientras los capitanes eligen: el partido queda EN PAUSA hasta que los equipos estén
+//     completos (3v3, 4v4, lo que diga el cupo). No se juega con la cancha a medio armar.
+//
+// Arrancar y reanudar piden lo mismo: JugadoresParaArrancar jugadores que NO estén AFK.
+// Si uno de los dos está AFK no cuenta, así que el partido no arranca ni se reanuda
+// hasta que vuelva (o hasta que entre otro).
+//
+// Y si los capitanes están eligiendo (bloque 🔀 MODOS DE EQUIPOS), el partido espera a
+// que terminen: arrancar antes dejaría afuera a los que están esperando su turno.
+//
+// Se banca que no haya ningún admin conectado: el bot hace todo por su cuenta.
+
+var AutoArranque = true;              // arrancar y reanudar solo
+var JugadoresParaArrancar = 2;        // con esta cantidad de jugadores despiertos ya se juega
+var SegundosDePausaMaxima = 10;       // una pausa más larga que esto se levanta sola
+var SegundosTrasParar = 5;            // respiro después de un stop, para no pisar un cambio de mapa
+var SegundosTrasVictoria = 8;         // cuánto esperamos, tras un ganador, antes de cerrar el partido
+
+var pausadoDesde = null;
+var ultimoStop = 0;
+var ultimoTickVisto = 0;
+var terminoEn = 0;                    // cuándo terminó el último partido (0 = no terminó)
+var pausadoPorElDraft = false;        // la pausa la pusimos nosotros mientras se elige
+
+// Los que pueden entrar a la cancha: sin el bot, sin AFK y sin rangos a medio verificar
+function disponiblesParaJugar() {
+	return room.getPlayerList().filter(function (j) {
+		if (j.id === 0) return false;
+		if (typeof afkPlayerIDs !== "undefined" && afkPlayerIDs.has && afkPlayerIDs.has(j.id)) return false;
+		if (typeof tieneRangoSinVerificar === "function" && tieneRangoSinVerificar(j)) return false;
+		return true;
+	});
+}
+
+// ¿El partido está pausado? No hay función en la API que lo diga, así que lo deducimos:
+// mientras el juego corre, onGameTick entra ~60 veces por segundo; en pausa deja de entrar.
+// Es lo más confiable, porque no depende de que el evento onGamePause nos haya llegado.
+function partidoPausado() {
+	if (room.getScores() === null) return false;
+	if (ultimoTickVisto && Date.now() - ultimoTickVisto > 1500) return true;
+	if (typeof isGamePaused !== "undefined" && isGamePaused) return true;
+	return pausadoDesde !== null;
+}
+
+function revisarArranque() {
+	if (!AutoArranque) return;
+
+	// Si el script está en pleno cambio de mapa, no nos metemos
+	if (typeof gameRestarting !== "undefined" && gameRestarting) return;
+
+	var gente = disponiblesParaJugar();
+
+	// ── Partido en curso ──
+	if (room.getScores() !== null) {
+		// Partido terminado (alguien ganó): con el gana-sigue apagado, el script no lo cierra
+		// nunca y la sala se queda con el marcador final puesto. Lo cerramos nosotros y el
+		// próximo arranca solo. Si el script ya arrancó otro (gana-sigue), onGameStart lo borra.
+		if (terminoEn) {
+			if (Date.now() - terminoEn < SegundosTrasVictoria * 1000) return;
+			terminoEn = 0;
+			room.stopGame();
+			return;
+		}
+		// Si los capitanes están eligiendo, el partido se pausa hasta que terminen:
+		// no se juega con los equipos a medio armar.
+		if (typeof draftPendiente === "function" && draftPendiente()) {
+			if (!partidoPausado()) {
+				pausadoPorElDraft = true;
+				room.pauseGame(true);
+				room.sendAnnouncement("⏸️ Esperando a que terminen de elegir los equipos…", null, 0xFFD100, "bold", 2);
+			}
+			return;
+		}
+
+		// Terminaron de elegir: se sigue jugando enseguida, sin esperar los 10 segundos
+		if (pausadoPorElDraft && partidoPausado()) {
+			pausadoPorElDraft = false;
+			pausadoDesde = null;
+			if (gente.length >= JugadoresParaArrancar) {
+				room.pauseGame(false);
+				room.sendAnnouncement("▶️ ¡Equipos completos! Seguimos jugando.", null, 0x00FFBB, "bold", 2);
+			}
+			return;
+		}
+
+		// Lo único que miramos es que no se quede pausado
+		if (!partidoPausado()) { pausadoDesde = null; pausadoPorElDraft = false; return; }
+		if (!pausadoDesde) pausadoDesde = Date.now();            // se pausó sin avisarnos
+		if (gente.length < JugadoresParaArrancar) return;        // no hay con quién seguir jugando
+		if (Date.now() - pausadoDesde < SegundosDePausaMaxima * 1000) return;
+
+		pausadoDesde = null;
+		room.pauseGame(false);
+		room.sendAnnouncement("▶️ Se reanuda el partido (la pausa duró más de " + SegundosDePausaMaxima + " segundos).", null, 0x00FFBB, "bold", 2);
+		return;
+	}
+
+	// ── Sin partido: arrancamos si hay gente suficiente ──
+	pausadoDesde = null;
+	if (Date.now() - ultimoStop < SegundosTrasParar * 1000) return;
+	if (gente.length < JugadoresParaArrancar) return;
+
+	var red = gente.filter(function (j) { return j.team === 1; });
+	var blue = gente.filter(function (j) { return j.team === 2; });
+
+	// Si falta gente en la cancha, la acomodamos.
+	// Con la selección por turnos activa no tocamos nada: de eso se encarga el draft.
+	if ((!red.length || !blue.length) && !(typeof SeleccionPorTurnos !== "undefined" && SeleccionPorTurnos)) {
+		var libres = gente.filter(function (j) { return j.team === 0; });
+		for (var i = 0; i < libres.length; i++) {
+			if (!red.length) { room.setPlayerTeam(libres[i].id, 1); red.push(libres[i]); continue; }
+			if (!blue.length) { room.setPlayerTeam(libres[i].id, 2); blue.push(libres[i]); continue; }
+			break;
+		}
+	}
+
+	if (!red.length || !blue.length) return;   // todavía no hay uno de cada lado
+
+	// Si sobra gente y los capitanes todavía están eligiendo, el partido espera:
+	// arrancar ahora dejaría afuera a los que están esperando su turno.
+	if (typeof draftPendiente === "function" && draftPendiente()) return;
+
+	room.startGame();
+	room.sendAnnouncement("▶️ ¡Arranca el partido!", null, 0x00FFBB, "bold", 2);
+}
+
+(function () {
+	// Latido del partido: nos dice si sigue corriendo o quedó en pausa
+	var anteriorTick = room.onGameTick;
+	room.onGameTick = function () {
+		ultimoTickVisto = Date.now();
+		if (typeof anteriorTick === "function") return anteriorTick.apply(this, arguments);
+	};
+
+	var anteriorPause = room.onGamePause;
+	room.onGamePause = function (byPlayer) {
+		if (typeof anteriorPause === "function") anteriorPause(byPlayer);
+		pausadoDesde = Date.now();
+	};
+
+	var anteriorUnpause = room.onGameUnpause;
+	room.onGameUnpause = function (byPlayer) {
+		if (typeof anteriorUnpause === "function") anteriorUnpause(byPlayer);
+		pausadoDesde = null;
+		ultimoTickVisto = Date.now();
+	};
+
+	var anteriorStop = room.onGameStop;
+	room.onGameStop = function (byPlayer) {
+		if (typeof anteriorStop === "function") anteriorStop(byPlayer);
+		pausadoDesde = null;
+		ultimoTickVisto = 0;
+		terminoEn = 0;
+		ultimoStop = Date.now();
+	};
+
+	var anteriorVictoria = room.onTeamVictory;
+	room.onTeamVictory = function (scores) {
+		if (typeof anteriorVictoria === "function") anteriorVictoria(scores);
+		terminoEn = Date.now();
+	};
+
+	var anteriorStart = room.onGameStart;
+	room.onGameStart = function (byPlayer) {
+		if (typeof anteriorStart === "function") anteriorStart(byPlayer);
+		pausadoDesde = null;
+		terminoEn = 0;
+		ultimoTickVisto = Date.now();
+	};
+
+	var anteriorJoin = room.onPlayerJoin;
+	room.onPlayerJoin = function (player) {
+		if (typeof anteriorJoin === "function") anteriorJoin(player);
+		setTimeout(revisarArranque, 3000);
+	};
+
+	setInterval(revisarArranque, 2000);
+	console.log("▶️ Arranque automático activo (con " + JugadoresParaArrancar + " jugadores despiertos, pausa máxima " + SegundosDePausaMaxima + "s)");
+})();

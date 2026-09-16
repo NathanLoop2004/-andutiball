@@ -7,18 +7,24 @@
 // Cómo funciona en la cancha:
 //   · Los dos primeros espectadores pasan solos a Red y Blue: son los capitanes.
 //   · El bot avisa de quién es el turno y lista a los espectadores con su número.
-//   · El capitán escribe el número en el chat (o "!elegir 7"). También vale para los admins.
-//   · Si nadie elige en SegundosParaElegir, el bot elige por él y sigue la ronda.
+//   · El capitán escribe !7 (o !elegir 7). También vale para los admins.
+//     Va con ! a propósito: escribir un número pelado es hablar, no elegir.
+//   · Sobre el final se cuenta 3… 2… 1… en el chat.
+//   · Si el capitán no elige en SegundosParaElegir, se va de la sala y elige el que sigue
+//     de su equipo; si el equipo queda vacío, entra un espectador de capitán.
 //
-// Se prende por sala con "SeleccionPorTurnos": true en hosts/*.json.
+// Lo prende y lo apaga el bloque 🔀 MODOS DE EQUIPOS (comandos !elegir / !combinado / !ganasigue).
 // Requiere que la sala NO tenga modoJueganTodos ni automatizadoActivado: si el script acomoda
-// jugadores por su cuenta, se pisan entre sí.
+// jugadores por su cuenta, se pisan entre sí; de eso también se encarga ese bloque.
 
-var SeleccionPorTurnos = false;    // lo prende el JSON de cada sala
-var SegundosParaElegir = 25;       // si el capitán no elige, elige el bot
+var SeleccionPorTurnos = false;    // se prende solo según el modo de la sala
+var SegundosParaElegir = 10;       // lo que tiene el capitán para elegir
+var EcharAlQueNoElige = true;      // true: se va de la sala | false: pasa a espectador y al final de la fila
+var SegundosDeCuenta = 3;          // los últimos segundos se cuentan en el chat (3… 2… 1…)
 
 var turnoDelEquipo = 1;            // 1 = Red, 2 = Blue
 var relojDeEleccion = null;
+var relojesDeCuenta = [];          // los avisos 3… 2… 1…
 var ultimoAvisoTurno = "";
 
 function cupoPorEquipo() {
@@ -56,6 +62,26 @@ function puedeElegir(jugador) {
 function frenarReloj() {
 	if (relojDeEleccion) clearTimeout(relojDeEleccion);
 	relojDeEleccion = null;
+	for (var i = 0; i < relojesDeCuenta.length; i++) clearTimeout(relojesDeCuenta[i]);
+	relojesDeCuenta = [];
+}
+
+// Los últimos segundos se avisan en el chat: 3… 2… 1… y se acabó
+function prepararCuentaRegresiva() {
+	for (var queda = Math.min(SegundosDeCuenta, SegundosParaElegir - 1); queda >= 1; queda--) {
+		relojesDeCuenta.push(setTimeout(avisarCuenta(queda), (SegundosParaElegir - queda) * 1000));
+	}
+}
+
+function avisarCuenta(queda) {
+	return function () {
+		if (!SeleccionPorTurnos || !relojDeEleccion) return;   // ya eligió, no contamos al pedo
+		var cap = capitanDe(turnoDelEquipo);
+		room.sendAnnouncement(
+			"⏳ " + (cap ? cap.name : "El capitán") + " elige en " + queda + "…",
+			null, queda === 1 ? 0xFF4444 : 0xFFD100, "bold", queda === 1 ? 2 : 0
+		);
+	};
 }
 
 function moverA(jugador, equipo) {
@@ -76,11 +102,12 @@ function avisarTurno(libres) {
 
 	var color = turnoDelEquipo === 1 ? 0xFF5D5D : 0x18FDE8;
 	room.sendAnnouncement(
-		"🎽 Turno de " + (turnoDelEquipo === 1 ? "🔴 " + NombreEquipoRojo : "🔵 " + NombreEquipoAzul) + " — elige " + quien,
+		"🎽 Turno de " + (turnoDelEquipo === 1 ? "🔴 " + NombreEquipoRojo : "🔵 " + NombreEquipoAzul) + " — elige " + quien +
+			" (" + SegundosParaElegir + "s" + (EcharAlQueNoElige ? " o salís de la sala" : "") + ")",
 		null, color, "bold", 2
 	);
 	room.sendAnnouncement(
-		"   Escribí el número del jugador: " + libres.map(function (j) { return "[" + j.id + "] " + j.name; }).join("   "),
+		"   Escribí !numero para elegir: " + libres.map(function (j) { return "!" + j.id + " " + j.name; }).join("   "),
 		null, color, "small", 0
 	);
 }
@@ -92,11 +119,61 @@ function elegirJugador(quienElige, idElegido) {
 		room.sendAnnouncement("❌ Ese número no está en la lista de espectadores.", quienElige.id, 0xFF4444, "bold", 2);
 		return false;
 	}
+	if (listaDelEquipo(turnoDelEquipo).length >= cupoPorEquipo()) {
+		room.sendAnnouncement("❌ Ese equipo ya está lleno.", quienElige.id, 0xFF4444, "bold", 2);
+		return false;
+	}
 	frenarReloj();
 	moverA(elegido, turnoDelEquipo);
 	turnoDelEquipo = turnoDelEquipo === 1 ? 2 : 1;
 	setTimeout(revisarTurnos, 600);
 	return true;
+}
+
+// ¿Quedó una elección a medio hacer? Mientras sea que sí, el partido no arranca:
+// hay gente esperando y todavía hay lugar en la cancha.
+function draftPendiente() {
+	if (!SeleccionPorTurnos) return false;
+	if (!espectadoresListos().length) return false;
+	var cupo = cupoPorEquipo();
+	return listaDelEquipo(1).length < cupo || listaDelEquipo(2).length < cupo;
+}
+
+// Se acabó el tiempo del capitán. Sale de la cancha y el turno pasa al que ya estaba en su
+// equipo; si el equipo queda vacío, revisarTurnos mete de capitán al primero que espera.
+// A los admins y al bot no se los echa: en ese caso elige el bot y la ronda sigue.
+function seAcaboElTiempo() {
+	relojDeEleccion = null;
+	frenarReloj();
+	if (!SeleccionPorTurnos) return;
+
+	var quedan = espectadoresListos();
+	if (!quedan.length) return;                       // ya no hay a quien elegir
+
+	var cap = capitanDe(turnoDelEquipo);
+	if (!cap || cap.id === 0 || cap.admin) {          // al admin no lo echamos
+		room.sendAnnouncement("⏱️ Se acabó el tiempo: elige el bot.", null, 0xFFD100, "small", 0);
+		moverA(quedan[0], turnoDelEquipo);
+		turnoDelEquipo = turnoDelEquipo === 1 ? 2 : 1;
+		setTimeout(revisarTurnos, 600);
+		return;
+	}
+
+	ultimoAvisoTurno = "";
+	room.sendAnnouncement(
+		"⏳ " + cap.name + " no eligió en " + SegundosParaElegir + " segundos. Elige el que sigue.",
+		null, 0xFF6B6B, "bold", 2
+	);
+
+	if (EcharAlQueNoElige) {
+		// El motivo importa: el bloque compat se traga los kicks que hablan de AFK o inactividad
+		room.kickPlayer(cap.id, "⏳ Te tocaba elegir y no elegiste", false);
+	} else {
+		room.setPlayerTeam(cap.id, 0);
+		// Al final de la fila, para que no vuelva a salir capitán al toque
+		try { room.reorderPlayers([cap.id], false); } catch (e) { /* sala vieja */ }
+	}
+	setTimeout(revisarTurnos, 800);
 }
 
 function revisarTurnos() {
@@ -130,24 +207,17 @@ function revisarTurnos() {
 
 	avisarTurno(libres);
 
-	// Si el capitán se cuelga, elige el bot y la ronda sigue
+	// Si el capitán se cuelga, se va y elige el que sigue
 	if (!relojDeEleccion) {
-		relojDeEleccion = setTimeout(function () {
-			relojDeEleccion = null;
-			var quedan = espectadoresListos();
-			if (!SeleccionPorTurnos || !quedan.length) return;
-			room.sendAnnouncement("⏱️ Se acabó el tiempo: elige el bot.", null, 0xFFD100, "small", 0);
-			moverA(quedan[0], turnoDelEquipo);
-			turnoDelEquipo = turnoDelEquipo === 1 ? 2 : 1;
-			setTimeout(revisarTurnos, 600);
-		}, SegundosParaElegir * 1000);
+		relojDeEleccion = setTimeout(seAcaboElTiempo, SegundosParaElegir * 1000);
+		prepararCuentaRegresiva();
 	}
 }
 
 // ── Enganches ──
+// Se enganchan siempre, aunque la sala arranque sin turnos: el modo se puede cambiar en
+// caliente con !elegir / !combinado, y si SeleccionPorTurnos está en false no hacen nada.
 (function () {
-	if (!SeleccionPorTurnos) return;
-
 	var anteriorJoin = room.onPlayerJoin;
 	room.onPlayerJoin = function (player) {
 		if (typeof anteriorJoin === "function") anteriorJoin(player);
@@ -168,11 +238,12 @@ function revisarTurnos() {
 		setTimeout(revisarTurnos, 2000);
 	};
 
-	// El capitán elige escribiendo el número, o con "!elegir 7"
+	// El capitán elige con "!7" o con "!elegir 7". Siempre con !, para que un número
+	// suelto en el chat sea un número y no una elección.
 	var anteriorChat = room.onPlayerChat;
 	room.onPlayerChat = function (player, message) {
 		var texto = String(message).trim();
-		var m = texto.match(/^(?:!elegir\s+)?(\d{1,3})$/i);
+		var m = texto.match(/^!(?:elegir\s*)?(\d{1,3})$/i);
 		if (m && espectadoresListos().length && puedeElegir(player)) {
 			elegirJugador(player, parseInt(m[1], 10));
 			return false;
@@ -186,5 +257,5 @@ function revisarTurnos() {
 	};
 
 	setInterval(revisarTurnos, 6000);
-	console.log("🎽 Selección por turnos activa (cupo " + cupoPorEquipo() + " por equipo)");
+	console.log("🎽 Selección por turnos lista (cupo " + cupoPorEquipo() + " por equipo, arranca " + (SeleccionPorTurnos ? "prendida" : "apagada") + ")");
 })();

@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ñandutí Web</title>
+<link rel="stylesheet" href="/css/nanduti.css">
+</head>
+<body>
+
+<div class="barra">
+  <a class="marca" href="/"><span class="telar">🕸️</span> Ñandutí Web</a>
+  <div class="derecha" id="derecha"></div>
+</div>
+
+<div class="tapa">
+  <h1>🕸️ Ñandutí Web</h1>
+  <p>El host paraguayo de HaxBall. Entrá a jugar, guardá tu nombre y mirá cómo venís.</p>
+  <div class="botones" id="botonesTapa"></div>
+  <div class="aviso" id="avisoTapa"></div>
+</div>
+
+<div class="centro">
+  <div class="tarjetas">
+    <div class="tarjeta">
+      <h3>⚽ Cuatro salas</h3>
+      <p>Futsal 3v3, 4v4, Futsal automático y Real Soccer. Mapas propios y camisetas de los clubes paraguayos.</p>
+    </div>
+    <div class="tarjeta">
+      <h3>🔐 Tu nombre es tuyo</h3>
+      <p>Registrate con una contraseña y nadie más va a poder entrar con tu nick.</p>
+    </div>
+    <div class="tarjeta">
+      <h3>📊 Tu puntaje</h3>
+      <p>Cada partido suma o resta ELO. Las cuatro salas comparten la misma tabla.</p>
+    </div>
+    <div class="tarjeta">
+      <h3>💬 Discord</h3>
+      <p>Las novedades y los torneos se avisan en el <a href="https://discord.gg/TGRug4BGG" target="_blank" rel="noopener">Discord de ÑandutíBall</a>.</p>
+    </div>
+  </div>
+
+  <div id="misDatos" hidden>
+    <h2 style="margin-top:36px">📊 Cómo venís</h2>
+    <div class="datos" id="datos"></div>
+  </div>
+</div>
+
+<div class="pie">ÑandutíBall 🇵🇾 · hecho por Jinder</div>
+
+<script src="/js/sesion.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+
+function pintarTapa() {
+  const u = Sesion.usuario();
+
+  if (!u) {
+    $("botonesTapa").innerHTML = `
+      <a class="boton principal grande" href="/frm/registro/">Crear mi cuenta</a>
+      <a class="boton grande" href="/frm/login/">Ya tengo cuenta</a>`;
+    $("misDatos").hidden = true;
+    return;
+  }
+
+  $("botonesTapa").innerHTML = u.admin
+    ? '<a class="boton principal grande" href="/frm/panel/">🎛️ Abrir el panel</a>'
+    : '<span class="aviso ok">¡Hola ' + Sesion.escapar(u.nick) + "! Entrá a cualquier sala con tu nombre y tu contraseña.</span>";
+
+  $("misDatos").hidden = false;
+  $("datos").innerHTML = [
+    ["ELO", u.elo],
+    ["Partidos", u.partidos],
+    ["Ganados", u.ganados],
+    ["Goles", u.goles],
+    ["Asistencias", u.asistencias],
+  ].map(([nombre, valor]) => `<div class="dato"><b>${valor ?? 0}</b><span>${nombre}</span></div>`).join("");
+}
+
+if (new URLSearchParams(location.search).get("sinpermiso")) {
+  $("avisoTapa").className = "aviso mal";
+  $("avisoTapa").textContent = "Esa parte es solo para los administradores.";
+}
+
+Sesion.pintarBarra("derecha");
+pintarTapa();
+
+// Por si le cambiaron el rango o los puntos desde la última vez
+Sesion.refrescar().then((usuario) => {
+  if (usuario) { Sesion.pintarBarra("derecha"); pintarTapa(); }
+});
+Sesion.mantener();   // el token se renueva solo mientras la pestaña esté abierta
+</script>
+</body>
+</html>

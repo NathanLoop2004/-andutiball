@@ -1,0 +1,30 @@
+
+
+// ▇▇▇▇▇▇▇▇▇ 🤫 COMANDOS SIN ECO — ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// Lo que empieza con "!" es un comando: se ejecuta, pero NO se muestra en el chat.
+// Así nadie ve tu clave cuando escribís "!clave loquesea", ni se llena la sala de
+// comandos de los demás.
+//
+// Va último a propósito: envuelve a todos los demás handlers, los deja hacer su trabajo
+// y después se queda con el mensaje.
+//
+// Lo que NO es comando sigue saliendo normal, incluidas las formas de hablar del script:
+// "t mensaje" (a tu equipo), "ac mensaje" (entre admins) y "@@nick mensaje" (privado).
+
+var MostrarComandosEnElChat = false;   // true para volver a verlos (como antes)
+
+(function () {
+	var anteriorChat = room.onPlayerChat;
+	room.onPlayerChat = function (jugador, mensaje) {
+		var esComando = String(mensaje).trim().charAt(0) === "!";
+
+		var respuesta = typeof anteriorChat === "function" ? anteriorChat(jugador, mensaje) : true;
+
+		// Si alguno de los handlers ya dijo que no se muestre, se respeta
+		if (respuesta === false) return false;
+		if (esComando && !MostrarComandosEnElChat) return false;
+		return respuesta;
+	};
+
+	console.log("🤫 Los comandos (!) no se muestran en el chat");
+})();

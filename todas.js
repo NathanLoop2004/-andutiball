@@ -1,13 +1,22 @@
-// Levanta las salas y el panel, sin Docker.
+// El arrancador de todo: Ñandutí Web, el panel, las 4 salas y el túnel de Cloudflare.
 //
-//   npm start            las 4 salas + el panel
-//   npm start 4v4        solo esa sala (3v3 · 4v4 · todos · realsoccer)
+//   npm start            todo junto
+//   npm start 4v4        todo, pero con una sola sala (3v3 · 4v4 · todos · realsoccer)
 //
-// Cada sala corre en su propio proceso y en su propio puerto; el panel las junta en 8080.
-// Se corta todo junto con Ctrl+C.
+// Cada cosa corre en su propio proceso y todo se corta junto con Ctrl+C.
+//
+// La BASE DE DATOS va aparte, a propósito: tiene su compose y su propio ciclo de vida
+// (los datos no se apagan con las salas).
+//
+//   npm run base         levanta Postgres
+//   npm run base:migrar  crea o actualiza las tablas
+//
+// Si la base no está levantada, igual arranca todo: la sala no pide claves y la web no
+// deja entrar, pero nadie se queda sin jugar.
 
 const { spawn } = require("child_process");
 const path = require("path");
+const { hayBase, cerrarBase, entornoActivo } = require("./services/ConexionBase");
 
 const PANEL_PORT = Number(process.env.PANEL_PORT || 8080);
 
@@ -64,17 +73,41 @@ function lanzar(nombre, color, archivo, variables) {
   return hijo;
 }
 
-console.log(`\n🕸️  ÑandutíBall — levantando ${SALAS.length === 1 ? SALAS[0].nombre : "las " + SALAS.length + " salas"}\n`);
+// El túnel viene prendido; se apaga con TUNEL_WEB=no en .env
+const conTunel = !/^(no|false|0)$/i.test(String(process.env.TUNEL_WEB ?? "si").trim());
+
+console.log(`\n🕸️  ÑandutíBall — levantando ${SALAS.length === 1 ? SALAS[0].nombre : "las " + SALAS.length + " salas"}, la web${conTunel ? ", el túnel" : ""} y el panel\n`);
 
 // HaxBall devuelve 429 si se crean varias salas al mismo tiempo desde una misma IP.
 const RETARDO_ENTRE_SALAS = Number(process.env.RETARDO_ENTRE_SALAS_MS || 8000);
 const espera = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// La base va aparte: acá solo miramos cómo está y lo decimos
+async function mirarLaBase() {
+  const ok = await hayBase().catch(() => false);
+  await cerrarBase().catch(() => {});
+  if (ok) {
+    console.log(`🗄️  Base de datos: conectada ${GRIS}(${entornoActivo})${RESET}`);
+  } else {
+    console.log(`🗄️  Base de datos: ${GRIS}apagada — las salas no van a pedir clave y la web no deja entrar${RESET}`);
+    console.log(`   ${GRIS}👉 Para levantarla, en otra terminal:  npm run base${RESET}`);
+  }
+  console.log("");
+}
+
 (async () => {
+  await mirarLaBase();
+
   lanzar("panel", "\x1b[34m", "panel/server.js", {
     PANEL_PORT: String(PANEL_PORT),
     SALAS: SALAS.map((s) => `${s.clave}|${s.nombre}|http://localhost:${s.puerto}`).join(","),
   });
+
+  // El túnel de Cloudflare saca la web afuera de localhost y avisa el link en el Discord
+  // (un solo mensaje, que se va actualizando). Se apaga con TUNEL_WEB=no en .env.
+  if (conTunel) {
+    lanzar("tunel", "\x1b[36m", "tunel.js", { TUNEL_PUERTO: String(PANEL_PORT) });
+  }
 
   for (let i = 0; i < SALAS.length; i++) {
     const sala = SALAS[i];
@@ -91,12 +124,14 @@ const espera = (ms) => new Promise((r) => setTimeout(r, ms));
   }
 
   console.log(`\n${GRIS}Los links de las salas van a ir apareciendo acá abajo.${RESET}`);
-  console.log(`🖥️  Panel: http://localhost:${PANEL_PORT}`);
+  console.log(`🕸️  Ñandutí Web: http://localhost:${PANEL_PORT}`);
+  console.log(`🖥️  Panel (admins): http://localhost:${PANEL_PORT}/frm/panel`);
+  if (conTunel) console.log(`${GRIS}🌐 El link público va a salir acá abajo, y se avisa en el Discord${RESET}`);
   console.log(`${GRIS}Cortá todo con Ctrl+C${RESET}\n`);
 })();
 
 const cerrarTodo = () => {
-  console.log(`\n👋 Cerrando ${SALAS.length === 1 ? "la sala" : "las " + SALAS.length + " salas"}...`);
+  console.log("\n👋 Cerrando todo...");
   for (const hijo of procesos) hijo.kill();
   setTimeout(() => process.exit(0), 1500);
 };

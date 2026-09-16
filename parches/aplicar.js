@@ -106,6 +106,31 @@ reemplazar(
   "🌐 𝐖𝐞𝐛 𝐆𝐋𝐇: https://grandesligashaxball.wixsite.com/grandesligashaxball/",
   "🇵🇾 ÑandutíBall - Host paraguayo de HaxBall"
 );
+// Hablar normal no puede disparar comandos: el autor prendía/apagaba el AFK con
+// cualquier mensaje que contuviera "estoy", "listo", "volvi", "mtm" o "meteme".
+// Con la lista vacía el AFK se maneja solo con !afk.
+// El nick solo está "en uso" si esa persona está AHORA en la sala. Sin esto alcanzaba con
+// que alguien lo hubiera usado antes para que te echara al entrar.
+reemplazar(
+  "🚪 Kick por nick repetido, solo si está en la sala",
+  'if(usedUsernames[player.name]&&usedUsernames[player.name]!==player.auth){if(!esAdminValido(player)){',
+  'if(usedUsernames[player.name]&&usedUsernames[player.name]!==player.auth&&room.getPlayerList().some(function(o){return o.id!==player.id&&o.name===player.name})){if(!esAdminValido(player)){'
+);
+reemplazar(
+  "💬 Palabras sueltas que prendían el AFK",
+  'const afkKeywords=["mtm","meteme","volvi","estoy","listo"];',
+  "const afkKeywords=[];"
+);
+reemplazar(
+  "🔗 Discord de la sala (redes sociales)",
+  '"discord.gg/tDEUbJU8QB"',
+  '"discord.gg/TGRug4BGG"'
+);
+reemplazar(
+  "📣 Webhook de sala abierta del autor",
+  '"https://discord.com/api/webhooks/1201825912958767134/g1BEoP1RNO_zSrQmf0nhkQRP_z3BnR2bJXfKYkK7CCPLk-KZf86tn-bPq_mDZ2UHwRMf"',
+  '"https://discord.com/api/webhooks/1549587917314326648/C-MCs-1bd1h_H42bV1byqyDuTIAikoFza_X3ddzcnfqE2Q9Ig4TL4MVGSMWHGi5QIthB"'
+);
 reemplazar(
   "🏷️ Link de Discord ajeno",
   "🔗 𝗗𝗶𝘀𝗰𝗼𝗿𝗱 𝗥𝗦𝗜: https://discord.gg/BZkDuSV",
@@ -246,6 +271,11 @@ const BLOQUES = [
   },
   { archivo: "turnos.txt", marca: "🎽 SELECCIÓN POR TURNOS", nombre: "🎽 Selección por turnos", siFalta: () => true },
   { archivo: "elo.txt", marca: "📊 ELO Y DIVISIONES", nombre: "📊 ELO y divisiones", siFalta: () => true },
+  { archivo: "autoarranque.txt", marca: "▶️ ARRANQUE AUTOMÁTICO", nombre: "▶️ Arranque automático", siFalta: () => true },
+  { archivo: "modos.txt", marca: "🔀 MODOS DE EQUIPOS", nombre: "🔀 Modos de equipos", siFalta: () => true },
+  { archivo: "usuarios.txt", marca: "🔐 USUARIOS Y CLAVES", nombre: "🔐 Usuarios y claves", siFalta: () => true },
+  { archivo: "aviso-discord.txt", marca: "📣 AVISO DE SALA ABIERTA", nombre: "📣 Aviso de sala abierta", siFalta: () => true },
+  { archivo: "comandos-sin-eco.txt", marca: "🤫 COMANDOS SIN ECO", nombre: "🤫 Comandos sin eco", siFalta: () => true },
   { contenido: bloqueMapas, marca: "🗺️ MAPAS DE FUTSAL", nombre: null, siFalta: () => Boolean(bloqueMapas) },
 ];
 

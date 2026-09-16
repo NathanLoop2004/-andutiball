@@ -38,10 +38,12 @@
   .ok { color: var(--verde); } .mal { color: var(--rojo); }
   .nota { color: var(--suave); font-size: 12px; margin-top: 8px; }
 </style>
+<script src="/js/sesion.js"></script>
 </head>
 <body>
+<script>if (!Sesion.exigirAdmin()) { document.documentElement.innerHTML = ""; }</script>
 <h1>🎖️ Rangos</h1>
-<div class="sub"><a class="volver" href="/">← volver al panel</a> · los cambios se aplican en las salas encendidas sin reiniciarlas</div>
+<div class="sub"><a class="volver" href="/frm/panel">← volver al panel</a> · los cambios se aplican en las salas encendidas sin reiniciarlas</div>
 
 <div class="caja">
   <h2>🔐 Clave para jugar</h2>

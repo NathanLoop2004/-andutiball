@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ñandutí Web — Iniciar sesión</title>
+<link rel="stylesheet" href="/css/nanduti.css">
+</head>
+<body>
+
+<div class="barra">
+  <a class="marca" href="/"><span class="telar">🕸️</span> Ñandutí Web</a>
+  <div class="derecha"><a class="boton" href="/frm/registro/">Registrarte</a></div>
+</div>
+
+<form class="caja" id="formulario">
+  <h2>Iniciar sesión</h2>
+  <div class="ayuda">Con el mismo nombre y la misma contraseña que usás en la sala.</div>
+
+  <label for="nick">Tu nombre en HaxBall</label>
+  <input type="text" id="nick" autocomplete="username" maxlength="60" required>
+
+  <label for="clave">Contraseña</label>
+  <input type="password" id="clave" autocomplete="current-password" required>
+
+  <button class="boton principal" type="submit" id="entrar">Entrar</button>
+  <div class="aviso" id="aviso"></div>
+  <div class="pie-caja">¿Todavía no tenés? <a href="/frm/registro/">Creá tu cuenta</a></div>
+</form>
+
+<script src="/js/sesion.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const volverA = new URLSearchParams(location.search).get("volver");
+
+$("formulario").onsubmit = async (evento) => {
+  evento.preventDefault();
+  $("entrar").disabled = true;
+  $("aviso").className = "aviso";
+  $("aviso").textContent = "Entrando…";
+  try {
+    const { token, usuario } = await Sesion.pedir("/api/auth/entrar", {
+      method: "POST",
+      body: JSON.stringify({ nick: $("nick").value.trim(), clave: $("clave").value }),
+    });
+    Sesion.guardar(token, usuario);
+    location.href = volverA || (usuario.admin ? "/frm/panel/" : "/");
+  } catch (error) {
+    $("aviso").className = "aviso mal";
+    $("aviso").textContent = error.message;
+    $("entrar").disabled = false;
+  }
+};
+
+if (Sesion.usuario()) location.href = volverA || "/";
+</script>
+</body>
+</html>

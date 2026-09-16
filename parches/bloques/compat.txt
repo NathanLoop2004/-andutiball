@@ -66,7 +66,32 @@ if (typeof DeletePlayer === "undefined") {
 		window.playerIPs = playerIPs.filter(function (x) { return x.id !== idJugador; });
 		delete playerJoinTimes[idJugador];
 		if (typeof playerMatchTime !== "undefined") delete playerMatchTime[idJugador];
+		soltarLaConexion(idJugador);
 	};
+}
+
+// Saca a alguien de la lista de conexiones abiertas.
+// Es lo que mira el script para decidir si LIBERA EL NICK cuando alguien se va: mientras
+// quede una conexión con su IP, el nombre sigue tomado. Como esta lista nunca se limpiaba,
+// el nick te quedaba ocupado para siempre y al volver te echaba con
+// "Ese NICKNAME ya está en uso por otro jugador".
+function soltarLaConexion(idJugador) {
+	if (typeof connections === "undefined") return;
+	for (var i = connections.length - 1; i >= 0; i--) {
+		if (connections[i] && connections[i][0] === idJugador) connections.splice(i, 1);
+	}
+}
+
+// Tiene que correr ANTES del onPlayerLeave del script, que es el que libera el nick
+if (!window.__soltamosConexiones) {
+	window.__soltamosConexiones = true;
+	(function () {
+		var anteriorLeave = room.onPlayerLeave;
+		room.onPlayerLeave = function (player) {
+			soltarLaConexion(player.id);
+			if (typeof anteriorLeave === "function") anteriorLeave(player);
+		};
+	})();
 }
 
 // Avisa que no hay ningún administrador en la sala (como mucho una vez por minuto)
@@ -165,6 +190,27 @@ if (!window.__arbitroAutonomo) {
 			else break;
 		}
 
+		// Equipos desparejos (2v0, 3v1, 4v2...): pasamos gente del lleno al vacío hasta quedar 1v1, 2v2...
+		// Movemos a los últimos que entraron para no tocar al capitán (que es el primero de la lista).
+		if (!(typeof gameRestarting !== "undefined" && gameRestarting)) {
+			var movidos = 0;
+			while (Math.abs(red.length - blue.length) >= 2) {
+				var deDonde = red.length > blue.length ? red : blue;
+				var aDonde = red.length > blue.length ? 2 : 1;
+				var quien = deDonde.pop();
+				if (!quien) break;
+				room.setPlayerTeam(quien.id, aDonde);
+				(aDonde === 1 ? red : blue).push(quien);
+				movidos++;
+			}
+			if (movidos) {
+				room.sendAnnouncement("⚖️ Equipos emparejados: " + red.length + " vs " + blue.length, null, 0xFFD100, "bold", 1);
+			}
+		}
+
+		// Arrancar el partido es tarea del bloque ▶️ ARRANQUE AUTOMÁTICO cuando está prendido:
+		// así respeta el respiro después de un stop y no pisa un cambio de mapa a medio hacer.
+		if (typeof AutoArranque !== "undefined" && AutoArranque) return;
 		var partido = room.getScores();
 		if (!partido && red.length >= 1 && blue.length >= 1) {
 			try { room.startGame(); } catch (e) { /* la sala aún no está lista */ }
@@ -186,4 +232,21 @@ if (!window.__arbitroAutonomo) {
 	})();
 
 	setInterval(window.__acomodarSala, 2000);
+}
+
+// A los AFK no se los echa: quedan de espectadores hasta que vuelvan.
+// El script del autor los expulsa a los 5 minutos ("EXPULSADO por INACTIVIDAD") y también
+// si hay muchos juntos ("Muchos jugadores AFK"). Filtramos solo esos dos motivos; los kicks
+// de admins, del panel y del anti-flood siguen pasando.
+if (!window.__sinKickAfk) {
+	window.__sinKickAfk = true;
+	var kickOriginal = room.kickPlayer;
+	room.kickPlayer = function (id, motivo, ban) {
+		var texto = String(motivo || "");
+		if (/INACTIVIDAD|jugadores AFK/i.test(texto)) {
+			if (typeof afkPlayerIDs !== "undefined" && afkPlayerIDs.add) afkPlayerIDs.add(id);
+			return;
+		}
+		return kickOriginal.call(room, id, motivo, ban);
+	};
 }

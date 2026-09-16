@@ -1,0 +1,126 @@
+// Tablas de ÑandutíBall. Primera versión: vamos a ir cambiándola.
+//
+//   npm run base            levanta Postgres (docker-compose.base.yml)
+//   npm run base:generar    genera el cliente de Prisma
+//   npm run base:migrar     crea/actualiza las tablas y guarda la migración
+//   npm run base:ver        abre Prisma Studio para mirar los datos
+//
+// La URL para las migraciones sale de DATABASE_URL (.env). En tiempo de ejecución
+// manda DB_ENV y la URL del entorno (ver services/ConexionBase.js).
+
+generator client {
+  // El generador clásico: escribe JavaScript en node_modules/@prisma/client, que es lo
+  // que necesita este proyecto (CommonJS con require). El generador nuevo
+  // ("prisma-client") escribe TypeScript y no se puede requerir desde acá.
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Una persona que entra a la sala. La identidad de verdad es el auth (Public ID de
+// HaxBall); el nick se puede repetir y cambiar.
+//
+// Cada usuario tiene su CLAVE, atada a su nombre: así nadie le usa el nick.
+// La clave nunca se guarda tal cual — se guarda el hash (ver lib/claves.js).
+model Usuario {
+  id              Int       @id @default(autoincrement())
+  nick            String    @unique
+  auth            String?   @unique
+  clave           String?   // hash scrypt. null = todavía no se registró
+  claveCambiada   DateTime?
+  elo             Int       @default(1000)
+  partidos        Int       @default(0)
+  ganados         Int       @default(0)
+  empatados       Int       @default(0)
+  perdidos        Int       @default(0)
+  goles           Int       @default(0)
+  asistencias     Int       @default(0)
+  creado          DateTime  @default(now())
+  visto           DateTime  @updatedAt
+
+  participaciones Participacion[]
+  rango           Rango?          @relation(fields: [rangoId], references: [id])
+  rangoId         Int?
+
+  @@map("usuarios")
+}
+
+// Cada sala del host (3v3, 4v4, todos, realsoccer)
+model Sala {
+  clave    String    @id
+  nombre   String
+  partidos Partido[]
+
+  @@map("salas")
+}
+
+model Partido {
+  id        Int       @id @default(autoincrement())
+  sala      Sala?     @relation(fields: [salaClave], references: [clave])
+  salaClave String?
+  mapa      String?
+  golesRed  Int       @default(0)
+  golesBlue Int       @default(0)
+  ganador   Int?      // 1 = red · 2 = blue · null = empate
+  inicio    DateTime  @default(now())
+  fin       DateTime?
+
+  participaciones Participacion[]
+
+  @@index([inicio])
+  @@map("partidos")
+}
+
+// Quién jugó qué partido, de qué lado y cómo le fue con el ELO
+model Participacion {
+  id          Int     @id @default(autoincrement())
+  partido     Partido @relation(fields: [partidoId], references: [id], onDelete: Cascade)
+  partidoId   Int
+  usuario     Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  usuarioId   Int
+  equipo      Int     // 1 = red · 2 = blue
+  goles       Int     @default(0)
+  asistencias Int     @default(0)
+  eloAntes    Int?
+  eloDespues  Int?
+
+  @@unique([partidoId, usuarioId])
+  @@map("participaciones")
+}
+
+// Los rangos que hoy viven en roles.json (OWNER, CO-OWNER, ...)
+model Rango {
+  id        Int       @id @default(autoincrement())
+  nombre    String    @unique
+  admin     Boolean   @default(false)
+  orden     Int       @default(0)
+  nicks     String[]  @default([])
+  usuarios  Usuario[]
+
+  @@map("rangos")
+}
+
+// Las novedades que se le cuentan a la gente en el Discord.
+//
+// Primero se guardan acá (estado "pendiente") y recién cuando alguien las revisa se mandan
+// al webhook (estado "enviada"). Así nada sale al Discord sin que se lo haya leído antes.
+//
+// El texto va en castellano y en criollo: qué cambia para el que juega. Nada de nombres de
+// archivos, funciones ni jerga (ver CLAUDE.md → "Actualizaciones para el Discord").
+model Actualizacion {
+  id      Int       @id @default(autoincrement())
+  titulo  String?
+  mensaje String
+  origen  String    @default("manual")     // manual (cargada a mano) | commit
+  commit  String?                          // el hash, si salió de un commit. Nunca se muestra en Discord
+  estado  String    @default("pendiente")  // pendiente | enviada | error
+  error   String?
+  creada  DateTime  @default(now())
+  enviada DateTime?
+
+  @@index([estado, creada])
+  @@map("actualizaciones")
+}
+

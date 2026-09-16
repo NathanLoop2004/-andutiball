@@ -2,3 +2,13 @@ node_modules/
 
 # La tabla de ELO se genera sola al jugar
 datos/elo.json
+
+# Los datos de Postgres (docker-compose.base.yml los guarda acá)
+postgres/
+
+# El .env de verdad (los tokens y la URL de la base). La plantilla es .env.example
+.env
+
+# El id del mensaje de Discord que avisa el link de la web
+datos/tunel.json
+

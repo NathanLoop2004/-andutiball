@@ -1,5 +1,6 @@
 {
   "NombreHost": "🕸️ ÑandutíBall | Futsal automático 🇵🇾",
+  "cambioCami": true,
   "CantidadDeJugadores": 30,
   "MapaPorDefecto": "Futsal x3",
   "TiempoDeJuego": 3,

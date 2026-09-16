@@ -1,0 +1,149 @@
+
+
+// ▇▇▇▇▇▇▇▇▇ 📣 AVISO DE SALA ABIERTA — ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// Cuando HaxBall entrega el link de la sala (onRoomLink), se avisa al Discord con una
+// tarjeta (embed): nombre de la sala, mapa, cupo, modo y el botón para entrar.
+//
+// Pisa a sendLinkToDiscord() del autor, que mandaba el link a SU webhook en texto pelado.
+// En JS gana la última declaración de una función, así que esta se usa en todos lados
+// sin tocar el onRoomLink ofuscado.
+//
+// ⚠️ El webhook es una llave: cualquiera que lo tenga puede escribir en ese canal.
+// Si se filtra, se borra el webhook en Discord (Editar canal → Integraciones) y se pone el nuevo acá.
+
+var AvisoSalaAbierta = true;          // false para no avisar nada
+var WebhookSalaAbierta = "https://discord.com/api/webhooks/1549587917314326648/C-MCs-1bd1h_H42bV1byqyDuTIAikoFza_X3ddzcnfqE2Q9Ig4TL4MVGSMWHGi5QIthB";
+var DiscordDeLaSala = "https://discord.gg/TGRug4BGG";
+var TagSalaAbierta = "@here";         // "@here", "@everyone", un ID de rol, o "" para no avisar a nadie
+var NombreDelAvisador = "ÑandutíBall 🇵🇾";
+var ColorSalaAbierta = 0x00C853;      // el color de la barra lateral de la tarjeta
+
+// ── La plantilla ──
+// Podés usar {sala} {link} {mapa} {cupo} {modo} {ubicacion} {discord} en cualquiera de estos textos.
+var TituloSalaAbierta = "🟢 ¡{sala} está abierta!";
+var MensajeSalaAbierta = "⚽ Ya se puede entrar a jugar. ¡Te esperamos en la cancha!";
+var BotonSalaAbierta = "👉 **[ENTRAR A LA SALA]({link})**";
+var PieSalaAbierta = "ÑandutíBall 🇵🇾 · {discord}";
+
+// ── El cartelito del Discord en el chat de la sala ──
+var AvisoDiscordEnElChat = true;      // false para no invitar al Discord en el chat
+var MinutosEntreAvisos = 3;           // cada cuánto sale el cartelito
+var MensajeDiscordEnElChat = [
+	"💬 ¿Buscás equipo, torneos o querés pasar tus quejas? Entrá al Discord de ÑandutíBall 🇵🇾",
+	"🔗 {discord}",
+];
+
+// Si el lanzador puso WEBHOOK_SALA_ABIERTA en .env, ese manda (la llave no queda en el repo)
+if (typeof window !== "undefined" && window.__WEBHOOK_SALA) WebhookSalaAbierta = window.__WEBHOOK_SALA;
+
+var ultimoLinkAvisado = null;
+
+function datosDeLaSala(link) {
+	var modo = "—";
+	if (typeof nombreDelModo === "function" && typeof ModoDeEquipos !== "undefined" && ModoDeEquipos !== "config") {
+		modo = nombreDelModo(ModoDeEquipos);
+	} else if (typeof modoJueganTodos !== "undefined" && modoJueganTodos) {
+		modo = "Juegan todos";
+	} else if (typeof automatizadoActivado !== "undefined" && automatizadoActivado) {
+		modo = "Automático";
+	}
+	return {
+		"{sala}": typeof NombreHost !== "undefined" ? NombreHost : "HaxBall",
+		"{link}": link || "",
+		"{mapa}": typeof MapaPorDefecto !== "undefined" ? MapaPorDefecto : (typeof currentMap !== "undefined" ? currentMap : "—"),
+		"{cupo}": typeof CantidadDeJugadores !== "undefined" ? String(CantidadDeJugadores) : "—",
+		"{modo}": modo,
+		"{ubicacion}": typeof countryOfHost !== "undefined" ? countryOfHost : "—",
+		"{discord}": DiscordDeLaSala,
+	};
+}
+
+function completarPlantilla(texto, datos) {
+	var salida = String(texto || "");
+	for (var marca in datos) {
+		if (Object.prototype.hasOwnProperty.call(datos, marca)) salida = salida.split(marca).join(datos[marca]);
+	}
+	return salida;
+}
+
+// "@here" y "@everyone" van tal cual; cualquier otra cosa se toma como ID de rol
+function mencionSalaAbierta() {
+	var tag = String(TagSalaAbierta || "").trim();
+	if (!tag) return "";
+	if (tag === "@here" || tag === "@everyone") return tag;
+	return "<@&" + tag.replace(/[<@&>]/g, "") + ">";
+}
+
+function avisarSalaAbierta(link) {
+	if (!AvisoSalaAbierta || !WebhookSalaAbierta || !link) return;
+	if (link === ultimoLinkAvisado) return;      // el mismo link no se avisa dos veces
+	ultimoLinkAvisado = link;
+
+	var datos = datosDeLaSala(link);
+	var cuerpo = {
+		username: NombreDelAvisador,
+		content: mencionSalaAbierta(),
+		embeds: [{
+			title: completarPlantilla(TituloSalaAbierta, datos),
+			url: link,
+			description: completarPlantilla(MensajeSalaAbierta, datos) + "\n\n" + completarPlantilla(BotonSalaAbierta, datos),
+			color: ColorSalaAbierta,
+			fields: [
+				{ name: "⚽ Mapa", value: datos["{mapa}"], inline: true },
+				{ name: "🔀 Modo", value: datos["{modo}"], inline: true },
+				{ name: "👥 Cupo", value: datos["{cupo}"] + " jugadores", inline: true },
+				{ name: "📍 Ubicación", value: datos["{ubicacion}"], inline: true },
+				{ name: "🔗 Link", value: link, inline: false },
+			],
+			footer: { text: completarPlantilla(PieSalaAbierta, datos) },
+			timestamp: new Date().toISOString(),
+		}],
+	};
+
+	try {
+		var xhr = new XMLHttpRequest();
+		xhr.open("POST", WebhookSalaAbierta);
+		xhr.setRequestHeader("Content-type", "application/json");
+		xhr.send(JSON.stringify(cuerpo));
+		console.log("📣 Aviso de sala abierta enviado al Discord");
+	} catch (e) {
+		console.log("📣 No se pudo avisar al Discord: " + e.message);
+	}
+}
+
+// Esta pisa a la del autor (que mandaba el link a su propio webhook).
+// El texto que arma el script no nos sirve: usamos roomLink, que ya está puesto.
+function sendLinkToDiscord(mensajeDelAutor) {
+	var link = typeof roomLink !== "undefined" && roomLink ? roomLink : null;
+	if (!link) {
+		var encontrado = String(mensajeDelAutor || "").match(/https?:\/\/\S*haxball\.com\/play\S*/);
+		if (encontrado) link = encontrado[0];
+	}
+	avisarSalaAbierta(link);
+}
+
+// Invita al Discord en el chat de la sala. Con la sala vacía no habla solo.
+function avisarDiscordEnElChat() {
+	if (!AvisoDiscordEnElChat) return;
+	if (!room.getPlayerList().filter(function (j) { return j.id !== 0; }).length) return;
+
+	var datos = datosDeLaSala(typeof roomLink !== "undefined" ? roomLink : "");
+	for (var i = 0; i < MensajeDiscordEnElChat.length; i++) {
+		room.sendAnnouncement(completarPlantilla(MensajeDiscordEnElChat[i], datos), null, 0x5865F2, "bold", i === 0 ? 1 : 0);
+	}
+}
+
+// Red de seguridad: si el onRoomLink del autor cambiara y no llamara a sendLinkToDiscord,
+// el aviso sale igual desde acá.
+(function () {
+	var anteriorLink = room.onRoomLink;
+	room.onRoomLink = function (url) {
+		if (typeof anteriorLink === "function") anteriorLink(url);
+		avisarSalaAbierta(url);
+	};
+
+	if (AvisoDiscordEnElChat) {
+		setInterval(avisarDiscordEnElChat, MinutosEntreAvisos * 60 * 1000);
+		console.log("📣 Invitación al Discord en el chat cada " + MinutosEntreAvisos + " minutos");
+	}
+})();

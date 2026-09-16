@@ -1,0 +1,166 @@
+
+
+// ▇▇▇▇▇▇▇▇▇ 🔀 MODOS DE EQUIPOS — ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// Tres formas de armar los equipos, que un admin cambia desde el chat:
+//
+//   !ganasigue   El bot arma los equipos y el que gana se queda; el que pierde sale.
+//   !elegir      Siempre eligen los capitanes por turnos. El partido no arranca
+//                hasta que terminen de elegir.
+//   !combinado   Si no sobra nadie, el bot arma y arranca solo.
+//                Si hay más gente de la que entra en la cancha, eligen los capitanes
+//                y el partido NO arranca hasta que terminen.
+//
+//   !modo        Dice qué modo está puesto (lo puede escribir cualquiera).
+//
+// Con "config" (el valor de fábrica) este bloque no toca nada y manda lo que diga
+// hosts/*.json. Las salas de Futsal x3 y x4 vienen en "combinado".
+
+var ModoDeEquipos = "config";        // "config" | "ganasigue" | "elegir" | "combinado"
+var RearmarConEleccion = true;       // al terminar un partido, si hay gente esperando, se vuelve a elegir
+
+var MODOS_DE_EQUIPOS = {
+	ganasigue: {
+		nombre: "🏆 GANA SIGUE",
+		explicacion: "El bot arma los equipos y el que gana se queda en la cancha.",
+	},
+	elegir: {
+		nombre: "🎽 ELEGIR",
+		explicacion: "Los capitanes eligen por turnos y el partido espera a que terminen.",
+	},
+	combinado: {
+		nombre: "🔀 COMBINADO",
+		explicacion: "Si no sobra nadie, arranca solo; si hay gente esperando, eligen los capitanes.",
+	},
+	config: {
+		nombre: "⚙️ EL DE LA SALA",
+		explicacion: "Manda la configuración de la sala; el modo no toca nada.",
+	},
+};
+
+// ¿Hay más gente despierta de la que entra en la cancha?
+function hayJugadoresDeMas() {
+	var cupo = typeof cupoPorEquipo === "function" ? cupoPorEquipo() : (typeof maxPlayersPerTeam === "number" && maxPlayersPerTeam > 0 ? maxPlayersPerTeam : 3);
+	return disponiblesParaJugar().length > cupo * 2;
+}
+
+// Deja los interruptores del script como los pide el modo.
+// Durante un partido no reacomodamos nada (salvo que un admin lo pida): se mueve gente en pleno juego.
+function aplicarModoDeEquipos(forzar) {
+	if (ModoDeEquipos === "config") return;
+	if (!forzar && room.getScores() !== null) return;
+
+	if (ModoDeEquipos === "ganasigue") {
+		SeleccionPorTurnos = false;
+		ganasigueEnabled = true;
+		// El gana-sigue necesita los equipos armados: si la sala no acomoda sola, la ponemos a acomodar
+		if (!modoJueganTodos) modoJueganAlgunos = true;
+		return;
+	}
+
+	// Los dos modos con elección no se bancan que el script acomode jugadores por su cuenta
+	var conEleccion = ModoDeEquipos === "elegir" || hayJugadoresDeMas();
+	SeleccionPorTurnos = conEleccion;
+	ganasigueEnabled = false;
+	modoJueganTodos = false;
+	modoJueganAlgunos = !conEleccion;
+	automatizadoActivado = false;
+}
+
+function nombreDelModo(modo) {
+	return (MODOS_DE_EQUIPOS[modo] || MODOS_DE_EQUIPOS.config).nombre;
+}
+
+function contarModo(destino) {
+	var info = MODOS_DE_EQUIPOS[ModoDeEquipos] || MODOS_DE_EQUIPOS.config;
+	room.sendAnnouncement("🔀 Modo de equipos: " + info.nombre, destino, 0xFFD100, "bold", 0);
+	room.sendAnnouncement("   " + info.explicacion, destino, 0xFFD100, "small", 0);
+	if (ModoDeEquipos === "combinado") {
+		room.sendAnnouncement(
+			"   Ahora mismo: " + (SeleccionPorTurnos ? "sobra gente, eligen los capitanes 🎽" : "no sobra nadie, arranca solo ▶️"),
+			destino, 0xFFD100, "small", 0
+		);
+	}
+	room.sendAnnouncement("   Los admins lo cambian con !ganasigue · !elegir · !combinado", destino, 0xFFD100, "small", 0);
+}
+
+function cambiarModoDeEquipos(modo, quien) {
+	ModoDeEquipos = modo;
+	aplicarModoDeEquipos(true);
+	room.sendAnnouncement("🔀 " + quien + " puso el modo " + nombreDelModo(modo), null, 0xFFD100, "bold", 2);
+	room.sendAnnouncement("   " + MODOS_DE_EQUIPOS[modo].explicacion, null, 0xFFD100, "small", 0);
+	if (typeof ultimoAvisoTurno !== "undefined") ultimoAvisoTurno = "";
+	if (typeof revisarTurnos === "function") setTimeout(revisarTurnos, 500);
+	if (typeof revisarArranque === "function") setTimeout(revisarArranque, 900);
+}
+
+// Terminó el partido: si hay gente esperando y el modo es con elección, se vacía la cancha
+// y se vuelve a elegir. Los que acaban de jugar pasan al final de la fila (reorderPlayers),
+// así los capitanes salen de entre los que estaban esperando.
+function rearmarTrasElPartido() {
+	if (!RearmarConEleccion) return;
+	if (ModoDeEquipos !== "elegir" && ModoDeEquipos !== "combinado") return;
+	if (typeof espectadoresListos !== "function" || !espectadoresListos().length) return;
+	if (ModoDeEquipos === "combinado" && !hayJugadoresDeMas()) return;
+
+	var jugaron = room.getPlayerList().filter(function (j) { return j.team !== 0 && j.id !== 0; });
+	if (!jugaron.length) return;
+
+	// Deja los interruptores como los pide la elección. Es a la fuerza porque el partido que
+	// terminó sigue "en curso" hasta que se lo cierra, y si no el bot vuelve a llenar la cancha.
+	aplicarModoDeEquipos(true);
+	SeleccionPorTurnos = true;
+	try { room.reorderPlayers(jugaron.map(function (j) { return j.id; }), false); } catch (e) { /* sala vieja */ }
+	jugaron.forEach(function (j) { room.setPlayerTeam(j.id, 0); });
+	if (typeof ultimoAvisoTurno !== "undefined") ultimoAvisoTurno = "";
+	room.sendAnnouncement("🎽 Hay gente esperando: se vuelven a elegir los equipos.", null, 0xFFD100, "bold", 2);
+	if (typeof revisarTurnos === "function") setTimeout(revisarTurnos, 800);
+}
+
+(function () {
+	var anteriorChat = room.onPlayerChat;
+	room.onPlayerChat = function (player, message) {
+		var texto = String(message).trim().toLowerCase();
+
+		if (texto === "!modo" || texto === "!modos") { contarModo(player.id); return false; }
+
+		var pedido = null;
+		if (texto === "!ganasigue") pedido = "ganasigue";
+		else if (texto === "!elegir" || texto === "!turnos") pedido = "elegir";
+		else if (texto === "!combinado" || texto === "!mixto") pedido = "combinado";
+		if (!pedido) return typeof anteriorChat === "function" ? anteriorChat(player, message) : true;
+
+		if (!player.admin) {
+			room.sendAnnouncement("🔒 Solo los admins cambian el modo de equipos. Con !modo ves cuál está puesto.", player.id, 0xFF4444, "bold", 2);
+			return false;
+		}
+		if (pedido === ModoDeEquipos) {
+			room.sendAnnouncement("ℹ️ El modo " + nombreDelModo(pedido) + " ya estaba puesto.", player.id, 0xFFD100, "bold", 0);
+			return false;
+		}
+		cambiarModoDeEquipos(pedido, player.name);
+		return false;
+	};
+
+	// Al entrar o salir gente cambia si sobra o no sobra, así que revisamos ahí mismo
+	var anteriorJoin = room.onPlayerJoin;
+	room.onPlayerJoin = function (player) {
+		if (typeof anteriorJoin === "function") anteriorJoin(player);
+		aplicarModoDeEquipos(false);
+	};
+
+	var anteriorLeave = room.onPlayerLeave;
+	room.onPlayerLeave = function (player) {
+		if (typeof anteriorLeave === "function") anteriorLeave(player);
+		aplicarModoDeEquipos(false);
+	};
+
+	var anteriorVictoria = room.onTeamVictory;
+	room.onTeamVictory = function (scores) {
+		if (typeof anteriorVictoria === "function") anteriorVictoria(scores);
+		setTimeout(rearmarTrasElPartido, 3500);
+	};
+
+	setInterval(function () { aplicarModoDeEquipos(false); }, 2000);
+	aplicarModoDeEquipos(true);
+	console.log("🔀 Modo de equipos: " + nombreDelModo(ModoDeEquipos) + " (!ganasigue · !elegir · !combinado · !modo)");
+})();

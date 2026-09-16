@@ -16,7 +16,8 @@ x-haxball: &haxball
     - ./hosts:/home/pptruser/app/hosts:ro
     # Los rangos y su clave: las salas los vigilan y los recargan sin reiniciarse
     - ./roles.json:/home/pptruser/app/roles.json:ro
-    - ./panel:/home/pptruser/app/panel:ro
+    # Las pantallas, para poder retocarlas sin reconstruir la imagen
+    - ./public:/home/pptruser/app/public:ro
 
 services:
   host-3v3:
@@ -52,9 +53,11 @@ services:
       HAXBALL_TOKEN: ${TOKEN_REALSOCCER:?Falta TOKEN_REALSOCCER en .env}
 
   panel:
-    image: node:22-alpine
+    # Misma imagen que las salas: así tiene express y la capa MVC (app.js, routes…)
+    build: .
+    image: nandutiball-host
     container_name: nandutiball-panel
-    working_dir: /app
+    working_dir: /home/pptruser/app
     command: node panel/server.js
     ports:
       - "8080:8080"
@@ -62,9 +65,8 @@ services:
       PANEL_PORT: 8080
       SALAS: "3v3|Futsal 3v3|http://host-3v3:3000,4v4|Futsal 4v4|http://host-4v4:3000,todos|Futsal automático|http://host-todos:3000,rs|Real Soccer|http://host-rs:3000"
     volumes:
-      - ./panel:/app/panel:ro
-      - ./lib:/app/lib:ro
+      - ./public:/home/pptruser/app/public:ro
       # Se escribe desde la pantalla de rangos, así que va sin :ro
-      - ./roles.json:/app/roles.json
+      - ./roles.json:/home/pptruser/app/roles.json
     restart: unless-stopped
     depends_on: [host-3v3, host-4v4, host-todos, host-rs]

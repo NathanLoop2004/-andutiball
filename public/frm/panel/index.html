@@ -108,11 +108,15 @@
   .barra-celda { width: 30%; min-width: 70px; }
   .barra { display: block; height: 7px; border-radius: 4px; opacity: 0.75; }
 </style>
+<script src="/js/sesion.js"></script>
 </head>
 <body>
+<script>if (!Sesion.exigirAdmin()) { document.documentElement.innerHTML = ""; } else { Sesion.mantener(); }</script>
 <header>
   <h1>🕸️ ÑandutíBall</h1>
-  <a href="/rangos">🎖️ Administrar rangos →</a>
+  <a href="/frm/rangos">🎖️ Administrar rangos →</a>
+  <a href="/frm/actualizaciones">📣 Actualizaciones →</a>
+  <a href="/">← Ñandutí Web</a>
   <span class="resumen" id="resumen">Cargando…</span>
 </header>
 

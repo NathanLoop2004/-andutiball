@@ -1,5 +1,6 @@
 {
   "NombreHost": "🕸️ ÑandutíBall | Real Soccer ⚽ 🇵🇾",
+  "cambioCami": true,
   "CantidadDeJugadores": 30,
   "MapaPorDefecto": "Real Soccer",
   "TiempoDeJuego": 6,

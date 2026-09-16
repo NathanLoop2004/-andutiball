@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ñandutí Web — Registrarte</title>
+<link rel="stylesheet" href="/css/nanduti.css">
+</head>
+<body>
+
+<div class="barra">
+  <a class="marca" href="/"><span class="telar">🕸️</span> Ñandutí Web</a>
+  <div class="derecha"><a class="boton" href="/frm/login/">Iniciar sesión</a></div>
+</div>
+
+<form class="caja" id="formulario">
+  <h2>Crear mi cuenta</h2>
+  <div class="ayuda">Guardá tu nombre para que nadie más pueda usarlo en las salas.</div>
+
+  <label for="nick">Tu nombre en HaxBall (tal cual lo escribís al entrar)</label>
+  <input type="text" id="nick" autocomplete="username" maxlength="60" required>
+
+  <label for="clave">Contraseña (mínimo 4 caracteres)</label>
+  <input type="password" id="clave" autocomplete="new-password" minlength="4" required>
+
+  <label for="clave2">Repetila</label>
+  <input type="password" id="clave2" autocomplete="new-password" minlength="4" required>
+
+  <button class="boton principal" type="submit" id="crear">Crear cuenta</button>
+  <div class="aviso" id="aviso"></div>
+  <div class="pie-caja">¿Ya tenés? <a href="/frm/login/">Iniciá sesión</a></div>
+</form>
+
+<script src="/js/sesion.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+
+$("formulario").onsubmit = async (evento) => {
+  evento.preventDefault();
+  if ($("clave").value !== $("clave2").value) {
+    $("aviso").className = "aviso mal";
+    $("aviso").textContent = "Las dos contraseñas tienen que ser iguales.";
+    return;
+  }
+  $("crear").disabled = true;
+  $("aviso").className = "aviso";
+  $("aviso").textContent = "Creando…";
+  try {
+    const { token, usuario } = await Sesion.pedir("/api/auth/registrar", {
+      method: "POST",
+      body: JSON.stringify({ nick: $("nick").value.trim(), clave: $("clave").value }),
+    });
+    Sesion.guardar(token, usuario);
+    location.href = "/";
+  } catch (error) {
+    $("aviso").className = "aviso mal";
+    $("aviso").textContent = error.message;
+    $("crear").disabled = false;
+  }
+};
+
+if (Sesion.usuario()) location.href = "/";
+</script>
+</body>
+</html>

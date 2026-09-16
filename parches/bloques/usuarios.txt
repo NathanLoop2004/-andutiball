@@ -1,0 +1,201 @@
+
+
+// ▇▇▇▇▇▇▇▇▇ 🔐 USUARIOS Y CLAVES — ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// Cada usuario tiene su clave atada a su nombre, para que nadie le use el nick.
+//
+//   · Si el nombre con el que entrás ESTÁ registrado → se te pide la clave (!clave ...).
+//     Hasta que la pongas mirás de afuera: no entrás a la cancha ni te eligen.
+//   · Si NO está registrado → jugás normal, y cada MinutosEntreAvisosDeRegistro te aparece
+//     un cartelito para que te crees el usuario con !registrar ...
+//
+// La base la maneja Node (el launcher): acá no hay Postgres. El puente es el mismo que usa
+// el ELO — se deja el pedido en window.__panelCola y el launcher contesta llamando a
+// window.__usuarioRespuesta(). Los nombres registrados llegan en window.__USUARIOS.
+//
+// Si no hay launcher o la base está apagada, window.__USUARIOS queda vacío y NO se le pide
+// clave a nadie: la sala nunca se traba por culpa de la base.
+
+var PedirClaveAUsuarios = true;
+var MinutosEntreAvisosDeRegistro = 2;
+var SegundosParaPonerLaClave = 90;     // si no la pone, se lo echa (puede volver a entrar)
+
+var usuariosRegistrados = [];          // los nicks que tienen clave
+var usuariosVerificados = {};          // id del jugador → true cuando puso bien la clave
+var relojesDeClave = {};               // id → el timeout de los 90 segundos
+
+function esUsuarioRegistrado(nombre) {
+	var buscado = String(nombre || "").trim().toLowerCase();
+	for (var i = 0; i < usuariosRegistrados.length; i++) {
+		if (String(usuariosRegistrados[i]).trim().toLowerCase() === buscado) return true;
+	}
+	return false;
+}
+
+// Le falta poner la clave: está registrado y todavía no la puso
+function leFaltaLaClave(jugador) {
+	if (!PedirClaveAUsuarios || !jugador || jugador.id === 0) return false;
+	if (usuariosVerificados[jugador.id]) return false;
+	return esUsuarioRegistrado(jugador.name);
+}
+
+// Los demás bloques (arranque, turnos, modos) ya preguntan por esta función para saber a
+// quién no meter en la cancha. Antes siempre devolvía false; ahora también tapa al que
+// entró con un nombre registrado y todavía no puso la clave.
+function tieneRangoSinVerificar(player) {
+	return leFaltaLaClave(player);
+}
+
+function pedirLaClave(jugador) {
+	room.sendAnnouncement("🔐 " + jugador.name + " está registrado. Poné tu clave para jugar:", jugador.id, 0xFFD100, "bold", 2);
+	room.sendAnnouncement("      !clave tu-contraseña", jugador.id, 0xFFD100, "bold", 0);
+	room.sendAnnouncement("   Mientras tanto podés mirar y chatear. Si el nombre no es tuyo, entrá con otro.", jugador.id, 0x93A1B0, "small", 0);
+	room.setPlayerTeam(jugador.id, 0);
+
+	if (relojesDeClave[jugador.id]) clearTimeout(relojesDeClave[jugador.id]);
+	relojesDeClave[jugador.id] = setTimeout(function () {
+		var sigue = room.getPlayer(jugador.id);
+		if (sigue && leFaltaLaClave(sigue)) {
+			room.kickPlayer(jugador.id, "🔐 Ese nombre tiene clave y no la pusiste", false);
+		}
+	}, SegundosParaPonerLaClave * 1000);
+}
+
+// Le avisa al que no tiene usuario que se lo puede crear
+function avisarQueSeRegistre() {
+	if (!PedirClaveAUsuarios) return;
+	room.getPlayerList().forEach(function (jugador) {
+		if (jugador.id === 0 || esUsuarioRegistrado(jugador.name)) return;
+		room.sendAnnouncement("📝 " + jugador.name + ", guardá tu nombre para que nadie más lo use:", jugador.id, 0x00C853, "bold", 1);
+		room.sendAnnouncement("      !registrar tu-contraseña", jugador.id, 0x00C853, "bold", 0);
+	});
+}
+
+// ── El puente con el launcher ──
+// Se deja el pedido en la cola y el launcher contesta por window.__usuarioRespuesta
+function pedirleALaBase(accion, jugador, clave, claveNueva) {
+	if (typeof window === "undefined" || !window.__panelCola) {
+		room.sendAnnouncement("⚠️ Ahora mismo no se puede consultar la base de usuarios.", jugador.id, 0xFF4444, "bold", 2);
+		return;
+	}
+	window.__panelCola.push({
+		tipo: "usuario",
+		accion: accion,
+		id: jugador.id,
+		nick: jugador.name,
+		auth: jugador.auth || null,
+		clave: clave,
+		claveNueva: claveNueva || null,
+	});
+}
+
+// El launcher llama acá con la respuesta
+window.__usuarioRespuesta = function (respuesta) {
+	var jugador = room.getPlayer(respuesta.id);
+	if (!jugador) return;
+
+	if (respuesta.accion === "verificar") {
+		if (respuesta.ok) {
+			usuariosVerificados[jugador.id] = true;
+			if (relojesDeClave[jugador.id]) { clearTimeout(relojesDeClave[jugador.id]); delete relojesDeClave[jugador.id]; }
+			room.sendAnnouncement("✅ ¡Bienvenido de vuelta, " + jugador.name + "! Ya podés jugar.", null, 0x00C853, "bold", 2);
+		} else if (respuesta.motivo === "clave-mal") {
+			room.sendAnnouncement("❌ Esa no es la clave. Probá de nuevo: !clave tu-contraseña", jugador.id, 0xFF4444, "bold", 2);
+		} else {
+			room.sendAnnouncement("ℹ️ Ese nombre todavía no tiene clave. Creála con: !registrar tu-contraseña", jugador.id, 0xFFD100, "bold", 2);
+		}
+		return;
+	}
+
+	if (respuesta.accion === "registrar") {
+		if (respuesta.ok) {
+			usuariosVerificados[jugador.id] = true;
+			if (usuariosRegistrados.indexOf(jugador.name) === -1) usuariosRegistrados.push(jugador.name);
+			room.sendAnnouncement("✅ Listo " + jugador.name + ", tu nombre quedó guardado con tu clave.", jugador.id, 0x00C853, "bold", 2);
+			room.sendAnnouncement("   La próxima vez que entres te la va a pedir: !clave tu-contraseña", jugador.id, 0x93A1B0, "small", 0);
+		} else {
+			room.sendAnnouncement("❌ No se pudo: " + (respuesta.motivo || "probá con otra clave"), jugador.id, 0xFF4444, "bold", 2);
+		}
+		return;
+	}
+
+	if (respuesta.accion === "cambiar") {
+		room.sendAnnouncement(respuesta.ok ? "✅ Clave cambiada." : "❌ No se pudo: " + (respuesta.motivo || ""), jugador.id, respuesta.ok ? 0x00C853 : 0xFF4444, "bold", 2);
+	}
+};
+
+// El launcher deja acá la lista de nombres registrados y la va actualizando
+window.__usuariosActualizar = function (nicks) {
+	usuariosRegistrados = Array.isArray(nicks) ? nicks : [];
+	room.getPlayerList().forEach(function (jugador) {
+		if (leFaltaLaClave(jugador) && !relojesDeClave[jugador.id]) pedirLaClave(jugador);
+	});
+};
+
+(function () {
+	if (typeof window !== "undefined" && Array.isArray(window.__USUARIOS)) usuariosRegistrados = window.__USUARIOS;
+
+	var anteriorJoin = room.onPlayerJoin;
+	room.onPlayerJoin = function (jugador) {
+		if (typeof anteriorJoin === "function") anteriorJoin(jugador);
+		delete usuariosVerificados[jugador.id];
+		if (leFaltaLaClave(jugador)) setTimeout(function () { pedirLaClave(jugador); }, 1200);
+	};
+
+	var anteriorLeave = room.onPlayerLeave;
+	room.onPlayerLeave = function (jugador) {
+		if (typeof anteriorLeave === "function") anteriorLeave(jugador);
+		delete usuariosVerificados[jugador.id];
+		if (relojesDeClave[jugador.id]) { clearTimeout(relojesDeClave[jugador.id]); delete relojesDeClave[jugador.id]; }
+	};
+
+	// Al que le falta la clave no lo dejamos entrar a la cancha
+	var anteriorCambio = room.onPlayerTeamChange;
+	room.onPlayerTeamChange = function (jugador, porQuien) {
+		if (typeof anteriorCambio === "function") anteriorCambio(jugador, porQuien);
+		if (jugador.team !== 0 && leFaltaLaClave(jugador)) {
+			room.setPlayerTeam(jugador.id, 0);
+			room.sendAnnouncement("🔐 Primero poné tu clave: !clave tu-contraseña", jugador.id, 0xFFD100, "bold", 2);
+		}
+	};
+
+	var anteriorChat = room.onPlayerChat;
+	room.onPlayerChat = function (jugador, mensaje) {
+		var texto = String(mensaje).trim();
+		var partes = texto.split(/\s+/);
+		var comando = partes[0].toLowerCase();
+
+		if (comando === "!clave" || comando === "!login") {
+			if (partes.length < 2) {
+				room.sendAnnouncement("🔐 Se usa así: !clave tu-contraseña", jugador.id, 0xFFD100, "bold", 2);
+			} else {
+				pedirleALaBase("verificar", jugador, partes.slice(1).join(" "));
+			}
+			return false;
+		}
+
+		if (comando === "!registrar" || comando === "!registro") {
+			if (partes.length < 2) {
+				room.sendAnnouncement("📝 Se usa así: !registrar tu-contraseña", jugador.id, 0x00C853, "bold", 2);
+			} else if (esUsuarioRegistrado(jugador.name) && !usuariosVerificados[jugador.id]) {
+				room.sendAnnouncement("🔐 Ese nombre ya tiene clave. Poné la tuya con: !clave tu-contraseña", jugador.id, 0xFFD100, "bold", 2);
+			} else {
+				pedirleALaBase("registrar", jugador, partes.slice(1).join(" "));
+			}
+			return false;
+		}
+
+		if (comando === "!cambiarclave") {
+			if (partes.length < 3) {
+				room.sendAnnouncement("🔐 Se usa así: !cambiarclave la-vieja la-nueva", jugador.id, 0xFFD100, "bold", 2);
+			} else {
+				pedirleALaBase("cambiar", jugador, partes[1], partes[2]);
+			}
+			return false;
+		}
+
+		return typeof anteriorChat === "function" ? anteriorChat(jugador, mensaje) : true;
+	};
+
+	setInterval(avisarQueSeRegistre, MinutosEntreAvisosDeRegistro * 60 * 1000);
+	console.log("🔐 Usuarios y claves: se pide clave a los registrados, y se invita a registrarse cada " + MinutosEntreAvisosDeRegistro + " minutos");
+})();

@@ -6,9 +6,13 @@
 // Token nuevo en https://www.haxball.com/headlesstoken (vence a los pocos minutos).
 
 const fs = require("fs");
-const http = require("http");
 const path = require("path");
 const puppeteer = require("puppeteer");
+const { crearApp } = require("./app");
+const { crearSalaEspiada } = require("./lib/espia");
+const EstadoModel = require("./models/EstadoModel");
+const UsuarioModel = require("./models/UsuarioModel");
+const RangoModel = require("./models/RangoModel");
 const { leerRoles } = require("./lib/roles");
 const { ARCHIVO: ARCHIVO_RANGOS, leerRangos, guardarRangos, sinClave } = require("./lib/rangos");
 const { leerElo, guardarElo, aplicarPartido, ranking, paraLaSala, DIVISIONES } = require("./lib/elo");
@@ -48,7 +52,6 @@ if (!token) {
 }
 
 const PUERTO_API = Number(process.env.API_PORT || 3000);
-const MAX_MENSAJES = 500;
 
 const scriptPath = path.join(__dirname, "script.js");
 let roomScript = fs.readFileSync(scriptPath, "utf8");
@@ -79,124 +82,40 @@ try {
 }
 
 // ── Estado que consume el panel ─────────────────────────────────────────────
-const estado = {
+// La forma la define EstadoModel; acá solo se la va completando con lo que se ve
+// en la sala (el puente con Puppeteer está más abajo).
+const estado = EstadoModel.crear({
   sala: process.env.ROOM_NAME || hostConfig.NombreHost || "Sala",
   config: hostConfig,
   roles: leerRoles(roomScript),
   rangos: sinClave(leerRangos()),
   elo: ranking(leerElo(), 50),
   divisiones: DIVISIONES,
-  encendida: false,
-  problema: null,
-  link: null,
-  desde: null,
-  jugadores: [],
-  mensajes: [],
-  bans: [],
-  partido: { enJuego: false, red: 0, blue: 0 },
-};
+});
 
-const agregarMensaje = (tipo, texto, datos = {}) => {
-  estado.mensajes.push({ hora: new Date().toISOString(), tipo, texto, ...datos });
-  if (estado.mensajes.length > MAX_MENSAJES) estado.mensajes.shift();
-};
+const agregarMensaje = (tipo, texto, datos = {}) => EstadoModel.agregarMensaje(estado, tipo, texto, datos);
 
 // El mismo servidor sirve la API y el panel, así "npm start" no necesita otra terminal.
-const paginaPanel = path.join(__dirname, "panel", "index.html");
+// Las rutas están en routes/, la lógica en controllers/ y models/, y las pantallas
+// en views/ — todo se arma en app.js. Acá solo se inyecta ESTA sala.
 let framePagina = null;   // asignado cuando la sala está lista, lo usa /api/kick y /api/ban
 
-const api = http.createServer((req, res) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Cache-Control", "no-store");
-
-  if (req.url.startsWith("/api/estado")) {
-    res.setHeader("Content-Type", "application/json; charset=utf-8");
-    res.end(JSON.stringify(estado));
-    return;
-  }
-
-  // Kick / Ban desde el panel
-  if (req.method === "POST" && (req.url.startsWith("/api/kick") || req.url.startsWith("/api/ban"))) {
-    const banear = req.url.startsWith("/api/ban");
-    let cuerpo = "";
-    req.on("data", (c) => (cuerpo += c));
-    req.on("end", async () => {
-      try {
-        const { id, motivo } = JSON.parse(cuerpo || "{}");
-        if (!Number.isInteger(id)) throw new Error("Falta el id del jugador");
-        if (!framePagina) throw new Error("La sala todavía no está lista");
-        const razon = String(motivo || (banear ? "Baneado desde el panel" : "Expulsado desde el panel")).slice(0, 100);
-        await framePagina.evaluate((idJugador, razonTexto, esBan) => {
-          if (window.__sala && typeof window.__sala.kickPlayer === "function") {
-            window.__sala.kickPlayer(idJugador, razonTexto, esBan);
-          }
-        }, id, razon, banear);
-        res.setHeader("Content-Type", "application/json; charset=utf-8");
-        res.end(JSON.stringify({ ok: true }));
-      } catch (error) {
-        res.statusCode = 400;
-        res.end(JSON.stringify({ ok: false, error: error.message }));
-      }
-    });
-    return;
-  }
-
-  if (req.url.startsWith("/api/elo")) {
-    res.setHeader("Content-Type", "application/json; charset=utf-8");
-    res.end(JSON.stringify({ divisiones: DIVISIONES, ranking: ranking(leerElo(), 200) }));
-    return;
-  }
-
-  // Rangos: el panel los lee y los guarda acá
-  if (req.url.startsWith("/api/rangos")) {
-    res.setHeader("Content-Type", "application/json; charset=utf-8");
-    if (req.method === "GET") {
-      res.end(JSON.stringify(sinClave(leerRangos())));
-      return;
-    }
-    if (req.method === "POST") {
-      let cuerpo = "";
-      req.on("data", (c) => (cuerpo += c));
-      req.on("end", () => {
-        try {
-          const enviado = JSON.parse(cuerpo);
-          const actual = leerRangos();
-          // Si no mandan clave nueva, se conserva la que ya estaba
-          const guardado = guardarRangos({ ...enviado, clave: enviado.clave ? enviado.clave : actual.clave });
-          res.end(JSON.stringify(sinClave(guardado)));
-        } catch (error) {
-          res.statusCode = 400;
-          res.end(JSON.stringify({ error: error.message }));
+const app = crearApp({
+  sala: {
+    estado: () => estado,
+    // El kick lo hace la página: window.__sala es la sala de HaxBall
+    expulsar: async (id, motivo, banear) => {
+      if (!framePagina) throw new Error("La sala todavía no está lista");
+      await framePagina.evaluate((idJugador, razonTexto, esBan) => {
+        if (window.__sala && typeof window.__sala.kickPlayer === "function") {
+          window.__sala.kickPlayer(idJugador, razonTexto, esBan);
         }
-      });
-      return;
-    }
-  }
-
-  if (req.method === "OPTIONS") {
-    res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-    res.end();
-    return;
-  }
-
-  // El panel pide /api/salas; con una sola sala, devolvemos solo esta
-  if (req.url.startsWith("/api/salas")) {
-    res.setHeader("Content-Type", "application/json; charset=utf-8");
-    res.end(JSON.stringify({ salas: [{ clave: "sala", nombre: estado.sala, ok: true, estado }] }));
-    return;
-  }
-
-  const pagina = req.url.startsWith("/rangos") ? path.join(__dirname, "panel", "rangos.html") : paginaPanel;
-  if (fs.existsSync(pagina)) {
-    res.setHeader("Content-Type", "text/html; charset=utf-8");
-    res.end(fs.readFileSync(pagina));
-    return;
-  }
-
-  res.statusCode = 404;
-  res.end("not found");
+      }, id, motivo, banear);
+    },
+  },
 });
+
+const api = app.listen(PUERTO_API, () => console.log(`🖥️  Panel de esta sala en http://localhost:${PUERTO_API}`));
 api.on("error", (error) => {
   if (error.code === "EADDRINUSE") {
     console.error(`\n❌ El puerto ${PUERTO_API} ya está ocupado: seguramente tenés otra sala abierta.`);
@@ -207,7 +126,6 @@ api.on("error", (error) => {
   }
   process.exit(1);
 });
-api.listen(PUERTO_API, () => console.log(`🖥️  Panel de esta sala en http://localhost:${PUERTO_API}`));
 
 (async () => {
   // PROXY opcional: si esta sala tiene PROXY_<CLAVE> en .env, Chrome sale por ese proxy.
@@ -317,9 +235,86 @@ api.listen(PUERTO_API, () => console.log(`🖥️  Panel de esta sala en http://
         estado.partido.blue = evento.blue;
         break;
       }
+      case "usuario":
+        atenderUsuario(evento);
+        break;
       case "elo-partido":
         procesarPartidoElo(evento);
         break;
+    }
+  };
+
+  // Claves de los usuarios: el script pregunta y nosotros le contestamos.
+  // Si la base está apagada NO se traba la sala: se contesta "sin-base" y a jugar.
+  const atenderUsuario = async (evento) => {
+    const contestar = (respuesta) => {
+      frame
+        .evaluate((r) => { if (window.__usuarioRespuesta) window.__usuarioRespuesta(r); }, { id: evento.id, accion: evento.accion, ...respuesta })
+        .catch(() => {});
+    };
+
+    try {
+      if (evento.accion === "verificar") {
+        const { ok, motivo } = await UsuarioModel.verificar({ nick: evento.nick, clave: evento.clave, auth: evento.auth });
+        agregarMensaje("usuario", ok ? `${evento.nick} puso bien su clave` : `${evento.nick} erró la clave`, { jugador: evento.nick });
+        return contestar({ ok, motivo });
+      }
+
+      if (evento.accion === "registrar") {
+        await UsuarioModel.registrar({ nick: evento.nick, clave: evento.clave, auth: evento.auth });
+        agregarMensaje("usuario", `${evento.nick} se registró`, { jugador: evento.nick });
+        await refrescarUsuarios();
+        return contestar({ ok: true });
+      }
+
+      if (evento.accion === "cambiar") {
+        await UsuarioModel.cambiarClave({ nick: evento.nick, claveVieja: evento.clave, claveNueva: evento.claveNueva });
+        return contestar({ ok: true });
+      }
+    } catch (error) {
+      const sinBase = /No se pudo abrir la base|Can't reach database|ECONNREFUSED/i.test(error.message);
+      if (sinBase) console.warn("⚠️ La base no responde: la sala sigue andando, sin pedir claves");
+      return contestar({ ok: false, motivo: sinBase ? "sin-base" : error.message });
+    }
+  };
+
+  // Los rangos, desde la tabla `rangos`. Se mandan cada pocos segundos y la sala vuelve a
+  // aplicarlos: si alguien se mete javascript y se pone admin, en la próxima pasada se le cae.
+  // Si la base está apagada, paraLaSala() devuelve lo de roles.json (el espejo).
+  let avisamosRangosCaidos = false;
+  const refrescarRangos = async () => {
+    try {
+      const { rangos, desde } = await RangoModel.paraLaSala();
+      if (!rangos.length) return;
+      await frame.evaluate((lista) => {
+        window.__RANGOS_TABLA = lista;
+        if (window.__rangosDeLaBase) window.__rangosDeLaBase(lista);
+      }, rangos);
+      if (avisamosRangosCaidos) {
+        avisamosRangosCaidos = false;
+        console.log(`🎖️ Rangos otra vez desde ${desde}`);
+      }
+    } catch (error) {
+      if (!avisamosRangosCaidos) {
+        avisamosRangosCaidos = true;
+        console.warn("⚠️ No se pudieron leer los rangos: " + error.message.split("\n")[0]);
+      }
+    }
+  };
+
+  // La lista de nombres registrados: es lo que mira el script para saber a quién pedirle clave
+  const refrescarUsuarios = async () => {
+    try {
+      const nicks = await UsuarioModel.nicksRegistrados();
+      await frame.evaluate((lista) => {
+        window.__USUARIOS = lista;
+        if (window.__usuariosActualizar) window.__usuariosActualizar(lista);
+      }, nicks);
+      return nicks.length;
+    } catch (error) {
+      // Sin base no se le pide clave a nadie
+      await frame.evaluate(() => { window.__USUARIOS = []; }).catch(() => {});
+      return null;
     }
   };
 
@@ -353,20 +348,25 @@ api.listen(PUERTO_API, () => console.log(`🖥️  Panel de esta sala en http://
       .catch(() => {});
   };
 
-  // Los rangos y su clave viajan a la página antes de correr el script
-  await frame.evaluate((rangos, elo) => {
+  // Los rangos y su clave viajan a la página antes de correr el script.
+  // WEBHOOK_SALA_ABIERTA es opcional: si está en .env, pisa al que trae script.js
+  // (así la llave del webhook no queda escrita en un archivo que se sube a Git).
+  await frame.evaluate((rangos, elo, webhookSala) => {
     window.__RANGOS = rangos;
     window.__ELO = elo;
-  }, leerRangos(), paraLaSala(leerElo()));
+    if (webhookSala) window.__WEBHOOK_SALA = webhookSala;
+  }, leerRangos(), paraLaSala(leerElo()), process.env.WEBHOOK_SALA_ABIERTA || "");
 
   // Envuelve HBInit: agrega el token y engancha el puente del panel sin tocar el script
-  await frame.evaluate((token) => {
+  await frame.evaluate((token, fuenteEspia) => {
+    // lib/espia.js viaja como texto: en la página no hay require
+    const crearSalaEspiada = new Function("return (" + fuenteEspia + ")")();
+
     window.__panelCola = [];
     const avisar = (evento) => {
       window.__panelCola.push(evento);
       if (window.__panelCola.length > 300) window.__panelCola.shift();
     };
-    const nombre = (jugador) => (jugador && jugador.name) || "—";
 
     const originalHBInit = window.HBInit;
     window.HBInit = (config) => {
@@ -389,51 +389,27 @@ api.listen(PUERTO_API, () => console.log(`🖥️  Panel de esta sala en http://
         }
       }, 1000);
 
-      // Espía los eventos sin reemplazar los del script: encadena el handler original
-      const espiados = {
-        // Así entrega HaxBall el link de la sala; leerlo del HTML no es confiable
-        onRoomLink: (url) => avisar({ tipo: "link", link: url }),
-        onPlayerChat: (j, m) => avisar({ tipo: "chat", jugador: nombre(j), texto: m }),
-        onPlayerJoin: (j) => avisar({ tipo: "entra", jugador: nombre(j) }),
-        onPlayerLeave: (j) => avisar({ tipo: "sale", jugador: nombre(j) }),
-        onPlayerKicked: (j, motivo, ban, por) => avisar({ tipo: "expulsion", jugador: nombre(j), motivo, ban, porJugador: por ? nombre(por) : null }),
-        onTeamGoal: (equipo) => avisar({ tipo: "gol", equipo }),
-        onGameStart: () => avisar({ tipo: "partido", enJuego: true }),
-        onGameStop: () => avisar({ tipo: "partido", enJuego: false }),
-      };
-
-      return new Proxy(sala, {
-        set(destino, prop, valor) {
-          const espia = espiados[prop];
-          destino[prop] = espia
-            ? (...args) => {
-                try {
-                  espia(...args);
-                } catch {
-                  // Un fallo del panel nunca debe romper la sala
-                }
-                return typeof valor === "function" ? valor(...args) : undefined;
-              }
-            : valor;
-          return true;
-        },
-        get(destino, prop) {
-          const valor = destino[prop];
-          if (prop === "clearBans" && typeof valor === "function") {
-            return (...args) => {
-              avisar({ tipo: "bans-limpios" });
-              return valor.apply(destino, args);
-            };
-          }
-          return typeof valor === "function" ? valor.bind(destino) : valor;
-        },
-      });
+      // El espía del panel vive en lib/espia.js (así se puede probar en Node).
+      // Mira los eventos sin reemplazar los handlers del script.
+      return crearSalaEspiada(sala, avisar);
     };
-  }, token);
+  }, token, crearSalaEspiada.toString());
+
+  // Los nombres registrados van ANTES del script, así sabe a quién pedirle clave
+  // desde el primero que entra. Si la base está apagada, la lista queda vacía.
+  await refrescarUsuarios();
 
   // Si el script nunca asigna un handler espiado, igual lo enganchamos al arrancar
   await frame.evaluate(roomScript);
   console.log("✅ script.js cargado. Esperando el link de la sala...");
+
+  // Alguien puede registrarse desde otra sala: refrescamos la lista cada tanto
+  setInterval(refrescarUsuarios, 60000);
+
+  // Los rangos se revisan seguido: es lo que deshace cualquier admin puesto a mano
+  const SEGUNDOS_RANGOS = Number(process.env.SEGUNDOS_RANGOS || 5);
+  await refrescarRangos();
+  setInterval(refrescarRangos, SEGUNDOS_RANGOS * 1000);
 
   // Vaciamos la cola de eventos y leemos el link directo de la página
   setInterval(async () => {

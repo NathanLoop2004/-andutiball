@@ -1,0 +1,113 @@
+/* Estilo común de Ñandutí Web. Las pantallas del panel traen el suyo aparte. */
+
+:root {
+  color-scheme: dark;
+  --fondo: #0f1419;
+  --tarjeta: #171d24;
+  --borde: #262f3a;
+  --texto: #e7edf3;
+  --suave: #93a1b0;
+  --verde: #2ecc71;
+  --rojo: #e74c3c;
+  --acento: #ffd100;
+  --acento-suave: #4a412a;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--fondo);
+  color: var(--texto);
+  font: 15px/1.6 system-ui, "Segoe UI", sans-serif;
+  min-height: 100vh;
+}
+
+a { color: var(--acento); }
+
+/* ── Barra de arriba ── */
+.barra {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--borde);
+  flex-wrap: wrap;
+}
+.barra .marca { display: flex; align-items: center; gap: 10px; font-size: 19px; font-weight: 700; text-decoration: none; color: var(--texto); }
+.barra .marca span.telar { font-size: 22px; }
+.barra .derecha { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+/* ── Botones ── */
+.boton {
+  display: inline-block;
+  background: #1f2a36;
+  border: 1px solid var(--borde);
+  color: var(--texto);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+.boton:hover { border-color: var(--acento); }
+.boton.principal { background: var(--acento); border-color: var(--acento); color: #14181d; font-weight: 600; }
+.boton.grande { padding: 11px 20px; font-size: 16px; }
+.boton:disabled { opacity: .5; cursor: default; }
+
+/* ── Contenido ── */
+.centro { max-width: 960px; margin: 0 auto; padding: 28px 20px 48px; }
+.tapa { text-align: center; padding: 56px 20px 36px; }
+.tapa h1 { font-size: 40px; margin: 0 0 8px; }
+.tapa p { color: var(--suave); font-size: 17px; margin: 0 auto; max-width: 560px; }
+.tapa .botones { display: flex; gap: 12px; justify-content: center; margin-top: 24px; flex-wrap: wrap; }
+
+.tarjetas { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-top: 32px; }
+.tarjeta { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 12px; padding: 16px; }
+.tarjeta h3 { margin: 0 0 6px; font-size: 16px; }
+.tarjeta p { margin: 0; color: var(--suave); font-size: 14px; }
+
+/* ── Formularios (entrar / registrarse) ── */
+.caja {
+  background: var(--tarjeta);
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  padding: 22px;
+  max-width: 400px;
+  margin: 40px auto;
+}
+.caja h2 { margin: 0 0 4px; font-size: 20px; }
+.caja .ayuda { color: var(--suave); font-size: 13px; margin-bottom: 18px; }
+label { display: block; color: var(--suave); font-size: 12px; margin: 12px 0 4px; }
+input[type=text], input[type=password] {
+  background: #101720;
+  border: 1px solid var(--borde);
+  color: var(--texto);
+  border-radius: 8px;
+  padding: 9px 11px;
+  font: inherit;
+  width: 100%;
+}
+input:focus { outline: none; border-color: var(--acento); }
+.caja .boton { width: 100%; margin-top: 18px; text-align: center; }
+.aviso { margin-top: 12px; font-size: 13px; min-height: 20px; }
+.ok { color: var(--verde); }
+.mal { color: var(--rojo); }
+.pie-caja { margin-top: 16px; text-align: center; color: var(--suave); font-size: 13px; }
+
+/* ── Sesión abierta ── */
+.chapa { display: flex; align-items: center; gap: 8px; border: 1px solid var(--borde); border-radius: 999px; padding: 4px 6px 4px 12px; }
+.chapa .rango { font-size: 11px; color: var(--acento); border: 1px solid var(--acento-suave); border-radius: 999px; padding: 1px 8px; }
+
+.datos { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-top: 18px; }
+.dato { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 12px; padding: 14px; text-align: center; }
+.dato b { display: block; font-size: 22px; }
+.dato span { color: var(--suave); font-size: 12px; }
+
+.pie { color: var(--suave); font-size: 12px; text-align: center; padding: 24px 0; }
+
+@media (max-width: 520px) {
+  .tapa h1 { font-size: 30px; }
+  .barra { padding: 12px 14px; }
+  .centro { padding: 20px 14px 40px; }
+}

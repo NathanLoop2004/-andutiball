@@ -1,49 +1,108 @@
-
-
 // ▇▇▇▇▇▇▇▇▇ 🎖️ RANGOS — ÑandutíBall ▇▇▇▇▇▇▇▇▇
-// Si el nick del jugador coincide con uno de los rangos de roles.json, le damos su rango
-// automáticamente (admin si corresponde). No se pide clave: basta con tener el nick.
+// Los rangos salen de la TABLA `rangos` de la base. El launcher la relee cada pocos
+// segundos y deja la lista acá; con eso se le da (o se le saca) el admin a cada uno.
+//
+// Por qué se revisa todo el tiempo y no solo al entrar: si alguien se mete javascript en
+// la página y se pone admin a mano, en la próxima pasada se le cae, porque manda la tabla.
+// Lo mismo si le sacan el admin a alguien que sí lo tiene por su rango.
+//
+// Si la base está apagada, el launcher manda lo que diga roles.json (el espejo), y si no
+// hay nada de nada NO se toca a nadie: una sala no se queda sin admins por eso.
 
 var RANGOS = window.__RANGOS || { clave: "", roles: [] };
-var rangosVerificados = {};   // se sigue exportando para el árbitro, pero ya no se usa como bloqueo
+var rangosVerificados = {};   // se sigue exportando para el árbitro
 
-// El panel avisa por acá cuando se cambian los rangos
-window.__rangosActualizar = function (datos) {
-	RANGOS = datos || { clave: "", roles: [] };
-	console.log("🎖️ Rangos actualizados: " + RANGOS.roles.length + " roles");
-};
+var RevisarRangosCadaSegundos = 5;   // cada cuánto se vuelve a aplicar lo que dice la tabla
+var SoloRangosDeLaBase = true;       // true: el que no está en la tabla no es admin
+
+var rangosAnunciados = {};           // para saludar una sola vez a cada uno
+
+// Los rangos como los manda el launcher: [{ nombre, admin, nicks }]
+function listaDeRangos() {
+	if (Array.isArray(window.__RANGOS_TABLA) && window.__RANGOS_TABLA.length) return window.__RANGOS_TABLA;
+	return (RANGOS && Array.isArray(RANGOS.roles)) ? RANGOS.roles : [];
+}
 
 function rangoDelNombre(nombre) {
-	for (var i = 0; i < RANGOS.roles.length; i++) {
-		var rol = RANGOS.roles[i];
-		for (var j = 0; j < rol.nicks.length; j++) {
-			if (rol.nicks[j].toLowerCase() === String(nombre).toLowerCase()) return rol;
+	var lista = listaDeRangos();
+	for (var i = 0; i < lista.length; i++) {
+		var rol = lista[i];
+		var nicks = rol.nicks || [];
+		for (var j = 0; j < nicks.length; j++) {
+			if (String(nicks[j]).trim().toLowerCase() === String(nombre).trim().toLowerCase()) return rol;
 		}
 	}
 	return null;
 }
 
-// Compatibilidad: otros bloques preguntan si el rango está "sin verificar". Ahora nunca lo está.
+// Compatibilidad: lo redefine el bloque 🔐 USUARIOS (gana la última declaración)
 function tieneRangoSinVerificar(player) { return false; }
 
-function aplicarRango(player) {
-	var rol = rangoDelNombre(player.name);
-	if (!rol) return;
-	rangosVerificados[player.id] = true;
-	if (rol.admin) room.setPlayerAdmin(player.id, true);
-	room.sendAnnouncement("🎖️ Bienvenido, " + rol.nombre + " " + player.name + "!", null, 0x2ECC71, "bold", 2);
+// Deja a cada jugador como dice la tabla. Devuelve cuántos cambió.
+function aplicarRangosDeLaTabla() {
+	var lista = listaDeRangos();
+	if (!lista.length) return 0;      // sin lista no tocamos nada
+
+	var cambios = 0;
+	room.getPlayerList().forEach(function (jugador) {
+		if (jugador.id === 0) return;   // el bot es el bot
+
+		var rol = rangoDelNombre(jugador.name);
+		var deberiaSerAdmin = Boolean(rol && rol.admin);
+
+		if (rol) rangosVerificados[jugador.id] = true;
+		else delete rangosVerificados[jugador.id];
+
+		// El que no está en la tabla no es admin (salvo que se apague SoloRangosDeLaBase)
+		if (!deberiaSerAdmin && !SoloRangosDeLaBase) return;
+
+		if (jugador.admin !== deberiaSerAdmin) {
+			room.setPlayerAdmin(jugador.id, deberiaSerAdmin);
+			cambios++;
+		}
+
+		// El saludo, una sola vez por jugador
+		if (rol && !rangosAnunciados[jugador.id]) {
+			rangosAnunciados[jugador.id] = true;
+			room.sendAnnouncement("🎖️ Bienvenido, " + rol.nombre + " " + jugador.name + "!", null, 0x2ECC71, "bold", 2);
+		}
+	});
+	return cambios;
 }
+
+function aplicarRango(player) {
+	aplicarRangosDeLaTabla();
+}
+
+// El launcher deja acá la tabla (cada RevisarRangosCadaSegundos) y el panel avisa cuando
+// se toca roles.json
+window.__rangosDeLaBase = function (lista) {
+	window.__RANGOS_TABLA = Array.isArray(lista) ? lista : [];
+	aplicarRangosDeLaTabla();
+};
+
+window.__rangosActualizar = function (datos) {
+	RANGOS = datos || { clave: "", roles: [] };
+	aplicarRangosDeLaTabla();
+	console.log("🎖️ Rangos actualizados: " + RANGOS.roles.length + " roles");
+};
 
 (function () {
 	var anteriorJoin = room.onPlayerJoin;
 	room.onPlayerJoin = function (player) {
 		if (typeof anteriorJoin === "function") anteriorJoin(player);
-		if (rangoDelNombre(player.name)) setTimeout(function () { aplicarRango(player); }, 800);
+		delete rangosAnunciados[player.id];
+		setTimeout(aplicarRangosDeLaTabla, 800);
 	};
 
 	var anteriorLeave = room.onPlayerLeave;
 	room.onPlayerLeave = function (player) {
 		if (typeof anteriorLeave === "function") anteriorLeave(player);
 		delete rangosVerificados[player.id];
+		delete rangosAnunciados[player.id];
 	};
+
+	// La ronda que vuelve a poner todo como dice la tabla
+	setInterval(aplicarRangosDeLaTabla, RevisarRangosCadaSegundos * 1000);
+	console.log("🎖️ Rangos: se revisan cada " + RevisarRangosCadaSegundos + " segundos contra la tabla");
 })();

@@ -1,138 +1,109 @@
-// Prueba la selección por turnos: entran 8 espectadores y los capitanes van eligiendo.
-// Comprueba que se arme 3v3 alternando Red y Blue, y que nadie de más entre a la cancha.
+// Prueba la selección por turnos: entran 8 espectadores, los capitanes van eligiendo,
+// y el que no elige a tiempo se va y le toca al que sigue.
 //
 //   node pruebas/turnos.js [hosts/3v3.json]
+//
+// Usa el reloj virtual de sala-falsa.js: hace falta para probar "si no elige en 10
+// segundos". Si se corrieran todos los setTimeout de golpe, el primer capitán se ir
+// ía antes de poder elegir a mano.
 
-const fs = require("fs");
-const path = require("path");
-const vm = require("vm");
+const { abrirSala } = require("./sala-falsa");
 
-const RAIZ = path.join(__dirname, "..");
 const hostConfig = process.argv[2] || "hosts/3v3.json";
-const anuncios = [];
-const errores = [];
+const sala = abrirSala(hostConfig);
+const { contexto, avanzar, entra, entran, equipos, chat } = sala;
+const cupo = sala.ajustes.maxPlayersPerTeam;
 
-const jugadores = new Map();
-let enJuego = false;
-const room = {
-  getPlayerList: () => [...jugadores.values()],
-  getPlayer: (id) => jugadores.get(id) || null,
-  getScores: () => (enJuego ? { red: 0, blue: 0, time: 30, scoreLimit: 3, timeLimit: 180 } : null),
-  getBallPosition: () => ({ x: 0, y: 0 }),
-  getDiscProperties: () => ({ x: 0, y: 0, xspeed: 0, yspeed: 0, radius: 10, invMass: 1 }),
-  getPlayerDiscProperties: () => ({ x: 0, y: 0, xspeed: 0, yspeed: 0, radius: 15, invMass: 1 }),
-  getDiscCount: () => 0,
-  sendAnnouncement: (msg) => anuncios.push(String(msg)),
-  setPlayerAdmin: (id, v) => jugadores.has(id) && (jugadores.get(id).admin = v),
-  setPlayerTeam: (id, t) => jugadores.has(id) && (jugadores.get(id).team = t),
-  kickPlayer: () => {}, clearBan: () => {}, clearBans: () => {}, setPassword: () => {},
-  setRequireRecaptcha: () => {}, setTeamsLock: () => {}, setScoreLimit: () => {}, setTimeLimit: () => {},
-  setCustomStadium: () => {}, setDefaultStadium: () => {}, setTeamColors: () => {}, setPlayerAvatar: () => {},
-  setDiscProperties: () => {}, setPlayerDiscProperties: () => {}, setKickRateLimit: () => {}, reorderPlayers: () => {},
-  startGame: () => { enJuego = true; }, stopGame: () => { enJuego = false; }, pauseGame: () => {},
-  startRecording: () => {}, stopRecording: () => new Uint8Array(0),
-};
-
-// Relojes controlados: el test decide cuándo corre cada setTimeout
-const pendientes = [];
-const noop = () => {};
-const elemento = { innerText: "", innerHTML: "", href: "", style: {}, appendChild: noop, remove: noop, querySelector: () => null, querySelectorAll: () => [] };
-const ventana = {
-  HBInit: () => room,
-  localStorage: { getItem: () => null, setItem: noop, removeItem: noop },
-  XMLHttpRequest: class { open() {} setRequestHeader() {} send() {} addEventListener() {} },
-  fetch: () => Promise.resolve({ ok: true, json: () => Promise.resolve({}), text: () => Promise.resolve("") }),
-  FormData: class { append() {} }, File: class {}, Blob: class {},
-  document: { querySelector: () => elemento, querySelectorAll: () => [], createElement: () => elemento, body: elemento },
-  console: { log: noop, warn: noop, error: (...a) => errores.push(a.join(" ")) },
-  setTimeout: (fn, ms) => { pendientes.push({ fn, ms }); return pendientes.length; },
-  setInterval: () => 0, clearInterval: noop, clearTimeout: noop,
-};
-ventana.window = ventana;
-
-// Corre los setTimeout pendientes que caen dentro de "topeMs".
-// Respetar el tiempo importa: si corriéramos todos, dispararíamos el reloj de
-// "si el capitán no elige, elige el bot" y nunca probaríamos la elección a mano.
-function correrRelojes(topeMs = 3000, vueltas = 12) {
-  for (let v = 0; v < vueltas; v++) {
-    const listos = pendientes.filter((t) => (t.ms || 0) <= topeMs);
-    if (!listos.length) return;
-    for (const t of listos) pendientes.splice(pendientes.indexOf(t), 1);
-    for (const t of listos) {
-      try { t.fn(); } catch (e) { errores.push("timeout: " + e.message); }
-    }
-  }
+const problemas = [];
+function revisar(titulo, condicion, detalle) {
+  console.log((condicion ? "  ✅ " : "  ❌ ") + titulo + (detalle ? "  (" + detalle + ")" : ""));
+  if (!condicion) problemas.push(titulo);
 }
-
-const contexto = vm.createContext(ventana);
-let script = fs.readFileSync(path.join(RAIZ, "script.js"), "utf8");
-const ajustes = JSON.parse(fs.readFileSync(path.join(RAIZ, hostConfig), "utf8"));
-for (const [nombre, valor] of Object.entries(ajustes)) {
-  const decl = new RegExp(`^([ \\t]*)(var|let|const)\\s+${nombre}\\b[^;\\n]*;?`, "m");
-  script = script.replace(decl, (_, s, k) => `${s}${k} ${nombre} = ${JSON.stringify(valor)};`);
-}
-contexto.__RANGOS = JSON.parse(fs.readFileSync(path.join(RAIZ, "roles.json"), "utf8"));
-
-vm.runInContext(script, contexto, { timeout: 30000 });
-console.log(`⚙️  ${hostConfig} — cupo ${ajustes.maxPlayersPerTeam} por equipo\n`);
-
-// Entran 8 espectadores
-for (let i = 1; i <= 8; i++) {
-  const j = { id: i, name: "Jugador" + i, team: 0, admin: false, conn: "3" + i, auth: "a" + i };
-  jugadores.set(i, j);
-  if (room.onPlayerJoin) room.onPlayerJoin(j);
-}
-correrRelojes();
-
-const equipos = () => ({
-  red: [...jugadores.values()].filter((j) => j.team === 1).map((j) => j.name),
-  blue: [...jugadores.values()].filter((j) => j.team === 2).map((j) => j.name),
-  espect: [...jugadores.values()].filter((j) => j.team === 0).map((j) => j.name),
-});
-
-console.log("Tras entrar los 8 (deberían salir solo los 2 capitanes):");
-console.log("  🔴", equipos().red, "| 🔵", equipos().blue, "| 👁️", equipos().espect.length, "espectadores\n");
-
-// El capitán de turno va eligiendo hasta llenar
-const capitanDe = (equipo) => [...jugadores.values()].find((j) => j.team === equipo);
-for (let ronda = 1; ronda <= 8; ronda++) {
-  const libres = [...jugadores.values()].filter((j) => j.team === 0);
-  if (!libres.length) break;
+const cancha = () => {
   const e = equipos();
-  if (e.red.length >= ajustes.maxPlayersPerTeam && e.blue.length >= ajustes.maxPlayersPerTeam) break;
+  return e.red.map((j) => j.name).join(", ") + " 🔴 vs 🔵 " + e.blue.map((j) => j.name).join(", ") + "  ·  esperan " + e.espect.length;
+};
+const capitanDe = (equipo) => equipos()[equipo === 1 ? "red" : "blue"][0];
+const libres = () => equipos().espect.filter((j) => j.id !== 0);
 
-  // Quién tiene el turno lo dice el propio script: probamos con los dos capitanes
+console.log("⚙️  " + hostConfig + " — cupo " + cupo + " por equipo, " + contexto.SegundosParaElegir + "s para elegir\n");
+
+// Modo "elegir": el draft manda siempre y el bot no acomoda a nadie por su cuenta
+contexto.ModoDeEquipos = "elegir";
+contexto.aplicarModoDeEquipos(true);
+
+entran(8);          // espaciados: 5 ingresos en 2 segundos y el script echa al que sobra
+avanzar(2000);      // poco rato: a los 10 s sin elegir, al capitán lo echan
+
+console.log("🎽 Entran 8 y salen los dos capitanes:");
+revisar("Red y Blue tienen capitán", Boolean(capitanDe(1)) && Boolean(capitanDe(2)), cancha());
+revisar("El resto espera", libres().length === 6, libres().length + " esperando");
+
+// ── Los capitanes eligen, sin colgarse ──
+console.log("\n🎽 Eligiendo por turnos (a mano, antes de que se acabe el tiempo):");
+for (let ronda = 1; ronda <= 8; ronda++) {
+  const e = equipos();
+  if (e.red.length >= cupo && e.blue.length >= cupo) break;
+  if (!libres().length) break;
+
+  // El turno lo decide el script: probamos con los dos capitanes
   let eligio = false;
   for (const equipo of [1, 2]) {
     const cap = capitanDe(equipo);
-    if (!cap) continue;
-    const antes = JSON.stringify(equipos());
-    room.onPlayerChat(cap, String(libres[0].id));
-    correrRelojes();
-    if (JSON.stringify(equipos()) !== antes) {
-      console.log(`  ronda ${ronda}: ${cap.name} (${equipo === 1 ? "🔴" : "🔵"}) eligió a ${libres[0].name}`);
+    const elegido = libres()[0];
+    if (!cap || !elegido) continue;
+    chat(cap, "!" + elegido.id);
+    avanzar(1500);
+    if (elegido.team !== 0) {
+      console.log(`     ronda ${ronda}: ${cap.name} (${equipo === 1 ? "🔴" : "🔵"}) eligió a ${elegido.name}`);
       eligio = true;
       break;
     }
   }
-  if (!eligio) { console.log(`  ronda ${ronda}: nadie pudo elegir`); break; }
+  if (!eligio) break;
 }
 
 const fin = equipos();
-console.log("\nEquipos armados:");
-console.log("  🔴", fin.red.join(", ") || "(vacío)");
-console.log("  🔵", fin.blue.join(", ") || "(vacío)");
-console.log("  👁️ quedan afuera:", fin.espect.join(", ") || "(nadie)");
+revisar("Quedó " + cupo + "v" + cupo, fin.red.length === cupo && fin.blue.length === cupo, cancha());
+revisar("Nadie se fue de la sala", sala.expulsados.length === 0, sala.expulsados.length + " expulsados");
 
-const cupo = ajustes.maxPlayersPerTeam;
-const problemas = [];
-if (fin.red.length !== cupo) problemas.push(`Red quedó con ${fin.red.length}, se esperaban ${cupo}`);
-if (fin.blue.length !== cupo) problemas.push(`Blue quedó con ${fin.blue.length}, se esperaban ${cupo}`);
-if (errores.length) problemas.push(...new Set(errores));
+// ── El que se cuelga ──
+console.log("\n⏳ Un capitán se cuelga y no elige:");
+// Vaciamos la cancha para que arranque un draft nuevo
+for (const j of [...fin.red, ...fin.blue]) sala.room.setPlayerTeam(j.id, 0);
+avanzar(3000);
+
+const colgado = capitanDe(contexto.turnoDelEquipo);
+revisar("Hay un capitán con el turno", Boolean(colgado), colgado ? colgado.name + " " + (contexto.turnoDelEquipo === 1 ? "🔴" : "🔵") : "ninguno");
+
+const eran = sala.jugadores.size;
+const anunciosAntes = sala.anuncios.length;
+avanzar(contexto.SegundosParaElegir * 1000 + 2000);
+
+const cuenta = sala.anuncios.slice(anunciosAntes).filter((a) => /elige en \d…/.test(a));
+revisar("Cuenta 3… 2… 1… antes de echarlo", cuenta.length === 3, cuenta.join("  |  ") || "no contó nada");
+
+const echado = sala.expulsados[sala.expulsados.length - 1];
+revisar("Al que no eligió se lo echa", Boolean(echado), echado ? echado.nombre + " — " + echado.motivo : "no se echó a nadie");
+revisar("Ya no está en la sala", sala.jugadores.size === eran - 1, sala.jugadores.size + " jugadores");
+revisar("Sigue habiendo capitán para elegir", Boolean(capitanDe(1)) && Boolean(capitanDe(2)), cancha());
+revisar("Y el capitán nuevo no es el que se fue", (capitanDe(1) || {}).id !== (echado || {}).id && (capitanDe(2) || {}).id !== (echado || {}).id);
+
+// ── El modo suave: a espectadores en vez de a la calle ──
+console.log("\n👁️ Con EcharAlQueNoElige en false, va a espectadores:");
+contexto.EcharAlQueNoElige = false;
+const antesDeEchar = sala.expulsados.length;
+const capSuave = capitanDe(contexto.turnoDelEquipo);
+avanzar(contexto.SegundosParaElegir * 1000 + 2000);
+
+revisar("No se echó a nadie", sala.expulsados.length === antesDeEchar, sala.expulsados.length - antesDeEchar + " expulsados");
+revisar("El que no eligió sigue en la sala", Boolean(capSuave && sala.jugadores.get(capSuave.id)), capSuave ? capSuave.name : "—");
 
 console.log("");
+const unicos = [...new Set(sala.errores)];
+if (unicos.length) console.log("⚠️  Errores del script durante la prueba:\n   " + unicos.slice(0, 6).join("\n   ") + "\n");
 if (problemas.length) {
-  console.log("❌ " + problemas.join("\n❌ "));
+  console.log("❌ Falló: " + problemas.join(" | "));
   process.exit(1);
 }
-console.log(`✅ Quedó ${cupo}v${cupo} eligiendo por turnos, sin errores`);
+console.log("✅ Turnos OK: se arma " + cupo + "v" + cupo + " eligiendo, y el que no elige a tiempo deja su lugar");

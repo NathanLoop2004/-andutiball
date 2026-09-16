@@ -1,5 +1,6 @@
 {
   "NombreHost": "🕸️ ÑandutíBall | Futsal 4v4 🇵🇾",
+  "cambioCami": true,
   "CantidadDeJugadores": 30,
   "MapaPorDefecto": "Futsal x4",
   "TiempoDeJuego": 4,
@@ -8,5 +9,5 @@
   "modoJueganAlgunos": false,
   "maxPlayersPerTeam": 4,
   "automatizadoActivado": false,
-  "SeleccionPorTurnos": true
+  "ModoDeEquipos": "combinado"
 }

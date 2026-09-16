@@ -29,6 +29,12 @@ automática y avisos a Discord. Puede levantar **4 salas a la vez**: tres de Fut
 |---|---|
 | `script.js` | El script de la sala (~19.100 líneas). Se ejecuta dentro de HaxBall. |
 | `launcher.js` | Abre la sala con Puppeteer y le aplica la configuración de cada host. |
+| `app.js` | La app del panel (Express). Arma las rutas y la usan el launcher y `panel/server.js`. |
+| `docker-compose.base.yml` | La base de datos (Postgres), aparte de las salas. |
+| `actualizacion.js` | Carga novedades para el Discord desde la terminal. |
+| `prisma/schema.prisma` | Las tablas. `services/ConexionBase.js` elige la base según `DB_ENV`. |
+| `routes/`, `controllers/`, `models/` | La app en MVC: rutas → controladores → modelos. |
+| `public/` | Ñandutí Web: la portada, el login y las pantallas del panel. |
 | `get-tokens.js` | Consigue los tokens y los guarda en `.env`. |
 | `hosts/*.json` | Diferencias de cada sala (3v3, 4v4, automático, Real Soccer). |
 | `docker-compose.yml`, `Dockerfile` | Las 4 salas en Docker. |
@@ -41,18 +47,30 @@ automática y avisos a Discord. Puede levantar **4 salas a la vez**: tres de Fut
 
 ## ▶️ Cómo levantar las salas
 
-### Las 4 salas de una (sin Docker)
+### Todo junto (sin Docker)
 
 ```powershell
-npm install            # una sola vez
-npm run tokens         # los 4 tokens
-npm start              # levanta las 4 salas + el panel
+npm run base     # la base de datos, una sola vez (queda prendida aparte)
+npm start        # Ñandutí Web + el panel + las 4 salas + el túnel de Cloudflare
 ```
 
-Los links de las 4 van apareciendo en la terminal, cada uno con el nombre de su sala adelante.
-El panel con las cuatro queda en <http://localhost:8080>. Se corta todo junto con `Ctrl+C`.
+**`npm start` levanta todo junto** y se corta todo junto con Ctrl+C. Te avisa al arrancar si la
+base está prendida o no (si está apagada arranca igual: las salas no piden clave y la web no
+deja entrar, pero se puede jugar).
 
-Cada sala usa su propio puerto: 3001 (3v3), 3002 (4v4), 3003 (automático) y 3004 (Real Soccer).
+```
+npm start 4v4    todo, pero con una sola sala (3v3 · 4v4 · todos · realsoccer)
+```
+
+La **base va aparte a propósito**: tiene su propio compose y sus datos no se apagan con las
+salas. Se levanta una vez con `npm run base` y se olvida.
+
+| | Puerto |
+|---|---|
+| Ñandutí Web y el panel | <http://localhost:8080> |
+| Cada sala (su API) | 3001 · 3002 · 3003 · 3004 |
+| La base (Postgres) | 5432 |
+| El link público | sale en la consola y en el Discord |
 
 ### Con Docker (las 4 salas)
 
@@ -93,6 +111,30 @@ mensaje si ya estabas abajo del todo, y si no cambió nada no redibuja.
 
 Los bans que lista son los de la sesión en curso: HaxBall no permite pedirle la lista guardada.
 
+#### Cómo está armado (MVC)
+
+El panel sigue el patrón **modelo – vista – controlador**, con Express:
+
+```
+routes/       Qué URL llama a qué método        EstadoRouter.js, SalasRouter.js, RangosRouter.js…
+controllers/  Reciben el pedido y responden       EstadoController.js, ModeracionController.js…
+models/       La lógica y los datos               EstadoModel.js, SalasModel.js, EloModel.js…
+views/        Las pantallas                       index.html, rangos.html
+app.js        Arma la app con todo lo anterior
+```
+
+La misma app la usan los dos procesos, con distinta configuración:
+
+| | Quién la levanta | Qué recibe | Qué hace |
+|---|---|---|---|
+| **Una sala** | `launcher.js` | la sala que maneja con Puppeteer | responde con su propio estado y expulsa jugadores |
+| **El panel** | `panel/server.js` | la lista de salas (`SALAS`) | le pregunta a cada sala y reenvía los kicks |
+
+Endpoints: `GET /api/estado` · `GET /api/salas` · `GET /api/elo` · `GET|POST /api/rangos` ·
+`POST /api/kick[/sala]` · `POST /api/ban[/sala]`.
+
+`npm run prueba-api` levanta las dos apps de verdad y prueba todos los endpoints.
+
 ---
 
 ## 🎖️ Rangos
@@ -120,7 +162,21 @@ Entrá a <https://www.haxball.com/headless>, abrí la consola (`F12`), pegá el 
 
 ```powershell
 npm run prueba           # la sala entera: entrar, chatear, comandos, gol, salir
+npm run prueba-api       # la API del panel (rutas, controladores y modelos)
+npm run prueba-base      # la base de datos (enrutado por entorno y tablas)
+npm run prueba-actualizaciones  # las novedades del Discord (sin mandar nada)
+npm run prueba-usuarios  # las claves: en la sala y contra la base
+npm run prueba-nicks     # que no te echen por tu propio nombre
+npm run prueba-rangos    # que un admin puesto a mano se caiga solo
+npm run prueba-web       # la portada, el login y el panel solo para admins
+npm run prueba-tunel     # el aviso del link (un mensaje que se actualiza)
+npm run prueba-espia     # que el panel no repita los mensajes
+npm run prueba-chat      # hablar normal no dispara comandos
+npm run prueba-camisetas # que los clubes cambien en cada partido
 npm run prueba-turnos    # los capitanes eligiendo por turnos
+npm run prueba-arranque  # que el partido vuelva solo del Stop y de la pausa
+npm run prueba-modos     # los 3 modos y la espera mientras se elige
+npm run prueba-discord   # el aviso de sala abierta al Discord
 npm run prueba-elo       # el cálculo de puntajes y el circuito completo
 npm run prueba-mapas     # HaxBall valida los 4 mapas
 ```
@@ -168,8 +224,8 @@ saques de banda, córners y saques de arco.
 
 | Sala | Archivo | Jugadores | Mapa | Tiempo / Goles | Modo |
 |---|---|---|---|---|---|
-| **Futsal 3v3** | `hosts/3v3.json` | 12 | Futsal x3 | 3 min / 3 | Se elige por turnos |
-| **Futsal 4v4** | `hosts/4v4.json` | 14 | Futsal x4 | 4 min / 3 | Se elige por turnos |
+| **Futsal 3v3** | `hosts/3v3.json` | 12 | Futsal x3 | 3 min / 3 | Combinado (`!ganasigue` / `!elegir`) |
+| **Futsal 4v4** | `hosts/4v4.json` | 14 | Futsal x4 | 4 min / 3 | Combinado (`!ganasigue` / `!elegir`) |
 | **Futsal automático** | `hosts/todos.json` | 16 | Futsal x3 → x4 → x5 → x7 | según el mapa | Automático |
 | **Real Soccer** | `hosts/realsoccer.json` | 16 | Real Soccer | 6 min / sin límite | Juegan Todos |
 
@@ -195,18 +251,267 @@ Después basta con `docker compose restart`.
 
 ## 🎽 Cómo se arman los equipos (3v3 y 4v4)
 
-En esas dos salas el bot **ya no acomoda a todos de una**: los equipos se eligen por turnos.
+Hay **tres modos**. Los cambia un admin escribiendo un comando en el chat, y cualquiera
+puede ver cuál está puesto con `!modo`.
+
+| Comando | Modo | Qué hace |
+|---|---|---|
+| `!ganasigue` | 🏆 Gana sigue | El bot arma los equipos y el que gana se queda; el que pierde sale y entran los que esperan. |
+| `!elegir` | 🎽 Elegir | Siempre eligen los capitanes por turnos, y el partido **no arranca** hasta que terminen. |
+| `!combinado` | 🔀 Combinado | Si no sobra nadie, el bot arma y arranca solo. Si hay más gente de la que entra en la cancha, eligen los capitanes y el partido espera. |
+
+Las salas de **Futsal 3v3 y 4v4** arrancan en **combinado** (`"ModoDeEquipos"` en `hosts/*.json`).
+Las otras dos salas vienen en `"config"`: el modo no toca nada y manda la configuración de la sala.
+
+### Cuándo se elige
+
+"Sobra gente" quiere decir que hay más jugadores despiertos que lugares en la cancha:
+más de 6 en la x3, más de 8 en la x4. Los AFK no cuentan.
 
 1. Los dos primeros espectadores pasan solos a Red y Blue: son los **capitanes**.
 2. El bot avisa de quién es el turno y lista a los espectadores con su número.
-3. El capitán escribe **el número** en el chat (por ejemplo `7`) o `!elegir 7`.
+3. El capitán escribe **`!7`** (o `!elegir 7`). Va con `!`: un número suelto en el chat es hablar, no elegir.
 4. Se alterna: Red elige uno, después Blue, hasta llenar los dos equipos.
 
-Si el capitán no elige en 25 segundos, elige el bot y la ronda sigue. Los admins también pueden
-elegir. Con `!turno` se vuelve a mostrar el cartel.
+**El que no elige, deja el lugar.** El capitán tiene **10 segundos**; sobre el final el bot
+cuenta en el chat:
 
-Se prende por sala con `"SeleccionPorTurnos": true` en `hosts/*.json`. La sala **Futsal automático**
-y la de **Real Soccer** siguen llenando los equipos solas.
+```
+⏳ Pibe1 elige en 3…
+⏳ Pibe1 elige en 2…
+⏳ Pibe1 elige en 1…
+⏳ Pibe1 no eligió en 10 segundos. Elige el que sigue.
+```
+
+Y sale de la sala. La elección pasa al que ya estaba en su equipo; si el equipo queda vacío,
+entra de capitán el primero que estaba esperando. A los **admins no se los echa**: por ellos
+elige el bot y la ronda sigue.
+
+Se configura arriba del bloque `🎽 SELECCIÓN POR TURNOS`: `SegundosParaElegir` (10),
+`SegundosDeCuenta` (3) y `EcharAlQueNoElige`. Con `EcharAlQueNoElige = false` no lo echa de la
+sala: lo manda a espectadores y al final de la fila.
+
+Los admins también pueden elegir. Con `!turno` se vuelve a mostrar el cartel.
+
+**Mientras se elige no se juega**: si había un partido en curso queda en pausa hasta que los dos
+equipos estén completos (3v3 o 4v4, según la sala), y ahí sigue solo.
+
+Cuando termina un partido y hay gente esperando, se vacía la cancha y **se vuelve a elegir**:
+los que acaban de jugar pasan al final de la fila, así los capitanes salen de entre los que
+estaban esperando. En pleno partido no se mueve a nadie.
+
+## ▶️ El partido arranca (y se reanuda) solo
+
+Ningún admin tiene que apretar nada:
+
+- **Con 2 jugadores despiertos ya se juega.** Si la sala está sin partido, el bot lo arranca.
+- **Si alguien le da a Stop**, a los 5 segundos vuelve a arrancar (ese respiro es para no pisar
+  un cambio de mapa).
+- **Si el partido queda en pausa**, a los 10 segundos se reanuda solo.
+- **Cuando alguien gana**, a los 8 segundos se cierra el partido para que empiece el siguiente
+  (con el gana-sigue apagado el script lo dejaba abierto para siempre).
+- **Mientras los capitanes eligen**, el partido espera: arrancar antes dejaría afuera a los que
+  están esperando su turno.
+
+Arrancar y reanudar piden lo mismo: 2 jugadores que **no estén AFK**. Si uno de los dos está AFK
+no cuenta, así que el partido no arranca ni se reanuda hasta que vuelva (con `!afk`) o entre otro.
+
+Se configura arriba del bloque `▶️ ARRANQUE AUTOMÁTICO` de `script.js`: `AutoArranque`,
+`JugadoresParaArrancar` (2), `SegundosDePausaMaxima` (10), `SegundosTrasParar` (5) y
+`SegundosTrasVictoria` (8).
+
+## 📣 Aviso al Discord cuando abre una sala
+
+Apenas HaxBall entrega el link, el bot publica una tarjeta en el Discord de
+**[ÑandutíBall](https://discord.gg/TGRug4BGG)** con el nombre de la sala, el mapa, el modo, el
+cupo, la ubicación y el botón para entrar. Cada sala manda la suya, así que al levantar las 4
+salen 4 tarjetas. El mismo link no se avisa dos veces.
+
+Se configura arriba del bloque `📣 AVISO DE SALA ABIERTA` de `script.js`:
+
+| Variable | Para qué |
+|---|---|
+| `AvisoSalaAbierta` | `false` para no avisar nada |
+| `WebhookSalaAbierta` | El webhook de Discord al que se manda |
+| `DiscordDeLaSala` | El link de invitación que aparece en el pie y en el chat |
+| `TagSalaAbierta` | `"@here"`, `"@everyone"`, un ID de rol, o `""` para no pinguear a nadie |
+| `TituloSalaAbierta`, `MensajeSalaAbierta`, `BotonSalaAbierta`, `PieSalaAbierta` | La plantilla |
+| `ColorSalaAbierta`, `NombreDelAvisador` | Color de la tarjeta y nombre con el que firma el bot |
+
+En la plantilla se pueden usar `{sala}`, `{link}`, `{mapa}`, `{cupo}`, `{modo}`, `{ubicacion}`
+y `{discord}`. Por ejemplo:
+
+```js
+var TituloSalaAbierta = "🟢 ¡{sala} está abierta!";
+var MensajeSalaAbierta = "⚽ Ya se puede entrar a jugar. ¡Te esperamos en la cancha!";
+```
+
+### La invitación al Discord en el chat
+
+Cada **3 minutos** el bot escribe en el chat de la sala:
+
+```
+💬 ¿Buscás equipo, torneos o querés pasar tus quejas? Entrá al Discord de ÑandutíBall 🇵🇾
+🔗 https://discord.gg/TGRug4BGG
+```
+
+Con la sala vacía no habla solo. Se configura con `MinutosEntreAvisos` (3),
+`MensajeDiscordEnElChat` (las líneas, admiten `{discord}`, `{sala}`, `{link}`…) y
+`AvisoDiscordEnElChat` (`false` para apagarlo), todo arriba del mismo bloque.
+
+> ⚠️ **El webhook es una llave.** Cualquiera que lo tenga puede escribir en ese canal, y
+> `script.js` se sube a GitHub. Si el repositorio es público, conviene poner el webhook en `.env`
+> (`WEBHOOK_SALA_ABIERTA=...`, ignorado por Git): el lanzador lo inyecta y pisa al del script.
+> Si alguna vez se filtra, se borra en Discord (Editar canal → Integraciones → Webhooks) y se
+> crea uno nuevo.
+
+## 🌍 Sacar la web afuera de localhost
+
+Con **Cloudflare** la página sale a internet sin abrir puertos ni contratar nada:
+
+```powershell
+npm run tunel            # túnel al panel (puerto 8080)
+npm run tunel -- 3001    # a otro puerto
+```
+
+Te devuelve una dirección tipo `https://algo-algo.trycloudflare.com` y **la avisa en el Discord**.
+
+En el canal se publica **un solo mensaje, que se va actualizando**: cuando el link cambia (cambia
+en cada arranque) se edita ese mismo mensaje, y cuando cortás con Ctrl+C queda diciendo que la
+web está apagada. Así el canal nunca se llena de links viejos que ya no andan.
+
+Con `TUNEL_WEB=si` en el `.env`, **`npm start` lo levanta solo** junto con las salas.
+
+El webhook del canal va en `WEBHOOK_WEB`. `cloudflared` ya está instalado; si alguna vez falta:
+`winget install Cloudflare.cloudflared`.
+
+> ⚠️ Con el túnel abierto, **cualquiera con el link entra a la web**. El panel pide sesión de
+> admin, pero la API todavía no: no dejes el túnel abierto si no lo estás usando.
+
+## 🕸️ Ñandutí Web
+
+La página de ÑandutíBall: <http://localhost:8080> (o el puerto de la sala).
+
+- Arriba a la derecha: **Iniciar sesión** o **Registrarte**.
+- Es la **misma cuenta que en la sala**: si te registraste con `!registrar` en HaxBall, entrás
+  con eso; si te creás la cuenta acá, después entrás a la sala con `!clave`.
+- Si tu nick tiene rango de **OWNER / CO-OWNER / HOSTER / AYUDANTE** (los de `roles.json` marcados
+  como admin), te aparece el botón **🎛️ Panel** con todo lo de siempre: salas, mensajes, ELO,
+  bans, rangos y actualizaciones. Al que no es admin, el panel lo manda de vuelta a la portada.
+- Si ya entraste, la portada te muestra tu ELO, partidos, ganados, goles y asistencias.
+
+La sesión dura **1 hora y media** y se renueva sola mientras tengas la página abierta.
+
+Las pantallas viven en `public/frm/<pantalla>/index.html` (el mismo encarpetado que usa
+app-centralshop), con `public/css/` y `public/js/` compartidos.
+
+## 🎖️ Rangos
+
+Los rangos (OWNER, CO-OWNER, HOSTER, AYUDANTE…) viven en la tabla **`rangos`** de la base y se
+administran desde el panel. **La sala los revisa cada 5 segundos** y deja a cada uno como dice la
+tabla:
+
+- el que tiene un rango con admin, es admin;
+- **el que no está en la tabla, no es admin** — aunque se lo haya dado alguien a mano.
+
+Eso es lo que corta las inyecciones de javascript: si alguien se mete en la consola y se pone
+admin, a los 5 segundos lo pierde. Y si te sacan el admin siendo OWNER, te vuelve solo.
+
+Para dejar la base lista la primera vez:
+
+```powershell
+npm run base:sembrar     # copia los rangos de roles.json a la tabla y crea al dueño
+```
+
+Si la base está apagada se usa `roles.json` como respaldo, y si no hay ningún rango cargado no se
+le saca el admin a nadie (para no quedarte afuera de tu propia sala).
+
+## 🔐 Usuarios con clave
+
+Para que nadie te use el nombre, cada usuario tiene su clave:
+
+- **Si entrás con un nombre registrado**, el bot te pide la clave y mirás de afuera hasta que la
+  pongas: `!clave tu-contraseña`. Si no la ponés en 90 segundos te saca (podés volver a entrar).
+- **Si tu nombre no está registrado**, jugás normal, y cada 2 minutos te aparece un cartelito
+  para que te lo guardes: `!registrar tu-contraseña`.
+- Para cambiarla: `!cambiarclave la-vieja la-nueva`.
+
+Las claves se guardan **hasheadas** en la tabla `usuarios`: ni en la base ni en el chat aparece
+la contraseña de nadie. Si la base está apagada, la sala funciona como siempre y no se le pide
+clave a nadie.
+
+## 📣 Actualizaciones (novedades para el Discord)
+
+En el panel hay una pantalla **📣 Actualizaciones** para contarle a la gente qué cambió.
+
+1. Se escribe la novedad ahí (o se carga sola cada vez que se toca el bot).
+2. Queda **esperando**: no sale a ningún lado todavía.
+3. Cuando le das **Enviar al Discord**, recién ahí se publica en el canal de actualizaciones.
+
+Así nada sale sin que lo hayas leído antes. Las novedades se guardan en la tabla
+**`actualizaciones`** de la base, con su estado (esperando · enviada · error) y la fecha.
+
+También se pueden cargar desde la terminal:
+
+```powershell
+npm run actualizacion -- "Ahora el partido arranca solo cuando hay 2 jugadores"
+npm run actualizacion -- --lista      # ver las últimas
+npm run actualizacion -- --enviar     # mandar todas las que estén esperando
+```
+
+El webhook del canal va en `.env`, en `WEBHOOK_ACTUALIZACIONES`. Sin eso se pueden guardar
+novedades pero no enviarlas (el panel lo avisa).
+
+Las novedades se escriben **como se las contarías a alguien que entra a jugar**: qué cambia en la
+sala, sin nombres de archivos ni palabras técnicas.
+
+## 🗄️ La base de datos
+
+Postgres en Docker, **aparte de las salas** (tiene su propio compose, así se puede levantar sola):
+
+```powershell
+npm run base            # levanta Postgres        (docker compose -f docker-compose.base.yml up -d)
+npm run base:migrar     # crea/actualiza las tablas
+npm run base:ver        # Prisma Studio, para mirar los datos
+npm run prueba-base     # comprueba que todo enchufe
+npm run base:bajar      # la baja (los datos quedan en ./postgres)
+```
+
+La base se llama **nandutiball**, escucha en el **5432** y los datos quedan en la carpeta
+`./postgres` (ignorada por Git).
+
+> El PostgreSQL 16 que tenías instalado en Windows (servicio `postgresql-x64-16`) ocupaba ese
+> puerto: quedó **detenido y en arranque Manual**. Si alguna vez lo necesitás de vuelta:
+> `Start-Service postgresql-x64-16` (como administrador) y esta base pasala al 5433.
+
+### A qué base le habla
+
+Como en el Visualizador de facturas: una variable decide el entorno y **solo se abre esa conexión**.
+
+```
+DB_ENV=desarrollo        # produccion | testing | desarrollo
+DB_DESARROLLO_URL=postgresql://postgres:postgres@localhost:5432/nandutiball?schema=public
+DB_TESTING_URL=
+DB_PRODUCCION_URL=
+```
+
+`services/ConexionBase.js` requiere `ConexionPostgres<Entorno>.js` según `DB_ENV`; si falta la URL
+de ese entorno usa `DATABASE_URL`. La conexión se abre recién cuando alguien la pide, así que
+**el host y el panel andan igual con la base apagada** — todavía no dependen de ella.
+
+### Las tablas
+
+| Tabla | Qué guarda |
+|---|---|
+| `usuarios` | nick (único), su clave (hasheada), auth, ELO, partidos, goles, asistencias |
+| `salas` | las 4 salas (clave y nombre) |
+| `partidos` | sala, mapa, goles de cada lado, ganador, inicio y fin |
+| `participaciones` | quién jugó qué partido, de qué lado, con cuánto ELO antes y después |
+| `actualizaciones` | las novedades para el Discord (esperando · enviada · error) |
+| `rangos` | los rangos que hoy viven en `roles.json` |
+
+Es la primera versión y la vamos a ir cambiando: se toca `prisma/schema.prisma` y se corre
+`npm run base:migrar`.
 
 ## 🗺️ Mapas propios de futsal
 
@@ -289,9 +594,16 @@ Recoleta · Rubio Ñu · Sportivo Trinidense · Sportivo Ameliano · Sportivo Sa
 Deportivo Capiatá · Deportivo Santaní · Encarnación FC · Fernando de la Mora · General Caballero JLM ·
 Guaireña · Independiente CG · Paraguarí · Resistencia · Sol de América · Sportivo Carapeguá · Tacuary
 
-Con `!clubcolors` las camisetas cambian solas en cada partido: hay 28 cruces armados, y el
-superclásico **Olimpia vs Cerro** es el que más sale. Cuando se enfrentan dos camisetas parecidas
+**Las camisetas cambian solas en cada partido**: hay 28 cruces armados, y el superclásico
+**Olimpia vs Cerro** es el que más sale. Cuando se enfrentan dos camisetas parecidas
 (Olimpia vs Nacional, Guaraní vs Luqueño…), el equipo azul cambia automáticamente.
+
+Eso lo maneja `cambioCami`, que el script del autor traía **apagado** (por eso los equipos
+quedaban siempre con la misma camiseta). Las 4 salas lo traen prendido con `"cambioCami": true`
+en `hosts/*.json`. En vivo se prende y se apaga con `!clubcolors` (admin).
+
+Aparte está `!togglecamisetas` (`CamisetasGanaSigue`): el que gana **mantiene** su camiseta y
+solo cambia el que pierde o empata. Viene apagado; los dos modos no se usan juntos.
 
 Para agregar un club, copiá una entrada de `camisetasEquipos` (línea 688) con el formato
 `/colors <equipo> <ángulo> <color del número> <franja1> <franja2> <franja3>`.
@@ -345,9 +657,12 @@ Para agregar un club, copiá una entrada de `camisetasEquipos` (línea 688) con 
 | `PorcentajeDeVotosBan/Admin`, `DURACION_VOTACION` | Votaciones |
 
 ### Webhooks de Discord
-`AnuncioHostAbierto` (aviso de sala abierta) · `WebhookGrabaciones` (replays y resúmenes) ·
-`WebhookParaLlamarAdmins` · `AnuncioKicksBans` · `webhookMensajesJugadores` (chat) ·
-`webhookBoletero` (entradas y salidas) · `webhookEstadisticasJugadores` · `webhookIPJugadores`
+`WebhookSalaAbierta` (**el nuestro**: avisa cuando abre una sala) · `WebhookGrabaciones` (replays
+y resúmenes) · `WebhookParaLlamarAdmins` · `AnuncioKicksBans` · `webhookMensajesJugadores`
+(chat) · `webhookBoletero` (entradas y salidas) · `webhookEstadisticasJugadores` ·
+`webhookIPJugadores`
+
+Todos menos `WebhookSalaAbierta` siguen siendo **los del autor original** (ver Problemas conocidos).
 
 ---
 
@@ -362,6 +677,29 @@ Para agregar un club, copiá una entrada de `camisetasEquipos` (línea 688) con 
 `!mapas` muestra la lista dentro de la sala.
 
 ---
+
+## 💬 En el chat se habla de todo
+
+Los comandos **solo se disparan con `!`**. Todo lo demás es una charla y el bot no se mete.
+
+Antes no era así y molestaba:
+
+- El script ponía y sacaba del AFK a cualquiera que escribiera **estoy**, **listo**, **volvi**,
+  **mtm** o **meteme** en medio de una frase (“estoy re picante hoy” te sacaba de la cancha).
+  Ahora el AFK se maneja **solo con `!afk`**.
+- Con el draft prendido, escribir un número elegia a ese jugador. Ahora se elige con **`!7`**
+  o `!elegir 7`, así que se puede escribir “3 - 1 vamos” tranquilo.
+
+**Los comandos no se ven en el chat.** Si escribís `!clave loquesea`, el bot lo entiende pero
+nadie lo ve: tu contraseña no queda a la vista de la sala.
+
+Siguen andando los prefijos de siempre, que no son comandos sino formas de hablar:
+`t mensaje` (a tu equipo), `ac mensaje` (entre admins) y `@@nick mensaje` (privado).
+
+Lo único que puede frenar un mensaje es la moderación de los admins: `!silenciar palabra`,
+`!mute` y `!pausechat`.
+
+`npm run prueba-chat` lo verifica: frases con esas palabras, números sueltos y `!7`.
 
 ## 💬 Comandos
 
@@ -378,6 +716,7 @@ Para agregar un club, copiá una entrada de `camisetasEquipos` (línea 688) con 
 | `!goleadores`, `!asistidores`, `!vallas-invictas`, `!mvp`, `!racha-actual`, `!viciosos`, `!ganadores` | Rankings |
 | `!size N`, `!avatar a,b,c` | Tamaño y avatar animado |
 | `!expulsar ID`, `!admin` | Votaciones (`#` muestra los IDs) |
+| `!modo` | Ver cómo se arman los equipos ahora |
 | `!nv` | Salir de la sala |
 
 ### Admins
@@ -387,7 +726,8 @@ Para agregar un club, copiá una entrada de `camisetasEquipos` (línea 688) con 
 | `!mute ID`, `!unmute ID`, `!silenciar`, `!unmuteall` | Silenciar |
 | `!banip IP`, `!unbanip IP`, `!clearbans`, `!kickafks` | Expulsiones |
 | `!set_password clave`, `!clear_password` | Contraseña |
-| `!ganasigue`, `!juegantodos`, `!juegan N`, `!auto_balance`, `!automatizado` | Modos |
+| `!ganasigue`, `!elegir`, `!combinado` | **Cómo se arman los equipos** (ver abajo) |
+| `!juegantodos`, `!juegan N`, `!auto_balance`, `!automatizado` | Otros modos del script |
 | `!powershot`, `!goldeoro`, `!fairplay` | Reglas especiales |
 | `!camisetas`, `!clubcolors`, `!swapcolors` | Camisetas |
 
@@ -412,6 +752,11 @@ conviene cambiarlos.
 ### 4. 🟠 Webhooks del autor en el código
 Las URLs de webhook del inicio son reales y son del autor original: cualquiera con el archivo
 puede escribir en esos canales de Discord. Reemplazalas por las tuyas o vaciálas.
+
+El de **sala abierta** ya está cambiado por el nuestro (`WebhookSalaAbierta`), pero siguen siendo
+del autor los de **grabaciones**, **llamar admins**, **kicks y bans**, **mensajes del chat**,
+**entradas y salidas**, **estadísticas** e **IPs**: eso quiere decir que los replays y los
+mensajes de la sala se le siguen mandando a su Discord.
 
 ### 5. 🟡 Detalles
 - `ClaveParaSerAdmin` viene como `"!axeso5"`: es fácil de adivinar.
