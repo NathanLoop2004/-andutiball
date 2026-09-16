@@ -58,7 +58,10 @@ revisar("El link no se manda a webhooks ajenos", ajenos.length === 0, ajenos.map
 // ── El cartelito del Discord en el chat de la sala ──
 console.log("\n💬 El aviso del Discord en el chat:");
 
-const invitaciones = () => sala.anuncios.filter((a) => a.includes("discord.gg/TGRug4BGG")).length;
+// Ojo: el aviso para crear la cuenta también cae en el Discord cuando no hay web abierta,
+// así que se cuenta el cartelito por su texto y no por el link.
+// (ojo con copiar textos con ñ/í: no siempre son el mismo codepoint en los dos archivos)
+const invitaciones = () => sala.anuncios.filter((a) => a.includes("Entrá al Discord")).length;
 
 const sinGente = invitaciones();
 avanzar(10 * 60 * 1000);
@@ -72,7 +75,7 @@ revisar("A los 3 minutos invita al Discord", invitaciones() - antes === 1, invit
 avanzar(6 * 60 * 1000);
 revisar("Y sigue cada 3 minutos", invitaciones() - antes === 3, invitaciones() - antes + " avisos en 9 minutos");
 
-const invitacion = sala.anuncios.filter((a) => a.includes("discord.gg/TGRug4BGG")).pop();
+const invitacion = sala.anuncios.filter((a) => a.trim() === "🔗 " + contexto.DiscordDeLaSala).pop();
 revisar("El mensaje lleva el link del Discord", Boolean(invitacion), invitacion);
 
 console.log("");
