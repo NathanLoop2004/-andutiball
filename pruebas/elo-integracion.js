@@ -78,6 +78,8 @@ contexto.__ELO = {};          // arrancamos con la tabla vacía, como una sala n
 vm.runInContext(script, contexto, { timeout: 30000 });
 
 const fallos = [];
+// Calcula sobre una copia vacía, sin tocar la tabla de la prueba
+const cambios0 = (partido) => elo.aplicarPartido({}, partido);
 const revisar = (ok, que) => { console.log((ok ? "  ✅ " : "  ❌ ") + que); if (!ok) fallos.push(que); };
 
 // ── Entran 6 jugadores y se arma 3v3 ──
@@ -92,6 +94,10 @@ console.log("\n══ Un partido: gana Red 3-1 ══");
 room.startGame();
 if (room.onGameStart) room.onGameStart(null);
 marcador.red = 3; marcador.blue = 1;
+// Como en HaxBall de verdad: primero la victoria (con el marcador) y después se corta el
+// partido, así que en onGameStop room.getScores() ya devuelve null.
+if (room.onTeamVictory) room.onTeamVictory({ ...marcador });
+room.stopGame();
 if (room.onGameStop) room.onGameStop(null);
 
 // El bloque deja el resultado en la cola; el launcher la vacía. Acá hacemos lo mismo.
@@ -101,6 +107,8 @@ revisar(Boolean(evento), "la sala reporta el resultado del partido");
 if (!evento) { console.log("\n❌ Sin evento, no se puede seguir."); process.exit(1); }
 revisar(evento.red.length === 3 && evento.blue.length === 3, "reporta los 3 de cada equipo");
 revisar(evento.ganador === 1, "reconoce que ganó Red");
+revisar(evento.golesRed === 3 && evento.golesBlue === 1, "manda el marcador final");
+revisar(cambios0(evento).every((c) => c.equipo && c.resultado !== undefined), "cada cambio sabe su equipo y resultado (para la base)");
 revisar(evento.red.every((j) => j.auth), "manda el auth de cada jugador (no solo el nick)");
 
 // ── Node calcula y guarda ──
@@ -126,12 +134,23 @@ const top = anuncios.filter((a) => /pts/.test(a.msg));
 console.log("  !top →", top.length, "jugadores listados");
 revisar(top.length === 6, "el comando !top lista a los 6");
 
+// ── Un partido cortado con Stop no cuenta ──
+console.log("\n══ Partido cortado a mano: no suma ni resta ══");
+contexto.window.__panelCola.length = 0;
+room.startGame();
+if (room.onGameStart) room.onGameStart(null);
+room.stopGame();
+if (room.onGameStop) room.onGameStop(null);
+revisar(!contexto.window.__panelCola.some((e) => e.tipo === "elo-partido"), "un partido cortado con Stop no manda resultado");
+
 // ── Segundo partido: ahora gana Blue ──
 console.log("\n══ Segundo partido: gana Blue 2-0 ══");
 room.startGame();
 if (room.onGameStart) room.onGameStart(null);
 marcador.red = 0; marcador.blue = 2;
 contexto.window.__panelCola.length = 0;
+if (room.onTeamVictory) room.onTeamVictory({ ...marcador });
+room.stopGame();
 if (room.onGameStop) room.onGameStop(null);
 const evento2 = (contexto.window.__panelCola || []).find((e) => e.tipo === "elo-partido");
 const tabla2 = elo.leerElo();

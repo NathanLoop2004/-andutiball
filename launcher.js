@@ -13,6 +13,7 @@ const { crearSalaEspiada } = require("./lib/espia");
 const EstadoModel = require("./models/EstadoModel");
 const UsuarioModel = require("./models/UsuarioModel");
 const RangoModel = require("./models/RangoModel");
+const PartidoModel = require("./models/PartidoModel");
 const WebhookWeb = require("./services/WebhookWeb");
 const { leerRoles } = require("./lib/roles");
 const { ARCHIVO: ARCHIVO_RANGOS, leerRangos, guardarRangos, sinClave } = require("./lib/rangos");
@@ -352,6 +353,11 @@ api.on("error", (error) => {
       .join(" · ");
     agregarMensaje("elo", `Puntajes: ${resumen}`);
     console.log(`📊 ELO actualizado — ${resumen}`);
+
+    // Y a la base: usuarios, partido y participaciones. Si está apagada, queda solo en elo.json
+    PartidoModel.guardar(evento, cambios, { clave: salaElegida || "sala", nombre: hostConfig.NombreHost || salaElegida || "sala" })
+      .then((p) => p && console.log(`💾 Partido #${p.id} guardado en la base`))
+      .catch((error) => console.warn(`⚠️ El partido no se guardó en la base: ${String(error.message).split("\n")[0]}`));
 
     // Los que cambiaron de división se anuncian en la sala
     const anuncios = cambios

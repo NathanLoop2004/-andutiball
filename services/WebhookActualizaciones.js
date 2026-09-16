@@ -28,6 +28,10 @@ async function enviar({ titulo, mensaje }) {
 
   const cuerpo = {
     username: NOMBRE,
+    // @here avisa a los que están conectados. allowed_mentions hace falta: sin eso Discord
+    // muestra el texto pero no notifica a nadie ("everyone" cubre @everyone y @here)
+    content: "@here",
+    allowed_mentions: { parse: ["everyone"] },
     embeds: [{
       title: String(titulo || TITULO_POR_DEFECTO).slice(0, 250),
       description: String(mensaje).slice(0, 4000),

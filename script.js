@@ -157,11 +157,11 @@ var CantidadCambiarTamano = 1;
 // ▇▇▇▇▇▇▇ ⚽👕 CAMISETAS POR DEFECTO ⚽👕 ▇▇▇▇▇▇▇
 
 // CAMISETA EQUIPO RED 🔴
-var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
+var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
 var NombreEquipoRojo = "OLIMPIA";
 
 // CAMISETA EQUIPO BLUE 🔵
-var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
+var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
 var NombreEquipoAzul = "CERRO PORTEÑO";
 
 
@@ -19541,6 +19541,7 @@ function revisarTurnos() {
 var ColorearNombrePorElo = true;       // el nombre en el chat sale del color de su división
 var ELO = window.__ELO || {};          // nick en minúscula -> { elo, partidos, division, emoji, color }
 var eloDelPartido = null;              // quiénes estaban jugando cuando arrancó
+var mapaDelPartido = null;             // el nombre del mapa puesto (lo avisa onStadiumChange)
 
 window.__eloActualizar = function (datos) {
 	ELO = datos || {};
@@ -19590,6 +19591,12 @@ function jugadoresEnCancha() {
 		}, 2500);
 	};
 
+	var anteriorEstadio = room.onStadiumChange;
+	room.onStadiumChange = function (nombre, byPlayer) {
+		mapaDelPartido = nombre || null;
+		if (typeof anteriorEstadio === "function") anteriorEstadio(nombre, byPlayer);
+	};
+
 	// ── Al arrancar, anotamos quiénes juegan ──
 	var anteriorStart = room.onGameStart;
 	room.onGameStart = function (byPlayer) {
@@ -19597,20 +19604,34 @@ function jugadoresEnCancha() {
 		eloDelPartido = jugadoresEnCancha();
 	};
 
-	// ── Al terminar, le pasamos el resultado a Node ──
-	var anteriorStop = room.onGameStop;
-	room.onGameStop = function (byPlayer) {
-		var marcador = room.getScores();
+	// ── Al ganar un equipo, le pasamos el resultado a Node ──
+	// Va en onTeamVictory y no en onGameStop: en la sala de verdad, cuando corre onGameStop el
+	// partido ya no existe y room.getScores() devuelve null, así que no se mandaba nunca nada.
+	// De paso, un partido cortado a mano (Stop, cambio de mapa) no suma ni resta puntos.
+	var anteriorVictoria = room.onTeamVictory;
+	room.onTeamVictory = function (scores) {
+		var marcador = scores || room.getScores();
 		if (eloDelPartido && marcador && (eloDelPartido.red.length && eloDelPartido.blue.length)) {
 			var ganador = marcador.red > marcador.blue ? 1 : marcador.blue > marcador.red ? 2 : 0;
+			var goles = {};
+			if (typeof playerGoals !== "undefined") for (var n in playerGoals) goles[n] = playerGoals[n];
 			avisarAlPanel({
 				tipo: "elo-partido",
 				red: eloDelPartido.red,
 				blue: eloDelPartido.blue,
 				ganador: ganador,
-				goles: typeof playerGoals !== "undefined" ? playerGoals : {},
+				golesRed: marcador.red,
+				golesBlue: marcador.blue,
+				mapa: mapaDelPartido,
+				goles: goles,
 			});
 		}
+		eloDelPartido = null;
+		if (typeof anteriorVictoria === "function") return anteriorVictoria(scores);
+	};
+
+	var anteriorStop = room.onGameStop;
+	room.onGameStop = function (byPlayer) {
 		eloDelPartido = null;
 		if (typeof anteriorStop === "function") anteriorStop(byPlayer);
 	};

@@ -261,6 +261,8 @@ en `todas.js`, igual que el panel).
 - ese id se guarda en `datos/tunel.json` (ignorado por Git) y de ahí en adelante se
   `PATCH <webhook>/messages/<id>`, así el canal no se llena de links viejos;
 - si el PATCH vuelve 404 (alguien borró el mensaje) se publica uno nuevo y se guarda el id;
+- lleva `@here` (igual que el de actualizaciones), con `allowed_mentions: { parse: ["everyone"] }`,
+  que es lo que hace que Discord notifique. Solo suena al publicar: editar no vuelve a avisar;
 - al cortar con Ctrl+C el mismo mensaje queda diciendo que la web está apagada.
 
 El webhook va en `WEBHOOK_WEB` (.env). `npm run prueba-tunel` prueba todo el circuito con `fetch`
@@ -602,7 +604,11 @@ así que también comprueba que el link no viaje a ningún webhook ajeno.
 
 Puntaje por jugador, guardado en `datos/elo.json` **del lado de Node** (no en localStorage): así sobrevive al cierre de la sala y **las 4 salas comparten la tabla**. La clave es `auth:<PublicID>` y cae a `nick:<nombre>` solo si no hay auth.
 
-Circuito: el bloque `📊 ELO Y DIVISIONES` del script anota quién está en cancha al arrancar, y al terminar empuja `{tipo:"elo-partido", red, blue, ganador, goles}` a `window.__panelCola`. El launcher la vacía, llama a `aplicarPartido()`, guarda, y le devuelve la tabla a la página con `window.__eloActualizar()`. También anuncia los cambios en la sala.
+Circuito: el bloque `📊 ELO Y DIVISIONES` del script anota quién está en cancha al arrancar, y en **`onTeamVictory`** empuja `{tipo:"elo-partido", red, blue, ganador, golesRed, golesBlue, mapa, goles}` a `window.__panelCola`. El launcher la vacía, llama a `aplicarPartido()`, guarda, y le devuelve la tabla a la página con `window.__eloActualizar()`. También anuncia los cambios en la sala.
+
+**No volver a `onGameStop`**: ahí el partido ya no existe y `room.getScores()` devuelve `null`, así que en la sala de verdad nunca se mandaba nada (la prueba no lo veía porque disparaba `onGameStop` sin cortar el partido). Un partido cortado con Stop no cuenta.
+
+**La base**: además de `elo.json`, `models/PartidoModel.js` guarda cada partido en `partidos` + `participaciones` y le suma a `usuarios` (elo, partidos, ganados, perdidos, empatados, goles). Si el nick no tiene usuario se le crea uno sin clave. Con la base apagada solo avisa por consola. El elo de la tabla `usuarios` es el que calculó `elo.json` (que va por auth), no se recalcula.
 
 Fórmula Elo clásica por equipos: se compara el promedio de cada lado, K=32 (48 en los primeros 10 partidos). Es de suma cero. Divisiones en `DIVISIONES` (Novato → Leyenda).
 

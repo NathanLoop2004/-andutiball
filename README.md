@@ -568,6 +568,11 @@ El puntaje va por **auth** (el Public ID de HaxBall, que no se puede falsear), n
 alguien se cambia el nombre, su puntaje lo sigue. Se guarda en `datos/elo.json` del lado de Node,
 así sobrevive a que se cierre la sala, y **las 4 salas comparten la misma tabla**.
 
+Solo cuentan los partidos que **termina un equipo ganando**: si un admin le da a Stop o se cambia
+el mapa, nadie suma ni pierde puntos. Si la base está levantada, cada partido también queda en
+las tablas `partidos` y `participaciones`, y a cada jugador se le suma en `usuarios` (ELO,
+partidos, ganados, perdidos, goles). Al que no tenía usuario se le crea uno sin clave.
+
 En el panel hay una pestaña **ELO** con la tabla completa: puesto, división, puntos, partidos
 jugados y el historial de ganados-empatados-perdidos.
 

@@ -47,6 +47,10 @@ function armarMensaje({ url, estado = "arriba", nota }) {
   const arriba = estado === "arriba";
   return {
     username: "ÑandutíBall 🇵🇾",
+    // @here avisa a los conectados (allowed_mentions es lo que hace que Discord notifique).
+    // Ojo: Discord solo notifica al publicar; al editar el mensaje no vuelve a sonar.
+    content: "@here",
+    allowed_mentions: { parse: ["everyone"] },
     embeds: [{
       title: arriba ? "🌐 Ñandutí Web está en línea" : "💤 Ñandutí Web está apagada",
       description: arriba

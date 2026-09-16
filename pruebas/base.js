@@ -88,6 +88,25 @@ const enOtroProceso = (codigo, env) => {
     await db.usuario.delete({ where: { id: creado.id } });
     const borrado = await db.usuario.findUnique({ where: { id: creado.id } });
     revisar("Y borrarlo", borrado === null);
+
+    // Un partido terminado: crea el partido, los usuarios que falten y suma a sus números
+    const PartidoModel = require("../models/PartidoModel");
+    const { aplicarPartido } = require("../lib/elo");
+    const rojo = nick + "R", azul = nick + "B";
+    const evento = { red: [{ nombre: rojo, auth: "auth-" + rojo }], blue: [{ nombre: azul, auth: null }], ganador: 1, golesRed: 3, golesBlue: 1, mapa: "Futsal x3", goles: { [rojo]: 2 } };
+    const partido = await PartidoModel.guardar(evento, aplicarPartido({}, evento), { clave: "prueba-" + nick, nombre: "Prueba" });
+    try {
+      const ganador = await db.usuario.findUnique({ where: { nick: rojo } });
+      const perdedor = await db.usuario.findUnique({ where: { nick: azul } });
+      const participaciones = await db.participacion.count({ where: { partidoId: partido.id } });
+      revisar("Un partido terminado se guarda", partido.golesRed === 3 && partido.ganador === 1 && participaciones === 2, "partido #" + partido.id);
+      revisar("Al que gana le suma ELO, partido, victoria y goles", ganador && ganador.elo > 1000 && ganador.partidos === 1 && ganador.ganados === 1 && ganador.goles === 2 && ganador.auth === "auth-" + rojo);
+      revisar("Al que pierde le resta ELO y le anota la derrota", perdedor && perdedor.elo < 1000 && perdedor.perdidos === 1);
+    } finally {
+      await db.partido.delete({ where: { id: partido.id } });
+      await db.usuario.deleteMany({ where: { nick: { in: [rojo, azul] } } });
+      await db.sala.delete({ where: { clave: "prueba-" + nick } });
+    }
   } catch (error) {
     revisar("Las tablas están creadas", false, error.message.split("\n")[0]);
     console.log("      👉 Corré: npm run base:migrar");
