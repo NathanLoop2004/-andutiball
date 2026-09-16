@@ -17,13 +17,20 @@ Contexto para trabajar en este proyecto. La documentación para personas está e
 - `script.js`: el script (~19.100 líneas, 1,5 MB). Es demasiado grande para leerlo entero: usa `offset`/`limit` o busca con Grep.
 - `Real Soccer Revolution By GLH 3.1.0.txt`: el original completo del autor, sin parchar. De ahí sale `script.js` con `npm run parchar`.
 - `README.md`: documentación de configuración, comandos y problemas.
-- `app.js` + `routes/` + `controllers/` + `models/` + `views/`: el panel en MVC (ver “Panel y rangos”).
+- `app.js` + `routes/` + `controllers/` + `models/` + `middlewares/`: la app en MVC (ver “Panel y rangos”).
+- `public/`: Ñandutí Web (portada, login, registro) y las pantallas del panel, con el encarpetado de app-centralshop.
+- `services/`: la conexión a la base por entorno y los webhooks (actualizaciones, link de la web).
+- `prisma/` + `docker-compose.base.yml`: las tablas y la base, que va **aparte** de las salas.
+- `tunel.js`, `actualizacion.js`, `sembrar.js`: los comandos sueltos (túnel de Cloudflare, novedades, sembrar la base).
+- `pruebas/`: 17 pruebas que corren sin gastar tokens (ver “Probar sin gastar tokens”).
 
 ## Despliegue (launcher.js)
 
 - `launcher.js` + `package.json`: Puppeteer abre `haxball.com/headless`, envuelve `HBInit` para agregar `token` y ejecuta `script.js`.
 - El token se pasa por la variable de entorno `HAXBALL_TOKEN` (de https://www.haxball.com/headlesstoken). **Vence a los pocos minutos** y solo sirve para crear la sala: hay que pedir uno nuevo en cada arranque. Nunca guardarlo en archivos del repositorio.
-- El token se lee de `.env` (ignorado por Git); `.env.example` es la plantilla sin token.
+- El token se lee de `.env`, que **ya no se sube a Git** (se destrackeó con `git rm --cached .env`);
+  `.env.example` es la plantilla. Ojo: **los commits viejos todavía tienen el .env con tokens y
+  webhooks adentro**, así que si el repo es público conviene rotarlos.
 - Docker: `Dockerfile` (imagen `ghcr.io/puppeteer/puppeteer`, con la misma versión que puppeteer en package-lock.json) + `docker-compose.yml` (`env_file: .env`, `shm_size: 1gb`, `script.js` montado como volumen). Arranque: `docker compose up -d --build`; logs y link de la sala: `docker compose logs -f`.
 - Si el contenedor se reinicia, se necesita un token nuevo (por eso `restart: on-failure:3`).
 - **Multihost:** un solo `script.js` y cuatro salas en compose (`host-3v3`, `host-4v4`, `host-todos`, `host-rs`). Cada una tiene `HOST_CONFIG=hosts/<sala>.json`, y el launcher reemplaza en el script la declaración (`var/let/const Nombre ...;`) de cada variable del JSON. Solo sirve para variables de config de una línea.
@@ -619,6 +626,32 @@ El cupo de las 4 salas es 30 (`CantidadDeJugadores` en `hosts/*.json`), el máxi
 
 ## Probar sin gastar tokens
 
+Son 17 y **todas tienen que quedar en verde antes de commitear**:
+
+| Comando | Qué mira |
+|---|---|
+| `prueba` | El script entero cargando y los eventos básicos (atrapa los `X is not defined`) |
+| `prueba-api` | La API del panel (routes → controllers → models) contra HTTP real |
+| `prueba-web` | Ñandutí Web: portada, registro, sesión, JWT y el panel solo para admins |
+| `prueba-base` | El enrutado por `DB_ENV` y las tablas de Prisma |
+| `prueba-usuarios` | Las claves: hash, el flujo en la sala y el modelo contra la base |
+| `prueba-rangos` | Que la tabla mande y que un admin puesto a mano se caiga en 5 s |
+| `prueba-nicks` | Que no te echen por tu propio nombre |
+| `prueba-chat` | Hablar normal no dispara comandos, y los comandos no se ven |
+| `prueba-turnos` | El draft: elegir a tiempo y el que se cuelga |
+| `prueba-modos` | `!ganasigue` / `!elegir` / `!combinado` y la pausa mientras se elige |
+| `prueba-arranque` | Stop, pausa, fin de partido y AFK |
+| `prueba-camisetas` | Que los clubes roten en cada partido |
+| `prueba-espia` | Un evento por cosa que pasa (el panel no repite) |
+| `prueba-discord` | El aviso de sala abierta y el cartelito del chat |
+| `prueba-tunel` | Un solo mensaje en Discord que se va actualizando |
+| `prueba-actualizaciones` | Las novedades: se guardan primero, se mandan después |
+| `prueba-elo` | El cálculo, el circuito y el color del nombre |
+| `prueba-mapas` | Que HaxBall valide los 4 mapas |
+
+Las que hablan con la base **no fallan si está apagada**: avisan y saltean esa parte.
+
+
 `npm run prueba` (`pruebas/simulador.js`) monta una sala falsa con la API de HaxBall, corre `script.js` entero en un `vm` y dispara los eventos (entrar, chatear, clave de rango, comandos, gol, salir). Atrapa los `X is not defined` que dejó el corte del archivo. **Correrlo después de cada cambio en script.js.**
 
 `npm run prueba-api` (`pruebas/api.js`) prueba la capa MVC del panel contra HTTP de verdad; está explicado en “Panel y rangos”.
@@ -643,14 +676,66 @@ Piezas repuestas en el bloque `🩹 PIEZAS QUE FALTABAN` (se perdieron con el co
 - **Webhooks reales en texto plano** al inicio del archivo, y `webhookPass` (sin uso). Siguen siendo del autor original los de grabaciones, llamar admins, kicks/bans, mensajes del chat, entradas/salidas, estadísticas e IPs: los replays y el chat de nuestras salas se le mandan a su Discord. El de sala abierta ya es nuestro.
 - **`WebhookSalaAbierta` está en `script.js`, que se sube a Git**: si el repo es público, esa llave queda expuesta. Se puede mover a `.env` (`WEBHOOK_SALA_ABIERTA`).
 - `ClaveParaSerAdmin = "!axeso5"`: débil y visible.
-- La clave de rangos está en texto plano en `roles.json`, que se sube a Git; el panel no pide autenticación.
+- La clave de rangos está en texto plano en `roles.json`, que se sube a Git.
+- **La API no pide sesión**: el panel se protege del lado del navegador (`Sesion.exigirAdmin()`),
+  pero `/api/estado`, `/api/kick`, `/api/rangos`… contestan a cualquiera que sepa la URL. Con el
+  túnel de Cloudflare abierto eso queda en internet. Está `middlewares/verificarToken.js` listo;
+  falta que las pantallas del panel manden el `Authorization` en cada pedido.
+- El `sid` del token JWT no se guarda en ningún lado: no hay forma de invalidar una sesión suelta
+  (solo cambiando `JWT_SECRET`, que las corta todas).
 - Fallo del script original: `ballCarrying` solo existe tras el primer `onGameStart`; el bloque compat le pone una red de seguridad.
 
-## Cómo hacer cambios
+## Trampas con las que ya nos tropezamos
+
+Cosas que costaron encontrar y conviene no volver a pisar:
+
+- **Nunca escribir un archivo con un script que pueda fallar a mitad.** Un `io.open(p,"w")` de
+  Python que revienta al escribir deja el archivo **vacío**: así se perdió `launcher.js` entero y
+  hubo que reconstruirlo desde Git. Para textos con acentos o emojis conviene la herramienta Edit
+  o un script de Node, y nunca escapes de emojis dentro de un heredoc de Python.
+- **Los `\n` dentro de heredocs se convierten en saltos de línea reales** y rompen los strings de
+  JavaScript. Si el archivo tiene mensajes con `\n`, editarlo con Edit.
+- **Los textos con ñ/í no siempre son el mismo codepoint en dos archivos**: buscar por un pedazo
+  sin acentos (le pasó a `pruebas/aviso-discord.js`, que contaba 0 avisos).
+- **`npm install` puede romperse con `Cannot read properties of null (reading 'edgesOut')`**: se
+  arregla con `npm install --package-lock-only` y volviendo a instalar.
+- **Prisma 7 no es Prisma 6**: la URL salió del schema (va en `prisma7.config.ts`), el cliente
+  necesita adaptador (`@prisma/adapter-pg`) y el generador nuevo escribe TypeScript. Este proyecto
+  usa el generador clásico `prisma-client-js`.
+- **`prisma migrate dev` no corre acá** (pide terminal interactiva): las migraciones se escriben a
+  mano en `prisma/migrations/<fecha>_<nombre>/migration.sql` y se aplican con `migrate deploy`.
+  Para renombrar una tabla, `ALTER TABLE ... RENAME` — si no, Prisma la borra y la vuelve a crear,
+  y se pierden los datos.
+- **El 5432 lo puede tener el PostgreSQL de Windows**: el síntoma es `P1000: Authentication failed`.
+  Ese servicio quedó detenido y en arranque Manual.
+- **Las pruebas con muchos jugadores tienen que entrar espaciados** (`entran()` deja 700 ms): el
+  script echa al 5º que entra dentro de los mismos 2 segundos. Y **no usar los nombres
+  `Jugador1`…`Jugador20`**: están en la `ListaDeJogadores` de ejemplo del autor y el anti-DU los echa.
+- **La ronda de rangos le saca el admin a quien no esté en la tabla**, así que las pruebas que
+  necesitan un admin de mentira ponen `contexto.SoloRangosDeLaBase = false`.
+- El script tiene `commandCooldown = 5000` por jugador: entre dos comandos del mismo jugador hay
+  que mover el reloj virtual.
+
+## Cómo se cierra un cambio
+
+1. Tocar los **bloques** en `parches/bloques/` (nunca el final de `script.js` a mano) y correr
+   `npm run parchar`.
+2. `node --check script.js` y las **17 pruebas en verde**. No commitear con una en rojo: ya pasó
+   una vez de pushear con `prueba-discord` fallando.
+3. Actualizar `README.md` (para la gente) y este archivo (para el que siga programando).
+4. Commit y push.
+5. Cargar la novedad para el Discord con `npm run actualizacion -- --commit "…"` siguiendo las
+   reglas de “Actualizaciones para el Discord”. Queda **pendiente**: la manda el usuario desde el
+   panel. Si después algo cambia, se carga una corrección — ya pasó con la novedad 22, que decía
+   que la cuenta se creaba con `!registrar` cuando eso se movió a la web.
+
+## Al tocar el script
 
 - Antes de editar una zona minificada, léela con Grep y contexto (`-o` con `.{N}` alrededor), porque las líneas tienen miles de caracteres.
-- Para descifrar strings ofuscados: copia las líneas 1119–1143 a un archivo temporal en el scratchpad, define antes `ColorFondoRS` y `NombreHost` y llama `_0x3c81f9(0xNNN)` con Node.
-- Después de cada cambio, corre `node --check script.js` (sirve solo cuando el archivo esté completo).
-- Respeta el estilo existente: comentarios y mensajes en español, emojis en los anuncios, config con `var`/`let`/`const` al inicio del archivo.
-- Para probar de verdad hay que pegar el script en haxball.com/headless. Pídele al usuario que lo haga y te pase la salida de la consola.
-- Si cambian la configuración, los comandos o los problemas conocidos, actualiza `README.md` y este archivo.
+- Para descifrar strings ofuscados: copiá las líneas 1291–1309 (el array `_0x24f1`, `_0x2ffa` y el IIFE que lo rota) a un archivo del scratchpad, definí antes `ColorFondoRS` y `NombreHost`, y llamá `_0x3c81f9(0xNNN)` con Node.
+- Para ubicar una línea del script minificado cuando algo falla en las pruebas: `STACK=1 node pruebas/<la que sea>.js` muestra el stack con el número de línea de `evalmachine`.
+- Después de cada cambio, corré `node --check script.js` (sirve solo cuando el archivo esté completo).
+- Respetá el estilo existente: comentarios y mensajes en español, emojis en los anuncios, config con `var`/`let`/`const` al inicio del archivo.
+- **Redeclarar gana**: para pisar una función del autor sin tocar la zona minificada, se la vuelve a declarar en un bloque del final (así se hicieron los mapas, `sendLinkToDiscord` y `tieneRangoSinVerificar`).
+- **Encadenar, nunca reemplazar**: si un bloque toma un handler (`room.onPlayerChat`, `onPlayerJoin`…), tiene que guardar el anterior y llamarlo.
+- Para probar de verdad hay que pegar el script en haxball.com/headless, o levantar la sala con `npm start`. Pedile al usuario que lo haga y te pase la salida de la consola.
