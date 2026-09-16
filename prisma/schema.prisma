@@ -30,6 +30,9 @@ model Usuario {
   auth            String?   @unique
   clave           String?   // hash scrypt. null = todavía no se registró
   claveCambiada   DateTime?
+  baneado         Boolean   @default(false)   // lo banea el OWNER desde la web: no puede entrar a ninguna sala
+  motivoBan       String?
+  baneadoEl       DateTime?
   elo             Int       @default(1000)
   partidos        Int       @default(0)
   ganados         Int       @default(0)

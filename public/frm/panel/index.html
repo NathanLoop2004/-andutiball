@@ -116,6 +116,8 @@
   <h1>🕸️ ÑandutíBall</h1>
   <a href="/frm/rangos">🎖️ Administrar rangos →</a>
   <a href="/frm/actualizaciones">📣 Actualizaciones →</a>
+  <a href="/frm/usuarios" id="linkUsuarios" hidden>👥 Usuarios →</a>
+  <script>Sesion.refrescar().then(() => { document.getElementById("linkUsuarios").hidden = !Sesion.esOwner(); });</script>
   <a href="/">← Ñandutí Web</a>
   <span class="resumen" id="resumen">Cargando…</span>
 </header>

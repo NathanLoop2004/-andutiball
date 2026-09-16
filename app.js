@@ -19,6 +19,9 @@
 //   GET  /                        Ñandutí Web (la portada)
 //   GET  /frm/login · /frm/registro   entrar y registrarse
 //   GET  /frm/panel · /frm/rangos · /frm/actualizaciones   el panel (solo admins)
+//   GET  /api/usuarios?q=&pagina=   usuarios de a 15 (solo OWNER)
+//   POST /api/usuarios/:nick/banear · /desbanear · /clave      (solo OWNER)
+//   GET  /frm/usuarios            la pantalla de usuarios (solo OWNER)
 // =============================================================================
 const express = require("express");
 const path = require("path");
@@ -30,6 +33,7 @@ const rangosRouter = require("./routes/RangosRouter");
 const moderacionRouter = require("./routes/ModeracionRouter");
 const actualizacionesRouter = require("./routes/ActualizacionesRouter");
 const authRouter = require("./routes/AuthRouter");
+const usuariosRouter = require("./routes/UsuariosRouter");
 const vistasRouter = require("./routes/VistasRouter");
 
 // sala: adaptador de la sala local { estado(), expulsar(id, motivo, banear) }
@@ -50,7 +54,7 @@ function crearApp({ sala = null, salas = [] } = {}) {
   app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
     res.setHeader("Cache-Control", "no-store");
     if (req.method === "OPTIONS") return res.end();
     next();
@@ -63,6 +67,7 @@ function crearApp({ sala = null, salas = [] } = {}) {
   app.use("/api", moderacionRouter);
   app.use("/api", actualizacionesRouter);
   app.use("/api", authRouter);
+  app.use("/api", usuariosRouter);
 
   // Todo lo estático sale de public/ (igual que app-centralshop)
   app.use(express.static(path.join(__dirname, "public")));

@@ -325,10 +325,14 @@ api.on("error", (error) => {
   const refrescarUsuarios = async () => {
     try {
       const nicks = await UsuarioModel.nicksRegistrados();
-      await frame.evaluate((lista) => {
+      // Los baneados desde la pantalla de usuarios (OWNER): la sala los echa al entrar
+      const baneados = await UsuarioModel.baneados().catch(() => []);
+      await frame.evaluate((lista, bans) => {
         window.__USUARIOS = lista;
+        window.__BANEADOS = bans;
         if (window.__usuariosActualizar) window.__usuariosActualizar(lista);
-      }, nicks);
+        if (window.__baneadosActualizar) window.__baneadosActualizar(bans);
+      }, nicks, baneados);
       return nicks.length;
     } catch (error) {
       // Sin base no se le pide clave a nadie
@@ -428,7 +432,7 @@ api.on("error", (error) => {
   console.log("✅ script.js cargado. Esperando el link de la sala...");
 
   // Alguien puede registrarse desde otra sala: refrescamos la lista cada tanto
-  setInterval(refrescarUsuarios, 60000);
+  setInterval(refrescarUsuarios, 15000);   // un ban desde la web tarda como mucho esto en llegar
 
   // Los rangos se revisan seguido: es lo que deshace cualquier admin puesto a mano
   const SEGUNDOS_RANGOS = Number(process.env.SEGUNDOS_RANGOS || 5);

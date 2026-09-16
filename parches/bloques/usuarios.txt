@@ -22,10 +22,12 @@
 var PedirClaveAUsuarios = true;
 var MinutosEntreAvisosDeRegistro = 2;
 var SegundosParaPonerLaClave = 90;     // si no la pone, se lo echa (puede volver a entrar)
+var SegundosEntrePedidosDeClave = 25;  // el cartel de la clave sale como mucho una vez cada tanto
 
 var usuariosRegistrados = [];          // los nicks que tienen clave
 var usuariosVerificados = {};          // id del jugador → true cuando puso bien la clave
 var relojesDeClave = {};               // id → el timeout de los 90 segundos
+var ultimoPedidoDeClave = {};          // id → cuándo se le mostró el cartel por última vez
 
 function esUsuarioRegistrado(nombre) {
 	var buscado = String(nombre || "").trim().toLowerCase();
@@ -49,10 +51,20 @@ function tieneRangoSinVerificar(player) {
 	return leFaltaLaClave(player);
 }
 
-function pedirLaClave(jugador) {
+// El cartel de la clave. Lo pueden disparar muchas cosas seguidas (entrar, el acomodo automático
+// que lo quiere meter en la cancha cada 2 segundos, el draft...), así que sale como mucho una vez
+// cada SegundosEntrePedidosDeClave. Antes salía cada vez y llenaba el chat.
+function recordarLaClave(jugador) {
+	var ahora = Date.now();
+	if (ultimoPedidoDeClave[jugador.id] && ahora - ultimoPedidoDeClave[jugador.id] < SegundosEntrePedidosDeClave * 1000) return;
+	ultimoPedidoDeClave[jugador.id] = ahora;
 	room.sendAnnouncement("🔐 " + jugador.name + " está registrado. Poné tu clave para jugar:", jugador.id, 0xFFD100, "bold", 2);
 	room.sendAnnouncement("      !clave tu-contraseña", jugador.id, 0xFFD100, "bold", 0);
 	room.sendAnnouncement("   Mientras tanto podés mirar y chatear. Si el nombre no es tuyo, entrá con otro.", jugador.id, 0x93A1B0, "small", 0);
+}
+
+function pedirLaClave(jugador) {
+	recordarLaClave(jugador);
 	room.setPlayerTeam(jugador.id, 0);
 
 	if (relojesDeClave[jugador.id]) clearTimeout(relojesDeClave[jugador.id]);
@@ -113,6 +125,7 @@ window.__usuarioRespuesta = function (respuesta) {
 	if (respuesta.accion === "verificar") {
 		if (respuesta.ok) {
 			usuariosVerificados[jugador.id] = true;
+			delete ultimoPedidoDeClave[jugador.id];
 			if (relojesDeClave[jugador.id]) { clearTimeout(relojesDeClave[jugador.id]); delete relojesDeClave[jugador.id]; }
 			room.sendAnnouncement("✅ ¡Bienvenido de vuelta, " + jugador.name + "! Ya podés jugar.", null, 0x00C853, "bold", 2);
 		} else if (respuesta.motivo === "clave-mal") {
@@ -141,6 +154,34 @@ window.__usuarioRespuesta = function (respuesta) {
 	}
 };
 
+// ── Baneados desde la web (pantalla de usuarios del OWNER) ──
+// El launcher deja la lista en window.__BANEADOS ([{ nick, auth, motivoBan }]) y la actualiza.
+var usuariosBaneados = (typeof window !== "undefined" && Array.isArray(window.__BANEADOS)) ? window.__BANEADOS : [];
+
+function banDe(jugador) {
+	if (!jugador || jugador.id === 0) return null;
+	var nombre = String(jugador.name || "").trim().toLowerCase();
+	var auth = jugador.auth || (typeof playerAuths !== "undefined" ? playerAuths[jugador.id] : null);
+	for (var i = 0; i < usuariosBaneados.length; i++) {
+		var b = usuariosBaneados[i];
+		if (String(b.nick || "").trim().toLowerCase() === nombre || (auth && b.auth && b.auth === auth)) return b;
+	}
+	return null;
+}
+
+function echarSiEstaBaneado(jugador) {
+	var ban = banDe(jugador);
+	if (!ban) return false;
+	room.kickPlayer(jugador.id, "🚫 Cuenta baneada" + (ban.motivoBan ? ": " + ban.motivoBan : ""), false);
+	return true;
+}
+
+window.__baneadosActualizar = function (lista) {
+	usuariosBaneados = Array.isArray(lista) ? lista : [];
+	// Al que ya estaba adentro cuando lo banearon también se lo echa
+	room.getPlayerList().forEach(echarSiEstaBaneado);
+};
+
 // El launcher deja acá la lista de nombres registrados y la va actualizando
 window.__usuariosActualizar = function (nicks) {
 	usuariosRegistrados = Array.isArray(nicks) ? nicks : [];
@@ -156,6 +197,8 @@ window.__usuariosActualizar = function (nicks) {
 	room.onPlayerJoin = function (jugador) {
 		if (typeof anteriorJoin === "function") anteriorJoin(jugador);
 		delete usuariosVerificados[jugador.id];
+		delete ultimoPedidoDeClave[jugador.id];
+		if (echarSiEstaBaneado(jugador)) return;
 		if (leFaltaLaClave(jugador)) setTimeout(function () { pedirLaClave(jugador); }, 1200);
 	};
 
@@ -163,6 +206,7 @@ window.__usuariosActualizar = function (nicks) {
 	room.onPlayerLeave = function (jugador) {
 		if (typeof anteriorLeave === "function") anteriorLeave(jugador);
 		delete usuariosVerificados[jugador.id];
+		delete ultimoPedidoDeClave[jugador.id];
 		if (relojesDeClave[jugador.id]) { clearTimeout(relojesDeClave[jugador.id]); delete relojesDeClave[jugador.id]; }
 	};
 
@@ -172,7 +216,7 @@ window.__usuariosActualizar = function (nicks) {
 		if (typeof anteriorCambio === "function") anteriorCambio(jugador, porQuien);
 		if (jugador.team !== 0 && leFaltaLaClave(jugador)) {
 			room.setPlayerTeam(jugador.id, 0);
-			room.sendAnnouncement("🔐 Primero poné tu clave: !clave tu-contraseña", jugador.id, 0xFFD100, "bold", 2);
+			recordarLaClave(jugador);   // sale como mucho cada SegundosEntrePedidosDeClave
 		}
 	};
 
@@ -205,5 +249,12 @@ window.__usuariosActualizar = function (nicks) {
 	};
 
 	setInterval(avisarQueSeRegistre, MinutosEntreAvisosDeRegistro * 60 * 1000);
+
+	// Al que sigue sin poner la clave se le recuerda cada SegundosEntrePedidosDeClave
+	setInterval(function () {
+		room.getPlayerList().forEach(function (jugador) {
+			if (leFaltaLaClave(jugador)) recordarLaClave(jugador);
+		});
+	}, SegundosEntrePedidosDeClave * 1000);
 	console.log("🔐 Usuarios y claves: se pide clave a los registrados, y se invita a registrarse cada " + MinutosEntreAvisosDeRegistro + " minutos");
 })();

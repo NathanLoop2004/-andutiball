@@ -42,7 +42,13 @@ async function rangoDe(nick) {
   }
 }
 
+// El OWNER es el único que ve la pantalla de usuarios
+const esOwner = (rango) => Boolean(rango && String(rango.nombre).trim().toUpperCase() === "OWNER");
+
 class SesionModel {
+  static esOwner = esOwner;
+  static rangoDe = rangoDe;
+
   // Lo que se le manda al navegador: nunca el hash de la clave
   static async fichaDe(usuario) {
     const rango = await rangoDe(usuario.nick);
@@ -56,6 +62,7 @@ class SesionModel {
       desde: usuario.creado,
       rango: rango ? rango.nombre : null,
       admin: rango ? rango.admin : false,
+      owner: esOwner(rango),
     };
   }
 
@@ -90,6 +97,7 @@ class SesionModel {
         : "Usuario o contraseña incorrectos");
     }
     const usuario = await UsuarioModel.buscarPorNick(nick);
+    if (usuario.baneado) throw new Error("Tu cuenta está baneada" + (usuario.motivoBan ? ": " + usuario.motivoBan : ""));
     const ficha = await SesionModel.fichaDe(usuario);
     return { token: SesionModel.firmar(ficha), usuario: ficha };
   }
@@ -108,6 +116,7 @@ class SesionModel {
     if (!datos) throw new Error("La sesión venció, volvé a entrar");
     const usuario = await UsuarioModel.buscarPorNick(datos.nick);
     if (!usuario) throw new Error("Ese usuario ya no existe");
+    if (usuario.baneado) throw new Error("La sesión se cerró: tu cuenta está baneada");
 
     const ficha = await SesionModel.fichaDe(usuario);
     return { usuario: ficha, token: SesionModel.hayQueRenovar(datos) ? SesionModel.firmar(ficha) : null };

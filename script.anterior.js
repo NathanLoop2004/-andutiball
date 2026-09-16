@@ -157,11 +157,11 @@ var CantidadCambiarTamano = 1;
 // ▇▇▇▇▇▇▇ ⚽👕 CAMISETAS POR DEFECTO ⚽👕 ▇▇▇▇▇▇▇
 
 // CAMISETA EQUIPO RED 🔴
-var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
+var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
 var NombreEquipoRojo = "OLIMPIA";
 
 // CAMISETA EQUIPO BLUE 🔵
-var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
+var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
 var NombreEquipoAzul = "CERRO PORTEÑO";
 
 
@@ -19541,6 +19541,7 @@ function revisarTurnos() {
 var ColorearNombrePorElo = true;       // el nombre en el chat sale del color de su división
 var ELO = window.__ELO || {};          // nick en minúscula -> { elo, partidos, division, emoji, color }
 var eloDelPartido = null;              // quiénes estaban jugando cuando arrancó
+var mapaDelPartido = null;             // el nombre del mapa puesto (lo avisa onStadiumChange)
 
 window.__eloActualizar = function (datos) {
 	ELO = datos || {};
@@ -19590,6 +19591,12 @@ function jugadoresEnCancha() {
 		}, 2500);
 	};
 
+	var anteriorEstadio = room.onStadiumChange;
+	room.onStadiumChange = function (nombre, byPlayer) {
+		mapaDelPartido = nombre || null;
+		if (typeof anteriorEstadio === "function") anteriorEstadio(nombre, byPlayer);
+	};
+
 	// ── Al arrancar, anotamos quiénes juegan ──
 	var anteriorStart = room.onGameStart;
 	room.onGameStart = function (byPlayer) {
@@ -19597,20 +19604,34 @@ function jugadoresEnCancha() {
 		eloDelPartido = jugadoresEnCancha();
 	};
 
-	// ── Al terminar, le pasamos el resultado a Node ──
-	var anteriorStop = room.onGameStop;
-	room.onGameStop = function (byPlayer) {
-		var marcador = room.getScores();
+	// ── Al ganar un equipo, le pasamos el resultado a Node ──
+	// Va en onTeamVictory y no en onGameStop: en la sala de verdad, cuando corre onGameStop el
+	// partido ya no existe y room.getScores() devuelve null, así que no se mandaba nunca nada.
+	// De paso, un partido cortado a mano (Stop, cambio de mapa) no suma ni resta puntos.
+	var anteriorVictoria = room.onTeamVictory;
+	room.onTeamVictory = function (scores) {
+		var marcador = scores || room.getScores();
 		if (eloDelPartido && marcador && (eloDelPartido.red.length && eloDelPartido.blue.length)) {
 			var ganador = marcador.red > marcador.blue ? 1 : marcador.blue > marcador.red ? 2 : 0;
+			var goles = {};
+			if (typeof playerGoals !== "undefined") for (var n in playerGoals) goles[n] = playerGoals[n];
 			avisarAlPanel({
 				tipo: "elo-partido",
 				red: eloDelPartido.red,
 				blue: eloDelPartido.blue,
 				ganador: ganador,
-				goles: typeof playerGoals !== "undefined" ? playerGoals : {},
+				golesRed: marcador.red,
+				golesBlue: marcador.blue,
+				mapa: mapaDelPartido,
+				goles: goles,
 			});
 		}
+		eloDelPartido = null;
+		if (typeof anteriorVictoria === "function") return anteriorVictoria(scores);
+	};
+
+	var anteriorStop = room.onGameStop;
+	room.onGameStop = function (byPlayer) {
 		eloDelPartido = null;
 		if (typeof anteriorStop === "function") anteriorStop(byPlayer);
 	};
@@ -20065,10 +20086,12 @@ function rearmarTrasElPartido() {
 var PedirClaveAUsuarios = true;
 var MinutosEntreAvisosDeRegistro = 2;
 var SegundosParaPonerLaClave = 90;     // si no la pone, se lo echa (puede volver a entrar)
+var SegundosEntrePedidosDeClave = 25;  // el cartel de la clave sale como mucho una vez cada tanto
 
 var usuariosRegistrados = [];          // los nicks que tienen clave
 var usuariosVerificados = {};          // id del jugador → true cuando puso bien la clave
 var relojesDeClave = {};               // id → el timeout de los 90 segundos
+var ultimoPedidoDeClave = {};          // id → cuándo se le mostró el cartel por última vez
 
 function esUsuarioRegistrado(nombre) {
 	var buscado = String(nombre || "").trim().toLowerCase();
@@ -20092,10 +20115,20 @@ function tieneRangoSinVerificar(player) {
 	return leFaltaLaClave(player);
 }
 
-function pedirLaClave(jugador) {
+// El cartel de la clave. Lo pueden disparar muchas cosas seguidas (entrar, el acomodo automático
+// que lo quiere meter en la cancha cada 2 segundos, el draft...), así que sale como mucho una vez
+// cada SegundosEntrePedidosDeClave. Antes salía cada vez y llenaba el chat.
+function recordarLaClave(jugador) {
+	var ahora = Date.now();
+	if (ultimoPedidoDeClave[jugador.id] && ahora - ultimoPedidoDeClave[jugador.id] < SegundosEntrePedidosDeClave * 1000) return;
+	ultimoPedidoDeClave[jugador.id] = ahora;
 	room.sendAnnouncement("🔐 " + jugador.name + " está registrado. Poné tu clave para jugar:", jugador.id, 0xFFD100, "bold", 2);
 	room.sendAnnouncement("      !clave tu-contraseña", jugador.id, 0xFFD100, "bold", 0);
 	room.sendAnnouncement("   Mientras tanto podés mirar y chatear. Si el nombre no es tuyo, entrá con otro.", jugador.id, 0x93A1B0, "small", 0);
+}
+
+function pedirLaClave(jugador) {
+	recordarLaClave(jugador);
 	room.setPlayerTeam(jugador.id, 0);
 
 	if (relojesDeClave[jugador.id]) clearTimeout(relojesDeClave[jugador.id]);
@@ -20156,6 +20189,7 @@ window.__usuarioRespuesta = function (respuesta) {
 	if (respuesta.accion === "verificar") {
 		if (respuesta.ok) {
 			usuariosVerificados[jugador.id] = true;
+			delete ultimoPedidoDeClave[jugador.id];
 			if (relojesDeClave[jugador.id]) { clearTimeout(relojesDeClave[jugador.id]); delete relojesDeClave[jugador.id]; }
 			room.sendAnnouncement("✅ ¡Bienvenido de vuelta, " + jugador.name + "! Ya podés jugar.", null, 0x00C853, "bold", 2);
 		} else if (respuesta.motivo === "clave-mal") {
@@ -20199,6 +20233,7 @@ window.__usuariosActualizar = function (nicks) {
 	room.onPlayerJoin = function (jugador) {
 		if (typeof anteriorJoin === "function") anteriorJoin(jugador);
 		delete usuariosVerificados[jugador.id];
+		delete ultimoPedidoDeClave[jugador.id];
 		if (leFaltaLaClave(jugador)) setTimeout(function () { pedirLaClave(jugador); }, 1200);
 	};
 
@@ -20206,6 +20241,7 @@ window.__usuariosActualizar = function (nicks) {
 	room.onPlayerLeave = function (jugador) {
 		if (typeof anteriorLeave === "function") anteriorLeave(jugador);
 		delete usuariosVerificados[jugador.id];
+		delete ultimoPedidoDeClave[jugador.id];
 		if (relojesDeClave[jugador.id]) { clearTimeout(relojesDeClave[jugador.id]); delete relojesDeClave[jugador.id]; }
 	};
 
@@ -20215,7 +20251,7 @@ window.__usuariosActualizar = function (nicks) {
 		if (typeof anteriorCambio === "function") anteriorCambio(jugador, porQuien);
 		if (jugador.team !== 0 && leFaltaLaClave(jugador)) {
 			room.setPlayerTeam(jugador.id, 0);
-			room.sendAnnouncement("🔐 Primero poné tu clave: !clave tu-contraseña", jugador.id, 0xFFD100, "bold", 2);
+			recordarLaClave(jugador);   // sale como mucho cada SegundosEntrePedidosDeClave
 		}
 	};
 
@@ -20248,6 +20284,13 @@ window.__usuariosActualizar = function (nicks) {
 	};
 
 	setInterval(avisarQueSeRegistre, MinutosEntreAvisosDeRegistro * 60 * 1000);
+
+	// Al que sigue sin poner la clave se le recuerda cada SegundosEntrePedidosDeClave
+	setInterval(function () {
+		room.getPlayerList().forEach(function (jugador) {
+			if (leFaltaLaClave(jugador)) recordarLaClave(jugador);
+		});
+	}, SegundosEntrePedidosDeClave * 1000);
 	console.log("🔐 Usuarios y claves: se pide clave a los registrados, y se invita a registrarse cada " + MinutosEntreAvisosDeRegistro + " minutos");
 })();
 

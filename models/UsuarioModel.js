@@ -89,6 +89,58 @@ class UsuarioModel {
     return sinClave(usuario);
   }
 
+  // ── Pantalla de usuarios (solo OWNER) ──
+
+  // 15 por página, con buscador por nick. Nunca trae el hash de la clave.
+  static async buscar({ q = "", pagina = 1, porPagina = 15 } = {}) {
+    const texto = limpiarNick(q);
+    const tam = Math.min(Math.max(Number.parseInt(porPagina, 10) || 15, 1), 100);
+    const where = texto ? { nick: { contains: texto, mode: "insensitive" } } : {};
+    const total = await base().usuario.count({ where });
+    const paginas = Math.max(1, Math.ceil(total / tam));
+    const actual = Math.min(Math.max(Number.parseInt(pagina, 10) || 1, 1), paginas);
+
+    const usuarios = await base().usuario.findMany({
+      where,
+      orderBy: [{ nick: "asc" }],
+      skip: (actual - 1) * tam,
+      take: tam,
+    });
+    return { usuarios: usuarios.map(sinClave), total, pagina: actual, paginas, porPagina: tam };
+  }
+
+  static async banear(nick, motivo) {
+    const usuario = await base().usuario.update({
+      where: { nick: limpiarNick(nick) },
+      data: { baneado: true, motivoBan: String(motivo || "").trim().slice(0, 200) || null, baneadoEl: new Date() },
+    });
+    return sinClave(usuario);
+  }
+
+  static async desbanear(nick) {
+    const usuario = await base().usuario.update({
+      where: { nick: limpiarNick(nick) },
+      data: { baneado: false, motivoBan: null, baneadoEl: null },
+    });
+    return sinClave(usuario);
+  }
+
+  // El OWNER le pone una clave nueva (la vieja no se puede ver: está hasheada)
+  static async ponerClave(nick, clave) {
+    claves.revisarClave(clave);
+    const usuario = await base().usuario.update({
+      where: { nick: limpiarNick(nick) },
+      data: { clave: claves.hashear(clave), claveCambiada: new Date() },
+    });
+    return sinClave(usuario);
+  }
+
+  // Para la sala: a quién echar al entrar (por nick y por auth)
+  static async baneados() {
+    const lista = await base().usuario.findMany({ where: { baneado: true }, select: { nick: true, auth: true, motivoBan: true } });
+    return lista;
+  }
+
   // Para el panel: deja al usuario sin clave, así se la vuelve a poner con !registrar
   static async borrarClave(nick) {
     const usuario = await base().usuario.update({

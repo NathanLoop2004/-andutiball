@@ -24,6 +24,11 @@ const Sesion = {
     return Boolean(u && u.admin);
   },
 
+  esOwner() {
+    const u = Sesion.usuario();
+    return Boolean(u && u.owner);
+  },
+
   cerrar() {
     try { localStorage.removeItem(Sesion.LLAVE); } catch (e) {}
     location.href = "/";
@@ -96,6 +101,14 @@ const Sesion = {
     const u = Sesion.usuario();
     if (!u) { location.href = "/frm/login/?volver=" + encodeURIComponent(location.pathname); return false; }
     if (!u.admin) { location.href = "/?sinpermiso=1"; return false; }
+    return true;
+  },
+
+  // Para las pantallas que son solo del OWNER (la API igual lo vuelve a revisar)
+  exigirOwner() {
+    const u = Sesion.usuario();
+    if (!u) { location.href = "/frm/login/?volver=" + encodeURIComponent(location.pathname); return false; }
+    if (!u.owner) { location.href = "/?sinpermiso=1"; return false; }
     return true;
   },
 

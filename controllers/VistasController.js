@@ -14,6 +14,7 @@ class VistasController {
   static panel = pantalla("frm", "panel");
   static rangos = pantalla("frm", "rangos");
   static actualizaciones = pantalla("frm", "actualizaciones");
+  static usuarios = pantalla("frm", "usuarios");
 }
 
 module.exports = VistasController;

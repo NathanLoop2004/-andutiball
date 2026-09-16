@@ -54,6 +54,19 @@ function revisar(titulo, condicion, detalle) {
   sala.disparar("onPlayerTeamChange", registrado);
   revisar("No entra a la cancha hasta poner la clave", registrado.team === 0, "equipo " + registrado.team);
 
+  // El acomodo automático lo quiere meter cada 2 segundos: el cartel no tiene que salir cada vez
+  const carteles = () => anuncios.filter((a) => a.includes("está registrado. Poné tu clave")).length;
+  const antesDelSpam = carteles();
+  for (let i = 0; i < 10; i++) {
+    sala.room.setPlayerTeam(registrado.id, 1);
+    sala.disparar("onPlayerTeamChange", registrado);
+    avanzar(2000);
+  }
+  revisar("El cartel de la clave no se repite cada vez que lo sacan de la cancha", carteles() - antesDelSpam <= 1, (carteles() - antesDelSpam) + " carteles en 20 s");
+  const antesDeEsperar = carteles();
+  avanzar(30000);
+  revisar("Pero se le vuelve a recordar a los 25 segundos", carteles() - antesDeEsperar >= 1, (carteles() - antesDeEsperar) + " en 30 s");
+
   // El pedido viaja por la cola, como al launcher
   const cola = () => contexto.__panelCola || [];
   contexto.__panelCola = [];
