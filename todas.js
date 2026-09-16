@@ -1,7 +1,8 @@
 // El arrancador de todo: Ñandutí Web, el panel, las 4 salas y el túnel de Cloudflare.
 //
 //   npm start            todo junto
-//   npm start 4v4        todo, pero con una sola sala (3v3 · 4v4 · todos · realsoccer)
+//   npm start todos      lo mismo (también: todas, todo, all)
+//   npm start 4v4        todo, pero con una sola sala (3v3 · 4v4 · futsal · realsoccer)
 //
 // Cada cosa corre en su propio proceso y todo se corta junto con Ctrl+C.
 //
@@ -23,21 +24,23 @@ const PANEL_PORT = Number(process.env.PANEL_PORT || 8080);
 const TODAS = [
   { clave: "3v3", nombre: "Futsal 3v3", config: "hosts/3v3.json", token: "TOKEN_3V3", puerto: 3001, color: "\x1b[36m" },
   { clave: "4v4", nombre: "Futsal 4v4", config: "hosts/4v4.json", token: "TOKEN_4V4", puerto: 3002, color: "\x1b[35m" },
-  { clave: "todos", nombre: "Futsal automático", config: "hosts/todos.json", token: "TOKEN_TODOS", puerto: 3003, color: "\x1b[33m" },
+  { clave: "todos", alias: ["futsal", "auto"], nombre: "Futsal automático", config: "hosts/todos.json", token: "TOKEN_TODOS", puerto: 3003, color: "\x1b[33m" },
   { clave: "realsoccer", nombre: "Real Soccer", config: "hosts/realsoccer.json", token: "TOKEN_REALSOCCER", puerto: 3004, color: "\x1b[32m" },
 ];
 
 const RESET = "\x1b[0m";
 const GRIS = "\x1b[90m";
 
-// Sin argumentos levanta las 4; con el nombre de una sala, solo esa
+// Sin argumentos (o con "todos") levanta las 4; con el nombre de una sala, solo esa.
+// Ojo: la sala de futsal automático tiene clave "todos" (hosts/todos.json, TOKEN_TODOS), pero
+// "npm start todos" levanta las 4, que es lo que espera cualquiera. Esa sala sola: "npm start futsal".
 const pedida = (process.argv[2] || "").trim().toLowerCase();
 let SALAS = TODAS;
-if (pedida && !["todas", "todo", "all", "4", "cuatro"].includes(pedida)) {
-  const una = TODAS.find((s) => s.clave === pedida);
+if (pedida && !["todos", "todas", "todo", "all", "4", "cuatro"].includes(pedida)) {
+  const una = TODAS.find((s) => s.clave !== "todos" ? s.clave === pedida : (s.alias || []).includes(pedida));
   if (!una) {
     console.error(`\n❌ No existe la sala "${pedida}".`);
-    console.error(`   Salas: ${TODAS.map((s) => s.clave).join(" · ")}`);
+    console.error(`   Salas: ${TODAS.map((s) => (s.alias ? s.alias[0] : s.clave)).join(" · ")}`);
     console.error("   👉 Sin nombre levanta las 4:  npm start\n");
     process.exit(1);
   }

@@ -38,7 +38,7 @@ Contexto para trabajar en este proyecto. La documentación para personas está e
 - `npm run tokens` (`get-tokens.js`): abre headlesstoken en el navegador normal del usuario (Cloudflare Turnstile rechaza a Puppeteer con el error 600010); el usuario resuelve el captcha y copia el token, y el script lo lee del portapapeles y guarda los 3 tokens en `.env` (`-- --up` además hace `docker compose up`). No automatizar ni saltar el captcha.
 - **`npm start` = `todas.js`**: es EL arrancador. Levanta Ñandutí Web + el panel + las 4 salas + el túnel de Cloudflare (un proceso hijo por sala, puertos 3001-3004, panel en 8080, prefija la salida con el nombre de cada sala, Ctrl+C corta todo). Con argumento (`npm start 4v4`) levanta solo esa. `npm run todas` es alias. Es la forma práctica acá, porque el usuario no tiene Docker.
 - `npm run sala 4v4` llama directo a `launcher.js` (una sala, sin el panel unificado). `launcher.js` también acepta el nombre de sala como argumento y avisa si el puerto está ocupado.
-- **Cuidado con los nombres**: la sala de futsal automático se llama `todos` (hosts/todos.json) y el comando de las 4 era `todas`. Por eso `npm start` sin argumentos levanta las 4: el usuario escribió `npm start todos` esperando las 4 y le salió una sola.
+- **Cuidado con los nombres**: la sala de futsal automático tiene clave `todos` (hosts/todos.json, TOKEN_TODOS), pero `npm start todos` levanta **las 4** (el usuario lo escribía esperando eso y le salía una sola). Esa sala sola se abre con `npm start futsal` (o `auto`), por el `alias` en `todas.js`. `npm run sala todos` (launcher.js directo) sigue siendo esa sala sola.
 - No duplicar `script.js` por sala: los cambios por sala van en `hosts/*.json`.
 
 ## Base de datos (Postgres + Prisma)

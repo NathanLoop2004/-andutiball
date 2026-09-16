@@ -59,7 +59,8 @@ base está prendida o no (si está apagada arranca igual: las salas no piden cla
 deja entrar, pero se puede jugar).
 
 ```
-npm start 4v4    todo, pero con una sola sala (3v3 · 4v4 · todos · realsoccer)
+npm start todos  lo mismo que npm start: las 4
+npm start 4v4    todo, pero con una sola sala (3v3 · 4v4 · futsal · realsoccer)
 ```
 
 La **base va aparte a propósito**: tiene su propio compose y sus datos no se apagan con las
@@ -90,7 +91,7 @@ después del captcha, un clic copia el token. El captcha siempre lo resolvés vo
 ### Una sola sala
 
 ```powershell
-npm start 4v4          # 3v3 · 4v4 · todos · realsoccer
+npm start 4v4          # 3v3 · 4v4 · futsal · realsoccer ("todos" levanta las 4)
 npm run tokens -- --una  # si te falta el token de esa sala
 ```
 
