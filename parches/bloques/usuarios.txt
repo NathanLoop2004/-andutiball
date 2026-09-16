@@ -6,7 +6,11 @@
 //   · Si el nombre con el que entrás ESTÁ registrado → se te pide la clave (!clave ...).
 //     Hasta que la pongas mirás de afuera: no entrás a la cancha ni te eligen.
 //   · Si NO está registrado → jugás normal, y cada MinutosEntreAvisosDeRegistro te aparece
-//     un cartelito para que te crees el usuario con !registrar ...
+//     un cartelito con el link de la web para que te crees la cuenta ahí.
+//
+// Las cuentas se crean SOLO en Ñandutí Web: desde la sala no se cargan datos, solo se
+// verifica la clave. El link de la web lo deja el launcher en window.__WEB_URL (sale del
+// túnel de Cloudflare, ver tunel.js).
 //
 // La base la maneja Node (el launcher): acá no hay Postgres. El puente es el mismo que usa
 // el ELO — se deja el pedido en window.__panelCola y el launcher contesta llamando a
@@ -60,13 +64,26 @@ function pedirLaClave(jugador) {
 	}, SegundosParaPonerLaClave * 1000);
 }
 
-// Le avisa al que no tiene usuario que se lo puede crear
+// El link para crearse la cuenta: el de la web si el túnel está abierto, si no el Discord
+function linkParaRegistrarse() {
+	if (typeof window !== "undefined" && window.__WEB_URL) return window.__WEB_URL + "/frm/registro/";
+	if (typeof DiscordDeLaSala !== "undefined" && DiscordDeLaSala) return DiscordDeLaSala;
+	return null;
+}
+
+// Le avisa al que no tiene usuario que se puede crear la cuenta EN LA WEB
 function avisarQueSeRegistre() {
 	if (!PedirClaveAUsuarios) return;
+	var link = linkParaRegistrarse();
 	room.getPlayerList().forEach(function (jugador) {
 		if (jugador.id === 0 || esUsuarioRegistrado(jugador.name)) return;
-		room.sendAnnouncement("📝 " + jugador.name + ", guardá tu nombre para que nadie más lo use:", jugador.id, 0x00C853, "bold", 1);
-		room.sendAnnouncement("      !registrar tu-contraseña", jugador.id, 0x00C853, "bold", 0);
+		room.sendAnnouncement("📝 " + jugador.name + ", guardá tu nombre para que nadie más lo use.", jugador.id, 0x00C853, "bold", 1);
+		if (link) {
+			room.sendAnnouncement("   Creá tu cuenta en:  " + link, jugador.id, 0x00C853, "bold", 0);
+			room.sendAnnouncement("   Después entrás acá con:  !clave tu-contraseña", jugador.id, 0x93A1B0, "small", 0);
+		} else {
+			room.sendAnnouncement("   Pedile el link de la página a un admin para crear tu cuenta.", jugador.id, 0x93A1B0, "small", 0);
+		}
 	});
 }
 
@@ -101,7 +118,8 @@ window.__usuarioRespuesta = function (respuesta) {
 		} else if (respuesta.motivo === "clave-mal") {
 			room.sendAnnouncement("❌ Esa no es la clave. Probá de nuevo: !clave tu-contraseña", jugador.id, 0xFF4444, "bold", 2);
 		} else {
-			room.sendAnnouncement("ℹ️ Ese nombre todavía no tiene clave. Creála con: !registrar tu-contraseña", jugador.id, 0xFFD100, "bold", 2);
+			var donde = linkParaRegistrarse();
+			room.sendAnnouncement("ℹ️ Ese nombre todavía no tiene cuenta." + (donde ? " Creála en: " + donde : ""), jugador.id, 0xFFD100, "bold", 2);
 		}
 		return;
 	}
@@ -173,23 +191,13 @@ window.__usuariosActualizar = function (nicks) {
 			return false;
 		}
 
-		if (comando === "!registrar" || comando === "!registro") {
-			if (partes.length < 2) {
-				room.sendAnnouncement("📝 Se usa así: !registrar tu-contraseña", jugador.id, 0x00C853, "bold", 2);
-			} else if (esUsuarioRegistrado(jugador.name) && !usuariosVerificados[jugador.id]) {
-				room.sendAnnouncement("🔐 Ese nombre ya tiene clave. Poné la tuya con: !clave tu-contraseña", jugador.id, 0xFFD100, "bold", 2);
-			} else {
-				pedirleALaBase("registrar", jugador, partes.slice(1).join(" "));
-			}
-			return false;
-		}
-
-		if (comando === "!cambiarclave") {
-			if (partes.length < 3) {
-				room.sendAnnouncement("🔐 Se usa así: !cambiarclave la-vieja la-nueva", jugador.id, 0xFFD100, "bold", 2);
-			} else {
-				pedirleALaBase("cambiar", jugador, partes[1], partes[2]);
-			}
+		// Las cuentas se crean en la web, no acá: desde la sala no se cargan datos.
+		// Si alguien igual lo intenta, se le pasa el link (y su clave no queda en el chat).
+		if (comando === "!registrar" || comando === "!registro" || comando === "!cambiarclave" || comando === "!cuenta") {
+			var donde = linkParaRegistrarse();
+			room.sendAnnouncement("🌐 Las cuentas se crean y se cambian en la página de ÑandutíBall:", jugador.id, 0x00C853, "bold", 2);
+			if (donde) room.sendAnnouncement("   " + donde, jugador.id, 0x00C853, "bold", 0);
+			room.sendAnnouncement("   Acá adentro solo se pone la clave:  !clave tu-contraseña", jugador.id, 0x93A1B0, "small", 0);
 			return false;
 		}
 

@@ -433,8 +433,10 @@ Para que nadie te use el nombre, cada usuario tiene su clave:
 - **Si entrás con un nombre registrado**, el bot te pide la clave y mirás de afuera hasta que la
   pongas: `!clave tu-contraseña`. Si no la ponés en 90 segundos te saca (podés volver a entrar).
 - **Si tu nombre no está registrado**, jugás normal, y cada 2 minutos te aparece un cartelito
-  para que te lo guardes: `!registrar tu-contraseña`.
-- Para cambiarla: `!cambiarclave la-vieja la-nueva`.
+  con el **link de Ñandutí Web** para que te crees la cuenta ahí.
+- **Las cuentas se crean en la web, no en el chat.** Desde la sala solo se pone la clave
+  (`!clave`): no se cargan datos por el chat. Si escribís `!registrar`, el bot te pasa el link.
+- Para cambiar la contraseña, también en la web.
 
 Las claves se guardan **hasheadas** en la tabla `usuarios`: ni en la base ni en el chat aparece
 la contraseña de nadie. Si la base está apagada, la sala funciona como siempre y no se le pide

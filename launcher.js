@@ -13,6 +13,7 @@ const { crearSalaEspiada } = require("./lib/espia");
 const EstadoModel = require("./models/EstadoModel");
 const UsuarioModel = require("./models/UsuarioModel");
 const RangoModel = require("./models/RangoModel");
+const WebhookWeb = require("./services/WebhookWeb");
 const { leerRoles } = require("./lib/roles");
 const { ARCHIVO: ARCHIVO_RANGOS, leerRangos, guardarRangos, sinClave } = require("./lib/rangos");
 const { leerElo, guardarElo, aplicarPartido, ranking, paraLaSala, DIVISIONES } = require("./lib/elo");
@@ -302,6 +303,23 @@ api.on("error", (error) => {
     }
   };
 
+  // El link público de la web (el del túnel de Cloudflare). tunel.js lo deja escrito en
+  // datos/tunel.json y cada sala lo lee: es lo que se le muestra al que todavía no tiene
+  // cuenta, porque las cuentas se crean en la web y no desde el chat.
+  let ultimoLinkWeb = null;
+  const refrescarLinkWeb = async () => {
+    try {
+      const { url, estado } = WebhookWeb.leerGuardado();
+      const link = estado === "arriba" && url ? url : null;
+      if (link === ultimoLinkWeb) return;
+      ultimoLinkWeb = link;
+      await frame.evaluate((direccion) => { window.__WEB_URL = direccion; }, link);
+      if (link) console.log(`🌐 La sala ya sabe dónde se registra la gente: ${link}`);
+    } catch (error) {
+      // sin túnel abierto, el bloque manda al Discord
+    }
+  };
+
   // La lista de nombres registrados: es lo que mira el script para saber a quién pedirle clave
   const refrescarUsuarios = async () => {
     try {
@@ -410,6 +428,10 @@ api.on("error", (error) => {
   const SEGUNDOS_RANGOS = Number(process.env.SEGUNDOS_RANGOS || 5);
   await refrescarRangos();
   setInterval(refrescarRangos, SEGUNDOS_RANGOS * 1000);
+
+  // El link de la web puede aparecer después (el túnel tarda unos segundos en abrir)
+  await refrescarLinkWeb();
+  setInterval(refrescarLinkWeb, 10000);
 
   // Vaciamos la cola de eventos y leemos el link directo de la página
   setInterval(async () => {

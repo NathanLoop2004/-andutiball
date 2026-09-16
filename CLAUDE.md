@@ -156,7 +156,13 @@ clave atada al **nombre**, para que nadie le use el nick.
 | está registrado | se le pide la clave (`!clave ...`) y mira de afuera hasta ponerla; a los 90 s se lo echa |
 | no está registrado | juega normal, y cada 2 minutos le sale el cartelito de `!registrar ...` |
 
-Comandos en la sala: `!clave` (o `!login`), `!registrar`, `!cambiarclave vieja nueva`.
+**Las cuentas se crean en Ñandutí Web, no en la sala.** El único comando que queda es `!clave`
+(o `!login`), que solo verifica; `!registrar` y `!cambiarclave` contestan con el link de la web.
+Desde el chat no se cargan datos en la base.
+
+El link sale de `window.__WEB_URL`: `tunel.js` guarda la URL pública en `datos/tunel.json` y cada
+launcher la lee cada 10 s y se la pasa a su sala (`refrescarLinkWeb()`). Sin túnel abierto, el
+bloque manda al Discord.
 
 **La clave nunca se guarda tal cual**: `lib/claves.js` la hashea con `scrypt` (viene con Node,
 sin dependencias nuevas) y guarda `scrypt$<sal>$<hash>`. `UsuarioModel.sinClave()` saca el hash de

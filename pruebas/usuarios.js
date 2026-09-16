@@ -71,23 +71,25 @@ function revisar(titulo, condicion, detalle) {
   avanzar(1000);
   revisar("Con la clave correcta ya puede jugar", contexto.tieneRangoSinVerificar(registrado) === false, "adentro");
 
-  // El que no tiene usuario se registra
+  // Las cuentas se crean en la WEB, no desde el chat
+  contexto.__WEB_URL = "https://prueba.trycloudflare.com";
   contexto.__panelCola = [];
   chat(desconocido, "!registrar miclave99");
-  const alta = cola().find((e) => e.tipo === "usuario");
-  revisar("!registrar manda el alta a la base", Boolean(alta) && alta.accion === "registrar" && alta.nick === "Anonimo", alta ? alta.accion : "no mandó");
-  contexto.__usuarioRespuesta({ id: desconocido.id, accion: "registrar", ok: true });
-  revisar("Le avisa que quedó guardado", dijo("tu nombre quedó guardado"), "sí");
+  revisar("!registrar no carga nada en la base", cola().filter((e) => e.tipo === "usuario").length === 0, "no mandó nada");
+  revisar("Y manda a la página a crear la cuenta", dijo("https://prueba.trycloudflare.com/frm/registro/"), "con el link");
+  revisar("La clave escrita no queda en el chat", !dijo("miclave99"), "no se filtró");
 
   // ── 3) El aviso cada 2 minutos ──
   console.log("\n📝 El aviso para registrarse:\n");
   const sala2 = abrirSala("hosts/3v3.json");
   sala2.contexto.__usuariosActualizar([]);
   sala2.entra(1, "SinUsuario");
-  const avisos = () => sala2.anuncios.filter((a) => a.includes("!registrar tu-contraseña")).length;
+  sala2.contexto.__WEB_URL = "https://prueba.trycloudflare.com";
+  const avisos = () => sala2.anuncios.filter((a) => a.includes("Creá tu cuenta en:")).length;
   const antes = avisos();
   sala2.avanzar(2 * 60 * 1000 + 2000);
-  revisar("A los 2 minutos lo invita a registrarse", avisos() - antes === 1, avisos() - antes + " avisos");
+  revisar("A los 2 minutos lo invita a registrarse en la web", avisos() - antes === 1, avisos() - antes + " avisos");
+  revisar("Con el link de la página", sala2.anuncios.some((a) => a.includes("https://prueba.trycloudflare.com/frm/registro/")), "sí");
   sala2.avanzar(4 * 60 * 1000);
   revisar("Y sigue cada 2 minutos", avisos() - antes === 3, avisos() - antes + " avisos en 6 minutos");
 

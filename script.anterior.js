@@ -157,11 +157,11 @@ var CantidadCambiarTamano = 1;
 // ▇▇▇▇▇▇▇ ⚽👕 CAMISETAS POR DEFECTO ⚽👕 ▇▇▇▇▇▇▇
 
 // CAMISETA EQUIPO RED 🔴
-var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
+var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
 var NombreEquipoRojo = "OLIMPIA";
 
 // CAMISETA EQUIPO BLUE 🔵
-var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
+var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
 var NombreEquipoAzul = "CERRO PORTEÑO";
 
 
@@ -19696,6 +19696,8 @@ function jugadoresEnCancha() {
 //   · Partido parado (alguien le dio a Stop): a los SegundosTrasParar vuelve a arrancar.
 //   · Partido en pausa: a los SegundosDePausaMaxima se reanuda solo.
 //   · Partido terminado (hubo ganador): a los SegundosTrasVictoria se cierra, para que empiece otro.
+//   · Mientras los capitanes eligen: el partido queda EN PAUSA hasta que los equipos estén
+//     completos (3v3, 4v4, lo que diga el cupo). No se juega con la cancha a medio armar.
 //
 // Arrancar y reanudar piden lo mismo: JugadoresParaArrancar jugadores que NO estén AFK.
 // Si uno de los dos está AFK no cuenta, así que el partido no arranca ni se reanuda
@@ -19716,6 +19718,7 @@ var pausadoDesde = null;
 var ultimoStop = 0;
 var ultimoTickVisto = 0;
 var terminoEn = 0;                    // cuándo terminó el último partido (0 = no terminó)
+var pausadoPorElDraft = false;        // la pausa la pusimos nosotros mientras se elige
 
 // Los que pueden entrar a la cancha: sin el bot, sin AFK y sin rangos a medio verificar
 function disponiblesParaJugar() {
@@ -19756,8 +19759,30 @@ function revisarArranque() {
 			room.stopGame();
 			return;
 		}
+		// Si los capitanes están eligiendo, el partido se pausa hasta que terminen:
+		// no se juega con los equipos a medio armar.
+		if (typeof draftPendiente === "function" && draftPendiente()) {
+			if (!partidoPausado()) {
+				pausadoPorElDraft = true;
+				room.pauseGame(true);
+				room.sendAnnouncement("⏸️ Esperando a que terminen de elegir los equipos…", null, 0xFFD100, "bold", 2);
+			}
+			return;
+		}
+
+		// Terminaron de elegir: se sigue jugando enseguida, sin esperar los 10 segundos
+		if (pausadoPorElDraft && partidoPausado()) {
+			pausadoPorElDraft = false;
+			pausadoDesde = null;
+			if (gente.length >= JugadoresParaArrancar) {
+				room.pauseGame(false);
+				room.sendAnnouncement("▶️ ¡Equipos completos! Seguimos jugando.", null, 0x00FFBB, "bold", 2);
+			}
+			return;
+		}
+
 		// Lo único que miramos es que no se quede pausado
-		if (!partidoPausado()) { pausadoDesde = null; return; }
+		if (!partidoPausado()) { pausadoDesde = null; pausadoPorElDraft = false; return; }
 		if (!pausadoDesde) pausadoDesde = Date.now();            // se pausó sin avisarnos
 		if (gente.length < JugadoresParaArrancar) return;        // no hay con quién seguir jugando
 		if (Date.now() - pausadoDesde < SegundosDePausaMaxima * 1000) return;
@@ -20365,6 +20390,36 @@ function avisarDiscordEnElChat() {
 		setInterval(avisarDiscordEnElChat, MinutosEntreAvisos * 60 * 1000);
 		console.log("📣 Invitación al Discord en el chat cada " + MinutosEntreAvisos + " minutos");
 	}
+})();
+
+
+// ▇▇▇▇▇▇▇▇▇ 🤫 COMANDOS SIN ECO — ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// Lo que empieza con "!" es un comando: se ejecuta, pero NO se muestra en el chat.
+// Así nadie ve tu clave cuando escribís "!clave loquesea", ni se llena la sala de
+// comandos de los demás.
+//
+// Va último a propósito: envuelve a todos los demás handlers, los deja hacer su trabajo
+// y después se queda con el mensaje.
+//
+// Lo que NO es comando sigue saliendo normal, incluidas las formas de hablar del script:
+// "t mensaje" (a tu equipo), "ac mensaje" (entre admins) y "@@nick mensaje" (privado).
+
+var MostrarComandosEnElChat = false;   // true para volver a verlos (como antes)
+
+(function () {
+	var anteriorChat = room.onPlayerChat;
+	room.onPlayerChat = function (jugador, mensaje) {
+		var esComando = String(mensaje).trim().charAt(0) === "!";
+
+		var respuesta = typeof anteriorChat === "function" ? anteriorChat(jugador, mensaje) : true;
+
+		// Si alguno de los handlers ya dijo que no se muestre, se respeta
+		if (respuesta === false) return false;
+		if (esComando && !MostrarComandosEnElChat) return false;
+		return respuesta;
+	};
+
+	console.log("🤫 Los comandos (!) no se muestran en el chat");
 })();
 
 
