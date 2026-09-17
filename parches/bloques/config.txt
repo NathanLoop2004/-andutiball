@@ -49,7 +49,32 @@ function asignarParametro(nombre, valor) {
 	if (nombre === "ModoDeEquipos" && typeof aplicarModoDeEquipos === "function") {
 		try { aplicarModoDeEquipos(); } catch (e) {}
 	}
+	if (nombre === "powerShotMode") {
+		if (!valor) soltarPowershot();
+		room.sendAnnouncement(valor ? "💥 POWERSHOT ACTIVADO desde la web" : "💥 POWERSHOT DESACTIVADO desde la web", null, valor ? 0x00FF00 : 0xFF6B6B, "bold", 1);
+	}
 	return true;
+}
+
+// Al apagar el PowerShot, la pelota que ya estaba cargada (roja y pesada) vuelve a la normalidad.
+// El script del autor solo la descarga mientras el PowerShot está prendido: si se apagaba con la
+// pelota cargada, quedaba potente hasta el próximo partido (con la web y con !powershot).
+function soltarPowershot() {
+	try {
+		if (typeof game !== "undefined" && game) {
+			game.powershotCounter = 0;
+			game.powershotID = 0;
+			game.powershotTrigger = false;
+		}
+		var pelota = room.getDiscProperties(0);
+		if (!pelota) return;
+		var pesada = Math.round(pelota.invMass * 100) / 100;
+		var esRS = typeof RSRMap !== "undefined" && RSRMap == true;
+		var potencia = esRS ? PotenciaPowerShotRS : PotenciaPowerShot;
+		if (pesada !== Math.round(potencia * 100) / 100) return;   // no estaba cargada: no se toca
+		if (esRS) room.setDiscProperties(0, { invMass: 1.05, color: parseInt(PelotaRS, 16) });
+		else room.setDiscProperties(0, { invMass: 1.5, color: parseInt(PelotaFutsal, 16) });
+	} catch (e) {}
 }
 
 window.__configSala = function (datos) {
@@ -85,7 +110,10 @@ window.__configSala = function (datos) {
 			room.sendAnnouncement("🚫 El comando " + primera + " está desactivado en esta sala.", player.id, 0xFF6B6B, "bold", 2);
 			return false;
 		}
-		return typeof anteriorChat === "function" ? anteriorChat(player, message) : true;
+		var respuesta = typeof anteriorChat === "function" ? anteriorChat(player, message) : true;
+		// !powershot del autor: si lo apagó, se descarga la pelota como cuando se apaga desde la web
+		if (primera === "!powershot" && typeof powerShotMode !== "undefined" && !powerShotMode) soltarPowershot();
+		return respuesta;
 	};
 
 	console.log("⚙️ Configuración desde la base: activa (" + comandosApagados.length + " comandos apagados)");

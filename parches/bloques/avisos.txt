@@ -1,0 +1,50 @@
+
+
+// ▇▇▇▇▇▇▇▇▇ 🔕 AVISOS SIN SPAM — ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// El script del autor manda varios carteles en CADA partido (a los pocos segundos de arrancar):
+// el tutorial de YouTube, "Escribí !help", el Anuncio y el Anuncio2 ("ESTÁN JUGANDO" sí sale en cada partido). Con partidos
+// de 3 minutos eso llenaba el chat. No se sacan: cada uno sale como mucho una vez cada tantos
+// minutos, según lo importante que sea.
+//
+// Solo se frenan los carteles para TODA la sala. Lo que se le contesta a un jugador (un comando,
+// su clave) no pasa por acá. Los avisos nuestros tienen su propio tiempo:
+//   · pedir la clave (iniciar sesión): SegundosEntrePedidosDeClave (60) — bloque 🔐 USUARIOS
+//   · invitar a crear cuenta: MinutosEntreAvisosDeRegistro (5) — bloque 🔐 USUARIOS
+//   · invitar al Discord: MinutosEntreAvisos (10) — bloque 📣 AVISO DE SALA ABIERTA
+
+var AvisosSinSpam = true;
+
+// minutos: cada cuánto puede volver a salir. es(texto): si el cartel es este.
+var ReglasDeAvisos = [
+	{ nombre: "ver los comandos", minutos: 10, es: function (t) { return /^Escribe !help para ver/.test(t); } },
+	{ nombre: "anuncio de la sala", minutos: 10, es: function (t) { return typeof Anuncio !== "undefined" && Anuncio && t === Anuncio; } },
+	{ nombre: "cómo expulsar", minutos: 10, es: function (t) { return typeof Anuncio2 !== "undefined" && Anuncio2 && t === Anuncio2; } },
+	{ nombre: "tutorial del autor", minutos: 10, es: function (t) { return t.indexOf("youtu.be/Mkh7WcN8pSg") !== -1; } },
+];
+
+var ultimoAviso = {};   // nombre de la regla → cuándo salió
+
+function avisoPermitido(texto, destino) {
+	if (!AvisosSinSpam || typeof texto !== "string") return true;
+	if (destino !== null && destino !== undefined) return true;   // a un jugador: no se toca
+	for (var i = 0; i < ReglasDeAvisos.length; i++) {
+		var regla = ReglasDeAvisos[i];
+		var coincide = false;
+		try { coincide = regla.es(texto); } catch (e) {}
+		if (!coincide) continue;
+		var ahora = Date.now();
+		if (ultimoAviso[regla.nombre] && ahora - ultimoAviso[regla.nombre] < regla.minutos * 60 * 1000) return false;
+		ultimoAviso[regla.nombre] = ahora;
+		return true;
+	}
+	return true;
+}
+
+(function () {
+	var enviar = room.sendAnnouncement;
+	room.sendAnnouncement = function (texto, destino, color, estilo, sonido) {
+		if (!avisoPermitido(texto, destino)) return;
+		return enviar.call(room, texto, destino, color, estilo, sonido);
+	};
+	console.log("🔕 Avisos sin spam: los carteles de cada partido salen cada 5 o 10 minutos");
+})();

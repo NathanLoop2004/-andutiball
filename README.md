@@ -379,9 +379,20 @@ Cada **3 minutos** el bot escribe en el chat de la sala:
 🔗 https://discord.gg/TGRug4BGG
 ```
 
-Con la sala vacía no habla solo. Se configura con `MinutosEntreAvisos` (3),
+Con la sala vacía no habla solo. Se configura con `MinutosEntreAvisos` (10),
 `MensajeDiscordEnElChat` (las líneas, admiten `{discord}`, `{sala}`, `{link}`…) y
 `AvisoDiscordEnElChat` (`false` para apagarlo), todo arriba del mismo bloque.
+
+**Sin spam en el chat.** Ningún cartel se sacó, pero cada uno sale cada tanto según lo importante:
+
+| Cartel | Cada |
+|---|---|
+| Poné tu clave (iniciar sesión) | 1 minuto |
+| Creá tu cuenta en la web | 5 minutos |
+| Están jugando X vs Y | cada partido |
+| Invitación al Discord · Escribí !help · Anuncio de la sala · Cómo expulsar · Tutorial | 10 minutos |
+
+Los tiempos de los carteles de cada partido están en `ReglasDeAvisos` (bloque `🔕 AVISOS SIN SPAM`).
 
 > ⚠️ **El webhook es una llave.** Cualquiera que lo tenga puede escribir en ese canal, y
 > `script.js` se sube a GitHub. Si el repositorio es público, conviene poner el webhook en `.env`
@@ -539,7 +550,7 @@ Para que nadie te use el nombre, cada usuario tiene su clave:
 
 - **Si entrás con un nombre registrado**, el bot te pide la clave y mirás de afuera hasta que la
   pongas: `!clave tu-contraseña`. Si no la ponés en 90 segundos te saca (podés volver a entrar).
-- **Si tu nombre no está registrado**, jugás normal, y cada 2 minutos te aparece un cartelito
+- **Si tu nombre no está registrado**, jugás normal, y cada 5 minutos te aparece un cartelito
   con el **link de Ñandutí Web** para que te crees la cuenta ahí.
 - **Las cuentas se crean en la web, no en el chat.** Desde la sala solo se pone la clave
   (`!clave`): no se cargan datos por el chat. Si escribís `!registrar`, el bot te pasa el link.

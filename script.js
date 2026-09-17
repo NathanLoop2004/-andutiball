@@ -157,11 +157,11 @@ var CantidadCambiarTamano = 1;
 // ▇▇▇▇▇▇▇ ⚽👕 CAMISETAS POR DEFECTO ⚽👕 ▇▇▇▇▇▇▇
 
 // CAMISETA EQUIPO RED 🔴
-var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
+var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
 var NombreEquipoRojo = "OLIMPIA";
 
 // CAMISETA EQUIPO BLUE 🔵
-var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
+var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
 var NombreEquipoAzul = "CERRO PORTEÑO";
 
 
@@ -20142,9 +20142,9 @@ function rearmarTrasElPartido() {
 // clave a nadie: la sala nunca se traba por culpa de la base.
 
 var PedirClaveAUsuarios = true;
-var MinutosEntreAvisosDeRegistro = 2;
+var MinutosEntreAvisosDeRegistro = 5;   // invitar a crear cuenta (importante, pero sin llenar el chat)
 var SegundosParaPonerLaClave = 90;     // si no la pone, se lo echa (puede volver a entrar)
-var SegundosEntrePedidosDeClave = 25;  // el cartel de la clave sale como mucho una vez cada tanto
+var SegundosEntrePedidosDeClave = 60;  // el cartel de la clave (iniciar sesión) sale como mucho una vez por minuto
 
 var usuariosRegistrados = [];          // los nicks que tienen clave
 var usuariosVerificados = {};          // id del jugador → true cuando puso bien la clave
@@ -20377,7 +20377,7 @@ window.__usuariosActualizar = function (nicks) {
 		room.getPlayerList().forEach(function (jugador) {
 			if (leFaltaLaClave(jugador)) recordarLaClave(jugador);
 		});
-	}, SegundosEntrePedidosDeClave * 1000);
+	}, 5000);   // se revisa seguido; recordarLaClave() respeta los SegundosEntrePedidosDeClave
 	console.log("🔐 Usuarios y claves: se pide clave a los registrados, y se invita a registrarse cada " + MinutosEntreAvisosDeRegistro + " minutos");
 })();
 
@@ -20409,7 +20409,7 @@ var PieSalaAbierta = "ÑandutíBall 🇵🇾 · {discord}";
 
 // ── El cartelito del Discord en el chat de la sala ──
 var AvisoDiscordEnElChat = true;      // false para no invitar al Discord en el chat
-var MinutosEntreAvisos = 3;           // cada cuánto sale el cartelito
+var MinutosEntreAvisos = 10;          // cada cuánto sale el cartelito (no es urgente)
 var MensajeDiscordEnElChat = [
 	"💬 ¿Buscás equipo, torneos o querés pasar tus quejas? Entrá al Discord de ÑandutíBall 🇵🇾",
 	"🔗 {discord}",
@@ -20531,6 +20531,56 @@ function avisarDiscordEnElChat() {
 })();
 
 
+// ▇▇▇▇▇▇▇▇▇ 🔕 AVISOS SIN SPAM — ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// El script del autor manda varios carteles en CADA partido (a los pocos segundos de arrancar):
+// el tutorial de YouTube, "Escribí !help", el Anuncio y el Anuncio2 ("ESTÁN JUGANDO" sí sale en cada partido). Con partidos
+// de 3 minutos eso llenaba el chat. No se sacan: cada uno sale como mucho una vez cada tantos
+// minutos, según lo importante que sea.
+//
+// Solo se frenan los carteles para TODA la sala. Lo que se le contesta a un jugador (un comando,
+// su clave) no pasa por acá. Los avisos nuestros tienen su propio tiempo:
+//   · pedir la clave (iniciar sesión): SegundosEntrePedidosDeClave (60) — bloque 🔐 USUARIOS
+//   · invitar a crear cuenta: MinutosEntreAvisosDeRegistro (5) — bloque 🔐 USUARIOS
+//   · invitar al Discord: MinutosEntreAvisos (10) — bloque 📣 AVISO DE SALA ABIERTA
+
+var AvisosSinSpam = true;
+
+// minutos: cada cuánto puede volver a salir. es(texto): si el cartel es este.
+var ReglasDeAvisos = [
+	{ nombre: "ver los comandos", minutos: 10, es: function (t) { return /^Escribe !help para ver/.test(t); } },
+	{ nombre: "anuncio de la sala", minutos: 10, es: function (t) { return typeof Anuncio !== "undefined" && Anuncio && t === Anuncio; } },
+	{ nombre: "cómo expulsar", minutos: 10, es: function (t) { return typeof Anuncio2 !== "undefined" && Anuncio2 && t === Anuncio2; } },
+	{ nombre: "tutorial del autor", minutos: 10, es: function (t) { return t.indexOf("youtu.be/Mkh7WcN8pSg") !== -1; } },
+];
+
+var ultimoAviso = {};   // nombre de la regla → cuándo salió
+
+function avisoPermitido(texto, destino) {
+	if (!AvisosSinSpam || typeof texto !== "string") return true;
+	if (destino !== null && destino !== undefined) return true;   // a un jugador: no se toca
+	for (var i = 0; i < ReglasDeAvisos.length; i++) {
+		var regla = ReglasDeAvisos[i];
+		var coincide = false;
+		try { coincide = regla.es(texto); } catch (e) {}
+		if (!coincide) continue;
+		var ahora = Date.now();
+		if (ultimoAviso[regla.nombre] && ahora - ultimoAviso[regla.nombre] < regla.minutos * 60 * 1000) return false;
+		ultimoAviso[regla.nombre] = ahora;
+		return true;
+	}
+	return true;
+}
+
+(function () {
+	var enviar = room.sendAnnouncement;
+	room.sendAnnouncement = function (texto, destino, color, estilo, sonido) {
+		if (!avisoPermitido(texto, destino)) return;
+		return enviar.call(room, texto, destino, color, estilo, sonido);
+	};
+	console.log("🔕 Avisos sin spam: los carteles de cada partido salen cada 5 o 10 minutos");
+})();
+
+
 // ▇▇▇▇▇▇▇▇▇ ⚙️ CONFIGURACIÓN DESDE LA BASE — ÑandutíBall ▇▇▇▇▇▇▇▇▇
 // Los parámetros de juego y los comandos apagados se manejan desde el panel (Configuración),
 // y los guarda la base (tablas parametros_sala y comandos_apagados).
@@ -20580,7 +20630,32 @@ function asignarParametro(nombre, valor) {
 	if (nombre === "ModoDeEquipos" && typeof aplicarModoDeEquipos === "function") {
 		try { aplicarModoDeEquipos(); } catch (e) {}
 	}
+	if (nombre === "powerShotMode") {
+		if (!valor) soltarPowershot();
+		room.sendAnnouncement(valor ? "💥 POWERSHOT ACTIVADO desde la web" : "💥 POWERSHOT DESACTIVADO desde la web", null, valor ? 0x00FF00 : 0xFF6B6B, "bold", 1);
+	}
 	return true;
+}
+
+// Al apagar el PowerShot, la pelota que ya estaba cargada (roja y pesada) vuelve a la normalidad.
+// El script del autor solo la descarga mientras el PowerShot está prendido: si se apagaba con la
+// pelota cargada, quedaba potente hasta el próximo partido (con la web y con !powershot).
+function soltarPowershot() {
+	try {
+		if (typeof game !== "undefined" && game) {
+			game.powershotCounter = 0;
+			game.powershotID = 0;
+			game.powershotTrigger = false;
+		}
+		var pelota = room.getDiscProperties(0);
+		if (!pelota) return;
+		var pesada = Math.round(pelota.invMass * 100) / 100;
+		var esRS = typeof RSRMap !== "undefined" && RSRMap == true;
+		var potencia = esRS ? PotenciaPowerShotRS : PotenciaPowerShot;
+		if (pesada !== Math.round(potencia * 100) / 100) return;   // no estaba cargada: no se toca
+		if (esRS) room.setDiscProperties(0, { invMass: 1.05, color: parseInt(PelotaRS, 16) });
+		else room.setDiscProperties(0, { invMass: 1.5, color: parseInt(PelotaFutsal, 16) });
+	} catch (e) {}
 }
 
 window.__configSala = function (datos) {
@@ -20616,7 +20691,10 @@ window.__configSala = function (datos) {
 			room.sendAnnouncement("🚫 El comando " + primera + " está desactivado en esta sala.", player.id, 0xFF6B6B, "bold", 2);
 			return false;
 		}
-		return typeof anteriorChat === "function" ? anteriorChat(player, message) : true;
+		var respuesta = typeof anteriorChat === "function" ? anteriorChat(player, message) : true;
+		// !powershot del autor: si lo apagó, se descarga la pelota como cuando se apaga desde la web
+		if (primera === "!powershot" && typeof powerShotMode !== "undefined" && !powerShotMode) soltarPowershot();
+		return respuesta;
 	};
 
 	console.log("⚙️ Configuración desde la base: activa (" + comandosApagados.length + " comandos apagados)");

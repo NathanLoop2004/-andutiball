@@ -64,8 +64,8 @@ function revisar(titulo, condicion, detalle) {
   }
   revisar("El cartel de la clave no se repite cada vez que lo sacan de la cancha", carteles() - antesDelSpam <= 1, (carteles() - antesDelSpam) + " carteles en 20 s");
   const antesDeEsperar = carteles();
-  avanzar(30000);
-  revisar("Pero se le vuelve a recordar a los 25 segundos", carteles() - antesDeEsperar >= 1, (carteles() - antesDeEsperar) + " en 30 s");
+  avanzar(65000);
+  revisar("Pero se le vuelve a recordar al minuto", carteles() - antesDeEsperar >= 1, (carteles() - antesDeEsperar) + " en 65 s");
 
   // El pedido viaja por la cola, como al launcher
   const cola = () => contexto.__panelCola || [];
@@ -121,7 +121,7 @@ function revisar(titulo, condicion, detalle) {
   sala3.avanzar(10000);
   revisar("Con la clave puesta, lo mete a jugar", jinder.team !== 0, "equipo " + jinder.team);
 
-  // ── 3) El aviso cada 2 minutos ──
+  // ── 3) El aviso cada 5 minutos ──
   console.log("\n📝 El aviso para registrarse:\n");
   const sala2 = abrirSala("hosts/3v3.json");
   sala2.contexto.__usuariosActualizar([]);
@@ -129,11 +129,11 @@ function revisar(titulo, condicion, detalle) {
   sala2.contexto.__WEB_URL = "https://prueba.trycloudflare.com";
   const avisos = () => sala2.anuncios.filter((a) => a.includes("Creá tu cuenta en:")).length;
   const antes = avisos();
-  sala2.avanzar(2 * 60 * 1000 + 2000);
-  revisar("A los 2 minutos lo invita a registrarse en la web", avisos() - antes === 1, avisos() - antes + " avisos");
+  sala2.avanzar(5 * 60 * 1000 + 2000);
+  revisar("A los 5 minutos lo invita a registrarse en la web", avisos() - antes === 1, avisos() - antes + " avisos");
   revisar("Con el link de la página", sala2.anuncios.some((a) => a.includes("https://prueba.trycloudflare.com/frm/registro/")), "sí");
-  sala2.avanzar(4 * 60 * 1000);
-  revisar("Y sigue cada 2 minutos", avisos() - antes === 3, avisos() - antes + " avisos en 6 minutos");
+  sala2.avanzar(10 * 60 * 1000);
+  revisar("Y sigue cada 5 minutos", avisos() - antes === 3, avisos() - antes + " avisos en 15 minutos");
 
   // ── 4) La base de verdad ──
   console.log("\n🗄️  Contra la base:\n");

@@ -27,7 +27,7 @@ var PieSalaAbierta = "ÑandutíBall 🇵🇾 · {discord}";
 
 // ── El cartelito del Discord en el chat de la sala ──
 var AvisoDiscordEnElChat = true;      // false para no invitar al Discord en el chat
-var MinutosEntreAvisos = 3;           // cada cuánto sale el cartelito
+var MinutosEntreAvisos = 10;          // cada cuánto sale el cartelito (no es urgente)
 var MensajeDiscordEnElChat = [
 	"💬 ¿Buscás equipo, torneos o querés pasar tus quejas? Entrá al Discord de ÑandutíBall 🇵🇾",
 	"🔗 {discord}",

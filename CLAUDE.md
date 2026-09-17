@@ -318,7 +318,7 @@ clave atada al **nombre**, para que nadie le use el nick.
 | Si el nombre… | Pasa esto |
 |---|---|
 | está registrado | se le pide la clave (`!clave ...`) y mira de afuera hasta ponerla; a los 90 s se lo echa |
-| no está registrado | juega normal, y cada 2 minutos le sale el cartelito de `!registrar ...` |
+| no está registrado | juega normal, y cada 5 minutos le sale el cartelito para crear la cuenta en la web (y al registrado sin clave se le recuerda cada 1 minuto) |
 
 **Las cuentas se crean en Ñandutí Web, no en la sala.** El único comando que queda es `!clave`
 (o `!login`), que solo verifica; `!registrar` y `!cambiarclave` contestan con el link de la web.
@@ -747,6 +747,17 @@ cambia el que pierde (en `handleTeamVictory`). Viene apagado y los dos comandos 
 `npm run prueba-camisetas` arranca 8 partidos y comprueba que los clubes vayan cambiando. El arnés
 `sala-falsa.js` guarda cada `setTeamColors` en `sala.camisetas`.
 
+## Avisos sin spam
+
+Bloque `🔕 AVISOS SIN SPAM` (`parches/bloques/avisos.txt`, va antes de ⚙️ CONFIGURACIÓN). Envuelve
+`room.sendAnnouncement` y frena los carteles **para toda la sala** que el autor manda en cada
+partido (`LinkDelScript*`): "Escribe !help", `Anuncio`,
+`Anuncio2` y el tutorial de YouTube cada 10 min (`ReglasDeAvisos`); "E S T A N  J U G A N D O" sale en cada partido (pedido del usuario). No se sacan, se espacian.
+Lo que va a **un jugador** (destino con id) nunca se frena. Los avisos nuestros van por su variable:
+clave (iniciar sesión) `SegundosEntrePedidosDeClave` = 60 (se revisa cada 5 s, así no queda en 2 min),
+crear cuenta `MinutosEntreAvisosDeRegistro` = 5, Discord `MinutosEntreAvisos` = 10.
+`prueba-discord` lo cubre.
+
 ## Los comandos no se ven en el chat
 
 Bloque `🤫 COMANDOS SIN ECO` (`parches/bloques/comandos-sin-eco.txt`), **el último de todos**:
@@ -836,7 +847,7 @@ El parcheador también reemplaza dos cosas de la configuración del autor: `Disc
 era del autor y recibía el link de **nuestras** salas.
 
 **La invitación en el chat**: `avisarDiscordEnElChat()` con un `setInterval` de
-`MinutosEntreAvisos` (3). No habla con la sala vacía. Usa la misma `completarPlantilla()` que el
+`MinutosEntreAvisos` (10). No habla con la sala vacía. Usa la misma `completarPlantilla()` que el
 embed, así que `MensajeDiscordEnElChat` admite `{discord}`, `{sala}`, `{link}`…
 
 Ojo: el script del autor ya trae un `setInterval` cada 10 minutos (dentro del `onRoomLink`

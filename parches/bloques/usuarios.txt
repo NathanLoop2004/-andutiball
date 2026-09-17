@@ -20,9 +20,9 @@
 // clave a nadie: la sala nunca se traba por culpa de la base.
 
 var PedirClaveAUsuarios = true;
-var MinutosEntreAvisosDeRegistro = 2;
+var MinutosEntreAvisosDeRegistro = 5;   // invitar a crear cuenta (importante, pero sin llenar el chat)
 var SegundosParaPonerLaClave = 90;     // si no la pone, se lo echa (puede volver a entrar)
-var SegundosEntrePedidosDeClave = 25;  // el cartel de la clave sale como mucho una vez cada tanto
+var SegundosEntrePedidosDeClave = 60;  // el cartel de la clave (iniciar sesión) sale como mucho una vez por minuto
 
 var usuariosRegistrados = [];          // los nicks que tienen clave
 var usuariosVerificados = {};          // id del jugador → true cuando puso bien la clave
@@ -255,6 +255,6 @@ window.__usuariosActualizar = function (nicks) {
 		room.getPlayerList().forEach(function (jugador) {
 			if (leFaltaLaClave(jugador)) recordarLaClave(jugador);
 		});
-	}, SegundosEntrePedidosDeClave * 1000);
+	}, 5000);   // se revisa seguido; recordarLaClave() respeta los SegundosEntrePedidosDeClave
 	console.log("🔐 Usuarios y claves: se pide clave a los registrados, y se invita a registrarse cada " + MinutosEntreAvisosDeRegistro + " minutos");
 })();

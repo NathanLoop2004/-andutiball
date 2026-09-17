@@ -69,14 +69,37 @@ revisar("Con la sala vacía no habla solo", invitaciones() === sinGente, invitac
 
 sala.entra(1, "Ana");
 const antes = invitaciones();
-avanzar(3 * 60 * 1000 + 5000);
-revisar("A los 3 minutos invita al Discord", invitaciones() - antes === 1, invitaciones() - antes + " avisos");
+avanzar(10 * 60 * 1000 + 5000);
+revisar("A los 10 minutos invita al Discord", invitaciones() - antes === 1, invitaciones() - antes + " avisos");
 
-avanzar(6 * 60 * 1000);
-revisar("Y sigue cada 3 minutos", invitaciones() - antes === 3, invitaciones() - antes + " avisos en 9 minutos");
+avanzar(20 * 60 * 1000);
+revisar("Y sigue cada 10 minutos", invitaciones() - antes === 3, invitaciones() - antes + " avisos en 30 minutos");
 
 const invitacion = sala.anuncios.filter((a) => a.trim() === "🔗 " + contexto.DiscordDeLaSala).pop();
 revisar("El mensaje lleva el link del Discord", Boolean(invitacion), invitacion);
+
+// ── Los carteles de cada partido no llenan el chat (🔕 AVISOS SIN SPAM) ──
+console.log("\n🔕 Avisos sin spam:\n");
+const cuantos = (texto) => sala.anuncios.filter((a) => a === texto).length;
+const anuncio = contexto.Anuncio;
+const antesAnuncio = cuantos(anuncio);
+for (let i = 0; i < 3; i++) { sala.room.sendAnnouncement(anuncio, null, 0xffffff, "bold", 0); avanzar(3 * 60 * 1000); }
+revisar("El anuncio de cada partido sale una vez aunque haya 3 partidos en 9 minutos", cuantos(anuncio) - antesAnuncio === 1, cuantos(anuncio) - antesAnuncio + " veces");
+avanzar(2 * 60 * 1000);
+sala.room.sendAnnouncement(anuncio, null, 0xffffff, "bold", 0);
+revisar("Pasados 10 minutos vuelve a salir", cuantos(anuncio) - antesAnuncio === 2, cuantos(anuncio) - antesAnuncio + " veces");
+sala.room.sendAnnouncement(anuncio, 1, 0xffffff, "bold", 0);
+revisar("Lo que se le manda a un solo jugador no se frena", cuantos(anuncio) - antesAnuncio === 3);
+const equipos = "   🏆    E S T A N    J U G A N D O  :       Olimpia   vs   Cerro";
+sala.room.sendAnnouncement(equipos, null, 0xffffff, "normal", 0);
+avanzar(4 * 60 * 1000);
+sala.room.sendAnnouncement(equipos, null, 0xffffff, "normal", 0);
+avanzar(2 * 60 * 1000);
+sala.room.sendAnnouncement(equipos, null, 0xffffff, "normal", 0);
+revisar("\"Están jugando\" sale en cada partido", cuantos(equipos) === 3, cuantos(equipos) + " veces");
+sala.room.sendAnnouncement("⚽ GOL de Ana", null, 0xffffff, "bold", 0);
+sala.room.sendAnnouncement("⚽ GOL de Ana", null, 0xffffff, "bold", 0);
+revisar("Los demás mensajes salen siempre", cuantos("⚽ GOL de Ana") === 2);
 
 console.log("");
 const unicos = [...new Set(sala.errores)];
