@@ -157,11 +157,11 @@ var CantidadCambiarTamano = 1;
 // ▇▇▇▇▇▇▇ ⚽👕 CAMISETAS POR DEFECTO ⚽👕 ▇▇▇▇▇▇▇
 
 // CAMISETA EQUIPO RED 🔴
-var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
+var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
 var NombreEquipoRojo = "OLIMPIA";
 
 // CAMISETA EQUIPO BLUE 🔵
-var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
+var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
 var NombreEquipoAzul = "CERRO PORTEÑO";
 
 
@@ -20533,7 +20533,7 @@ function avisarDiscordEnElChat() {
 
 // ▇▇▇▇▇▇▇▇▇ 🔕 AVISOS SIN SPAM — ÑandutíBall ▇▇▇▇▇▇▇▇▇
 // El script del autor manda varios carteles en CADA partido (a los pocos segundos de arrancar):
-// el tutorial de YouTube, "ESTÁN JUGANDO", "Escribí !help", el Anuncio y el Anuncio2. Con partidos
+// el tutorial de YouTube, "Escribí !help", el Anuncio y el Anuncio2 ("ESTÁN JUGANDO" sí sale en cada partido). Con partidos
 // de 3 minutos eso llenaba el chat. No se sacan: cada uno sale como mucho una vez cada tantos
 // minutos, según lo importante que sea.
 //
@@ -20547,7 +20547,6 @@ var AvisosSinSpam = true;
 
 // minutos: cada cuánto puede volver a salir. es(texto): si el cartel es este.
 var ReglasDeAvisos = [
-	{ nombre: "equipos del partido", minutos: 5, es: function (t) { return t.indexOf("E S T A N") !== -1; } },
 	{ nombre: "ver los comandos", minutos: 10, es: function (t) { return /^Escribe !help para ver/.test(t); } },
 	{ nombre: "anuncio de la sala", minutos: 10, es: function (t) { return typeof Anuncio !== "undefined" && Anuncio && t === Anuncio; } },
 	{ nombre: "cómo expulsar", minutos: 10, es: function (t) { return typeof Anuncio2 !== "undefined" && Anuncio2 && t === Anuncio2; } },
@@ -20673,7 +20672,18 @@ window.__configSala = function (datos) {
 		if (asignarParametro(nombre, nuevos[nombre])) cambiados.push(nombre);
 		configVista[nombre] = nuevos[nombre];
 	});
-	if (cambiados.length) console.log("⚙️ Configuración aplicada desde el panel: " + cambiados.join(", "));
+	if (cambiados.length) {
+		console.log("⚙️ Configuración aplicada desde el panel: " + cambiados.join(", "));
+		// Para verlo: en Mensajes del panel y, a los admins que están en la sala, en el chat
+		var detalle = cambiados.map(function (n) { return n + " = " + JSON.stringify(nuevos[n]); }).join(" · ");
+		try {
+			window.__panelCola = window.__panelCola || [];
+			window.__panelCola.push({ tipo: "config", texto: detalle });
+		} catch (e) {}
+		room.getPlayerList().forEach(function (j) {
+			if (j.admin && j.id !== 0) room.sendAnnouncement("⚙️ Cambio desde la web: " + detalle, j.id, 0x93A1B0, "small", 0);
+		});
+	}
 };
 
 (function () {

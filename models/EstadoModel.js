@@ -39,6 +39,8 @@ class EstadoModel {
   // La consola de la sala en el panel: se guardan los últimos MAX_MENSAJES
   static agregarMensaje(estado, tipo, texto, datos = {}) {
     if (!estado) return;
+    // Las contraseñas nunca quedan en el panel: "!clave loquesea" → "!clave ••••"
+    if (typeof texto === "string") texto = texto.replace(/^(\s*!(?:clave|login|registrar|cambiarclave)\b)\s+\S.*$/i, "$1 ••••");
     estado.mensajes.push({ hora: new Date().toISOString(), tipo, texto, ...datos });
     if (estado.mensajes.length > MAX_MENSAJES) estado.mensajes.shift();
   }

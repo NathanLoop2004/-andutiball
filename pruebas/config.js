@@ -58,6 +58,21 @@ function revisar(titulo, condicion, detalle) {
   contexto.__configSala({ parametros: { ...base0, SegundosParaElegir: 30, modoJueganTodos: true, TiempoDeJuego: 7 }, comandosApagados: [] });
   revisar("Lo que no cambió en la base no pisa lo que se cambió en la sala", leer("modoJueganTodos") === false);
 
+  // Los interruptores de comando (ConfigSincronizada) van al revés: de la sala a la base
+  const cola = () => (contexto.__panelCola || []).filter((e) => e.tipo === "config-sala");
+  contexto.__panelCola = [];
+  const conPowershot = { ...base0, SegundosParaElegir: 30, modoJueganTodos: true, TiempoDeJuego: 7 };
+  vmSet(sala, "powerShotMode", true);   // como si un admin hubiera escrito !powershot
+  contexto.__configSala({ parametros: conPowershot, comandosApagados: [] });
+  revisar("Lo que se prende con un comando no lo apaga la base", leer("powerShotMode") === true);
+  revisar("Y se manda a guardar en la base", cola().length === 1 && cola()[0].nombre === "powerShotMode" && cola()[0].valor === true, JSON.stringify(cola()));
+  contexto.__configSala({ parametros: conPowershot, comandosApagados: [] });
+  revisar("No se manda dos veces mientras la base no lo devuelve", cola().length === 1 && leer("powerShotMode") === true);
+  contexto.__configSala({ parametros: { ...conPowershot, powerShotMode: true }, comandosApagados: [] });
+  revisar("Cuando la base ya lo tiene, queda igual", leer("powerShotMode") === true && cola().length === 1);
+  contexto.__configSala({ parametros: { ...conPowershot, powerShotMode: false }, comandosApagados: [] });
+  revisar("Y después la web lo puede volver a apagar", leer("powerShotMode") === false, leer("powerShotMode"));
+
   // Con partido en curso, los goles esperan a que termine
   room.startGame();
   if (room.onGameStart) room.onGameStart(null);

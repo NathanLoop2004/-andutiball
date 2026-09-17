@@ -33,6 +33,10 @@ const iguales = (a, b) => {
   return x.length === y.length && crypto.timingSafeEqual(x, y);
 };
 
+// ¿El correo no salió por culpa NUESTRA? (la clave del SMTP, la conexión), no de la dirección
+const esProblemaNuestro = (error) =>
+  /invalid login|535|534|EAUTH|ECONNREFUSED|ETIMEDOUT|ENOTFOUND|self.signed|certificate|SMTP sin configurar/i.test(String(error && error.message));
+
 function limpiarVencidos() {
   const ahora = Date.now();
   for (const [correo, p] of pendientes) if (p.vence < ahora) pendientes.delete(correo);
@@ -70,6 +74,9 @@ class RegistroModel {
     } catch (error) {
       pendientes.delete(correo);
       console.error("⚠️ No se pudo mandar el código de registro a " + nombre + ": " + error.message);
+      // Distinguir "el problema es nuestro" de "ese correo no existe": si el servidor de correo
+      // nos rechaza a NOSOTROS, no tiene sentido decirle a la persona que revise su dirección.
+      if (esProblemaNuestro(error)) throw new Error("No podemos mandar correos en este momento: es un problema nuestro, no de tu correo. Avisale a un administrador y probá más tarde.");
       throw new Error("No se pudo mandar el correo a esa dirección. Revisá que exista y probá de nuevo.");
     }
     return { enviadoA: correo, minutos: MINUTOS_CODIGO };

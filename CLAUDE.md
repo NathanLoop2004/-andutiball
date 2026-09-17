@@ -153,6 +153,15 @@ entero: **el OWNER de verdad no era OWNER** y la pantalla de usuarios lo rechaza
   y el bloque `⚙️ CONFIGURACIÓN DESDE LA BASE` (`parches/bloques/config.txt`) aplica **solo lo que
   cambió** desde la última vez (`configVista`; el punto de partida es `window.__CONFIG_INICIAL`).
   Así un comando de la sala (`!ganasigue`) no queda pisado por la base cada 5 s.
+- **De la sala a la base**: los interruptores de `ConfigSincronizada` (powerShotMode, combaMode,
+  GolDeOroActivado, FairPlayActivado, cambioCami, CamisetasGanaSigue, ModoDeEquipos) se guardan en
+  la base cuando un admin los cambia con un comando (`!powershot`…): el bloque compara el valor de
+  verdad con `configVista`, empuja `{tipo:"config-sala"}` y el launcher hace `ConfigModel.guardar(...,
+  "la sala")`. `configPorGuardar` evita que la lectura de los 5 s lo revierta antes de que la base
+  lo devuelva (se larga a los 20 s). Si cambió en los dos lados a la vez, manda la web.
+- **Para verlo**: cada guardado sale en `datos/web.log` (ConfigController), los rechazos 401/403
+  también (`middlewares/puedeConfigurar.js`), y lo aplicado se anota en Mensajes del panel
+  (evento `config`) y se le avisa por chat a los admins de la sala.
 - La asignación es con `eval(nombre + " = ...")` **dentro del bloque**, porque varias son `let` del
   script (no son propiedades de `window`). El nombre se valida con regex y solo llegan los del catálogo.
 - `TiempoDeJuego` / `LimiteDeGoles` llaman a `room.setTimeLimit/setScoreLimit`, que HaxBall solo

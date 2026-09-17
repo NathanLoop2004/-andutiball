@@ -210,6 +210,23 @@ api.on("error", (error) => {
       case "chat":
         agregarMensaje("chat", evento.texto, { jugador: evento.jugador });
         break;
+      case "config":
+        agregarMensaje("config", `⚙️ Aplicado desde la web: ${evento.texto}`);
+        console.log(`⚙️ Aplicado desde la web: ${evento.texto}`);
+        break;
+      // Un admin lo cambió con un comando adentro de la sala (!powershot, !ganasigue…): a la base,
+      // así la web muestra lo que pasa de verdad.
+      case "config-sala":
+        if (salaElegida) {
+          ConfigModel.guardar(salaElegida, evento.nombre, evento.valor, "la sala")
+            .then(() => {
+              const texto = `⚙️ Cambiado en la sala y guardado en la web: ${evento.nombre} = ${JSON.stringify(evento.valor)}`;
+              agregarMensaje("config", texto);
+              console.log(texto);
+            })
+            .catch((error) => console.warn(`⚠️ No se pudo guardar ${evento.nombre} en la base: ${String(error.message).split("\n")[0]}`));
+        }
+        break;
       case "entra":
         agregarMensaje("entra", `${evento.jugador} entró a la sala`, { jugador: evento.jugador });
         break;
@@ -508,7 +525,11 @@ api.on("error", (error) => {
       avisamosConfigCaida = false;
       await frame.evaluate((d) => { if (window.__configSala) window.__configSala(d); }, datos);
     } catch (error) {
-      if (!avisamosConfigCaida) console.warn("⚠️ No se pudo leer la configuración de la base: la sala sigue con la que tiene");
+      if (!avisamosConfigCaida) {
+        const motivo = String(error.message).split("\n")[0];
+        console.warn("⚠️ No se pudo leer la configuración de la base: la sala sigue con la que tiene (" + motivo + ")");
+        agregarMensaje("config", "⚠️ La sala no pudo leer la configuración de la web: " + motivo);
+      }
       avisamosConfigCaida = true;
     }
   };

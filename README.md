@@ -513,6 +513,14 @@ apagar comandos. La pueden usar **OWNER, CO-OWNER, HOSTER y AYUDANTE**.
   - Cada cambio queda con el nombre de quien lo hizo, y se puede **volver al valor de fábrica**.
 - **Comandos**: un interruptor por comando, para una sala o para todas. Al que escribe un comando
   apagado, el bot le avisa que está desactivado. `!clave` y `!login` no se pueden apagar.
+  > ⚠️ **Apagar un comando no apaga la función.** Apagar `!powershot` solo impide escribir ese
+  > comando en el chat; para prender o apagar el disparo potente está **Parámetros → Partido →
+  > Disparo potente**.
+
+**Las dos puntas quedan iguales.** Lo que un admin cambia con un comando adentro de la sala
+(`!powershot`, `!comba`, `!ganasigue`, `!combinado`, `!elegir`, las camisetas…) **se guarda solo en
+la web**, y aparece en Configuración con el autor "la sala". Y lo que cambiás en la web llega a la
+sala en unos segundos. Si se cambia en los dos lados casi al mismo tiempo, gana la web.
 
 Todo se guarda en la base (`parametros_sala` y `comandos_apagados`). Si la base está apagada, las
 salas abren con lo de `hosts/*.json`, como siempre.

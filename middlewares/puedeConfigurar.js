@@ -8,10 +8,14 @@ const SesionModel = require("../models/SesionModel");
 const puedeConfigurar = async (req, res, next) => {
   const token = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "");
   const datos = SesionModel.leerToken(token);
-  if (!datos) return res.status(401).json({ ok: false, error: "Necesitás iniciar sesión" });
+  if (!datos) {
+    if (req.method !== "GET") console.warn(`⚠️ Configuración: ${req.method} ${req.originalUrl} sin sesión válida (401)`);
+    return res.status(401).json({ ok: false, error: "Necesitás iniciar sesión" });
+  }
 
   const rango = await SesionModel.rangoDe(datos.nick);
   if (!SesionModel.puedeConfigurar(rango)) {
+    console.warn(`⚠️ Configuración: ${datos.nick} (${rango ? rango.nombre : "sin rango"}) no tiene permiso para ${req.method} ${req.originalUrl} (403)`);
     return res.status(403).json({ ok: false, error: "Esto es solo para OWNER, CO-OWNER, HOSTER y AYUDANTE" });
   }
 

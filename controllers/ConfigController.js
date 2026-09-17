@@ -21,8 +21,13 @@ class ConfigController {
   static guardarParametro = async (req, res) => {
     try {
       const { valor } = req.body || {};
-      res.json({ ok: true, ...(await ConfigModel.guardar(req.params.sala, req.params.nombre, valor, req.usuario.nick)) });
-    } catch (error) { responder(res, error); }
+      const r = await ConfigModel.guardar(req.params.sala, req.params.nombre, valor, req.usuario.nick);
+      console.log(`⚙️ ${req.usuario.nick} cambió ${r.nombre} en ${req.params.sala} → ${JSON.stringify(r.valor)}${r.cambiado ? "" : " (valor de fábrica)"}`);
+      res.json({ ok: true, ...r });
+    } catch (error) {
+      console.warn(`⚠️ No se guardó ${req.params.nombre} en ${req.params.sala}: ${error.message}`);
+      responder(res, error);
+    }
   };
 
   static restablecerParametro = async (req, res) => {
