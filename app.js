@@ -9,7 +9,7 @@
 //   GET  /api/estado        el estado de la sala local
 //   GET  /api/salas         { salas: [ { clave, nombre, ok, estado } ] }
 //   GET  /api/elo           { divisiones, ranking }
-//   GET  /api/rangos        rangos sin la clave
+//   GET  /api/rangos        rangos sin la clave (solo OWNER y CO-OWNER)
 //   POST /api/rangos        guarda y devuelve los rangos sin la clave
 //   GET  /api/actualizaciones        las novedades para el Discord
 //   POST /api/actualizaciones        guarda una (queda pendiente)
@@ -24,6 +24,8 @@
 //   GET  /api/ranking             los mejores ELO para la web (sin datos internos)
 //   GET  /api/cuenta · POST /api/cuenta/codigo · /clave · /email   Mi cuenta (con sesión)
 //   /api/config/:sala/parametros · /comandos   Configuración de las salas (OWNER, CO-OWNER, HOSTER, AYUDANTE)
+//   /api/carrusel (público) · /api/carrusel/todas · POST|PUT|DELETE   el carrusel de la portada
+//   GET  /frm/carrusel            la pantalla del carrusel
 //   GET  /frm/config              la pantalla de Configuración
 //   GET  /frm/cuenta              la pantalla de Mi cuenta
 //   GET  /frm/usuarios            la pantalla de usuarios (solo OWNER)
@@ -41,6 +43,7 @@ const authRouter = require("./routes/AuthRouter");
 const usuariosRouter = require("./routes/UsuariosRouter");
 const cuentaRouter = require("./routes/CuentaRouter");
 const configRouter = require("./routes/ConfigRouter");
+const carruselRouter = require("./routes/CarruselRouter");
 const vistasRouter = require("./routes/VistasRouter");
 
 // sala: adaptador de la sala local { estado(), expulsar(id, motivo, banear) }
@@ -60,7 +63,7 @@ function crearApp({ sala = null, salas = [] } = {}) {
   // El panel puede estar en otro puerto (8080) que la sala (3001…), y nada se cachea
   app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+    res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
     res.setHeader("Cache-Control", "no-store");
     if (req.method === "OPTIONS") return res.end();
@@ -77,6 +80,7 @@ function crearApp({ sala = null, salas = [] } = {}) {
   app.use("/api", usuariosRouter);
   app.use("/api", cuentaRouter);
   app.use("/api", configRouter);
+  app.use("/api", carruselRouter);
 
   // Todo lo estático sale de public/ (igual que app-centralshop)
   app.use(express.static(path.join(__dirname, "public")));

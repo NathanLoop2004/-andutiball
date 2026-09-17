@@ -22,12 +22,20 @@
 <main class="contenido">
   <div class="aviso" id="avisoTapa"></div>
 
+  <!-- Carrusel: lo ve cualquiera. Las imágenes se cargan desde el panel (Carrusel) -->
+  <section class="carrusel" id="carrusel" aria-roledescription="carrusel" aria-label="Novedades" hidden>
+    <div class="carrusel-pista" id="pista"></div>
+    <button class="carrusel-flecha izq" id="anterior" type="button" aria-label="Imagen anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+    <button class="carrusel-flecha der" id="siguiente" type="button" aria-label="Imagen siguiente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+    <div class="carrusel-puntos" id="puntos"></div>
+  </section>
+
   <!-- Sin sesión: la presentación -->
   <section id="sinSesion" hidden>
     <div class="tapa">
       <span class="etiqueta-tapa">Host paraguayo de HaxBall</span>
       <h1>Jugá, subí en el ranking y cuidá tu nombre.</h1>
-      <p>Cuatro salas abiertas todo el día: Futsal 3v3, 4v4, automático y Real Soccer. Cada partido suma o resta ELO en una tabla compartida.</p>
+      <p>Cuatro salas abiertas todo el día: Futsal 3v3, 4v4, automático y Real Soccer. Cada sala tiene su propio ranking ELO, y además hay uno general.</p>
       <div class="botones">
         <a class="boton principal grande" href="/frm/registro/">Crear cuenta</a>
         <a class="boton grande" href="/frm/login/">Iniciar sesión</a>
@@ -48,7 +56,7 @@
       <div class="rasgo">
         <div class="icono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></div>
         <h3>Ranking ELO</h3>
-        <p>Ganar suma y perder resta. Subís de división a medida que mejorás.</p>
+        <p>Un ranking por sala y uno general. Ganar suma, perder resta, y subís de división.</p>
       </div>
       <div class="rasgo">
         <div class="icono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg></div>
@@ -58,9 +66,9 @@
     </div>
   </section>
 
-  <!-- Con sesión: tu ELO y el ranking -->
+  <!-- Con sesión: tu ELO -->
   <section id="conSesion" hidden>
-    <div class="cabecera">
+    <div class="cabecera" style="margin-top:24px">
       <div>
         <h1 id="saludo">Hola</h1>
         <p>Entrá a cualquier sala con tu nombre y escribí <b>!clave</b> con tu contraseña.</p>
@@ -68,15 +76,20 @@
       <div id="accionesCabecera"></div>
     </div>
 
-    <div class="seccion-titulo"><h2>Tu ELO</h2><span id="miPuesto"></span></div>
+    <div class="seccion-titulo"><h2>Tu ELO general</h2><span id="miPuesto"></span></div>
     <div class="tarjeta" id="miElo">
       <div class="vacio-elo">Cargando…</div>
     </div>
+    <div class="elo-salas" id="eloSalas"></div>
+  </section>
 
+  <!-- Ranking: lo ve cualquiera -->
+  <section id="seccionRanking">
     <div class="seccion-titulo">
       <h2>Ranking</h2>
       <input type="search" class="buscador" id="buscar" placeholder="Buscar jugador" aria-label="Buscar jugador">
     </div>
+    <div class="pestanas" id="pestanasRanking" role="tablist" aria-label="Ranking por sala"></div>
     <div class="tarjeta">
       <div class="tabla-caja">
         <table class="tabla">
@@ -94,9 +107,13 @@
           <tbody id="filas"><tr><td colspan="7" class="tenue">Cargando…</td></tr></tbody>
         </table>
       </div>
+      <nav class="paginado" id="paginado" aria-label="Páginas del ranking" hidden>
+        <span class="tenue" id="rangoFilas" style="font-size:13px"></span>
+        <div class="paginas-numeros" id="numeros"></div>
+        <button class="boton chico" id="irAMiPuesto" type="button" hidden>Ir a mi puesto</button>
+      </nav>
     </div>
   </section>
-
 </main>
 
 <footer class="pie">ÑandutíBall · Hecho en Paraguay por Jinder</footer>
@@ -105,13 +122,103 @@
 <script>
 const $ = (id) => document.getElementById(id);
 const esc = Sesion.escapar;
+const POR_PAGINA = 10;
 let ranking = [];
+let pagina = 1;
+let salaRanking = "general";   // "general" o la clave de una sala
 
 const chipDivision = (d) => d
   ? `<span class="division"><i style="background:#${esc(d.color)}"></i>${esc(d.nombre)}</span>`
   : "";
 
-// Cuánto avanzaste dentro de tu división hacia la siguiente
+// ══════════ Carrusel ══════════
+const Carrusel = {
+  imagenes: [],
+  actual: 0,
+  reloj: null,
+  SEGUNDOS: 6,
+
+  async cargar() {
+    try {
+      const { imagenes } = await Sesion.pedir("/api/carrusel");
+      this.imagenes = imagenes || [];
+    } catch (e) {
+      this.imagenes = [];
+    }
+    this.pintar();
+  },
+
+  pintar() {
+    const caja = $("carrusel");
+    caja.hidden = !this.imagenes.length;
+    if (!this.imagenes.length) return;
+    const varias = this.imagenes.length > 1;
+
+    $("pista").innerHTML = this.imagenes.map((img, i) => {
+      const texto = img.titulo || img.descripcion
+        ? `<div class="carrusel-texto">${img.titulo ? `<h2>${esc(img.titulo)}</h2>` : ""}${img.descripcion ? `<p>${esc(img.descripcion)}</p>` : ""}</div>`
+        : "";
+      const imagen = `<img src="${esc(img.url)}" alt="${esc(img.titulo || img.descripcion || "Imagen " + (i + 1))}" ${i === 0 ? "" : 'loading="lazy"'}>`;
+      const contenido = img.enlace
+        ? `<a href="${esc(img.enlace)}" target="_blank" rel="noopener noreferrer">${imagen}${texto}</a>`
+        : imagen + texto;
+      return `<div class="carrusel-slide" role="group" aria-roledescription="imagen" aria-label="${i + 1} de ${this.imagenes.length}">${contenido}</div>`;
+    }).join("");
+
+    $("puntos").innerHTML = varias
+      ? this.imagenes.map((_, i) => `<button type="button" data-ir="${i}" aria-label="Ir a la imagen ${i + 1}"></button>`).join("")
+      : "";
+    $("anterior").hidden = !varias;
+    $("siguiente").hidden = !varias;
+    this.ir(Math.min(this.actual, this.imagenes.length - 1));
+    this.arrancar();
+  },
+
+  ir(indice) {
+    const n = this.imagenes.length;
+    if (!n) return;
+    this.actual = (indice + n) % n;
+    $("pista").style.transform = `translateX(-${this.actual * 100}%)`;
+    $("puntos").querySelectorAll("button").forEach((b, i) => b.setAttribute("aria-current", String(i === this.actual)));
+  },
+
+  arrancar() {
+    this.frenar();
+    const quieto = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (this.imagenes.length < 2 || quieto) return;
+    this.reloj = setInterval(() => this.ir(this.actual + 1), this.SEGUNDOS * 1000);
+  },
+
+  frenar() {
+    clearInterval(this.reloj);
+    this.reloj = null;
+  },
+};
+
+$("anterior").addEventListener("click", () => { Carrusel.ir(Carrusel.actual - 1); Carrusel.arrancar(); });
+$("siguiente").addEventListener("click", () => { Carrusel.ir(Carrusel.actual + 1); Carrusel.arrancar(); });
+$("puntos").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-ir]");
+  if (b) { Carrusel.ir(Number(b.dataset.ir)); Carrusel.arrancar(); }
+});
+// Se frena mientras el mouse está encima o se usa con el teclado
+$("carrusel").addEventListener("mouseenter", () => Carrusel.frenar());
+$("carrusel").addEventListener("mouseleave", () => Carrusel.arrancar());
+$("carrusel").addEventListener("focusin", () => Carrusel.frenar());
+$("carrusel").addEventListener("focusout", () => Carrusel.arrancar());
+// Deslizar con el dedo
+let toqueX = null;
+$("carrusel").addEventListener("touchstart", (e) => { toqueX = e.touches[0].clientX; Carrusel.frenar(); }, { passive: true });
+$("carrusel").addEventListener("touchend", (e) => {
+  if (toqueX === null) return;
+  const dx = e.changedTouches[0].clientX - toqueX;
+  if (Math.abs(dx) > 40) Carrusel.ir(Carrusel.actual + (dx < 0 ? 1 : -1));
+  toqueX = null;
+  Carrusel.arrancar();
+});
+document.addEventListener("visibilitychange", () => (document.hidden ? Carrusel.frenar() : Carrusel.arrancar()));
+
+// ══════════ Tu ELO ══════════
 const porcentaje = (elo, falta) => {
   const desde = elo.division && typeof elo.division.desde === "number" ? elo.division.desde : 0;
   const hasta = elo.elo + falta.puntos;
@@ -152,18 +259,37 @@ function pintarMiElo(elo) {
     </div>`;
 }
 
-function pintarRanking() {
-  const u = Sesion.usuario();
-  const yo = u ? String(u.nick).trim().toLowerCase() : "";
+// ══════════ Ranking paginado ══════════
+const yo = () => { const u = Sesion.usuario(); return u ? String(u.nick).trim().toLowerCase() : ""; };
+const filtrados = () => {
   const filtro = $("buscar").value.trim().toLowerCase();
-  const lista = filtro ? ranking.filter((j) => String(j.nombre).toLowerCase().includes(filtro)) : ranking;
+  return filtro ? ranking.filter((j) => String(j.nombre).toLowerCase().includes(filtro)) : ranking;
+};
+
+// 1 2 3 … 8 9 10: siempre la primera, la última y las de alrededor de la actual
+function numerosDePagina(total, actual) {
+  const set = new Set([1, total, actual - 1, actual, actual + 1].filter((n) => n >= 1 && n <= total));
+  const lista = [...set].sort((a, b) => a - b);
+  const salida = [];
+  lista.forEach((n, i) => { if (i && n - lista[i - 1] > 1) salida.push("…"); salida.push(n); });
+  return salida;
+}
+
+function pintarRanking() {
+  const lista = filtrados();
+  const paginas = Math.max(1, Math.ceil(lista.length / POR_PAGINA));
+  pagina = Math.min(Math.max(1, pagina), paginas);
 
   if (!lista.length) {
-    $("filas").innerHTML = `<tr><td colspan="7" class="tenue">${ranking.length ? "No hay jugadores con ese nombre." : "Todavía no hay partidos jugados."}</td></tr>`;
+    $("filas").innerHTML = `<tr><td colspan="7" class="tenue">${ranking.length ? "No hay jugadores con ese nombre." : salaRanking === "general" ? "Todavía no hay partidos jugados." : "Todavía no hay partidos jugados en esta sala."}</td></tr>`;
+    $("paginado").hidden = true;
     return;
   }
-  $("filas").innerHTML = lista.map((j) => `
-    <tr class="${String(j.nombre).trim().toLowerCase() === yo ? "soy-yo" : ""}">
+
+  const desde = (pagina - 1) * POR_PAGINA;
+  const visibles = lista.slice(desde, desde + POR_PAGINA);
+  $("filas").innerHTML = visibles.map((j) => `
+    <tr class="${String(j.nombre).trim().toLowerCase() === yo() ? "soy-yo" : ""}">
       <td class="puesto">${j.puesto <= 3 ? `<span class="medalla m${j.puesto}">${j.puesto}</span>` : j.puesto}</td>
       <td class="jugador" title="${esc(j.nombre)}">${esc(j.nombre)}</td>
       <td class="ocultar-movil">${chipDivision(j.division)}</td>
@@ -172,23 +298,74 @@ function pintarRanking() {
       <td class="der num ocultar-movil">${j.partidos}</td>
       <td class="der num ocultar-movil">${j.ganados}-${j.empatados}-${j.perdidos}</td>
     </tr>`).join("");
+
+  $("paginado").hidden = paginas < 2 && !yo();
+  $("rangoFilas").textContent = `${desde + 1}–${desde + visibles.length} de ${lista.length}`;
+  $("numeros").innerHTML = paginas < 2 ? "" : [
+    `<button type="button" data-pagina="${pagina - 1}" ${pagina === 1 ? "disabled" : ""} aria-label="Página anterior">‹</button>`,
+    ...numerosDePagina(paginas, pagina).map((n) => n === "…" ? "<span>…</span>" : `<button type="button" data-pagina="${n}" ${n === pagina ? 'aria-current="page"' : ""}>${n}</button>`),
+    `<button type="button" data-pagina="${pagina + 1}" ${pagina === paginas ? "disabled" : ""} aria-label="Página siguiente">›</button>`,
+  ].join("");
+  $("irAMiPuesto").hidden = !yo() || !ranking.some((j) => String(j.nombre).trim().toLowerCase() === yo());
 }
 
-async function cargarConSesion() {
+$("numeros").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-pagina]");
+  if (!b || b.disabled) return;
+  pagina = Number(b.dataset.pagina);
+  pintarRanking();
+});
+$("irAMiPuesto").addEventListener("click", () => {
+  $("buscar").value = "";
+  const i = ranking.findIndex((j) => String(j.nombre).trim().toLowerCase() === yo());
+  if (i >= 0) { pagina = Math.floor(i / POR_PAGINA) + 1; pintarRanking(); }
+});
+$("buscar").addEventListener("input", () => { pagina = 1; pintarRanking(); });
+
+function pintarPestanasRanking(salas) {
+  $("pestanasRanking").innerHTML = (salas || []).map((s) =>
+    `<button type="button" role="tab" data-ranking="${esc(s.clave)}" aria-selected="${s.clave === salaRanking}">${esc(s.nombre)}</button>`
+  ).join("");
+}
+
+$("pestanasRanking").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-ranking]");
+  if (!b || b.dataset.ranking === salaRanking) return;
+  salaRanking = b.dataset.ranking;
+  pagina = 1;
+  cargarRanking();
+});
+
+async function cargarRanking() {
+  try {
+    const datos = await Sesion.pedir("/api/ranking?limite=200&sala=" + encodeURIComponent(salaRanking));
+    ranking = datos.ranking;
+    pintarPestanasRanking(datos.salas);
+    pintarRanking();
+  } catch (e) {
+    $("filas").innerHTML = `<tr><td colspan="7" class="tenue">No se pudo cargar el ranking.</td></tr>`;
+  }
+}
+
+// Una tarjetita por sala: el ELO de esa sala y el puesto (el general se calcula con estas)
+function pintarEloSalas(lista) {
+  $("eloSalas").innerHTML = (lista || []).map((s) => s.elo
+    ? `<div class="elo-sala"><span class="tenue">${esc(s.nombre)}</span><b>${s.elo.elo}</b>${chipDivision(s.elo.division)}<small>Puesto ${s.elo.puesto} de ${s.elo.total} · ${s.elo.partidos} PJ</small></div>`
+    : `<div class="elo-sala vacia"><span class="tenue">${esc(s.nombre)}</span><b>—</b><small>Sin partidos en esta sala</small></div>`
+  ).join("");
+}
+
+async function cargarMiElo() {
   const u = Sesion.usuario();
   $("saludo").textContent = "Hola, " + u.nick;
   $("accionesCabecera").innerHTML = u.admin ? '<a class="boton" href="/frm/panel/">Panel de administración</a>' : "";
-
-  const [cuenta, tabla] = await Promise.allSettled([
-    Sesion.pedir("/api/cuenta"),
-    Sesion.pedir("/api/ranking?limite=100"),
-  ]);
-
-  if (cuenta.status === "fulfilled") pintarMiElo(cuenta.value.cuenta.elo);
-  else $("miElo").innerHTML = `<div class="vacio-elo">No se pudo cargar tu puntaje: ${esc(cuenta.reason.message)}</div>`;
-
-  if (tabla.status === "fulfilled") { ranking = tabla.value.ranking; pintarRanking(); }
-  else $("filas").innerHTML = `<tr><td colspan="7" class="tenue">No se pudo cargar el ranking.</td></tr>`;
+  try {
+    const { cuenta } = await Sesion.pedir("/api/cuenta");
+    pintarMiElo(cuenta.elo);
+    pintarEloSalas(cuenta.eloPorSala);
+  } catch (error) {
+    $("miElo").innerHTML = `<div class="vacio-elo">No se pudo cargar tu puntaje: ${esc(error.message)}</div>`;
+  }
 }
 
 function pintar() {
@@ -196,16 +373,17 @@ function pintar() {
   Sesion.pintarBarra("derecha");
   $("sinSesion").hidden = Boolean(u);
   $("conSesion").hidden = !u;
-  if (u) cargarConSesion();
+  if (u) cargarMiElo();
+  pintarRanking();
 }
-
-$("buscar").addEventListener("input", pintarRanking);
 
 if (new URLSearchParams(location.search).get("sinpermiso")) {
   $("avisoTapa").className = "aviso mal";
   $("avisoTapa").textContent = "Esa sección es solo para administradores.";
 }
 
+Carrusel.cargar();
+cargarRanking();
 pintar();
 
 // Por si le cambiaron el rango desde la última vez (y el token se renueva solo)

@@ -22,7 +22,7 @@ Contexto para trabajar en este proyecto. La documentación para personas está e
 - `services/`: la conexión a la base por entorno y los webhooks (actualizaciones, link de la web).
 - `prisma/` + `docker-compose.base.yml`: las tablas y la base, que va **aparte** de las salas.
 - `tunel.js`, `actualizacion.js`, `sembrar.js`: los comandos sueltos (túnel de Cloudflare, novedades, sembrar la base).
-- `pruebas/`: 19 pruebas que corren sin gastar tokens (ver “Probar sin gastar tokens”).
+- `pruebas/`: 21 pruebas que corren sin gastar tokens (ver “Probar sin gastar tokens”).
 
 ## Despliegue (launcher.js)
 
@@ -175,6 +175,53 @@ el límite que espera al fin del partido y que la base no pise un cambio hecho e
 comandos apagados, el modelo contra la base y la API con permisos (sin sesión, sin rango,
 SUBAYUDANTE, HOSTER). Deja las tablas como estaban.
 
+## Carrusel de la portada
+
+Tabla `imagenes_carrusel` (modelo `ImagenCarrusel`, migración `20260917160000_carrusel`): **la
+imagen se guarda en la base** (`datos Bytes`), con título, texto, enlace, orden y `activa`.
+
+- `models/CarruselModel.js` valida al subir: **se miran los primeros bytes** (`detectarTipo`),
+  no solo el `Content-Type`; solo PNG/JPEG/WebP/GIF (**nada de SVG**, puede traer script); hasta
+  3 MB; hasta 20 imágenes. El enlace solo puede ser `http(s)` (nada de `javascript:`).
+- La subida va con la imagen **tal cual en el cuerpo** (`express.raw`, `Content-Type: image/…`) y
+  los textos en la query. `express.json` global no la toca.
+- `GET /api/carrusel/:id/imagen` sirve los bytes con `nosniff`, un CSP propio y cache de un día
+  (`?v=<cambiada>` en la URL evita ver una imagen vieja).
+- Público: `GET /api/carrusel` (solo activas; sin base devuelve lista vacía y la portada no se
+  rompe). Panel (`puedeConfigurar`): `GET /api/carrusel/todas`, `POST /api/carrusel`,
+  `POST /api/carrusel/orden {ids}`, `PUT|DELETE /api/carrusel/:id`.
+- Pantalla `public/frm/carrusel/` (sección "Carrusel" del panel). La portada (`public/index.html`)
+  muestra el carrusel **a todos**, con o sin sesión: pasa solo cada 6 s, se frena con el mouse
+  encima, con el foco o con la pestaña oculta, se desliza con el dedo y respeta
+  `prefers-reduced-motion`.
+
+**La portada es pública**: carrusel y ranking los ve cualquiera; "Tu ELO" solo con sesión. El
+ranking va **paginado de a 10** (`POR_PAGINA`), con buscador y "Ir a mi puesto".
+
+`npm run prueba-carrusel` cubre la firma de los archivos, SVG disfrazado, tamaño, enlaces,
+orden, lo que ve el público, `nosniff` y los permisos (sin sesión, jugador, AYUDANTE). Solo borra
+lo que crea.
+
+## Quién ve qué en el panel
+
+| Sección | Quién | Dónde se controla |
+|---|---|---|
+| Salas | rangos con admin | `Sesion.exigirAdmin()` (la API de salas sigue abierta) |
+| Configuración, Carrusel | OWNER, CO-OWNER, HOSTER, AYUDANTE | `middlewares/puedeConfigurar.js` |
+| **Rangos** | **OWNER y CO-OWNER** | `middlewares/puedeVerRangos.js` (`GET|POST /api/rangos`, `GET /api/rangos/usuarios`) |
+| Usuarios | OWNER | `middlewares/soloOwner.js` |
+
+Todos vuelven a mirar el rango en la tabla en cada pedido. La ficha de sesión trae `admin`,
+`configura`, `rangos` y `owner`, y `Sesion.pintarNavAdmin()` muestra solo lo que corresponde. En
+Salas, la pestaña Rangos también se esconde para los demás.
+
+**Dar un rango se hace eligiendo una cuenta**, no escribiendo el nick: `GET /api/rangos/usuarios?q=`
+(`UsuarioModel.nicksParaElegir`) devuelve hasta 20 cuentas con clave y sin ban. Los nicks viejos
+que no tienen cuenta se muestran con borde punteado.
+
+**`pruebas/api.js` corre SIN `.env` a propósito**: su POST a `/api/rangos` hace
+`rango.deleteMany({})` y, con la base prendida, borraría los rangos de verdad.
+
 ## Panel y modo oscuro
 
 Todas las pantallas del panel (salas, configuración, rangos, usuarios, actualizaciones) usan
@@ -278,6 +325,15 @@ por eso no se veía, y `pruebas/usuarios.js` lo dispara a mano en la parte "sala
 falseado) y el modelo contra la base.
 
 ## Actualizaciones para el Discord  ← **LEER ANTES DE COMMITEAR**
+
+> **Cuando el usuario pide "hacé el anuncio" (o "la actualización") significa TODO esto, sin preguntar:**
+>
+> 1. Las pruebas en verde, **commit y push** de todo lo que esté hecho.
+> 2. Cargar la novedad con **todo lo que se hizo desde el último anuncio** que la gente pueda notar,
+>    contado de forma **sencilla**: que cualquiera que juega lo entienda a la primera, sin palabras
+>    técnicas (ver "Cómo se escribe" más abajo). Con el hash del commit en la columna `commit`.
+> 3. Queda **pendiente**: no se manda al Discord salvo que lo pida ("mandalo", "envialo").
+> 4. Avisarle qué partes funcionan recién al reiniciar las salas.
 
 Hay un canal de Discord donde se le cuenta a la gente qué cambió. **Cada vez que se hace un
 commit**, se carga una novedad en la tabla `actualizaciones`:
@@ -566,7 +622,7 @@ Probar sin abrir sala: `node pruebas/render.js mapas/nanduti-futsal-x3.hbs vista
 
 ## Selección por turnos
 
-Bloque `🎽 SELECCIÓN POR TURNOS` (`parches/bloques/turnos.txt`). Los dos primeros espectadores pasan solos como capitanes y después se elige alternando: el capitán del equipo de turno escribe `!7` (o `!elegir 7`) en el chat. Si no elige en `SegundosParaElegir`, elige el bot.
+Bloque `🎽 SELECCIÓN POR TURNOS` (`parches/bloques/turnos.txt`). Los dos primeros espectadores pasan solos como capitanes y después se elige alternando: el capitán del equipo de turno escribe `!7` (o `!elegir 7`) en el chat. **El número es la posición entre los espectadores, sin el bot** (`!1` = el primer espectador de la lista), no el id de HaxBall: `espectadoresEnOrden()` / `numeroDe()`. Si esa posición es alguien AFK o sin clave, avisa y no lo elige. En las pruebas se calcula con `numero(j)`; ojo que con pocos jugadores la posición coincide con el id, por eso `pruebas/turnos.js` lo revisa cuando ya no coinciden. Si no elige en `SegundosParaElegir`, elige el bot.
 
 Ya **no** se prende desde `hosts/*.json`: lo prende y lo apaga `aplicarModoDeEquipos()` (bloque 🔀 MODOS DE EQUIPOS) según el modo de la sala, y por eso los enganches del bloque se registran siempre (antes el IIFE cortaba con `if (!SeleccionPorTurnos) return`, y el modo no se podía cambiar en caliente). Exige `modoJueganTodos`, `modoJueganAlgunos` y `automatizadoActivado` en `false`: si el script acomoda jugadores por su cuenta, se pisan entre sí; de eso también se encarga ese bloque.
 
@@ -760,6 +816,31 @@ Circuito: el bloque `📊 ELO Y DIVISIONES` del script anota quién está en can
 
 **La base**: además de `elo.json`, `models/PartidoModel.js` guarda cada partido en `partidos` + `participaciones` y le suma a `usuarios` (elo, partidos, ganados, perdidos, empatados, goles). **Solo a los que tienen cuenta con clave** (creada en la web): al que no tiene cuenta no se le crea nada, ni usuario ni participación. Antes se le creaba un usuario sin clave y la tabla se llenó con 67 "cuentas" que nadie creó (se borraron el 17/09/2026, con respaldo en `datos/respaldo-usuarios-sin-clave-*.json`). Desde la sala tampoco se crean cuentas: `atenderUsuario()` del launcher solo acepta `verificar`. Con la base apagada solo avisa por consola. El elo de la tabla `usuarios` es el que calculó `elo.json` (que va por auth), no se recalcula.
 
+**ELO por sala + general (17/09/2026).** Una tabla por sala (`elo_3v3`, `elo_4v4`, `elo_todos`,
+`elo_realsoccer`) y `elo_general` (migración `20260917180000_elo_por_sala`):
+
+- Cada partido actualiza **solo la tabla de su sala** (`EloSalasModel.procesarPartido`: lee la
+  tabla, `aplicarPartido`, upsert de los que jugaron).
+- El general **no se calcula a mano**: `CALL actualizar_elo_general(claves)` (procedimiento
+  PL/pgSQL en la migración). `elo` = promedio de los ELO de las salas **pesado por los partidos**
+  de cada una; partidos/ganados/empatados/perdidos/goles = suma; nombre = el último. Sin claves
+  recalcula a todos, y saca del general a los que ya no están en ninguna sala.
+- `lib/elo.js` → `calcularGeneral()` hace **la misma cuenta** en Node: se usa sin base, y
+  `prueba-elo-salas` comprueba que da igual que el procedimiento.
+- Los archivos `datos/elo.json` (general) y `datos/elo-<sala>.json` quedan como **espejo** (los
+  leen la sala y la web, sincrónico). `EloSalasModel.espejar()` los escribe después de cada partido
+  y `sincronizar()` al abrir la sala (si la tabla está vacía y el archivo tiene datos, sube el archivo).
+- Sin base: `procesarPartido` cae a los archivos y calcula el general en Node (`enBase: false`).
+- El nombre de la tabla va en SQL: sale **solo** de `EloSalasModel.TABLAS`. `archivoDe()` rechaza
+  cualquier sala que no sea `[a-z0-9-]`. Una sala nueva en `hosts/` necesita su tabla (migración +
+  `TABLAS`); mientras tanto usa solo el general.
+- La sala recibe `window.__ELO = { sala, general }` (`eloParaLaPagina()` en el launcher). El color y
+  la división del chat son los de la sala. `!elo` muestra sala y general; `!top` es de la sala y
+  `!top general` el general. `paraLaSala()` ahora manda `nombre` (sin eso `!top` decía "undefined").
+- La cuenta de la web (`usuarios.elo`) guarda el **general** (`PartidoModel.guardar(..., eloGeneral)`);
+  las participaciones guardan el ELO de la sala. `/api/ranking?sala=3v3` y `/api/cuenta` →
+  `eloPorSala`. La portada tiene pestañas General / cada sala.
+
 Fórmula Elo clásica por equipos: se compara el promedio de cada lado, K=32 (48 en los primeros 10 partidos). Es de suma cero. Divisiones en `DIVISIONES` (Novato → Leyenda).
 
 API: `GET /api/elo`. El panel lo muestra en la pestaña **ELO** (también viene en `/api/estado` como `estado.elo`).
@@ -782,7 +863,7 @@ El cupo de las 4 salas es 30 (`CantidadDeJugadores` en `hosts/*.json`), el máxi
 
 ## Probar sin gastar tokens
 
-Son 19 y **todas tienen que quedar en verde antes de commitear**:
+Son 21 y **todas tienen que quedar en verde antes de commitear**:
 
 | Comando | Qué mira |
 |---|---|
@@ -805,6 +886,8 @@ Son 19 y **todas tienen que quedar en verde antes de commitear**:
 | `prueba-elo` | El cálculo, el circuito y el color del nombre |
 | `prueba-mapas` | Que HaxBall valide los 4 mapas |
 | `prueba-config` | Parámetros y comandos desde el panel: en vivo, en la base y con permisos |
+| `prueba-carrusel` | Las imágenes del carrusel: archivos seguros, portada pública y panel con permisos |
+| `prueba-elo-salas` | ELO por sala: tablas separadas, el procedimiento del general y el modo sin base |
 
 Las que hablan con la base **no fallan si está apagada**: avisan y saltean esa parte.
 
@@ -876,7 +959,7 @@ Cosas que costaron encontrar y conviene no volver a pisar:
 
 1. Tocar los **bloques** en `parches/bloques/` (nunca el final de `script.js` a mano) y correr
    `npm run parchar`.
-2. `node --check script.js` y las **19 pruebas en verde**. No commitear con una en rojo: ya pasó
+2. `node --check script.js` y las **21 pruebas en verde**. No commitear con una en rojo: ya pasó
    una vez de pushear con `prueba-discord` fallando.
 3. Actualizar `README.md` (para la gente) y este archivo (para el que siga programando).
 4. Commit y push.

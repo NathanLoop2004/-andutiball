@@ -188,6 +188,8 @@ npm run prueba-nicks     # que no te echen por tu propio nombre
 npm run prueba-rangos    # que un admin puesto a mano se caiga solo
 npm run prueba-web       # la portada, el login y el panel solo para admins
 npm run prueba-config    # parámetros y comandos desde el panel, con permisos
+npm run prueba-carrusel  # el carrusel: imágenes seguras y permisos
+npm run prueba-elo-salas # el ELO de cada sala y el general
 npm run prueba-tunel     # el aviso del link (un mensaje que se actualiza)
 npm run prueba-espia     # que el panel no repita los mensajes
 npm run prueba-chat      # hablar normal no dispara comandos
@@ -289,7 +291,9 @@ más de 6 en la x3, más de 8 en la x4. Los AFK no cuentan.
 
 1. Los dos primeros espectadores pasan solos a Red y Blue: son los **capitanes**.
 2. El bot avisa de quién es el turno y lista a los espectadores con su número.
-3. El capitán escribe **`!7`** (o `!elegir 7`). Va con `!`: un número suelto en el chat es hablar, no elegir.
+3. El capitán escribe **`!2`** (o `!elegir 2`): el número es el **lugar en la lista de espectadores**
+   (`!1` el primero, `!2` el segundo…), sin contar al bot. El cartel del turno muestra cada número con
+   su nombre. Va con `!`: un número suelto en el chat es hablar, no elegir.
 4. Se alterna: Red elige uno, después Blue, hasta llenar los dos equipos.
 
 **El que no elige, deja el lugar.** El capitán tiene **15 segundos**; sobre el final el bot
@@ -451,6 +455,19 @@ muestra en la consola.
 Las pantallas viven en `public/frm/<pantalla>/index.html` (el mismo encarpetado que usa
 app-centralshop), con `public/css/` y `public/js/` compartidos.
 
+## 🖼️ Carrusel de la portada
+
+Arriba de todo en la portada pasan las imágenes que se cargan desde el panel, en la sección
+**Carrusel** (OWNER, CO-OWNER, HOSTER y AYUDANTE):
+
+- Se sube arrastrando o eligiendo la imagen: **PNG, JPG, WebP o GIF, hasta 3 MB**. Se ve mejor
+  apaisada, por ejemplo 1600×600.
+- Cada una puede tener título, un texto y un enlace (al tocarla, lleva ahí).
+- Se pueden activar o desactivar, ordenar con las flechas y borrar.
+
+La imagen se guarda en la base (`imagenes_carrusel`). La portada la ve cualquiera, con o sin
+cuenta. El ranking de la portada va de a 10 jugadores por página, con buscador.
+
 ## ⚙️ Configuración de las salas
 
 En el panel, la sección **Configuración** deja cambiar los parámetros de juego de cada sala y
@@ -474,6 +491,9 @@ salas abren con lo de `hosts/*.json`, como siempre.
 cambiar entre claro y oscuro. Lo que elegís queda guardado en tu navegador.
 
 ## 🎖️ Rangos
+
+**Solo OWNER y CO-OWNER** ven la sección Rangos del panel. Para darle un rango a alguien se busca
+y se elige su **cuenta** (las creadas en la web), en vez de escribir el nick a mano.
 
 Los rangos (OWNER, CO-OWNER, HOSTER, AYUDANTE…) viven en la tabla **`rangos`** de la base y se
 administran desde el panel. **La sala los revisa cada 5 segundos** y deja a cada uno como dice la
@@ -597,6 +617,16 @@ npm run prueba-mapas     # HaxBall los valida
 Para ver un mapa sin abrir una sala: `node pruebas/render.js mapas/nanduti-futsal-x3.hbs vista.png`
 
 ## 📊 ELO y divisiones
+
+**Cada sala tiene su propio ELO** (Futsal 3v3, 4v4, automático y Real Soccer), y además hay un
+**ELO general**, que es el promedio de tus ELO de cada sala pesado por los partidos que jugaste en
+cada una (si jugaste mucho más en 3v3, el 3v3 pesa más). Cada partido suma o resta solo en la sala
+donde se jugó; el general lo recalcula la base sola.
+
+- En la sala: `!elo` muestra el de esa sala y el general · `!top` los mejores de esa sala ·
+  `!top general` los mejores de todas.
+- En la web: el ranking tiene pestañas **General** y una por sala, y "Tu ELO" muestra el general
+  y el de cada sala.
 
 Cada jugador tiene un **puntaje** que sube si gana y baja si pierde. Ese puntaje lo ubica en una
 división, así se ve de una quién recién empieza y quién juega bien.

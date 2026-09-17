@@ -51,7 +51,7 @@ const VISTAS = [
 
 let salas = [];
 let salaAbierta = null;          // clave de la sala elegida
-let vistaAbierta = "cancha";     // pestaña de adentro
+let vistaAbierta = "cancha";     // pestaña de adentro (Rangos solo la ven OWNER y CO-OWNER)
 let ultimaFirma = "";            // para no redibujar si nada cambió
 let cambioDeVista = false;       // true cuando el usuario cambia de pestaña o de sala
 
@@ -108,7 +108,7 @@ function pintarSala() {
   const html = `
     <div class="chips">${chips}</div>
     <div class="subpestanas" role="tablist">
-      ${VISTAS.map((v) => `<button role="tab" data-vista="${v.id}" aria-selected="${v.id === vistaAbierta}">${v.nombre}</button>`).join("")}
+      ${VISTAS.filter((v) => v.id !== "roles" || (Sesion.usuario() || {}).rangos).map((v) => `<button role="tab" data-vista="${v.id}" aria-selected="${v.id === vistaAbierta}">${v.nombre}</button>`).join("")}
     </div>
     <div class="vista" id="vista">${sala.ok ? contenido(vistaAbierta, e) : `<div class="vacio">No se pudo conectar con esta sala.</div>`}</div>
   `;

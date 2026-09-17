@@ -157,11 +157,11 @@ var CantidadCambiarTamano = 1;
 // ▇▇▇▇▇▇▇ ⚽👕 CAMISETAS POR DEFECTO ⚽👕 ▇▇▇▇▇▇▇
 
 // CAMISETA EQUIPO RED 🔴
-var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
+var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
 var NombreEquipoRojo = "OLIMPIA";
 
 // CAMISETA EQUIPO BLUE 🔵
-var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
+var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
 var NombreEquipoAzul = "CERRO PORTEÑO";
 
 
@@ -19313,6 +19313,19 @@ function espectadoresListos() {
 	});
 }
 
+// Los espectadores en el orden en que aparecen en la sala, sin el bot. El número que escribe el
+// capitán es la posición en ESTA lista: !1 es el primer espectador, !2 el segundo…
+// (antes era el id de HaxBall, que no se ve en ningún lado).
+function espectadoresEnOrden() {
+	return room.getPlayerList().filter(function (j) { return j.team === 0 && j.id !== 0; });
+}
+
+function numeroDe(jugador) {
+	var lista = espectadoresEnOrden();
+	for (var i = 0; i < lista.length; i++) if (lista[i].id === jugador.id) return i + 1;
+	return 0;
+}
+
 // El capitán es el primero que entró al equipo. Si el equipo está vacío, todavía no hay.
 function capitanDe(equipo) {
 	var lista = listaDelEquipo(equipo);
@@ -19363,7 +19376,8 @@ function moverA(jugador, equipo) {
 function avisarTurno(libres) {
 	var cap = capitanDe(turnoDelEquipo);
 	var quien = cap ? cap.name : "el primero que entre";
-	var aviso = turnoDelEquipo + "|" + quien + "|" + libres.map(function (j) { return j.id; }).join(",");
+	// Si cambian los números (alguien entró o salió), se vuelve a avisar
+	var aviso = turnoDelEquipo + "|" + quien + "|" + libres.map(function (j) { return j.id + ":" + numeroDe(j); }).join(",");
 	if (aviso === ultimoAvisoTurno) return;     // no repetimos el mismo cartel
 	ultimoAvisoTurno = aviso;
 
@@ -19374,16 +19388,21 @@ function avisarTurno(libres) {
 		null, color, "bold", 2
 	);
 	room.sendAnnouncement(
-		"   Escribí !numero para elegir: " + libres.map(function (j) { return "!" + j.id + " " + j.name; }).join("   "),
+		"   Escribí !numero para elegir: " + libres.map(function (j) { return "!" + numeroDe(j) + " " + j.name; }).join("   "),
 		null, color, "small", 0
 	);
 }
 
-function elegirJugador(quienElige, idElegido) {
-	var libres = espectadoresListos();
-	var elegido = libres.filter(function (j) { return j.id === idElegido; })[0];
+// numero: la posición entre los espectadores (1, 2, 3…), no el id del jugador
+function elegirJugador(quienElige, numero) {
+	var elegido = espectadoresEnOrden()[numero - 1];
 	if (!elegido) {
-		room.sendAnnouncement("❌ Ese número no está en la lista de espectadores.", quienElige.id, 0xFF4444, "bold", 2);
+		room.sendAnnouncement("❌ No hay ningún espectador con el número " + numero + ".", quienElige.id, 0xFF4444, "bold", 2);
+		return false;
+	}
+	var libres = espectadoresListos();
+	if (!libres.some(function (j) { return j.id === elegido.id; })) {
+		room.sendAnnouncement("❌ " + elegido.name + " no se puede elegir ahora (está AFK o no puso su clave).", quienElige.id, 0xFF4444, "bold", 2);
 		return false;
 	}
 	if (listaDelEquipo(turnoDelEquipo).length >= cupoPorEquipo()) {
@@ -19536,15 +19555,32 @@ function revisarTurnos() {
 // y mostramos lo que Node nos devuelve. Así el puntaje sobrevive a que se cierre la sala y las
 // 4 salas comparten la misma tabla.
 //
-// Comandos: !elo (el propio o el de otro) · !top (los 10 mejores) · !divisiones
+// Hay dos ELO: el de ESTA sala y el GENERAL (las 4 salas juntas). Cada partido mueve los dos.
+// El color del nombre y la división que se muestran son los de esta sala.
+//
+// Comandos: !elo (el propio o el de otro: sala y general) · !top (los 10 mejores de esta sala)
+//           · !top general · !divisiones
 
 var ColorearNombrePorElo = true;       // el nombre en el chat sale del color de su división
-var ELO = window.__ELO || {};          // nick en minúscula -> { elo, partidos, division, emoji, color }
+var ELO = {};                          // esta sala: nick en minúscula -> { nombre, elo, partidos, division, emoji, color }
+var ELO_GENERAL = {};                  // lo mismo, pero de las 4 salas juntas
 var eloDelPartido = null;              // quiénes estaban jugando cuando arrancó
 var mapaDelPartido = null;             // el nombre del mapa puesto (lo avisa onStadiumChange)
 
+// El launcher manda { sala, general }. Si llega una tabla sola (versión vieja), vale para las dos.
+function cargarElo(datos) {
+	if (datos && (datos.sala || datos.general)) {
+		ELO = datos.sala || {};
+		ELO_GENERAL = datos.general || {};
+	} else {
+		ELO = datos || {};
+		ELO_GENERAL = datos || {};
+	}
+}
+cargarElo(window.__ELO);
+
 window.__eloActualizar = function (datos) {
-	ELO = datos || {};
+	cargarElo(datos);
 };
 
 // El launcher deja acá los avisos que tiene que procesar Node
@@ -19561,8 +19597,32 @@ function fichaElo(nombre) {
 
 function textoElo(nombre) {
 	var f = fichaElo(nombre);
-	if (!f) return nombre + " todavía no jugó ningún partido (arranca en 1000).";
-	return f.emoji + " " + nombre + " — " + f.elo + " pts · " + f.division + " · " + f.partidos + " partidos";
+	var g = ELO_GENERAL[String(nombre).toLowerCase()] || null;
+	if (!f && !g) return nombre + " todavía no jugó ningún partido (arranca en 1000).";
+	var enSala = f
+		? "En esta sala: " + f.emoji + " " + f.elo + " pts · " + f.division + " · " + f.partidos + " partidos"
+		: "En esta sala todavía no jugó (arranca en 1000)";
+	var general = g ? "General: " + g.emoji + " " + g.elo + " pts · " + g.division : "General: 1000 pts";
+	return nombre + " — " + enSala + "  |  " + general;
+}
+
+function mostrarTop(player, tabla, titulo) {
+	var lista = Object.keys(tabla)
+		.map(function (k) { return tabla[k]; })
+		.filter(function (f) { return f && f.partidos > 0; })
+		.sort(function (a, b) { return b.elo - a.elo; })
+		.slice(0, 10);
+	if (!lista.length) {
+		room.sendAnnouncement("📊 Todavía no hay partidos jugados" + (tabla === ELO ? " en esta sala." : "."), player.id, 0xFFD100, "small", 0);
+		return;
+	}
+	room.sendAnnouncement("🏆 " + titulo, player.id, 0xFFD100, "bold", 2);
+	for (var i = 0; i < lista.length; i++) {
+		room.sendAnnouncement(
+			"   " + (i + 1) + ". " + lista[i].emoji + " " + lista[i].nombre + " — " + lista[i].elo + " pts (" + lista[i].division + ")",
+			player.id, 0xFFFFFF, "small", 0
+		);
+	}
 }
 
 // Los que están en la cancha cuando arranca el partido son los que después suman o pierden
@@ -19677,22 +19737,12 @@ function jugadoresEnCancha() {
 		}
 
 		if (bajo === "!top") {
-			var lista = Object.keys(ELO)
-				.map(function (k) { return ELO[k]; })
-				.filter(function (f) { return f && f.partidos > 0; })
-				.sort(function (a, b) { return b.elo - a.elo; })
-				.slice(0, 10);
-			if (!lista.length) {
-				room.sendAnnouncement("📊 Todavía no hay partidos jugados.", player.id, 0xFFD100, "small", 0);
-				return false;
-			}
-			room.sendAnnouncement("🏆 TOP 10 — ÑandutíBall", player.id, 0xFFD100, "bold", 2);
-			for (var i = 0; i < lista.length; i++) {
-				room.sendAnnouncement(
-					"   " + (i + 1) + ". " + lista[i].emoji + " " + lista[i].nombre + " — " + lista[i].elo + " pts (" + lista[i].division + ")",
-					player.id, 0xFFFFFF, "small", 0
-				);
-			}
+			mostrarTop(player, ELO, "TOP 10 de esta sala — ÑandutíBall");
+			return false;
+		}
+
+		if (bajo === "!top general" || bajo === "!topgeneral") {
+			mostrarTop(player, ELO_GENERAL, "TOP 10 general (las 4 salas) — ÑandutíBall");
 			return false;
 		}
 
@@ -20470,6 +20520,98 @@ function avisarDiscordEnElChat() {
 		setInterval(avisarDiscordEnElChat, MinutosEntreAvisos * 60 * 1000);
 		console.log("📣 Invitación al Discord en el chat cada " + MinutosEntreAvisos + " minutos");
 	}
+})();
+
+
+// ▇▇▇▇▇▇▇▇▇ ⚙️ CONFIGURACIÓN DESDE LA BASE — ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// Los parámetros de juego y los comandos apagados se manejan desde el panel (Configuración),
+// y los guarda la base (tablas parametros_sala y comandos_apagados).
+//
+//   · Al abrir la sala, el launcher ya escribe en el script los valores de la base.
+//   · Después manda cada pocos segundos window.__configSala({ parametros, comandosApagados }).
+//     Acá se aplica SOLO lo que cambió desde la última vez: si un admin usa un comando de la sala
+//     (por ejemplo !ganasigue), la base no se lo vuelve a pisar a cada rato.
+//   · Minutos por partido y límite de goles se aplican cuando no hay partido (HaxBall no deja
+//     cambiarlos en pleno juego): si hay uno en curso, quedan para cuando termine.
+//
+// Va antes de 🤫 COMANDOS SIN ECO, así corta los comandos apagados antes que cualquier otro bloque.
+
+var ConfigDesdeLaBase = true;
+var configVista = window.__CONFIG_INICIAL && window.__CONFIG_INICIAL.parametros ? JSON.parse(JSON.stringify(window.__CONFIG_INICIAL.parametros)) : null;
+var comandosApagados = window.__CONFIG_INICIAL && Array.isArray(window.__CONFIG_INICIAL.comandosApagados) ? window.__CONFIG_INICIAL.comandosApagados.slice() : [];
+var limitesPendientes = {};   // TiempoDeJuego / LimiteDeGoles esperando que termine el partido
+
+function hayPartidoEnCurso() {
+	try { return room.getScores() !== null; } catch (e) { return false; }
+}
+
+function aplicarLimite(nombre, valor) {
+	if (hayPartidoEnCurso()) { limitesPendientes[nombre] = valor; return; }
+	try {
+		if (nombre === "TiempoDeJuego") room.setTimeLimit(valor);
+		if (nombre === "LimiteDeGoles") room.setScoreLimit(valor);
+		delete limitesPendientes[nombre];
+	} catch (e) {
+		limitesPendientes[nombre] = valor;
+	}
+}
+
+// Cambia la variable del script por su nombre. Como este bloque vive en el mismo script, el eval
+// llega también a las variables declaradas con let (modoJueganTodos, maxPlayersPerTeam…).
+function asignarParametro(nombre, valor) {
+	if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(nombre)) return false;
+	try {
+		window.__valorDeConfig = valor;
+		eval(nombre + " = window.__valorDeConfig");
+		delete window.__valorDeConfig;
+	} catch (e) {
+		console.warn("⚙️ No se pudo aplicar " + nombre + ": " + e.message);
+		return false;
+	}
+	if (nombre === "TiempoDeJuego" || nombre === "LimiteDeGoles") aplicarLimite(nombre, valor);
+	if (nombre === "ModoDeEquipos" && typeof aplicarModoDeEquipos === "function") {
+		try { aplicarModoDeEquipos(); } catch (e) {}
+	}
+	return true;
+}
+
+window.__configSala = function (datos) {
+	if (!ConfigDesdeLaBase || !datos) return;
+	if (Array.isArray(datos.comandosApagados)) comandosApagados = datos.comandosApagados.map(function (c) { return String(c).toLowerCase(); });
+
+	var nuevos = datos.parametros || {};
+	// La primera vez sin valores de arranque solo se anota lo que hay: ya está en el script
+	if (!configVista) { configVista = JSON.parse(JSON.stringify(nuevos)); return; }
+
+	var cambiados = [];
+	Object.keys(nuevos).forEach(function (nombre) {
+		if (JSON.stringify(nuevos[nombre]) === JSON.stringify(configVista[nombre])) return;
+		if (asignarParametro(nombre, nuevos[nombre])) cambiados.push(nombre);
+		configVista[nombre] = nuevos[nombre];
+	});
+	if (cambiados.length) console.log("⚙️ Configuración aplicada desde el panel: " + cambiados.join(", "));
+};
+
+(function () {
+	// Lo que quedó esperando a que termine el partido
+	var anteriorStop = room.onGameStop;
+	room.onGameStop = function (byPlayer) {
+		if (typeof anteriorStop === "function") anteriorStop(byPlayer);
+		Object.keys(limitesPendientes).forEach(function (nombre) { aplicarLimite(nombre, limitesPendientes[nombre]); });
+	};
+
+	// Los comandos apagados no llegan a ningún otro bloque ni al script
+	var anteriorChat = room.onPlayerChat;
+	room.onPlayerChat = function (player, message) {
+		var primera = String(message).trim().split(/\s+/)[0].toLowerCase();
+		if (primera.charAt(0) === "!" && comandosApagados.indexOf(primera) !== -1) {
+			room.sendAnnouncement("🚫 El comando " + primera + " está desactivado en esta sala.", player.id, 0xFF6B6B, "bold", 2);
+			return false;
+		}
+		return typeof anteriorChat === "function" ? anteriorChat(player, message) : true;
+	};
+
+	console.log("⚙️ Configuración desde la base: activa (" + comandosApagados.length + " comandos apagados)");
 })();
 
 

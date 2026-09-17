@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Carrusel · ÑandutíBall</title>
+<link rel="icon" href="/img/logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/css/nanduti.css">
+<script src="/js/tema.js"></script>
+<script src="/js/sesion.js"></script>
+<script>if (!Sesion.usuario()) location.replace("/frm/login/?volver=" + encodeURIComponent("/frm/carrusel/"));</script>
+</head>
+<body>
+
+<header class="barra ancha">
+  <a class="marca" href="/"><img src="/img/logo.svg" alt=""><span>ÑandutíBall</span></a>
+  <div class="derecha" id="derecha"></div>
+</header>
+
+<main class="contenido ancho">
+  <div class="cabecera">
+    <div>
+      <h1>Carrusel</h1>
+      <p>Las imágenes que pasan arriba de todo en la portada. Se muestran en este orden y solo las activas.</p>
+    </div>
+    <a class="boton" href="/" target="_blank" rel="noopener">Ver la portada ↗</a>
+  </div>
+
+  <section class="tarjeta">
+    <div class="tarjeta-cabeza"><h2>Subir una imagen</h2><span class="tenue" style="font-size:13px">PNG, JPG, WebP o GIF · hasta 3 MB · se ve mejor apaisada (por ejemplo 1600×600)</span></div>
+    <form class="tarjeta-cuerpo carrusel-subir" id="formSubir">
+      <label class="soltar" id="soltar" for="archivo">
+        <input type="file" id="archivo" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+        <img id="vistaPrevia" alt="" hidden>
+        <span id="textoSoltar"><b>Elegí una imagen</b> o arrastrala acá</span>
+      </label>
+      <div class="carrusel-campos">
+        <div class="campo" style="margin-top:0">
+          <label for="titulo">Título (opcional)</label>
+          <input type="text" id="titulo" maxlength="80" placeholder="Torneo de verano">
+        </div>
+        <div class="campo">
+          <label for="descripcion">Texto (opcional)</label>
+          <input type="text" id="descripcion" maxlength="200" placeholder="Inscripciones abiertas hasta el viernes">
+        </div>
+        <div class="campo">
+          <label for="enlace">Enlace al tocarla (opcional)</label>
+          <input type="text" id="enlace" maxlength="500" placeholder="https://discord.gg/…">
+        </div>
+        <div class="fila-botones"><button class="boton principal" type="submit" id="subir" disabled>Subir imagen</button></div>
+        <div class="aviso" id="avisoSubir" role="status"></div>
+      </div>
+    </form>
+  </section>
+
+  <div class="seccion-titulo"><h2>Imágenes</h2><span id="cantidad"></span></div>
+  <div class="aviso" id="aviso" role="status"></div>
+  <section class="tarjeta" id="lista"><div class="tarjeta-cuerpo tenue">Cargando…</div></section>
+</main>
+
+<footer class="pie">ÑandutíBall · Panel de administración</footer>
+
+<style>
+  .carrusel-subir { display: grid; grid-template-columns: minmax(240px, 380px) 1fr; gap: 24px; align-items: start; }
+  .soltar { display: grid; place-items: center; aspect-ratio: 8 / 3; border: 2px dashed var(--borde-fuerte); border-radius: var(--radio); background: var(--superficie-2); color: var(--suave); text-align: center; cursor: pointer; overflow: hidden; margin: 0; font-weight: 400; padding: 12px; }
+  .soltar.encima { border-color: var(--acento); background: var(--acento-suave); }
+  .soltar img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
+  .imagen-fila { display: grid; grid-template-columns: 200px 1fr auto; gap: 18px; align-items: center; padding: 16px 22px; border-bottom: 1px solid var(--borde); }
+  .imagen-fila:last-child { border-bottom: 0; }
+  .imagen-fila.inactiva .mini { opacity: .45; }
+  .mini { width: 200px; aspect-ratio: 8 / 3; object-fit: cover; border-radius: 8px; border: 1px solid var(--borde); background: var(--superficie-2); display: block; }
+  .imagen-datos { display: grid; gap: 8px; min-width: 0; }
+  .imagen-datos .fila2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .imagen-datos input { height: 34px; font-size: 14px; }
+  .imagen-lado { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+  .imagen-lado .mover { display: flex; gap: 6px; }
+  @media (max-width: 860px) {
+    .carrusel-subir { grid-template-columns: 1fr; }
+    .imagen-fila { grid-template-columns: 1fr; }
+    .mini { width: 100%; }
+    .imagen-lado { flex-direction: row; justify-content: space-between; align-items: center; }
+    .imagen-datos .fila2 { grid-template-columns: 1fr; }
+  }
+</style>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = Sesion.escapar;
+let imagenes = [];
+let archivo = null;
+
+function avisar(donde, texto, clase) {
+  $(donde).className = "aviso " + (clase || "");
+  $(donde).textContent = texto || "";
+  clearTimeout(avisar["_" + donde]);
+  if (texto && clase === "ok") avisar["_" + donde] = setTimeout(() => avisar(donde, ""), 4000);
+}
+
+const kb = (n) => n > 1024 * 1024 ? (n / 1024 / 1024).toFixed(1) + " MB" : Math.round(n / 1024) + " KB";
+
+function manejarError(error) {
+  if (/iniciar sesión/i.test(error.message)) location.replace("/frm/login/?volver=" + encodeURIComponent("/frm/carrusel/"));
+  if (/solo para OWNER/i.test(error.message)) location.replace("/?sinpermiso=1");
+}
+
+// ── Subir ──
+function elegir(f) {
+  if (!f) return;
+  if (!/^image\/(png|jpeg|webp|gif)$/.test(f.type)) return avisar("avisoSubir", "Ese archivo no es una imagen PNG, JPG, WebP o GIF.", "mal");
+  if (f.size > 3 * 1024 * 1024) return avisar("avisoSubir", "La imagen pesa más de 3 MB.", "mal");
+  archivo = f;
+  $("vistaPrevia").src = URL.createObjectURL(f);
+  $("vistaPrevia").hidden = false;
+  $("textoSoltar").hidden = true;
+  $("subir").disabled = false;
+  avisar("avisoSubir", f.name + " · " + kb(f.size), "info");
+}
+$("archivo").addEventListener("change", (e) => elegir(e.target.files[0]));
+["dragenter", "dragover"].forEach((ev) => $("soltar").addEventListener(ev, (e) => { e.preventDefault(); $("soltar").classList.add("encima"); }));
+["dragleave", "drop"].forEach((ev) => $("soltar").addEventListener(ev, (e) => { e.preventDefault(); $("soltar").classList.remove("encima"); }));
+$("soltar").addEventListener("drop", (e) => elegir(e.dataTransfer.files[0]));
+
+$("formSubir").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!archivo) return;
+  $("subir").disabled = true;
+  avisar("avisoSubir", "Subiendo…", "info");
+  const params = new URLSearchParams();
+  for (const campo of ["titulo", "descripcion", "enlace"]) if ($(campo).value.trim()) params.set(campo, $(campo).value.trim());
+  try {
+    await Sesion.pedir("/api/carrusel?" + params, { method: "POST", headers: { "Content-Type": archivo.type }, body: archivo });
+    archivo = null;
+    $("formSubir").reset();
+    $("vistaPrevia").hidden = true;
+    $("textoSoltar").hidden = false;
+    avisar("avisoSubir", "Imagen subida. Ya sale en la portada.", "ok");
+    cargar();
+  } catch (error) {
+    manejarError(error);
+    avisar("avisoSubir", error.message, "mal");
+    $("subir").disabled = false;
+  }
+});
+
+// ── Lista ──
+function pintar() {
+  $("cantidad").textContent = imagenes.length ? `${imagenes.filter((i) => i.activa).length} activas de ${imagenes.length}` : "";
+  if (!imagenes.length) {
+    $("lista").innerHTML = '<div class="tarjeta-cuerpo tenue">Todavía no hay imágenes. Mientras no haya ninguna activa, la portada no muestra el carrusel.</div>';
+    return;
+  }
+  $("lista").innerHTML = imagenes.map((img, i) => `
+    <div class="imagen-fila ${img.activa ? "" : "inactiva"}" data-id="${img.id}">
+      <img class="mini" src="${esc(img.url)}" alt="${esc(img.titulo || "Imagen " + (i + 1))}" loading="lazy">
+      <div class="imagen-datos">
+        <div class="fila2">
+          <input type="text" data-campo="titulo" value="${esc(img.titulo || "")}" maxlength="80" placeholder="Título" aria-label="Título">
+          <input type="text" data-campo="enlace" value="${esc(img.enlace || "")}" maxlength="500" placeholder="Enlace (opcional)" aria-label="Enlace">
+        </div>
+        <input type="text" data-campo="descripcion" value="${esc(img.descripcion || "")}" maxlength="200" placeholder="Texto (opcional)" aria-label="Texto">
+        <span class="tenue" style="font-size:12px">${kb(img.tamano)} · ${esc(img.tipo.replace("image/", "").toUpperCase())}${img.subidaPor ? " · subida por " + esc(img.subidaPor) : ""}</span>
+      </div>
+      <div class="imagen-lado">
+        <label style="display:flex;gap:8px;align-items:center;margin:0;font-weight:500">
+          Activa <span class="interruptor"><input type="checkbox" data-activa ${img.activa ? "checked" : ""}><span></span></span>
+        </label>
+        <div class="mover">
+          <button class="boton chico" data-mover="-1" ${i === 0 ? "disabled" : ""} aria-label="Subir en el orden">↑</button>
+          <button class="boton chico" data-mover="1" ${i === imagenes.length - 1 ? "disabled" : ""} aria-label="Bajar en el orden">↓</button>
+          <button class="boton chico peligro" data-borrar>Borrar</button>
+        </div>
+      </div>
+    </div>`).join("");
+}
+
+async function cargar() {
+  try {
+    imagenes = (await Sesion.pedir("/api/carrusel/todas")).imagenes;
+    pintar();
+  } catch (error) {
+    manejarError(error);
+    $("lista").innerHTML = `<div class="tarjeta-cuerpo">${esc(error.message)}</div>`;
+  }
+}
+
+async function editar(id, cambios) {
+  try {
+    await Sesion.pedir("/api/carrusel/" + id, { method: "PUT", body: JSON.stringify(cambios) });
+    avisar("aviso", "Guardado.", "ok");
+  } catch (error) {
+    avisar("aviso", error.message, "mal");
+  }
+  cargar();
+}
+
+$("lista").addEventListener("change", (e) => {
+  const fila = e.target.closest("[data-id]");
+  if (!fila) return;
+  const id = fila.dataset.id;
+  if (e.target.matches("[data-activa]")) return editar(id, { activa: e.target.checked });
+  if (e.target.dataset.campo) editar(id, { [e.target.dataset.campo]: e.target.value });
+});
+
+$("lista").addEventListener("click", async (e) => {
+  const fila = e.target.closest("[data-id]");
+  if (!fila) return;
+  const id = Number(fila.dataset.id);
+  const mover = e.target.closest("[data-mover]");
+  if (mover) {
+    const ids = imagenes.map((i) => i.id);
+    const desde = ids.indexOf(id);
+    const hasta = desde + Number(mover.dataset.mover);
+    if (hasta < 0 || hasta >= ids.length) return;
+    [ids[desde], ids[hasta]] = [ids[hasta], ids[desde]];
+    try {
+      imagenes = (await Sesion.pedir("/api/carrusel/orden", { method: "POST", body: JSON.stringify({ ids }) })).imagenes;
+      pintar();
+    } catch (error) { avisar("aviso", error.message, "mal"); }
+  }
+  if (e.target.closest("[data-borrar]")) {
+    if (!confirm("¿Borrar esta imagen? No se puede deshacer.")) return;
+    try {
+      await Sesion.pedir("/api/carrusel/" + id, { method: "DELETE" });
+      avisar("aviso", "Imagen borrada.", "ok");
+    } catch (error) { avisar("aviso", error.message, "mal"); }
+    cargar();
+  }
+});
+
+async function iniciar() {
+  const u = await Sesion.refrescar();
+  if (!u) return location.replace("/frm/login/?volver=" + encodeURIComponent("/frm/carrusel/"));
+  if (!Sesion.exigirConfig()) return;
+  Sesion.pintarBarra("derecha");
+  Sesion.pintarNavAdmin("carrusel");
+  Sesion.mantener();
+  cargar();
+}
+
+if (Sesion.usuario()) {
+  Sesion.pintarBarra("derecha");
+  Sesion.pintarNavAdmin("carrusel");
+  iniciar();
+}
+</script>
+</body>
+</html>

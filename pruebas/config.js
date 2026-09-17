@@ -189,6 +189,25 @@ function revisar(titulo, condicion, detalle) {
       revisar("Puede apagar y prender comandos", cmd.status === 200 && cmd2.status === 200);
       const noSala = await pedir("/api/config/inventada/parametros");
       revisar("Una sala que no existe da error", noSala.status === 400, noSala.datos.error);
+
+      // Rangos: solo OWNER y CO-OWNER (HOSTER ya tiene el rango puesto acá)
+      const rangosHoster = await pedir("/api/rangos");
+      revisar("HOSTER no puede ver los rangos", rangosHoster.status === 403, rangosHoster.datos.error);
+      const buscarHoster = await pedir("/api/rangos/usuarios?q=");
+      revisar("Ni buscar cuentas para darles rango", buscarHoster.status === 403, "HTTP " + buscarHoster.status);
+      await RangoModel.asignarNick({ nombreRango: nombreDe("CO-OWNER"), nick });
+      const rangosCo = await pedir("/api/rangos");
+      revisar("CO-OWNER sí ve los rangos", rangosCo.status === 200 && Array.isArray(rangosCo.datos.roles), "HTTP " + rangosCo.status);
+      const sinClaveNick = "SinClave" + Date.now();
+      await base().usuario.create({ data: { nick: sinClaveNick } });
+      try {
+        const cuentas = await pedir("/api/rangos/usuarios?q=" + encodeURIComponent(nick.slice(0, 6)));
+        revisar("Busca cuentas que existen para elegirlas", cuentas.status === 200 && cuentas.datos.usuarios.includes(nick), cuentas.datos.usuarios.join(", "));
+        const todas = await pedir("/api/rangos/usuarios?q=SinClave");
+        revisar("No ofrece nicks sin cuenta de verdad (sin clave)", todas.status === 200 && !todas.datos.usuarios.includes(sinClaveNick));
+      } finally {
+        await base().usuario.deleteMany({ where: { nick: sinClaveNick } });
+      }
     } finally {
       await RangoModel.quitarNick(nick);
       await base().usuario.deleteMany({ where: { nick } });

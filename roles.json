@@ -18,14 +18,16 @@
     {
       "id": "rol3",
       "nombre": "🌐 HOSTER",
-      "admin": true,
+      "admin": false,
       "nicks": []
     },
     {
       "id": "rol4",
       "nombre": "🛠️ AYUDANTE",
-      "admin": true,
-      "nicks": []
+      "admin": false,
+      "nicks": [
+        "rj"
+      ]
     },
     {
       "id": "rol5",

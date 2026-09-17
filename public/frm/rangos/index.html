@@ -11,9 +11,19 @@
 <link rel="stylesheet" href="/css/nanduti.css">
 <script src="/js/tema.js"></script>
 <script src="/js/sesion.js"></script>
+<script>if (!Sesion.usuario()) location.replace("/frm/login/?volver=" + encodeURIComponent("/frm/rangos/"));</script>
+<style>
+  .elegir { position: relative; flex: 1; max-width: 340px; }
+  .elegir input { height: 34px; }
+  .opciones { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 30; max-height: 240px; overflow: auto; background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); box-shadow: var(--sombra-menu); padding: 4px; }
+  .opciones button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 10px; border: 0; border-radius: var(--radio-chico); background: transparent; color: var(--texto); font: 14px var(--fuente); text-align: left; cursor: pointer; }
+  .opciones button:hover, .opciones button.activa { background: var(--superficie-2); }
+  .opciones button .avatar { width: 24px; height: 24px; font-size: 11px; }
+  .opciones .nada { padding: 8px 10px; color: var(--tenue); font-size: 13px; }
+  .nick.sin-cuenta { border-style: dashed; }
+</style>
 </head>
 <body>
-<script>if (!Sesion.exigirAdmin()) { document.documentElement.innerHTML = ""; } else { Sesion.mantener(); }</script>
 
 <header class="barra ancha">
   <a class="marca" href="/"><img src="/img/logo.svg" alt=""><span>ÑandutíBall</span></a>
@@ -24,7 +34,7 @@
   <div class="cabecera">
     <div>
       <h1>Rangos</h1>
-      <p>Quién tiene cada rango y cuáles dan admin. Las salas encendidas lo toman en unos segundos, sin reiniciarlas.</p>
+      <p>Quién tiene cada rango y cuáles dan admin. Solo OWNER y CO-OWNER ven esta pantalla. Las salas lo toman en unos segundos.</p>
     </div>
     <div class="acciones">
       <button class="boton" id="recargar">Descartar cambios</button>
@@ -39,13 +49,11 @@
 <footer class="pie">ÑandutíBall · Panel de administración</footer>
 
 <script>
-Sesion.pintarBarra("derecha");
-Sesion.pintarNavAdmin("rangos");
-Sesion.refrescar().then((u) => { if (u) { Sesion.pintarBarra("derecha"); Sesion.pintarNavAdmin("rangos"); } });
-
 let datos = { roles: [] };
 let sinGuardar = false;
+let cuentas = new Set();   // nicks (en minúscula) que tienen cuenta, para marcar los que no
 const esc = (t) => String(t ?? "").replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
+const igual = (a, b) => String(a).trim().toLowerCase() === String(b).trim().toLowerCase();
 
 function avisar(texto, clase) {
   const aviso = document.getElementById("aviso");
@@ -72,83 +80,176 @@ function pintar() {
         </div>
         <div class="nicks">
           ${rol.nicks.length
-            ? rol.nicks.map((n, j) => `<span class="nick">${esc(n)}<button data-quitar="${i}-${j}" title="Quitar a ${esc(n)}" aria-label="Quitar a ${esc(n)}">×</button></span>`).join("")
+            ? rol.nicks.map((n, j) => {
+                const sinCuenta = cuentas.size && !cuentas.has(n.toLowerCase());
+                return `<span class="nick ${sinCuenta ? "sin-cuenta" : ""}" ${sinCuenta ? 'title="Este nick no tiene cuenta en la web"' : ""}>${esc(n)}<button data-quitar="${i}-${j}" title="Quitar a ${esc(n)}" aria-label="Quitar a ${esc(n)}">×</button></span>`;
+              }).join("")
             : '<span class="tenue" style="font-size:13px">Nadie tiene este rango.</span>'}
         </div>
         <div class="agregar">
-          <input type="text" placeholder="Nick exacto del jugador" data-input="${i}" aria-label="Agregar jugador a ${esc(rol.nombre)}">
-          <button class="boton chico" data-agregar="${i}">Agregar</button>
+          <div class="elegir">
+            <input type="search" placeholder="Buscar una cuenta…" data-buscar="${i}" autocomplete="off" aria-label="Buscar una cuenta para ${esc(rol.nombre)}" aria-autocomplete="list">
+            <div class="opciones" data-opciones="${i}" role="listbox" hidden></div>
+          </div>
+          <button class="boton chico" data-agregar="${i}" disabled>Agregar</button>
         </div>
       </div>`)
     .join("");
+}
 
-  document.querySelectorAll("[data-agregar]").forEach((b) =>
-    b.addEventListener("click", () => {
-      const i = +b.dataset.agregar;
-      const input = document.querySelector(`[data-input="${i}"]`);
-      const nick = input.value.trim();
-      if (!nick) return;
-      if (!datos.roles[i].nicks.includes(nick)) datos.roles[i].nicks.push(nick);
-      input.value = "";
-      pintar();
-      marcarCambios();
-    })
-  );
-  document.querySelectorAll("[data-input]").forEach((input) =>
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") document.querySelector(`[data-agregar="${input.dataset.input}"]`).click();
-    })
-  );
-  document.querySelectorAll("[data-quitar]").forEach((b) =>
-    b.addEventListener("click", () => {
-      const [i, j] = b.dataset.quitar.split("-").map(Number);
-      datos.roles[i].nicks.splice(j, 1);
-      pintar();
-      marcarCambios();
-    })
-  );
-  document.querySelectorAll("[data-admin]").forEach((c) =>
-    c.addEventListener("change", () => {
-      datos.roles[+c.dataset.admin].admin = c.checked;
-      pintar();
-      marcarCambios();
-    })
-  );
+// ── Buscador de cuentas ──
+let esperaBusqueda = null;
+const elegidas = {};   // índice del rol → nick elegido de la lista
+
+async function buscar(i, texto) {
+  const caja = document.querySelector(`[data-opciones="${i}"]`);
+  try {
+    const { usuarios } = await Sesion.pedir("/api/rangos/usuarios?q=" + encodeURIComponent(texto));
+    const yaTienen = datos.roles[i].nicks;
+    const lista = usuarios.filter((n) => !yaTienen.some((y) => igual(y, n)));
+    usuarios.forEach((n) => cuentas.add(n.toLowerCase()));
+    caja.innerHTML = lista.length
+      ? lista.map((n) => `<button type="button" role="option" data-elegir="${i}" data-nick="${esc(n)}"><span class="avatar">${esc(Sesion.inicial(n))}</span>${esc(n)}</button>`).join("")
+      : `<div class="nada">${usuarios.length ? "Todas las cuentas que coinciden ya tienen este rango." : "No hay ninguna cuenta con ese nombre."}</div>`;
+    caja.hidden = false;
+  } catch (error) {
+    caja.innerHTML = `<div class="nada">${esc(error.message)}</div>`;
+    caja.hidden = false;
+  }
+}
+
+function cerrarOpciones() {
+  document.querySelectorAll("[data-opciones]").forEach((c) => (c.hidden = true));
+}
+
+function agregar(i) {
+  const nick = elegidas[i];
+  if (!nick) return;
+  if (!datos.roles[i].nicks.some((n) => igual(n, nick))) datos.roles[i].nicks.push(nick);
+  delete elegidas[i];
+  pintar();
+  marcarCambios();
+}
+
+const roles = document.getElementById("roles");
+
+roles.addEventListener("input", (e) => {
+  const i = e.target.dataset.buscar;
+  if (i === undefined) return;
+  delete elegidas[i];
+  document.querySelector(`[data-agregar="${i}"]`).disabled = true;
+  clearTimeout(esperaBusqueda);
+  esperaBusqueda = setTimeout(() => buscar(i, e.target.value.trim()), 200);
+});
+
+roles.addEventListener("focusin", (e) => {
+  const i = e.target.dataset.buscar;
+  if (i !== undefined) buscar(i, e.target.value.trim());
+});
+
+roles.addEventListener("keydown", (e) => {
+  const i = e.target.dataset.buscar;
+  if (i === undefined) return;
+  const caja = document.querySelector(`[data-opciones="${i}"]`);
+  const botones = [...caja.querySelectorAll("button")];
+  const activa = botones.findIndex((b) => b.classList.contains("activa"));
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    e.preventDefault();
+    if (!botones.length) return;
+    const nueva = e.key === "ArrowDown" ? (activa + 1) % botones.length : (activa - 1 + botones.length) % botones.length;
+    botones.forEach((b, j) => b.classList.toggle("activa", j === nueva));
+    botones[nueva].scrollIntoView({ block: "nearest" });
+  }
+  if (e.key === "Enter") {
+    e.preventDefault();
+    if (activa >= 0) botones[activa].click();
+    else if (elegidas[i]) agregar(i);
+  }
+  if (e.key === "Escape") cerrarOpciones();
+});
+
+roles.addEventListener("click", (e) => {
+  const opcion = e.target.closest("[data-elegir]");
+  if (opcion) {
+    const i = opcion.dataset.elegir;
+    elegidas[i] = opcion.dataset.nick;
+    document.querySelector(`[data-buscar="${i}"]`).value = opcion.dataset.nick;
+    document.querySelector(`[data-agregar="${i}"]`).disabled = false;
+    cerrarOpciones();
+    return;
+  }
+  const botonAgregar = e.target.closest("[data-agregar]");
+  if (botonAgregar) return agregar(botonAgregar.dataset.agregar);
+
+  const quitar = e.target.closest("[data-quitar]");
+  if (quitar) {
+    const [i, j] = quitar.dataset.quitar.split("-").map(Number);
+    datos.roles[i].nicks.splice(j, 1);
+    pintar();
+    marcarCambios();
+  }
+});
+
+roles.addEventListener("change", (e) => {
+  if (e.target.dataset.admin === undefined) return;
+  datos.roles[+e.target.dataset.admin].admin = e.target.checked;
+  pintar();
+  marcarCambios();
+});
+
+document.addEventListener("click", (e) => { if (!e.target.closest(".elegir")) cerrarOpciones(); });
+
+// ── Cargar y guardar ──
+function manejarError(error) {
+  if (/iniciar sesión/i.test(error.message)) location.replace("/frm/login/?volver=" + encodeURIComponent("/frm/rangos/"));
+  if (/solo para OWNER y CO-OWNER/i.test(error.message)) location.replace("/?sinpermiso=1");
 }
 
 async function cargar() {
   try {
-    const res = await fetch("/api/rangos", { cache: "no-store" });
-    datos = await res.json();
+    datos = await Sesion.pedir("/api/rangos");
     sinGuardar = false;
     avisar("");
     pintar();
+    // Para marcar los nicks viejos que no tienen cuenta
+    Sesion.pedir("/api/rangos/usuarios?q=").then((r) => { r.usuarios.forEach((n) => cuentas.add(n.toLowerCase())); }).catch(() => {});
   } catch (error) {
+    manejarError(error);
     avisar("No se pudieron cargar los rangos: " + error.message, "mal");
   }
 }
 
 document.getElementById("guardar").addEventListener("click", async () => {
   try {
-    const res = await fetch("/api/rangos", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ roles: datos.roles }),
-    });
-    const respuesta = await res.json();
-    if (!res.ok) throw new Error(respuesta.error || "error al guardar");
+    const respuesta = await Sesion.pedir("/api/rangos", { method: "POST", body: JSON.stringify({ roles: datos.roles }) });
     datos = respuesta;
     sinGuardar = false;
     pintar();
     avisar(respuesta.aviso || "Guardado. Las salas encendidas lo toman en unos segundos.", respuesta.aviso ? "info" : "ok");
   } catch (error) {
+    manejarError(error);
     avisar(error.message, "mal");
   }
 });
 
 document.getElementById("recargar").addEventListener("click", cargar);
 window.addEventListener("beforeunload", (e) => { if (sinGuardar) { e.preventDefault(); e.returnValue = ""; } });
-cargar();
+
+async function iniciar() {
+  const u = await Sesion.refrescar();
+  if (!u) return location.replace("/frm/login/?volver=" + encodeURIComponent("/frm/rangos/"));
+  if (!Sesion.exigirRangos()) return;
+  Sesion.pintarBarra("derecha");
+  Sesion.pintarNavAdmin("rangos");
+  Sesion.mantener();
+  cargar();
+}
+
+if (Sesion.usuario()) {
+  Sesion.pintarBarra("derecha");
+  Sesion.pintarNavAdmin("rangos");
+  iniciar();
+}
 </script>
 </body>
 </html>

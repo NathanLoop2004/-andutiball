@@ -106,6 +106,19 @@ class UsuarioModel {
     return sinClave(usuario);
   }
 
+  // Para elegir a quién darle un rango: solo cuentas de verdad (con clave) y sin ban.
+  // Devuelve los nicks que contienen lo buscado, hasta 20.
+  static async nicksParaElegir(q = "") {
+    const texto = limpiarNick(q).slice(0, 60);
+    const lista = await base().usuario.findMany({
+      where: { NOT: { clave: null }, baneado: false, ...(texto ? { nick: { contains: texto, mode: "insensitive" } } : {}) },
+      select: { nick: true },
+      orderBy: { nick: "asc" },
+      take: 20,
+    });
+    return lista.map((u) => u.nick);
+  }
+
   // ── Pantalla de usuarios (solo OWNER) ──
 
   // 15 por página, con buscador por nick. Nunca trae el hash de la clave.

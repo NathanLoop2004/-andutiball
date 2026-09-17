@@ -46,6 +46,19 @@ function espectadoresListos() {
 	});
 }
 
+// Los espectadores en el orden en que aparecen en la sala, sin el bot. El número que escribe el
+// capitán es la posición en ESTA lista: !1 es el primer espectador, !2 el segundo…
+// (antes era el id de HaxBall, que no se ve en ningún lado).
+function espectadoresEnOrden() {
+	return room.getPlayerList().filter(function (j) { return j.team === 0 && j.id !== 0; });
+}
+
+function numeroDe(jugador) {
+	var lista = espectadoresEnOrden();
+	for (var i = 0; i < lista.length; i++) if (lista[i].id === jugador.id) return i + 1;
+	return 0;
+}
+
 // El capitán es el primero que entró al equipo. Si el equipo está vacío, todavía no hay.
 function capitanDe(equipo) {
 	var lista = listaDelEquipo(equipo);
@@ -96,7 +109,8 @@ function moverA(jugador, equipo) {
 function avisarTurno(libres) {
 	var cap = capitanDe(turnoDelEquipo);
 	var quien = cap ? cap.name : "el primero que entre";
-	var aviso = turnoDelEquipo + "|" + quien + "|" + libres.map(function (j) { return j.id; }).join(",");
+	// Si cambian los números (alguien entró o salió), se vuelve a avisar
+	var aviso = turnoDelEquipo + "|" + quien + "|" + libres.map(function (j) { return j.id + ":" + numeroDe(j); }).join(",");
 	if (aviso === ultimoAvisoTurno) return;     // no repetimos el mismo cartel
 	ultimoAvisoTurno = aviso;
 
@@ -107,16 +121,21 @@ function avisarTurno(libres) {
 		null, color, "bold", 2
 	);
 	room.sendAnnouncement(
-		"   Escribí !numero para elegir: " + libres.map(function (j) { return "!" + j.id + " " + j.name; }).join("   "),
+		"   Escribí !numero para elegir: " + libres.map(function (j) { return "!" + numeroDe(j) + " " + j.name; }).join("   "),
 		null, color, "small", 0
 	);
 }
 
-function elegirJugador(quienElige, idElegido) {
-	var libres = espectadoresListos();
-	var elegido = libres.filter(function (j) { return j.id === idElegido; })[0];
+// numero: la posición entre los espectadores (1, 2, 3…), no el id del jugador
+function elegirJugador(quienElige, numero) {
+	var elegido = espectadoresEnOrden()[numero - 1];
 	if (!elegido) {
-		room.sendAnnouncement("❌ Ese número no está en la lista de espectadores.", quienElige.id, 0xFF4444, "bold", 2);
+		room.sendAnnouncement("❌ No hay ningún espectador con el número " + numero + ".", quienElige.id, 0xFF4444, "bold", 2);
+		return false;
+	}
+	var libres = espectadoresListos();
+	if (!libres.some(function (j) { return j.id === elegido.id; })) {
+		room.sendAnnouncement("❌ " + elegido.name + " no se puede elegir ahora (está AFK o no puso su clave).", quienElige.id, 0xFF4444, "bold", 2);
 		return false;
 	}
 	if (listaDelEquipo(turnoDelEquipo).length >= cupoPorEquipo()) {

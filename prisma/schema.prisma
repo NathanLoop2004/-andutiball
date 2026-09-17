@@ -166,3 +166,103 @@ model Actualizacion {
   @@map("actualizaciones")
 }
 
+
+// Las imágenes del carrusel de la portada. Se suben desde el panel (Carrusel) y la imagen
+// misma se guarda acá (bytes), así no depende de archivos sueltos en el disco.
+model ImagenCarrusel {
+  id          Int      @id @default(autoincrement())
+  titulo      String?
+  descripcion String?
+  enlace      String?  // opcional: a dónde lleva al tocarla (solo http/https)
+  tipo        String   // image/png · image/jpeg · image/webp · image/gif
+  tamano      Int      // en bytes
+  datos       Bytes
+  orden       Int      @default(0)
+  activa      Boolean  @default(true)
+  subidaPor   String?
+  creada      DateTime @default(now())
+  cambiada    DateTime @updatedAt
+
+  @@index([activa, orden])
+  @@map("imagenes_carrusel")
+}
+
+// ── ELO: una tabla por sala y una general ──
+// Cada partido actualiza SOLO la tabla de su sala. La general no se toca a mano: la recalcula
+// el procedimiento actualizar_elo_general() (ver la migración elo_por_sala) con el promedio de
+// los ELO de cada sala, pesado por los partidos jugados en cada una.
+// clave = "auth:<PublicID>" o, si no hay auth, "nick:<nombre>".
+model Elo3v3 {
+  clave       String   @id
+  nombre      String
+  elo         Int      @default(1000)
+  partidos    Int      @default(0)
+  ganados     Int      @default(0)
+  empatados   Int      @default(0)
+  perdidos    Int      @default(0)
+  goles       Int      @default(0)
+  actualizado DateTime @default(now())
+
+  @@index([elo])
+  @@map("elo_3v3")
+}
+
+model Elo4v4 {
+  clave       String   @id
+  nombre      String
+  elo         Int      @default(1000)
+  partidos    Int      @default(0)
+  ganados     Int      @default(0)
+  empatados   Int      @default(0)
+  perdidos    Int      @default(0)
+  goles       Int      @default(0)
+  actualizado DateTime @default(now())
+
+  @@index([elo])
+  @@map("elo_4v4")
+}
+
+model EloTodos {
+  clave       String   @id
+  nombre      String
+  elo         Int      @default(1000)
+  partidos    Int      @default(0)
+  ganados     Int      @default(0)
+  empatados   Int      @default(0)
+  perdidos    Int      @default(0)
+  goles       Int      @default(0)
+  actualizado DateTime @default(now())
+
+  @@index([elo])
+  @@map("elo_todos")
+}
+
+model EloRealsoccer {
+  clave       String   @id
+  nombre      String
+  elo         Int      @default(1000)
+  partidos    Int      @default(0)
+  ganados     Int      @default(0)
+  empatados   Int      @default(0)
+  perdidos    Int      @default(0)
+  goles       Int      @default(0)
+  actualizado DateTime @default(now())
+
+  @@index([elo])
+  @@map("elo_realsoccer")
+}
+
+model EloGeneral {
+  clave       String   @id
+  nombre      String
+  elo         Int      @default(1000)
+  partidos    Int      @default(0)
+  ganados     Int      @default(0)
+  empatados   Int      @default(0)
+  perdidos    Int      @default(0)
+  goles       Int      @default(0)
+  actualizado DateTime @default(now())
+
+  @@index([elo])
+  @@map("elo_general")
+}

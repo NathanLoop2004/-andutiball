@@ -60,7 +60,8 @@ class CuentaModel {
       emailTapado: taparEmail(u.email),
       desde: u.creado,
       claveCambiada: u.claveCambiada,
-      elo: EloModel.deNick(u.nick),
+      elo: EloModel.deNick(u.nick),          // el general
+      eloPorSala: EloModel.porSala(u.nick),  // [{ sala, nombre, elo }]
     };
   }
 

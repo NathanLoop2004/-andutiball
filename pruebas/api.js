@@ -7,7 +7,10 @@
 //   node pruebas/api.js
 //
 // Los archivos de datos van a una carpeta temporal, así no se pisan roles.json ni
-// datos/elo.json de verdad. Hay que ponerlos ANTES de cargar app.js, porque lib/
+// datos/elo.json de verdad.
+//
+// OJO: esta prueba corre SIN el .env (sin base). No agregarle --env-file: el POST de
+// /api/rangos reemplaza la tabla de rangos entera, y con la base prendida borraría los de verdad. Hay que ponerlos ANTES de cargar app.js, porque lib/
 // los lee al importarse.
 
 const fs = require("fs");
@@ -56,7 +59,10 @@ const pedir = async (url, opciones) => {
   try { datos = JSON.parse(texto); } catch { datos = texto; }
   return { status: respuesta.status, datos };
 };
-const json = (cuerpo) => ({ method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(cuerpo) });
+const json = (cuerpo, token) => ({ method: "POST", headers: { "Content-Type": "application/json", ...(token ? { Authorization: "Bearer " + token } : {}) }, body: JSON.stringify(cuerpo) });
+// Los rangos son solo de OWNER y CO-OWNER: una sesión de Jinder, que es OWNER en el roles.json de prueba
+const tokenOwner = require("../models/SesionModel").firmar({ nick: "Jinder", rango: "OWNER", admin: true });
+const conOwner = { headers: { Authorization: "Bearer " + tokenOwner } };
 
 (async () => {
   const sala = await escuchar(crearApp({ sala: salaFalsa }));
@@ -74,9 +80,12 @@ const json = (cuerpo) => ({ method: "POST", headers: { "Content-Type": "applicat
   revisar("GET /api/elo devuelve ranking y divisiones", r.status === 200 && Array.isArray(r.datos.ranking) && r.datos.ranking[0].nombre === "Ana", JSON.stringify(r.datos.ranking?.[0]?.nombre));
 
   r = await pedir(`${sala.url}/api/rangos`);
+  revisar("GET /api/rangos sin sesión no deja ver los rangos", r.status === 401, `HTTP ${r.status}`);
+
+  r = await pedir(`${sala.url}/api/rangos`, conOwner);
   revisar("GET /api/rangos no filtra la clave", r.status === 200 && r.datos.clave === undefined && r.datos.tieneClave === true, JSON.stringify(Object.keys(r.datos)));
 
-  r = await pedir(`${sala.url}/api/rangos`, json({ roles: [{ id: "owner", nombre: "OWNER", admin: true, nicks: ["Jinder", "Nathan"] }] }));
+  r = await pedir(`${sala.url}/api/rangos`, json({ roles: [{ id: "owner", nombre: "OWNER", admin: true, nicks: ["Jinder", "Nathan"] }] }, tokenOwner));
   const guardado = JSON.parse(fs.readFileSync(process.env.ROLES_FILE, "utf8"));
   revisar("POST /api/rangos guarda y conserva la clave", r.status === 200 && guardado.clave === "secreta" && guardado.roles[0].nicks.length === 2, `clave=${guardado.clave}`);
 
@@ -116,7 +125,7 @@ const json = (cuerpo) => ({ method: "POST", headers: { "Content-Type": "applicat
   r = await pedir(`${panel.url}/api/kick/noexiste`, json({ id: 7 }));
   revisar("POST a una sala que no existe da 404", r.status === 404 && /no encontrada/.test(r.datos.error || ""), r.datos.error);
 
-  r = await pedir(`${panel.url}/api/rangos`);
+  r = await pedir(`${panel.url}/api/rangos`, conOwner);
   revisar("El panel también lee los rangos", r.status === 200 && r.datos.tieneClave === true, `HTTP ${r.status}`);
 
   // Una sala caída no puede romper el panel

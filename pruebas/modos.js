@@ -69,8 +69,10 @@ revisar("Con un aviso claro", sala.anuncios.some((a) => a.includes("terminen de 
 const capitanDe = (equipo) => equipos()[equipo === 1 ? "red" : "blue"][0];
 const libres = () => equipos().espect.filter((j) => j.id !== 0);
 
+// El número que se escribe es la posición entre los espectadores (sin el bot)
+const numero = (j) => equipos().espect.filter((x) => x.id !== 0).findIndex((x) => x.id === j.id) + 1;
 const primero = libres()[0];
-if (capitanDe(1) && primero) chat(capitanDe(1), "!" + primero.id);
+if (capitanDe(1) && primero) chat(capitanDe(1), "!" + numero(primero));
 avanzar(1500);
 revisar("El capitán pudo elegir a mano", primero && primero.team !== 0, primero ? primero.name + " → equipo " + primero.team : "no había a quién elegir");
 
@@ -81,7 +83,7 @@ for (let ronda = 0; ronda < 8; ronda++) {
   for (const equipo of [1, 2]) {
     const cap = capitanDe(equipo);
     if (!cap) continue;
-    chat(cap, "!" + elegido.id);
+    chat(cap, "!" + numero(elegido));
     avanzar(1500);
     if (elegido.team !== 0) break;
   }

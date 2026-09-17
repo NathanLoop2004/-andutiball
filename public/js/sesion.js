@@ -150,6 +150,14 @@ const Sesion = {
     return true;
   },
 
+  // Rangos: solo OWNER y CO-OWNER (la API igual lo vuelve a revisar)
+  exigirRangos() {
+    const u = Sesion.usuario();
+    if (!u) { location.href = "/frm/login/?volver=" + encodeURIComponent(location.pathname); return false; }
+    if (!u.rangos) { location.href = "/?sinpermiso=1"; return false; }
+    return true;
+  },
+
   // Configuración de salas: OWNER, CO-OWNER, HOSTER y AYUDANTE (la API igual lo vuelve a revisar)
   exigirConfig() {
     const u = Sesion.usuario();
@@ -166,7 +174,8 @@ const Sesion = {
     const secciones = [
       { id: "salas", href: "/frm/panel/", nombre: "Salas", ver: u.admin, icono: i('<rect x="3" y="4" width="18" height="14" rx="2"/><path d="M12 4v14M3 11h18"/>') },
       { id: "config", href: "/frm/config/", nombre: "Configuración", ver: u.configura, icono: i('<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>') },
-      { id: "rangos", href: "/frm/rangos/", nombre: "Rangos", ver: u.admin, icono: i('<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/>') },
+      { id: "carrusel", href: "/frm/carrusel/", nombre: "Carrusel", ver: u.configura, icono: i('<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="m21 15-5-5L5 19"/>') },
+      { id: "rangos", href: "/frm/rangos/", nombre: "Rangos", ver: u.rangos, icono: i('<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/>') },
       { id: "usuarios", href: "/frm/usuarios/", nombre: "Usuarios", ver: u.owner, icono: i('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6"/>') },
       { id: "actualizaciones", href: "/frm/actualizaciones/", nombre: "Actualizaciones", ver: u.admin, icono: i('<path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/>') },
     ];

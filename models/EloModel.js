@@ -5,6 +5,24 @@
 // El cálculo está en lib/elo.js; este modelo es la puerta de entrada para la API.
 // =============================================================================
 const { DIVISIONES, leerElo, ranking, faltaParaSubir } = require("../lib/elo");
+const Parametros = require("../lib/parametros");
+const EloSalasModel = require("./EloSalasModel");
+
+// Las pestañas del ranking: el general y las salas que tienen tabla de ELO
+function ambitos() {
+  const nombres = Object.fromEntries(Parametros.salas().map((s) => [s.clave, s.nombre]));
+  // "🕸️ ÑandutíBall | Futsal 3v3 🇵🇾" → "Futsal 3v3"
+  const corto = (n) => String(n || "").replace(/^.*\|\s*/, "").replace(/\s*🇵🇾\s*$/u, "").replace(/\s*⚽\s*$/u, "").trim();
+  return [{ clave: "general", nombre: "General" }].concat(EloSalasModel.SALAS.map((s) => ({ clave: s, nombre: corto(nombres[s]) || s })));
+}
+
+// "general" o una sala con tabla; cualquier otra cosa es un error (nunca llega a un nombre de archivo)
+function ambitoDe(pedido) {
+  const a = String(pedido || "general").trim().toLowerCase();
+  if (a === "general") return undefined;
+  if (!EloSalasModel.tieneTabla(a)) throw new Error("Esa sala no tiene ranking");
+  return a;
+}
 
 const TOPE_POR_DEFECTO = 200;
 
@@ -36,9 +54,13 @@ class EloModel {
   }
 
   // Para la web pública: los mejores, sin datos internos. Solo los que jugaron.
-  static rankingPublico(limite) {
-    const lista = ranking(leerElo(), 100000).filter((f) => f.partidos > 0);
+  static ambitos = ambitos;
+
+  static rankingPublico(limite, sala) {
+    const lista = ranking(leerElo(ambitoDe(sala)), 100000).filter((f) => f.partidos > 0);
     return {
+      sala: sala || "general",
+      salas: ambitos(),
       total: lista.length,
       ranking: lista.slice(0, tope(limite, 50, 200)).map((f, i) => publica(f, i + 1)),
     };
@@ -46,10 +68,10 @@ class EloModel {
 
   // La ficha de un nick (la tabla va por auth: si el mismo nick aparece más de una vez, se
   // queda con la que más partidos tiene). null si nunca jugó.
-  static deNick(nick) {
+  static deNick(nick, sala) {
     const buscado = String(nick || "").trim().toLowerCase();
     if (!buscado) return null;
-    const lista = ranking(leerElo(), 100000).filter((f) => f.partidos > 0);
+    const lista = ranking(leerElo(ambitoDe(sala)), 100000).filter((f) => f.partidos > 0);
     let elegido = null;
     let puesto = null;
     lista.forEach((f, i) => {
@@ -58,6 +80,11 @@ class EloModel {
     });
     if (!elegido) return null;
     return { ...publica(elegido, puesto), total: lista.length, faltaParaSubir: faltaParaSubir(elegido.elo) };
+  }
+
+  // El de cada sala, para "Tu ELO"
+  static porSala(nick) {
+    return EloSalasModel.SALAS.map((s) => ({ sala: s, nombre: ambitos().find((a) => a.clave === s).nombre, elo: EloModel.deNick(nick, s) }));
   }
 }
 

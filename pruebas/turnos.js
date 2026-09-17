@@ -39,6 +39,23 @@ console.log("🎽 Entran 8 y salen los dos capitanes:");
 revisar("Red y Blue tienen capitán", Boolean(capitanDe(1)) && Boolean(capitanDe(2)), cancha());
 revisar("El resto espera", libres().length === 6, libres().length + " esperando");
 
+// El número que se escribe es la posición entre los espectadores (sin el bot)
+const numero = (j) => equipos().espect.filter((x) => x.id !== 0).findIndex((x) => x.id === j.id) + 1;
+
+// Los dos capitanes ya salieron de espectadores: los ids de los que esperan ya no coinciden con su posición
+{
+  const esperando = equipos().espect.filter((x) => x.id !== 0);
+  const cartel = sala.anuncios.filter((a) => a.includes("Escribí !numero para elegir")).pop() || "";
+  revisar("El cartel numera a los espectadores 1, 2, 3… (no por id)", cartel.includes("!1 " + esperando[0].name) && esperando[0].id !== 1, cartel.slice(0, 90));
+  revisar("El bot no aparece para elegir", !/!0\b/.test(cartel) && !cartel.includes(contexto.NombreBot || "Ñandu Bot"));
+  const antes = sala.anuncios.length;
+  chat(capitanDe(1), "!" + esperando[0].id);   // su id, que ahora es otro número
+  avanzar(200);
+  const cap = capitanDe(1);
+  revisar("Escribir el id en vez de la posición no elige a esa persona", esperando[0].team === 0 || numero(esperando[0]) === esperando[0].id, cap && cap.name);
+  sala.anuncios.length = antes;
+}
+
 // ── Los capitanes eligen, sin colgarse ──
 console.log("\n🎽 Eligiendo por turnos (a mano, antes de que se acabe el tiempo):");
 for (let ronda = 1; ronda <= 8; ronda++) {
@@ -52,7 +69,7 @@ for (let ronda = 1; ronda <= 8; ronda++) {
     const cap = capitanDe(equipo);
     const elegido = libres()[0];
     if (!cap || !elegido) continue;
-    chat(cap, "!" + elegido.id);
+    chat(cap, "!" + numero(elegido));
     avanzar(1500);
     if (elegido.team !== 0) {
       console.log(`     ronda ${ronda}: ${cap.name} (${equipo === 1 ? "🔴" : "🔵"}) eligió a ${elegido.name}`);

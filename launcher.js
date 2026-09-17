@@ -15,11 +15,12 @@ const UsuarioModel = require("./models/UsuarioModel");
 const RangoModel = require("./models/RangoModel");
 const PartidoModel = require("./models/PartidoModel");
 const ConfigModel = require("./models/ConfigModel");
+const EloSalasModel = require("./models/EloSalasModel");
 const Parametros = require("./lib/parametros");
 const WebhookWeb = require("./services/WebhookWeb");
 const { leerRoles } = require("./lib/roles");
 const { ARCHIVO: ARCHIVO_RANGOS, leerRangos, guardarRangos, sinClave } = require("./lib/rangos");
-const { leerElo, guardarElo, aplicarPartido, ranking, paraLaSala, DIVISIONES } = require("./lib/elo");
+const { leerElo, guardarElo, aplicarPartido, ranking, paraLaSala, ambitoValido, DIVISIONES } = require("./lib/elo");
 
 // Qué sala levantar: "npm start 3v3" pesa más que el HOST_CONFIG del .env.
 // Sin argumento, usa el .env; si tampoco está, la sala de futsal automático.
@@ -77,6 +78,14 @@ if (hostConfigPath) {
   console.log(`⚙️ Configuración aplicada: ${hostConfigPath} (${Object.keys(hostConfig).join(", ")})`);
 }
 
+// El ELO de esta sala va en datos/elo-<sala>.json (además del general, datos/elo.json)
+const ambitoSala = salaElegida && ambitoValido(salaElegida) ? salaElegida : null;
+// Lo que recibe la página: el ELO de la sala (color, !elo, !top) y el general (!elo general)
+const eloParaLaPagina = () => ({
+  sala: ambitoSala ? paraLaSala(leerElo(ambitoSala)) : paraLaSala(leerElo()),
+  general: paraLaSala(leerElo()),
+});
+
 // Verifica la sintaxis antes de abrir el navegador
 try {
   new Function(roomScript);
@@ -93,7 +102,7 @@ const estado = EstadoModel.crear({
   config: hostConfig,
   roles: leerRoles(roomScript),
   rangos: sinClave(leerRangos()),
-  elo: ranking(leerElo(), 50),
+  elo: ranking(leerElo(ambitoSala), 50),
   divisiones: DIVISIONES,
 });
 
@@ -230,7 +239,7 @@ api.on("error", (error) => {
       case "jugadores": {
         // Le pegamos a cada jugador su puntaje y división, para que el panel
         // pueda pintar el nombre con el color que le corresponde
-        const tablaElo = paraLaSala(leerElo());
+        const tablaElo = paraLaSala(leerElo(ambitoSala));
         estado.jugadores = evento.jugadores.map((j) => {
           const ficha = tablaElo[String(j.nombre).toLowerCase()];
           return ficha ? { ...j, elo: ficha.elo, division: ficha.division, emoji: ficha.emoji, color: ficha.color } : j;
@@ -336,16 +345,34 @@ api.on("error", (error) => {
   };
 
   // Resultado de un partido: actualiza el ELO, lo guarda y le devuelve la tabla a la sala
-  const procesarPartidoElo = (evento) => {
-    const tabla = leerElo();
-    const cambios = aplicarPartido(tabla, evento);
-    if (!cambios.length) return;
-    guardarElo(tabla);
-    estado.elo = ranking(tabla, 50);
+  // Cada partido mueve SOLO el ELO de esta sala (tabla elo_<sala>); el general lo recalcula el
+  // procedimiento actualizar_elo_general() de la base (ver models/EloSalasModel.js). Sin base, lo
+  // mismo sobre los archivos. Lo que se anuncia en la sala es el cambio del ELO de la sala.
+  const procesarPartidoElo = async (evento) => {
+    let cambiosSala;
+    let eloGeneral = {};
+    try {
+      if (!ambitoSala || !EloSalasModel.tieneTabla(ambitoSala)) {
+        // Una sala sin tabla propia (hosts/*.json nuevo): solo el general, como antes
+        const tabla = leerElo();
+        cambiosSala = aplicarPartido(tabla, evento);
+        if (cambiosSala.length) guardarElo(tabla);
+      } else {
+        const r = await EloSalasModel.procesarPartido(ambitoSala, evento);
+        cambiosSala = r.cambios;
+        eloGeneral = r.general;
+        if (!r.enBase) console.warn("⚠️ La base no responde: el ELO se guardó en los archivos (se sube cuando vuelva)");
+      }
+    } catch (error) {
+      console.error("❌ No se pudo actualizar el ELO:", error.message);
+      return;
+    }
+    if (!cambiosSala.length) return;
+    estado.elo = ranking(leerElo(ambitoSala), 50);
 
-    frame.evaluate((datos) => window.__eloActualizar && window.__eloActualizar(datos), paraLaSala(tabla)).catch(() => {});
+    frame.evaluate((datos) => window.__eloActualizar && window.__eloActualizar(datos), eloParaLaPagina()).catch(() => {});
 
-    const resumen = cambios
+    const resumen = cambiosSala
       .sort((a, b) => b.delta - a.delta)
       .map((c) => `${c.nombre} ${c.delta >= 0 ? "+" : ""}${c.delta}`)
       .join(" · ");
@@ -353,12 +380,12 @@ api.on("error", (error) => {
     console.log(`📊 ELO actualizado — ${resumen}`);
 
     // Y a la base: usuarios, partido y participaciones. Si está apagada, queda solo en elo.json
-    PartidoModel.guardar(evento, cambios, { clave: salaElegida || "sala", nombre: hostConfig.NombreHost || salaElegida || "sala" })
+    PartidoModel.guardar(evento, cambiosSala, { clave: salaElegida || "sala", nombre: hostConfig.NombreHost || salaElegida || "sala" }, eloGeneral)
       .then((p) => p && console.log(`💾 Partido #${p.id} guardado en la base`))
       .catch((error) => console.warn(`⚠️ El partido no se guardó en la base: ${String(error.message).split("\n")[0]}`));
 
     // Los que cambiaron de división se anuncian en la sala
-    const anuncios = cambios
+    const anuncios = cambiosSala
       .filter((c) => c.subio || c.bajo)
       .map((c) => `${c.subio ? "⬆️" : "⬇️"} ${c.nombre} ahora es ${c.division.emoji} ${c.division.nombre}`);
     const lineas = [`📊 ${resumen}`, ...anuncios];
@@ -377,7 +404,7 @@ api.on("error", (error) => {
     window.__RANGOS = rangos;
     window.__ELO = elo;
     if (webhookSala) window.__WEBHOOK_SALA = webhookSala;
-  }, leerRangos(), paraLaSala(leerElo()), process.env.WEBHOOK_SALA_ABIERTA || "");
+  }, leerRangos(), eloParaLaPagina(), process.env.WEBHOOK_SALA_ABIERTA || "");
 
   // Envuelve HBInit: agrega el token y engancha el puente del panel sin tocar el script
   await frame.evaluate((token, fuenteEspia) => {
@@ -436,6 +463,15 @@ api.on("error", (error) => {
     }
   } catch (error) {
     console.warn("⚠️ No se leyeron los parámetros de la base (se usa hosts/*.json): " + String(error.message).split("\n")[0]);
+  }
+
+  // El ELO: la base manda sobre los archivos espejo (si se jugó con la base apagada, se sube)
+  try {
+    const { subidas } = await EloSalasModel.sincronizar();
+    if (subidas) console.log(`📊 ELO: subí a la base ${subidas} fichas que estaban solo en los archivos`);
+    await frame.evaluate((datos) => { window.__ELO = datos; }, eloParaLaPagina());
+  } catch (error) {
+    console.warn("⚠️ ELO sin base: se usan los archivos (" + String(error.message).split("\n")[0] + ")");
   }
 
   // Si el script nunca asigna un handler espiado, igual lo enganchamos al arrancar

@@ -72,21 +72,24 @@ revisar("Hay elección por turnos", contexto.SeleccionPorTurnos === true, "Selec
 const libre = equipos().espect.filter((j) => j.id !== 0 && j.id !== 9)[0];
 revisar("Hay alguien esperando para ser elegido", Boolean(libre), libre ? libre.name + " (id " + libre.id + ")" : "nadie");
 
+// El número que se escribe es la posición entre los espectadores (sin el bot)
+const numero = (j) => equipos().espect.filter((x) => x.id !== 0).findIndex((x) => x.id === j.id) + 1;
+
 if (libre) {
   chat(jefa, String(libre.id));
   avanzar(1000);
   revisar(`"${libre.id}" NO lo mete a la cancha`, equipoDe(libre.id) === 0, "equipo " + equipoDe(libre.id));
   revisar("   y el número se ve en el chat", seDijo(`:    ${libre.id}`) || seDijo(` ${libre.id}`), "sí");
 
-  chat(jefa, "!" + libre.id);
+  chat(jefa, "!" + numero(libre));
   avanzar(1000);
-  revisar(`"!${libre.id}" sí lo elige`, equipoDe(libre.id) !== 0, "equipo " + equipoDe(libre.id));
+  revisar(`"!${numero(libre) || "N"}" (su posición entre los espectadores) sí lo elige`, equipoDe(libre.id) !== 0, "equipo " + equipoDe(libre.id));
 
   const otro = equipos().espect.filter((j) => j.id !== 0 && j.id !== 9)[0];
   if (otro) {
-    chat(jefa, "!elegir " + otro.id);
+    chat(jefa, "!elegir " + numero(otro));
     avanzar(1000);
-    revisar(`"!elegir ${otro.id}" también`, equipoDe(otro.id) !== 0, "equipo " + equipoDe(otro.id));
+    revisar(`"!elegir N" también`, equipoDe(otro.id) !== 0, "equipo " + equipoDe(otro.id));
   }
 }
 

@@ -14,9 +14,10 @@ class PartidoModel {
    * @param {object} partido  el evento "elo-partido" del script
    * @param {Array}  cambios  lo que devolvió aplicarPartido() (con equipo, auth, resultado, goles)
    * @param {object} sala     { clave, nombre }
+   * @param {object} eloGeneral { "auth:…" | "nick:…": elo }  el general que calculó la base; si falta, el de la sala
    * @returns el partido creado
    */
-  static async guardar(partido, cambios, sala = {}) {
+  static async guardar(partido, cambios, sala = {}, eloGeneral = {}) {
     if (!cambios || !cambios.length) return null;
     const db = base();
 
@@ -51,7 +52,8 @@ class PartidoModel {
         await tx.usuario.update({
           where: { id: usuario.id },
           data: {
-            elo: c.despues,
+            // La cuenta muestra el ELO general (las participaciones guardan el de la sala)
+            elo: eloGeneral[c.auth ? "auth:" + c.auth : "nick:" + nick.toLowerCase()] ?? c.despues,
             partidos: { increment: 1 },
             ganados: { increment: c.resultado === 1 ? 1 : 0 },
             perdidos: { increment: c.resultado === 0 ? 1 : 0 },

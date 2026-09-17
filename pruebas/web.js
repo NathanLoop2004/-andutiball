@@ -248,7 +248,12 @@ const json = (cuerpo, token) => ({
       // ── Ranking público ──
       const tabla = await pedir(web.url + "/api/ranking?limite=5");
       revisar("El ranking público responde", tabla.status === 200 && Array.isArray(tabla.datos.ranking) && tabla.datos.ranking.length <= 5, tabla.datos.ranking.length + " jugadores");
-      revisar("El ranking no muestra el auth de nadie", !/auth:|"clave"/.test(JSON.stringify(tabla.datos)));
+      revisar("El ranking no muestra el auth de nadie", !/auth:|"clave"/.test(JSON.stringify(tabla.datos.ranking)) && !/auth:/.test(JSON.stringify(tabla.datos)));
+      revisar("Trae las pestañas: general y cada sala", tabla.datos.salas[0].clave === "general" && tabla.datos.salas.some((s) => s.clave === "realsoccer" && s.nombre === "Real Soccer"), tabla.datos.salas.map((s) => s.nombre).join(" · "));
+      const deSala = await pedir(web.url + "/api/ranking?sala=3v3");
+      revisar("Se puede pedir el ranking de una sala", deSala.status === 200 && deSala.datos.sala === "3v3");
+      const trucha = await pedir(web.url + "/api/ranking?sala=" + encodeURIComponent("../../.env"));
+      revisar("Una sala inventada da error (no lee archivos raros)", trucha.status === 400, trucha.datos.error);
       revisar("Cada jugador trae puesto, ELO y goles", tabla.datos.ranking.every((j) => j.puesto && typeof j.elo === "number" && typeof j.goles === "number"));
     } finally {
       Correo.usarEnvio(null);
