@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<title>ÑandutíBall · Volviendo de Discord</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; background: #f6f7f9; color: #0f172a; }
+  @media (prefers-color-scheme: dark) { body { background: #0b0e14; color: #e6e9ef; } }
+  .caja { max-width: 420px; padding: 32px; text-align: center; }
+  .caja h1 { font-size: 20px; margin: 0 0 8px; }
+  .caja p { margin: 0; opacity: .75; }
+</style>
+</head>
+<body>
+<div class="caja">
+  <h1 id="titulo">Volviendo a ÑandutíBall…</h1>
+  <p id="texto">Un segundo, te llevamos de vuelta a tu cuenta.</p>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// Puente de Discord de ÑandutíBall.
+//
+// Discord exige registrar una dirección de vuelta FIJA, pero el link de la web de ÑandutíBall
+// cambia (túnel de Cloudflare). Entonces en Discord se registra ESTA página, que no cambia, y la
+// web manda su link actual escondido en el "state". Esta página lo lee y reenvía al jugador a
+// <link de la web>/api/discord/vuelta con lo mismo que trajo Discord.
+//
+// Seguridad:
+//   · solo reenvía a los dominios de DOMINIOS_PERMITIDOS (nadie la puede usar de trampolín);
+//   · el "code" que pasa por acá no sirve sin el secreto de la aplicación, que está solo en la web;
+//   · no guarda nada, no carga nada de afuera.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Si algún día ÑandutíBall tiene dominio propio, agregalo acá (ej. "nandutiball.com")
+var DOMINIOS_PERMITIDOS = ["trycloudflare.com"];
+
+function destinoDesdeElState(state, permitidos) {
+  var partes = String(state || "").split(".");
+  if (partes.length !== 2 || partes[0].length < 20) return null;
+  var base;
+  try {
+    base = atob(partes[1].replace(/-/g, "+").replace(/_/g, "/"));
+  } catch (e) {
+    return null;
+  }
+  var url;
+  try { url = new URL(base); } catch (e) { return null; }
+  var local = url.hostname === "localhost" || url.hostname === "127.0.0.1";
+  if (url.protocol !== "https:" && !(local && url.protocol === "http:")) return null;
+  var host = url.hostname.toLowerCase();
+  var permitido = local || permitidos.some(function (d) { return host === d || host.slice(-(d.length + 1)) === "." + d; });
+  if (!permitido || url.username || url.password) return null;
+  return url.origin + "/api/discord/vuelta";
+}
+
+(function () {
+  var q = new URLSearchParams(location.search);
+  var destino = destinoDesdeElState(q.get("state"), DOMINIOS_PERMITIDOS);
+  if (!destino) {
+    document.getElementById("titulo").textContent = "No se pudo volver a ÑandutíBall";
+    document.getElementById("texto").textContent = "El link no es válido o ya se usó. Volvé a la página de ÑandutíBall y tocá «Vincular con Discord» de nuevo.";
+    return;
+  }
+  var seguir = new URLSearchParams();
+  ["code", "state", "error", "error_description"].forEach(function (k) { if (q.get(k)) seguir.set(k, q.get(k)); });
+  location.replace(destino + "?" + seguir.toString());
+})();
+</script>
+</body>
+</html>

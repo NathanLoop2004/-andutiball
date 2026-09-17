@@ -10,8 +10,8 @@
 //   3. se escriben los archivos espejo (datos/elo-<sala>.json y datos/elo.json), que son lo que
 //      leen la sala (color, !elo, !top) y la web.
 //
-// Si la base está apagada, se hace lo mismo sobre los archivos y el general se calcula en Node con
-// la misma fórmula (calcularGeneral). Las salas nunca dejan de sumar.
+// Solo suman los que tienen cuenta en la tabla usuarios y pusieron su clave en la sala. Si la base
+// está apagada no hay cómo confirmar cuentas, así que ese partido no suma a nadie.
 // =============================================================================
 const { base } = require("../services/ConexionBase");
 const Elo = require("../lib/elo");
@@ -109,34 +109,47 @@ class EloSalasModel {
     return { subidas };
   }
 
+  // Los que pueden sumar ELO: pusieron su clave en la sala (verificado) Y tienen cuenta en la tabla
+  // usuarios (con clave y sin ban). Devuelve un Set con los nicks en minúscula.
+  static async conCuenta(evento) {
+    const verificados = [...(evento.red || []), ...(evento.blue || [])].filter((j) => j.verificado === true);
+    if (!verificados.length) return new Set();
+    const cuentas = await base().usuario.findMany({
+      where: { nick: { in: verificados.map((j) => String(j.nombre || "").trim()) }, NOT: { clave: null }, baneado: false },
+      select: { nick: true },
+    });
+    return new Set(cuentas.map((u) => u.nick.toLowerCase()));
+  }
+
   /**
    * Aplica un partido terminado a la sala y recalcula el general.
-   * @returns { cambios (del ELO de la sala), general: { clave: elo }, enBase: boolean }
+   * SOLO suman los que tienen cuenta y pusieron su clave (conCuenta). Los demás juegan con 1000 para
+   * que la cuenta sea justa, pero no se guardan. Sin base no se puede confirmar ninguna cuenta:
+   * ese partido no suma a nadie.
+   * @returns { cambios (del ELO de la sala), general: { clave: elo }, enBase, sinCuenta: [nombres] }
    */
   static async procesarPartido(sala, evento) {
     if (!TABLAS[sala]) throw new Error(`La sala "${sala}" no tiene tabla de ELO`);
+    const todos = [...(evento.red || []), ...(evento.blue || [])];
+    let permitidos;
     try {
-      const tabla = await EloSalasModel.tablaSala(sala);
-      const cambios = Elo.aplicarPartido(tabla, evento);
-      if (!cambios.length) return { cambios, general: {}, enBase: true };
-      const claves = [...evento.red, ...evento.blue].map((j) => Elo.claveDe(j));
-      await guardarFilas(tablaDe(sala), tabla, claves);
-      await EloSalasModel.actualizarGeneral(claves);
-      await EloSalasModel.espejar([sala]);
-      const general = Elo.leerElo();
-      return { cambios, general: EloSalasModel._elosDe(general, claves), enBase: true };
+      permitidos = await EloSalasModel.conCuenta(evento);
     } catch (error) {
       if (!/No se pudo abrir la base|Can't reach database|ECONNREFUSED|P1001|connect/i.test(error.message)) throw error;
-      // Sin base: los archivos, con la misma cuenta
-      const tabla = Elo.leerElo(sala);
-      const cambios = Elo.aplicarPartido(tabla, evento);
-      if (!cambios.length) return { cambios, general: {}, enBase: false };
-      Elo.guardarElo(tabla, sala);
-      const general = Elo.calcularGeneral(Object.fromEntries(SALAS.map((s) => [s, Elo.leerElo(s)])));
-      Elo.guardarElo(general);
-      const claves = [...evento.red, ...evento.blue].map((j) => Elo.claveDe(j));
-      return { cambios, general: EloSalasModel._elosDe(general, claves), enBase: false };
+      return { cambios: [], general: {}, enBase: false, sinCuenta: todos.map((j) => j.nombre) };
     }
+    const tieneCuenta = (j) => j.verificado === true && permitidos.has(String(j.nombre || "").trim().toLowerCase());
+    const sinCuenta = todos.filter((j) => !tieneCuenta(j)).map((j) => j.nombre);
+
+    const tabla = await EloSalasModel.tablaSala(sala);
+    const cambios = Elo.aplicarPartido(tabla, evento, { cuenta: tieneCuenta });
+    if (!cambios.length) return { cambios, general: {}, enBase: true, sinCuenta };
+    const claves = todos.filter(tieneCuenta).map((j) => Elo.claveDe(j));
+    await guardarFilas(tablaDe(sala), tabla, claves);
+    await EloSalasModel.actualizarGeneral(claves);
+    await EloSalasModel.espejar([sala]);
+    const general = Elo.leerElo();
+    return { cambios, general: EloSalasModel._elosDe(general, claves), enBase: true, sinCuenta };
   }
 
   static _elosDe(tabla, claves) {

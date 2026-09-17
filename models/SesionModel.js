@@ -107,10 +107,11 @@ class SesionModel {
     return { token: SesionModel.firmar(ficha), usuario: ficha };
   }
 
-  // En la web el correo es obligatorio: es lo que permite recuperar la cuenta
-  static async registrar({ nick, clave, email }) {
+  // En la web el correo es obligatorio y tiene que ser real: primero se pide un código
+  // (RegistroModel.pedirCodigo) y la cuenta se crea recién con ese código.
+  static async registrar({ nick, clave, email, codigo }) {
     UsuarioModel.revisarEmail(email);
-    await UsuarioModel.registrar({ nick, clave, email });
+    await require("./RegistroModel").confirmar({ nick, clave, email, codigo });
     const usuario = await UsuarioModel.buscarPorNick(nick);
     const ficha = await SesionModel.fichaDe(usuario);
     return { token: SesionModel.firmar(ficha), usuario: ficha };

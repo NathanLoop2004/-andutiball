@@ -11,4 +11,9 @@ router.post("/cuenta/codigo", verificarToken(), CuentaController.pedirCodigo);
 router.post("/cuenta/clave", verificarToken(), CuentaController.cambiarClave);
 router.post("/cuenta/email", verificarToken(), CuentaController.ponerEmail);
 
+// Vincular Discord (no es iniciar sesión): ir a autorizar, la vuelta de Discord, y desvincular
+router.post("/cuenta/discord", verificarToken(), CuentaController.vincularDiscord);
+router.delete("/cuenta/discord", verificarToken(), CuentaController.desvincularDiscord);
+router.get("/discord/vuelta", CuentaController.vueltaDiscord);
+
 module.exports = router;

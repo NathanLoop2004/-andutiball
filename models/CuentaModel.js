@@ -16,7 +16,9 @@ const crypto = require("crypto");
 const { base } = require("../services/ConexionBase");
 const claves = require("../lib/claves");
 const Correo = require("../services/Correo");
+const Correos = require("../lib/correos");
 const EloModel = require("./EloModel");
+const DiscordModel = require("./DiscordModel");
 const { revisarEmail } = require("./UsuarioModel");
 
 const MINUTOS_CODIGO = 10;
@@ -62,6 +64,8 @@ class CuentaModel {
       claveCambiada: u.claveCambiada,
       elo: EloModel.deNick(u.nick),          // el general
       eloPorSala: EloModel.porSala(u.nick),  // [{ sala, nombre, elo }]
+      discord: u.discordId ? { usuario: u.discordUsuario, avatar: u.discordAvatar, vinculado: u.discordVinculado } : null,
+      discordDisponible: DiscordModel.disponible(),
     };
   }
 
@@ -132,7 +136,7 @@ class CuentaModel {
   static async ponerEmail(nick, { email, clave }) {
     const u = await usuarioConSesion(nick);
     if (!claves.verificar(String(clave || ""), u.clave)) throw new Error("La contraseña actual no es esa.");
-    const correo = revisarEmail(email);
+    const correo = await Correos.revisarQueExista(revisarEmail(email));
     const otro = await base().usuario.findUnique({ where: { email: correo } });
     if (otro && otro.id !== u.id) throw new Error("Ese correo ya lo usa otra cuenta.");
     await base().usuario.update({ where: { id: u.id }, data: { email: correo } });

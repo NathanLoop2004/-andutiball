@@ -33,7 +33,7 @@
     <div class="campo">
       <label for="email">Correo electrónico</label>
       <input type="email" id="email" autocomplete="email" maxlength="200" required>
-      <div class="nota-campo">Lo usamos para recuperar tu cuenta y confirmar cambios de contraseña.</div>
+      <div class="nota-campo">Te mandamos un código para confirmar que existe. Lo usamos para recuperar tu cuenta.</div>
     </div>
 
     <div class="campo">
@@ -47,6 +47,12 @@
       <input type="password" id="clave2" autocomplete="new-password" minlength="4" required>
     </div>
 
+    <div class="campo" id="pasoCodigo" hidden>
+      <label for="codigo">Código que te mandamos al correo</label>
+      <input type="text" id="codigo" inputmode="numeric" autocomplete="one-time-code" maxlength="7" placeholder="6 números">
+      <div class="nota-campo" id="notaCodigo">Si no te llega en unos minutos, revisá spam o que el correo esté bien escrito. <a href="#" id="otroCodigo">Mandar otro código</a></div>
+    </div>
+
     <button class="boton principal" type="submit" id="crear">Crear cuenta</button>
     <div class="aviso" id="aviso"></div>
     <div class="pie-caja">¿Ya tenés cuenta? <a href="/frm/login/">Iniciá sesión</a></div>
@@ -57,28 +63,55 @@
 <script>
 const $ = (id) => document.getElementById(id);
 
+const avisar = (clase, texto) => { $("aviso").className = "aviso " + clase; $("aviso").textContent = texto; };
+const datos = () => ({ nick: $("nick").value.trim(), email: $("email").value.trim(), clave: $("clave").value });
+
+// Paso 1: revisa que el correo exista y manda el código. Paso 2: con el código se crea la cuenta.
+async function pedirCodigo() {
+  avisar("info", "Revisando tu correo…");
+  const r = await Sesion.pedir("/api/auth/registrar/codigo", { method: "POST", body: JSON.stringify(datos()) });
+  $("pasoCodigo").hidden = false;
+  $("crear").textContent = "Confirmar y crear cuenta";
+  avisar("ok", `Te mandamos un código a ${r.enviadoA}. Vence en ${r.minutos} minutos.`);
+  $("codigo").focus();
+}
+
+// Si cambia el nombre o el correo, hay que pedir un código nuevo
+for (const id of ["nick", "email"]) {
+  $(id).addEventListener("input", () => {
+    if ($("pasoCodigo").hidden) return;
+    $("pasoCodigo").hidden = true;
+    $("codigo").value = "";
+    $("crear").textContent = "Crear cuenta";
+    avisar("", "");
+  });
+}
+
+$("otroCodigo").onclick = async (evento) => {
+  evento.preventDefault();
+  try { await pedirCodigo(); } catch (error) { avisar("mal", error.message); }
+};
+
 $("formulario").onsubmit = async (evento) => {
   evento.preventDefault();
-  if ($("clave").value !== $("clave2").value) {
-    $("aviso").className = "aviso mal";
-    $("aviso").textContent = "Las dos contraseñas tienen que ser iguales.";
-    return;
-  }
+  if ($("clave").value !== $("clave2").value) return avisar("mal", "Las dos contraseñas tienen que ser iguales.");
   $("crear").disabled = true;
-  $("aviso").className = "aviso info";
-  $("aviso").textContent = "Creando tu cuenta…";
   try {
-    const { token, usuario } = await Sesion.pedir("/api/auth/registrar", {
-      method: "POST",
-      body: JSON.stringify({ nick: $("nick").value.trim(), email: $("email").value.trim(), clave: $("clave").value }),
-    });
-    Sesion.guardar(token, usuario);
-    location.href = "/";
+    if ($("pasoCodigo").hidden) {
+      await pedirCodigo();
+    } else {
+      avisar("info", "Creando tu cuenta…");
+      const { token, usuario } = await Sesion.pedir("/api/auth/registrar", {
+        method: "POST",
+        body: JSON.stringify({ ...datos(), codigo: $("codigo").value.trim() }),
+      });
+      Sesion.guardar(token, usuario);
+      location.href = "/";
+    }
   } catch (error) {
-    $("aviso").className = "aviso mal";
-    $("aviso").textContent = error.message;
-    $("crear").disabled = false;
+    avisar("mal", error.message);
   }
+  $("crear").disabled = false;
 };
 
 if (Sesion.usuario()) location.href = "/";

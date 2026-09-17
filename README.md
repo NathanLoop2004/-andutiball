@@ -190,6 +190,7 @@ npm run prueba-web       # la portada, el login y el panel solo para admins
 npm run prueba-config    # parámetros y comandos desde el panel, con permisos
 npm run prueba-carrusel  # el carrusel: imágenes seguras y permisos
 npm run prueba-elo-salas # el ELO de cada sala y el general
+npm run prueba-discord-vincular  # vincular Discord (simulado)
 npm run prueba-tunel     # el aviso del link (un mensaje que se actualiza)
 npm run prueba-espia     # que el panel no repita los mensajes
 npm run prueba-chat      # hablar normal no dispara comandos
@@ -435,8 +436,11 @@ La sesión dura **1 hora y media** y se renueva sola mientras tengas la página 
 
 ### 📧 Correo y "¿Olvidaste tu contraseña?"
 
-Para crear la cuenta se pide **correo electrónico** (dos cuentas no pueden tener el mismo). Si
-te olvidás la contraseña:
+Para crear la cuenta se pide **correo electrónico** (dos cuentas no pueden tener el mismo), y
+**tiene que existir**: si el Gmail es imposible o el dominio no recibe correos (por ejemplo
+`gmial.com`) la página dice que no existe, y si pasa ese control se manda un **código de 6 números**
+que hay que poner para terminar de crear la cuenta. Sin el código no hay cuenta. Si te olvidás la
+contraseña:
 
 1. En el login tocás **¿Olvidaste tu contraseña?** y escribís tu correo.
 2. Te llega un mail con el botón **Cambiar mi contraseña**. El link vence en **30 minutos** y
@@ -454,6 +458,21 @@ muestra en la consola.
 
 Las pantallas viven en `public/frm/<pantalla>/index.html` (el mismo encarpetado que usa
 app-centralshop), con `public/css/` y `public/js/` compartidos.
+
+## 🔗 Vincular Discord
+
+Con la sesión iniciada, en **Mi cuenta** (y en un aviso en la portada) está el botón **Vincular con
+Discord**. Discord pide permiso para ver tu usuario y sumarte al servidor; al aceptar, la cuenta queda
+vinculada y **entrás solo al servidor de ÑandutíBall**. No es para iniciar sesión y nunca se ve tu
+contraseña de Discord. En la tabla de **Usuarios** del panel se ve el Discord de cada cuenta.
+
+Para activarlo hay que crear una aplicación con bot en el portal de Discord y completar
+`DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DISCORD_BOT_TOKEN` y `DISCORD_GUILD_ID` en `.env`
+(los pasos están en `.env.example`). La dirección de vuelta que se registra en Discord es
+`<link de la web>/api/discord/vuelta`: si el link de la web cambia, hay que actualizarla. Para no tener que
+hacerlo nunca, está la **página puente** (`puente-discord/`): se sube una vez a GitHub Pages, se registra
+esa dirección en Discord y en `DISCORD_REDIRECT_URI`, y reenvía sola al link que tenga la web en ese
+momento. Los pasos están en `puente-discord/LEEME.md`.
 
 ## 🖼️ Carrusel de la portada
 
@@ -622,6 +641,10 @@ Para ver un mapa sin abrir una sala: `node pruebas/render.js mapas/nanduti-futsa
 **ELO general**, que es el promedio de tus ELO de cada sala pesado por los partidos que jugaste en
 cada una (si jugaste mucho más en 3v3, el 3v3 pesa más). Cada partido suma o resta solo en la sala
 donde se jugó; el general lo recalcula la base sola.
+
+**Solo suman los que tienen cuenta** (creada en la web) **y pusieron su `!clave` en la sala.** Los
+demás juegan igual, pero no ganan ni pierden puntos, y al terminar la sala avisa quiénes no
+sumaron. Si la base está apagada, ese partido no suma a nadie.
 
 - En la sala: `!elo` muestra el de esa sala y el general · `!top` los mejores de esa sala ·
   `!top general` los mejores de todas.

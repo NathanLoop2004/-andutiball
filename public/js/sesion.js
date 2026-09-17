@@ -193,6 +193,19 @@ const Sesion = {
       .join("");
   },
 
+  // Vincular Discord: el servidor arma la dirección de Discord y vamos para allá.
+  // Discord vuelve solo a Mi cuenta con el resultado.
+  async vincularDiscord(boton) {
+    if (boton) boton.disabled = true;
+    try {
+      const { url } = await Sesion.pedir("/api/cuenta/discord", { method: "POST" });
+      location.href = url;
+    } catch (error) {
+      if (boton) boton.disabled = false;
+      throw error;
+    }
+  },
+
   escapar(t) {
     return String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   },

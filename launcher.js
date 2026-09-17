@@ -348,26 +348,38 @@ api.on("error", (error) => {
   // Cada partido mueve SOLO el ELO de esta sala (tabla elo_<sala>); el general lo recalcula el
   // procedimiento actualizar_elo_general() de la base (ver models/EloSalasModel.js). Sin base, lo
   // mismo sobre los archivos. Lo que se anuncia en la sala es el cambio del ELO de la sala.
+  // SOLO suman los que tienen cuenta en la tabla usuarios y pusieron su clave: sin base, nadie.
   const procesarPartidoElo = async (evento) => {
     let cambiosSala;
     let eloGeneral = {};
+    let sinCuenta = [];
     try {
       if (!ambitoSala || !EloSalasModel.tieneTabla(ambitoSala)) {
-        // Una sala sin tabla propia (hosts/*.json nuevo): solo el general, como antes
+        // Una sala sin tabla propia (hosts/*.json nuevo): solo el general, con el mismo filtro de cuentas
+        const permitidos = await EloSalasModel.conCuenta(evento);
+        const tieneCuenta = (j) => j.verificado === true && permitidos.has(String(j.nombre || "").trim().toLowerCase());
+        sinCuenta = [...evento.red, ...evento.blue].filter((j) => !tieneCuenta(j)).map((j) => j.nombre);
         const tabla = leerElo();
-        cambiosSala = aplicarPartido(tabla, evento);
+        cambiosSala = aplicarPartido(tabla, evento, { cuenta: tieneCuenta });
         if (cambiosSala.length) guardarElo(tabla);
       } else {
         const r = await EloSalasModel.procesarPartido(ambitoSala, evento);
         cambiosSala = r.cambios;
         eloGeneral = r.general;
-        if (!r.enBase) console.warn("⚠️ La base no responde: el ELO se guardó en los archivos (se sube cuando vuelva)");
+        sinCuenta = r.sinCuenta || [];
+        if (!r.enBase) console.warn("⚠️ La base no responde: no se puede confirmar quién tiene cuenta, este partido no suma ELO");
       }
     } catch (error) {
       console.error("❌ No se pudo actualizar el ELO:", error.message);
       return;
     }
-    if (!cambiosSala.length) return;
+    const avisoSinCuenta = sinCuenta.length
+      ? `🔐 No sumaron (sin cuenta o sin !clave): ${sinCuenta.join(", ")} — creá tu cuenta en la web para sumar ELO`
+      : null;
+    if (!cambiosSala.length) {
+      if (avisoSinCuenta) frame.evaluate((t) => window.__sala && window.__sala.sendAnnouncement(t, null, 0xFFD100, "small", 0), avisoSinCuenta).catch(() => {});
+      return;
+    }
     estado.elo = ranking(leerElo(ambitoSala), 50);
 
     frame.evaluate((datos) => window.__eloActualizar && window.__eloActualizar(datos), eloParaLaPagina()).catch(() => {});
@@ -389,6 +401,7 @@ api.on("error", (error) => {
       .filter((c) => c.subio || c.bajo)
       .map((c) => `${c.subio ? "⬆️" : "⬇️"} ${c.nombre} ahora es ${c.division.emoji} ${c.division.nombre}`);
     const lineas = [`📊 ${resumen}`, ...anuncios];
+    if (avisoSinCuenta) lineas.push(avisoSinCuenta);
     frame
       .evaluate((textos) => {
         if (!window.__sala) return;

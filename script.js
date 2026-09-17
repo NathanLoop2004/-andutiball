@@ -157,11 +157,11 @@ var CantidadCambiarTamano = 1;
 // ▇▇▇▇▇▇▇ ⚽👕 CAMISETAS POR DEFECTO ⚽👕 ▇▇▇▇▇▇▇
 
 // CAMISETA EQUIPO RED 🔴
-var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
+var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
 var NombreEquipoRojo = "OLIMPIA";
 
 // CAMISETA EQUIPO BLUE 🔵
-var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
+var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
 var NombreEquipoAzul = "CERRO PORTEÑO";
 
 
@@ -19555,7 +19555,8 @@ function revisarTurnos() {
 // y mostramos lo que Node nos devuelve. Así el puntaje sobrevive a que se cierre la sala y las
 // 4 salas comparten la misma tabla.
 //
-// Hay dos ELO: el de ESTA sala y el GENERAL (las 4 salas juntas). Cada partido mueve los dos.
+// Hay dos ELO: el de ESTA sala y el GENERAL (sale de las salas). Solo suman los que tienen cuenta
+// en la web y pusieron su clave en la sala; los demás juegan igual pero no suman ni restan.
 // El color del nombre y la división que se muestran son los de esta sala.
 //
 // Comandos: !elo (el propio o el de otro: sala y general) · !top (los 10 mejores de esta sala)
@@ -19625,13 +19626,20 @@ function mostrarTop(player, tabla, titulo) {
 	}
 }
 
-// Los que están en la cancha cuando arranca el partido son los que después suman o pierden
+// Los que están en la cancha cuando arranca el partido son los que después suman o pierden.
+// verificado: puso bien su clave en esta sala (bloque 🔐 USUARIOS). Solo esos suman ELO: Node además
+// revisa que tengan cuenta en la tabla usuarios.
 function jugadoresEnCancha() {
 	var salida = { red: [], blue: [] };
 	room.getPlayerList().forEach(function (j) {
 		if (j.id === 0) return;
-		if (j.team === 1) salida.red.push({ nombre: j.name, auth: playerAuths[j.id] || null });
-		if (j.team === 2) salida.blue.push({ nombre: j.name, auth: playerAuths[j.id] || null });
+		var ficha = {
+			nombre: j.name,
+			auth: playerAuths[j.id] || null,
+			verificado: Boolean(typeof usuariosVerificados !== "undefined" && usuariosVerificados[j.id]),
+		};
+		if (j.team === 1) salida.red.push(ficha);
+		if (j.team === 2) salida.blue.push(ficha);
 	});
 	return salida;
 }

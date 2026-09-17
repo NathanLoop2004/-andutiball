@@ -39,6 +39,7 @@
         <span class="tenue" id="ladoRango" style="font-size:13px"></span>
         <nav>
           <a href="#perfil" class="activo">Perfil</a>
+          <a href="#discord">Discord</a>
           <a href="#seguridad">Contraseña</a>
           <a href="/">Mi ELO y ranking</a>
         </nav>
@@ -59,6 +60,32 @@
             <dt>Miembro desde</dt><dd id="datoDesde">…</dd>
             <dt>Último cambio de contraseña</dt><dd id="datoClave">…</dd>
           </dl>
+        </div>
+      </section>
+
+      <!-- Discord: vincular la cuenta (no es iniciar sesión) y entrar al servidor -->
+      <section class="tarjeta" id="discord">
+        <div class="tarjeta-cabeza"><h2>Discord</h2><span class="etiqueta" id="estadoDiscord">…</span></div>
+        <div class="tarjeta-cuerpo">
+          <div class="aviso" id="avisoDiscord" role="status"></div>
+          <div id="discordSin" hidden>
+            <p class="tenue" style="margin-top:0">Vinculá tu cuenta de Discord con la de ÑandutíBall. Al vincularla te sumamos al servidor de ÑandutíBall, donde se avisan las novedades y los torneos. No es para iniciar sesión: solo asocia tu Discord a esta cuenta.</p>
+            <div class="fila-botones" style="margin-top:0"><button class="boton discord" type="button" id="vincularDiscord">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3l-.6 1.3a18.4 18.4 0 0 0-5.6 0L8.6 3a19.7 19.7 0 0 0-4.9 1.5C.5 9.3-.3 14 .1 18.6a19.9 19.9 0 0 0 6 3l1.3-2a12.9 12.9 0 0 1-2-1l.5-.4a14.2 14.2 0 0 0 12.2 0l.5.4a12.8 12.8 0 0 1-2 1l1.3 2a19.8 19.8 0 0 0 6-3c.5-5.3-.8-9.9-3.6-14.2ZM8 15.8c-1.2 0-2.2-1.1-2.2-2.4S6.8 11 8 11s2.2 1.1 2.2 2.4-1 2.4-2.2 2.4Zm8 0c-1.2 0-2.2-1.1-2.2-2.4S14.8 11 16 11s2.2 1.1 2.2 2.4-1 2.4-2.2 2.4Z"/></svg>
+              Vincular con Discord</button></div>
+            <p class="tenue" style="font-size:12px;margin:12px 0 0">Discord te va a pedir permiso para que veamos tu nombre de usuario y te sumemos al servidor. Nunca vemos tu contraseña ni tus mensajes.</p>
+          </div>
+          <div id="discordCon" hidden>
+            <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+              <img id="discordAvatar" alt="" width="48" height="48" style="border-radius:50%;background:var(--superficie-2)" hidden>
+              <span class="avatar grande" id="discordInicial" hidden>D</span>
+              <div style="min-width:0">
+                <b id="discordUsuario" style="word-break:break-word"></b>
+                <div class="tenue" style="font-size:13px" id="discordDesde"></div>
+              </div>
+              <button class="boton chico peligro" type="button" id="desvincularDiscord" style="margin-left:auto">Desvincular</button>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -133,6 +160,60 @@ const fecha = (f) => f ? new Date(f).toLocaleDateString("es-PY", { day: "numeric
 let cuenta = null;
 let relojReenvio = null;
 
+// ── Discord ──
+const RESULTADOS_DISCORD = {
+  vinculado: ["¡Listo! Tu Discord quedó vinculado y ya estás en el servidor de ÑandutíBall.", "ok"],
+  "ya-estaba": ["¡Listo! Tu Discord quedó vinculado. Ya estabas en el servidor de ÑandutíBall.", "ok"],
+  "sin-servidor": ["Tu Discord quedó vinculado, pero no pudimos sumarte al servidor. Avisale a un administrador.", "info"],
+  cancelado: ["Cancelaste el vínculo en Discord. Podés intentarlo de nuevo cuando quieras.", "info"],
+  vencido: ["Se venció el tiempo para vincular. Tocá el botón de nuevo.", "mal"],
+  "otra-cuenta": ["Ese Discord ya está vinculado a otra cuenta de ÑandutíBall.", "mal"],
+  error: ["No se pudo vincular con Discord. Probá de nuevo en un rato.", "mal"],
+};
+
+function pintarDiscord() {
+  const d = cuenta.discord;
+  $("discordSin").hidden = Boolean(d);
+  $("discordCon").hidden = !d;
+  $("estadoDiscord").className = "etiqueta " + (d ? "ok" : "");
+  $("estadoDiscord").textContent = d ? "vinculado" : "sin vincular";
+  if (d) {
+    $("discordUsuario").textContent = d.usuario;
+    $("discordDesde").textContent = "Vinculado el " + fecha(d.vinculado);
+    $("discordAvatar").hidden = !d.avatar;
+    if (d.avatar) $("discordAvatar").src = d.avatar;
+    $("discordInicial").hidden = Boolean(d.avatar);
+    $("discordInicial").textContent = Sesion.inicial(d.usuario.replace(/^@/, ""));
+  } else {
+    $("vincularDiscord").disabled = !cuenta.discordDisponible;
+    if (!cuenta.discordDisponible && !$("avisoDiscord").textContent) avisar("avisoDiscord", "El vínculo con Discord todavía no está disponible.", "info");
+  }
+}
+
+$("vincularDiscord").onclick = async () => {
+  avisar("avisoDiscord", "Te llevamos a Discord…", "info");
+  try { await Sesion.vincularDiscord($("vincularDiscord")); }
+  catch (error) { avisar("avisoDiscord", error.message, "mal"); }
+};
+
+$("desvincularDiscord").onclick = async () => {
+  if (!confirm("¿Desvincular tu Discord de esta cuenta? No te saca del servidor.")) return;
+  try {
+    await Sesion.pedir("/api/cuenta/discord", { method: "DELETE" });
+    avisar("avisoDiscord", "Tu Discord quedó desvinculado.", "ok");
+    await cargar();
+  } catch (error) { avisar("avisoDiscord", error.message, "mal"); }
+};
+
+// Lo que dijo Discord al volver (?discord=...): se muestra una vez y se limpia la barra
+{
+  const r = new URLSearchParams(location.search).get("discord");
+  if (r && RESULTADOS_DISCORD[r]) {
+    avisar("avisoDiscord", RESULTADOS_DISCORD[r][0], RESULTADOS_DISCORD[r][1]);
+    history.replaceState(null, "", "/frm/cuenta/#discord");
+  }
+}
+
 function pintarCuenta() {
   const u = Sesion.usuario() || {};
   $("avatar").textContent = Sesion.inicial(cuenta.nick);
@@ -145,6 +226,7 @@ function pintarCuenta() {
   $("datoClave").textContent = fecha(cuenta.claveCambiada);
 
   $("seccionEmail").hidden = Boolean(cuenta.email);
+  pintarDiscord();
   $("pedirCodigo").disabled = !cuenta.email;
   $("textoPedir").textContent = cuenta.email
     ? `Por seguridad, te vamos a enviar un código de 6 números a ${cuenta.emailTapado}. Con ese código elegís la contraseña nueva.`

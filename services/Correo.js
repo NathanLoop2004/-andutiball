@@ -116,13 +116,13 @@ function mailRecuperar({ nick, link, minutos }) {
 }
 
 // El código de 6 números para cambiar la clave desde "Mi cuenta"
-function mailCodigo({ nick, codigo, minutos }) {
+function mailCodigo({ nick, codigo, minutos, para = "cambiar la contraseña de tu cuenta" }) {
   const digitos = String(codigo).split("").join("&#8202;");
   const html = plantilla({
     preencabezado: `Tu código es ${codigo}. Vence en ${minutos} minutos.`,
     titulo: "Tu código de verificación",
     cuerpoHtml:
-      parrafo(`Hola <b>${escapar(nick)}</b>, usá este código para cambiar la contraseña de tu cuenta:`) +
+      parrafo(`Hola <b>${escapar(nick)}</b>, usá este código para ${escapar(para)}:`) +
       `<div style="margin:8px 0 24px;padding:18px;border:1px solid #e5e7eb;border-radius:10px;background:#f9fafb;text-align:center;font-family:'SFMono-Regular',Consolas,'Liberation Mono',monospace;font-size:32px;font-weight:700;letter-spacing:8px;color:#111827;">${digitos}</div>` +
       parrafo(`Vence en <b>${minutos} minutos</b>. No se lo pases a nadie: nadie de ÑandutíBall te lo va a pedir.`),
     pie: "¿No pediste esto? Ignorá este correo y, por las dudas, cambiá tu contraseña.",
@@ -130,7 +130,7 @@ function mailCodigo({ nick, codigo, minutos }) {
 
   const texto =
     `Hola ${nick},\n\n` +
-    `Tu código para cambiar la contraseña de ÑandutíBall es: ${codigo}\n\n` +
+    `Tu código para ${para} en ÑandutíBall es: ${codigo}\n\n` +
     `Vence en ${minutos} minutos. No se lo pases a nadie.\n` +
     `Si no fuiste vos, ignorá este correo.`;
 

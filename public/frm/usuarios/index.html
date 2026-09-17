@@ -36,7 +36,7 @@
 
   <section class="tarjeta" style="margin-top:14px">
     <div class="tarjeta-cabeza">
-      <input type="search" id="q" placeholder="Buscar por nombre" autocomplete="off" aria-label="Buscar por nombre" style="max-width:280px">
+      <input type="search" id="q" placeholder="Buscar por nombre o Discord" autocomplete="off" aria-label="Buscar por nombre o Discord" style="max-width:280px">
       <span class="tenue" id="total" style="font-size:13px"></span>
     </div>
     <div class="tabla-caja" id="tabla"><div class="tarjeta-cuerpo tenue">Cargando…</div></div>
@@ -85,10 +85,13 @@ function pintar(datos) {
 
   document.getElementById("tabla").innerHTML = `
     <table class="tabla">
-      <thead><tr><th>Nombre</th><th>Correo</th><th>Estado</th><th class="der">ELO</th><th class="der">PJ</th><th class="der">G-E-P</th><th class="der">Goles</th><th>Visto</th><th class="der">Acciones</th></tr></thead>
+      <thead><tr><th>Nombre</th><th>Discord</th><th>Correo</th><th>Estado</th><th class="der">ELO</th><th class="der">PJ</th><th class="der">G-E-P</th><th class="der">Goles</th><th>Visto</th><th class="der">Acciones</th></tr></thead>
       <tbody>${datos.usuarios.map((u) => `
         <tr>
           <td class="jugador">${esc(u.nick)}</td>
+          <td>${u.discordId
+            ? `<span class="discord-celda" title="ID de Discord: ${esc(u.discordId)}">${u.discordAvatar ? `<img src="${esc(u.discordAvatar)}" alt="" width="22" height="22">` : ""}${esc(u.discordUsuario || u.discordId)}</span>`
+            : '<span class="tenue">sin vincular</span>'}</td>
           <td>${u.email ? esc(u.email) : '<span class="tenue">sin correo</span>'}</td>
           <td>${u.baneado
             ? `<span class="etiqueta ban" title="${esc(u.motivoBan || "")}">baneado</span>`

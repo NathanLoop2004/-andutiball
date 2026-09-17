@@ -69,7 +69,35 @@ const json = (cuerpo, token) => ({
     const emailMal = await pedir(web.url + "/api/auth/registrar", json({ nick, clave, email: "esto-no-es-un-mail" }));
     revisar("Un correo mal escrito se rechaza", emailMal.status === 400, emailMal.datos.error);
 
-    const alta = await pedir(web.url + "/api/auth/registrar", json({ nick, clave, email: email.toUpperCase() }));
+    // ── El correo tiene que existir ──
+    const Correos = require("../lib/correos");
+    revisar("Un Gmail imposible se rechaza al instante", !Correos.gmailValido("ab") && !Correos.gmailValido("juan..perez") && Correos.gmailValido("juan.perez+haxball"));
+    Correos.usarResolver(async (dominio) => {
+      if (dominio === "prueba.nanduti") return [{ exchange: "mx.prueba.nanduti", priority: 10 }];
+      throw Object.assign(new Error("no existe"), { code: "ENOTFOUND" });
+    });
+    const gmailMal = await pedir(web.url + "/api/auth/registrar/codigo", json({ nick, clave, email: "ab@gmail.com" }));
+    revisar("Si el Gmail no existe lo dice", gmailMal.status === 400 && /no existe/i.test(gmailMal.datos.error), gmailMal.datos.error);
+    const dominioMal = await pedir(web.url + "/api/auth/registrar/codigo", json({ nick, clave, email: "alguien@gmial.com" }));
+    revisar("Si el dominio no recibe correos dice que no existe", dominioMal.status === 400 && /no existe/i.test(dominioMal.datos.error), dominioMal.datos.error);
+
+    const CorreoAlta = require("../services/Correo");
+    const mailsAlta = [];
+    CorreoAlta.usarEnvio(async (mail) => { mailsAlta.push(mail); return { ok: true }; });
+    const sinCodigo = await pedir(web.url + "/api/auth/registrar", json({ nick, clave, email }));
+    revisar("Sin el código del correo no se crea la cuenta", sinCodigo.status === 400 && /código/i.test(sinCodigo.datos.error), sinCodigo.datos.error);
+    const pedidoAlta = await pedir(web.url + "/api/auth/registrar/codigo", json({ nick, clave, email: email.toUpperCase() }));
+    const codigoAlta = ((mailsAlta[0] && mailsAlta[0].texto) || "").match(/\b(\d{6})\b/)?.[1];
+    revisar("Manda un código de 6 números a ese correo", pedidoAlta.status === 200 && Boolean(codigoAlta) && mailsAlta[0].para === email, pedidoAlta.datos.error || pedidoAlta.datos.enviadoA);
+    const otraVez = await pedir(web.url + "/api/auth/registrar/codigo", json({ nick, clave, email }));
+    revisar("No deja pedir otro código enseguida", otraVez.status === 400 && /esper/i.test(otraVez.datos.error), otraVez.datos.error);
+    const codigoMalo = await pedir(web.url + "/api/auth/registrar", json({ nick, clave, email, codigo: codigoAlta === "000000" ? "111111" : "000000" }));
+    revisar("Con un código equivocado no se crea", codigoMalo.status === 400 && /incorrecto/i.test(codigoMalo.datos.error), codigoMalo.datos.error);
+    const codigoOtroNick = await pedir(web.url + "/api/auth/registrar", json({ nick: nick + "x", clave, email, codigo: codigoAlta }));
+    revisar("El código no sirve para otro nombre", codigoOtroNick.status === 400, codigoOtroNick.datos.error);
+    CorreoAlta.usarEnvio(null);
+
+    const alta = await pedir(web.url + "/api/auth/registrar", json({ nick, clave, email: email.toUpperCase(), codigo: codigoAlta }));
     revisar("Se puede crear la cuenta", alta.status === 201 && Boolean(alta.datos.token), "HTTP " + alta.status);
     revisar("Vuelve el usuario, nunca la clave", alta.datos.usuario.nick === nick && !("clave" in alta.datos.usuario), Object.keys(alta.datos.usuario).join(","));
     revisar("Un usuario nuevo no es admin", alta.datos.usuario.admin === false);

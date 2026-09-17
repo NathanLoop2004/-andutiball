@@ -24,7 +24,7 @@ function revisarEmail(email) {
 // Lo que se puede mostrar de un usuario (sin el hash de la clave)
 const sinClave = (usuario) => {
   if (!usuario) return null;
-  const { clave, recuperarHash, recuperarVence, codigoHash, codigoVence, codigoIntentos, codigoPedido, ...resto } = usuario;
+  const { clave, recuperarHash, recuperarVence, codigoHash, codigoVence, codigoIntentos, codigoPedido, discordEstadoHash, discordEstadoVence, discordVuelta, ...resto } = usuario;
   return { ...resto, registrado: Boolean(clave) };
 };
 
@@ -125,7 +125,10 @@ class UsuarioModel {
   static async buscar({ q = "", pagina = 1, porPagina = 15 } = {}) {
     const texto = limpiarNick(q);
     const tam = Math.min(Math.max(Number.parseInt(porPagina, 10) || 15, 1), 100);
-    const where = texto ? { nick: { contains: texto, mode: "insensitive" } } : {};
+    // Busca por nick o por el usuario de Discord vinculado
+    const where = texto
+      ? { OR: [{ nick: { contains: texto, mode: "insensitive" } }, { discordUsuario: { contains: texto, mode: "insensitive" } }] }
+      : {};
     const total = await base().usuario.count({ where });
     const paginas = Math.max(1, Math.ceil(total / tam));
     const actual = Math.min(Math.max(Number.parseInt(pagina, 10) || 1, 1), paginas);

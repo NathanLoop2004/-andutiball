@@ -76,6 +76,14 @@
       <div id="accionesCabecera"></div>
     </div>
 
+    <div class="aviso-discord" id="avisoDiscordInicio" hidden>
+      <div>
+        <b>Vinculá tu Discord</b>
+        <span class="tenue">Te sumamos al servidor de ÑandutíBall para que te enteres de las novedades y los torneos.</span>
+      </div>
+      <button class="boton discord" type="button" id="vincularDiscordInicio">Vincular con Discord</button>
+    </div>
+
     <div class="seccion-titulo"><h2>Tu ELO general</h2><span id="miPuesto"></span></div>
     <div class="tarjeta" id="miElo">
       <div class="vacio-elo">Cargando…</div>
@@ -362,11 +370,17 @@ async function cargarMiElo() {
   try {
     const { cuenta } = await Sesion.pedir("/api/cuenta");
     pintarMiElo(cuenta.elo);
+    $("avisoDiscordInicio").hidden = Boolean(cuenta.discord) || !cuenta.discordDisponible;
     pintarEloSalas(cuenta.eloPorSala);
   } catch (error) {
     $("miElo").innerHTML = `<div class="vacio-elo">No se pudo cargar tu puntaje: ${esc(error.message)}</div>`;
   }
 }
+
+$("vincularDiscordInicio").addEventListener("click", async (e) => {
+  try { await Sesion.vincularDiscord(e.currentTarget); }
+  catch (error) { alert(error.message); }
+});
 
 function pintar() {
   const u = Sesion.usuario();

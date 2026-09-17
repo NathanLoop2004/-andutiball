@@ -42,6 +42,17 @@ model Usuario {
   codigoVence     DateTime?
   codigoIntentos  Int       @default(0)
   codigoPedido    DateTime?
+  // Discord vinculado (no es para iniciar sesión: solo se asocia la cuenta y se lo mete al servidor).
+  // No se guarda ningún token de Discord: se usa una vez y se descarta.
+  discordId        String?   @unique
+  discordUsuario   String?
+  discordAvatar    String?
+  discordVinculado DateTime?
+  // Mientras está yendo y viniendo de Discord: el hash del "state" (ata la vuelta a esta cuenta),
+  // la dirección de vuelta que se usó y hasta cuándo sirve.
+  discordEstadoHash  String?  @unique
+  discordEstadoVence DateTime?
+  discordVuelta      String?
   baneado        Boolean   @default(false)   // lo banea el OWNER desde la web: no puede entrar a ninguna sala
   motivoBan       String?
   baneadoEl       DateTime?

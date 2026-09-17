@@ -546,3 +546,13 @@ input[type=number]:focus { outline: none; border-color: var(--acento); box-shado
 .elo-sala .division { align-self: flex-start; }
 .elo-sala.vacia b { color: var(--tenue); }
 #pestanasRanking { margin: -2px 0 12px; }
+
+/* Discord */
+.boton.discord { background: #5865f2; border-color: #5865f2; color: #fff; }
+.boton.discord:hover { background: #4752c4; border-color: #4752c4; color: #fff; }
+.boton.discord svg { width: 18px; height: 18px; }
+.aviso-discord { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 8px 0 4px; padding: 16px 20px; border-radius: var(--radio); border: 1px solid color-mix(in srgb, #5865f2 35%, transparent); background: color-mix(in srgb, #5865f2 10%, var(--superficie)); }
+.aviso-discord b { display: block; }
+.aviso-discord span { font-size: 14px; }
+.discord-celda { display: inline-flex; align-items: center; gap: 8px; }
+.discord-celda img { border-radius: 50%; flex: none; }

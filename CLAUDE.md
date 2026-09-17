@@ -22,7 +22,7 @@ Contexto para trabajar en este proyecto. La documentación para personas está e
 - `services/`: la conexión a la base por entorno y los webhooks (actualizaciones, link de la web).
 - `prisma/` + `docker-compose.base.yml`: las tablas y la base, que va **aparte** de las salas.
 - `tunel.js`, `actualizacion.js`, `sembrar.js`: los comandos sueltos (túnel de Cloudflare, novedades, sembrar la base).
-- `pruebas/`: 21 pruebas que corren sin gastar tokens (ver “Probar sin gastar tokens”).
+- `pruebas/`: 22 pruebas que corren sin gastar tokens (ver “Probar sin gastar tokens”).
 
 ## Despliegue (launcher.js)
 
@@ -174,6 +174,39 @@ API (`routes/ConfigRouter.js`): `GET /api/config/salas` · `GET|PUT|DELETE /api/
 el límite que espera al fin del partido y que la base no pise un cambio hecho en la sala), los
 comandos apagados, el modelo contra la base y la API con permisos (sin sesión, sin rango,
 SUBAYUDANTE, HOSTER). Deja las tablas como estaban.
+
+## Vincular Discord (no es iniciar sesión)
+
+En **Mi cuenta** (y un aviso en la portada) el que ya tiene sesión toca "Vincular con Discord":
+OAuth2 con los scopes `identify guilds.join` (`services/Discord.js`, `models/DiscordModel.js`).
+
+- `POST /api/cuenta/discord` (con sesión) arma un `state` al azar, guarda **su hash** en
+  `usuarios.discordEstadoHash` (vence en 10 min, con la dirección de vuelta en `discordVuelta`)
+  y devuelve la URL de Discord. La vuelta no trae el token de la web: **la cuenta sale del state**,
+  que sirve una sola vez.
+- `GET /api/discord/vuelta` canjea el código, pide `/users/@me`, guarda `discordId` (único: un
+  Discord no queda en dos cuentas), `discordUsuario` y `discordAvatar`, y lo mete al servidor con
+  `PUT /guilds/:guild/members/:id` usando el **bot** (201 agregado · 204 ya estaba). Siempre
+  redirige a `/frm/cuenta/?discord=<resultado>`: vinculado · ya-estaba · sin-servidor · cancelado ·
+  vencido · otra-cuenta · error.
+- **No se guarda ningún token de Discord**: el access_token se usa y se descarta.
+- `.env`: `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID`,
+  y opcional `DISCORD_REDIRECT_URI`. Sin eso el botón queda deshabilitado y la API avisa.
+- **Ojo con la dirección de vuelta**: Discord exige tenerla registrada tal cual en el portal. Por
+  defecto es `<web>/api/discord/vuelta` (WEB_URL → túnel → localhost): con el link de Cloudflare
+  que cambia, hay que actualizarla en el portal cada vez. **Por eso existe la página puente**
+  (`puente-discord/index.html`, se sube una vez a GitHub Pages): en Discord se registra el puente
+  (`DISCORD_REDIRECT_URI`), y la web manda su link actual adentro del `state`
+  (`<al azar>.<base64url del link>`). El puente lo lee y reenvía a `<link>/api/discord/vuelta` con
+  el mismo code/state. Solo reenvía a `DOMINIOS_PERMITIDOS` (trycloudflare.com) por https (o
+  localhost), así no sirve de trampolín; y el code sin el secreto no sirve. El canje del code se
+  hace con la vuelta guardada (`discordVuelta` = el puente), que es la que Discord exige.
+- La tabla de **Usuarios** del OWNER muestra el Discord de cada cuenta y el buscador busca también
+  por `discordUsuario`.
+
+`npm run prueba-discord-vincular` simula Discord (`Discord.usarFetch`): el link, el state de un
+solo uso, que no se guarden tokens, otra cuenta, cancelar, ya estaba, sin permiso del bot, código
+malo, vencido, desvincular, la tabla de Usuarios y sin configurar.
 
 ## Carrusel de la portada
 
@@ -502,6 +535,16 @@ contraseña pide un **código de 6 números por correo** (`CuentaModel`):
 
 - `usuarios.email` (único, en minúsculas). La web lo **exige** (`SesionModel.registrar`); desde la
   sala no se pide, por eso en `UsuarioModel.registrar` es opcional. Los usuarios viejos quedan con `null`.
+- **El correo tiene que existir** (17/09/2026). Ningún servidor confirma que una casilla exista
+  (Gmail no contesta eso), así que son dos capas:
+  1. `lib/correos.js` → `revisarQueExista()`: formato, reglas del nombre de Gmail (6 a 30 letras,
+     números y puntos, sin `..`) y registro **MX** del dominio (`gmial.com` → "Ese correo no existe").
+     Si el DNS no contesta (sin internet) deja pasar. Las pruebas cambian el DNS con `usarResolver(fn)`.
+  2. **Registro en dos pasos** (`models/RegistroModel.js`): `POST /api/auth/registrar/codigo`
+     manda un código de 6 números; `POST /api/auth/registrar` con `codigo` crea la cuenta. Si el
+     correo no existe, el código no llega y no hay cuenta. Lo pendiente vive **en memoria** (hash
+     atado a correo + nick, 10 min, 5 intentos, 60 s entre pedidos); la clave no se guarda ahí.
+  `CuentaModel.ponerEmail` usa la capa 1.
 - `RecuperarModel`: `pedir({email})` genera 32 bytes al azar, guarda **solo el SHA-256** en
   `recuperarHash` con `recuperarVence` (30 min) y manda el mail; `revisar(t)` y `cambiar({token, clave})`
   lo usan y lo borran (una sola vez). `pedir` contesta **lo mismo** exista o no el correo.
@@ -830,7 +873,14 @@ Circuito: el bloque `📊 ELO Y DIVISIONES` del script anota quién está en can
 - Los archivos `datos/elo.json` (general) y `datos/elo-<sala>.json` quedan como **espejo** (los
   leen la sala y la web, sincrónico). `EloSalasModel.espejar()` los escribe después de cada partido
   y `sincronizar()` al abrir la sala (si la tabla está vacía y el archivo tiene datos, sube el archivo).
-- Sin base: `procesarPartido` cae a los archivos y calcula el general en Node (`enBase: false`).
+- **Solo suman los que tienen cuenta y pusieron `!clave`** (17/09/2026). El bloque `📊 ELO` manda
+  `verificado` (de `usuariosVerificados`) por cada jugador, y `EloSalasModel.conCuenta(evento)`
+  busca en `usuarios` los verificados con `clave` no nula y sin ban. `aplicarPartido(tabla, partido,
+  { cuenta })` los deja jugar a los demás como invitados con 1000 (para que la cuenta del partido sea
+  justa), pero **no los agrega a la tabla ni a los cambios**. El launcher anuncia en la sala quiénes
+  no sumaron (`sinCuenta`). La rama de sala sin tabla del launcher usa el mismo filtro.
+- Sin base: **no suma nadie** (no se puede confirmar ninguna cuenta), no se escriben archivos y
+  devuelve `enBase: false`. `calcularGeneral()` queda para las pruebas y como referencia.
 - El nombre de la tabla va en SQL: sale **solo** de `EloSalasModel.TABLAS`. `archivoDe()` rechaza
   cualquier sala que no sea `[a-z0-9-]`. Una sala nueva en `hosts/` necesita su tabla (migración +
   `TABLAS`); mientras tanto usa solo el general.
@@ -863,7 +913,7 @@ El cupo de las 4 salas es 30 (`CantidadDeJugadores` en `hosts/*.json`), el máxi
 
 ## Probar sin gastar tokens
 
-Son 21 y **todas tienen que quedar en verde antes de commitear**:
+Son 22 y **todas tienen que quedar en verde antes de commitear**:
 
 | Comando | Qué mira |
 |---|---|
@@ -888,6 +938,7 @@ Son 21 y **todas tienen que quedar en verde antes de commitear**:
 | `prueba-config` | Parámetros y comandos desde el panel: en vivo, en la base y con permisos |
 | `prueba-carrusel` | Las imágenes del carrusel: archivos seguros, portada pública y panel con permisos |
 | `prueba-elo-salas` | ELO por sala: tablas separadas, el procedimiento del general y el modo sin base |
+| `prueba-discord-vincular` | Vincular Discord: autorizar, entrar al servidor, sin guardar tokens |
 
 Las que hablan con la base **no fallan si está apagada**: avisan y saltean esa parte.
 
@@ -959,7 +1010,7 @@ Cosas que costaron encontrar y conviene no volver a pisar:
 
 1. Tocar los **bloques** en `parches/bloques/` (nunca el final de `script.js` a mano) y correr
    `npm run parchar`.
-2. `node --check script.js` y las **21 pruebas en verde**. No commitear con una en rojo: ya pasó
+2. `node --check script.js` y las **22 pruebas en verde**. No commitear con una en rojo: ya pasó
    una vez de pushear con `prueba-discord` fallando.
 3. Actualizar `README.md` (para la gente) y este archivo (para el que siga programando).
 4. Commit y push.

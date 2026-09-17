@@ -2,6 +2,7 @@
 // Es el mismo usuario y la misma clave que se usan en la sala (tabla `usuarios`).
 const SesionModel = require("../models/SesionModel");
 const RecuperarModel = require("../models/RecuperarModel");
+const RegistroModel = require("../models/RegistroModel");
 
 const responder = (res, error) => {
   const sinBase = /No se pudo abrir la base|Can't reach database|ECONNREFUSED/i.test(error.message);
@@ -20,8 +21,16 @@ class AuthController {
 
   static registrar = async (req, res) => {
     try {
+      const { nick, clave, email, codigo } = req.body || {};
+      res.status(201).json({ ok: true, ...(await SesionModel.registrar({ nick, clave, email, codigo })) });
+    } catch (error) { responder(res, error); }
+  };
+
+  // Paso 1 del registro: revisa que el correo pueda existir y le manda el código
+  static codigoRegistro = async (req, res) => {
+    try {
       const { nick, clave, email } = req.body || {};
-      res.status(201).json({ ok: true, ...(await SesionModel.registrar({ nick, clave, email })) });
+      res.json({ ok: true, ...(await RegistroModel.pedirCodigo({ nick, clave, email })) });
     } catch (error) { responder(res, error); }
   };
 
