@@ -36,6 +36,12 @@ model Usuario {
   // tal cual) y hasta cuándo sirve. Se borra apenas se usa.
   recuperarHash   String?   @unique
   recuperarVence  DateTime?
+  // Cambiar la clave estando logueado: un código de 6 números que llega al correo.
+  // Se guarda su hash, hasta cuándo sirve, cuántas veces se erró y cuándo se pidió.
+  codigoHash      String?
+  codigoVence     DateTime?
+  codigoIntentos  Int       @default(0)
+  codigoPedido    DateTime?
   baneado        Boolean   @default(false)   // lo banea el OWNER desde la web: no puede entrar a ninguna sala
   motivoBan       String?
   baneadoEl       DateTime?

@@ -3,93 +3,216 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Ñandutí Web</title>
+<title>ÑandutíBall</title>
+<meta name="description" content="El host paraguayo de HaxBall: salas de futsal y Real Soccer, ranking ELO y tu cuenta.">
+<link rel="icon" href="/img/logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="/css/nanduti.css">
 </head>
 <body>
 
-<div class="barra">
-  <a class="marca" href="/"><span class="telar">🕸️</span> Ñandutí Web</a>
+<header class="barra">
+  <a class="marca" href="/"><img src="/img/logo.svg" alt=""><span>ÑandutíBall</span></a>
   <div class="derecha" id="derecha"></div>
-</div>
+</header>
 
-<div class="tapa">
-  <h1>🕸️ Ñandutí Web</h1>
-  <p>El host paraguayo de HaxBall. Entrá a jugar, guardá tu nombre y mirá cómo venís.</p>
-  <div class="botones" id="botonesTapa"></div>
+<main class="contenido">
   <div class="aviso" id="avisoTapa"></div>
-</div>
 
-<div class="centro">
-  <div class="tarjetas">
-    <div class="tarjeta">
-      <h3>⚽ Cuatro salas</h3>
-      <p>Futsal 3v3, 4v4, Futsal automático y Real Soccer. Mapas propios y camisetas de los clubes paraguayos.</p>
+  <!-- Sin sesión: la presentación -->
+  <section id="sinSesion" hidden>
+    <div class="tapa">
+      <span class="etiqueta-tapa">Host paraguayo de HaxBall</span>
+      <h1>Jugá, subí en el ranking y cuidá tu nombre.</h1>
+      <p>Cuatro salas abiertas todo el día: Futsal 3v3, 4v4, automático y Real Soccer. Cada partido suma o resta ELO en una tabla compartida.</p>
+      <div class="botones">
+        <a class="boton principal grande" href="/frm/registro/">Crear cuenta</a>
+        <a class="boton grande" href="/frm/login/">Iniciar sesión</a>
+      </div>
     </div>
-    <div class="tarjeta">
-      <h3>🔐 Tu nombre es tuyo</h3>
-      <p>Registrate con una contraseña y nadie más va a poder entrar con tu nick.</p>
-    </div>
-    <div class="tarjeta">
-      <h3>📊 Tu puntaje</h3>
-      <p>Cada partido suma o resta ELO. Las cuatro salas comparten la misma tabla.</p>
-    </div>
-    <div class="tarjeta">
-      <h3>💬 Discord</h3>
-      <p>Las novedades y los torneos se avisan en el <a href="https://discord.gg/TGRug4BGG" target="_blank" rel="noopener">Discord de ÑandutíBall</a>.</p>
-    </div>
-  </div>
 
-  <div id="misDatos" hidden>
-    <h2 style="margin-top:36px">📊 Cómo venís</h2>
-    <div class="datos" id="datos"></div>
-  </div>
-</div>
+    <div class="rasgos">
+      <div class="rasgo">
+        <div class="icono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m12 7 3 2-1 4h-4l-1-4z"/></svg></div>
+        <h3>Cuatro salas</h3>
+        <p>Futsal 3v3, 4v4, automático y Real Soccer, con mapas propios y camisetas de los clubes paraguayos.</p>
+      </div>
+      <div class="rasgo">
+        <div class="icono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+        <h3>Tu nombre es tuyo</h3>
+        <p>Con tu cuenta, nadie más puede entrar a las salas usando tu nick.</p>
+      </div>
+      <div class="rasgo">
+        <div class="icono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></div>
+        <h3>Ranking ELO</h3>
+        <p>Ganar suma y perder resta. Subís de división a medida que mejorás.</p>
+      </div>
+      <div class="rasgo">
+        <div class="icono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg></div>
+        <h3>Comunidad</h3>
+        <p>Novedades y torneos en el <a href="https://discord.gg/TGRug4BGG" target="_blank" rel="noopener">Discord de ÑandutíBall</a>.</p>
+      </div>
+    </div>
+  </section>
 
-<div class="pie">ÑandutíBall 🇵🇾 · hecho por Jinder</div>
+  <!-- Con sesión: tu ELO y el ranking -->
+  <section id="conSesion" hidden>
+    <div class="cabecera">
+      <div>
+        <h1 id="saludo">Hola</h1>
+        <p>Entrá a cualquier sala con tu nombre y escribí <b>!clave</b> con tu contraseña.</p>
+      </div>
+      <div id="accionesCabecera"></div>
+    </div>
+
+    <div class="seccion-titulo"><h2>Tu ELO</h2><span id="miPuesto"></span></div>
+    <div class="tarjeta" id="miElo">
+      <div class="vacio-elo">Cargando…</div>
+    </div>
+
+    <div class="seccion-titulo">
+      <h2>Ranking</h2>
+      <input type="search" class="buscador" id="buscar" placeholder="Buscar jugador" aria-label="Buscar jugador">
+    </div>
+    <div class="tarjeta">
+      <div class="tabla-caja">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th class="puesto">#</th>
+              <th>Jugador</th>
+              <th class="ocultar-movil">División</th>
+              <th class="der">ELO</th>
+              <th class="der">Goles</th>
+              <th class="der ocultar-movil">PJ</th>
+              <th class="der ocultar-movil">G-E-P</th>
+            </tr>
+          </thead>
+          <tbody id="filas"><tr><td colspan="7" class="tenue">Cargando…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="pie">ÑandutíBall · Hecho en Paraguay por Jinder</footer>
 
 <script src="/js/sesion.js"></script>
 <script>
 const $ = (id) => document.getElementById(id);
+const esc = Sesion.escapar;
+let ranking = [];
 
-function pintarTapa() {
-  const u = Sesion.usuario();
+const chipDivision = (d) => d
+  ? `<span class="division"><i style="background:#${esc(d.color)}"></i>${esc(d.nombre)}</span>`
+  : "";
 
-  if (!u) {
-    $("botonesTapa").innerHTML = `
-      <a class="boton principal grande" href="/frm/registro/">Crear mi cuenta</a>
-      <a class="boton grande" href="/frm/login/">Ya tengo cuenta</a>`;
-    $("misDatos").hidden = true;
+// Cuánto avanzaste dentro de tu división hacia la siguiente
+const porcentaje = (elo, falta) => {
+  const desde = elo.division && typeof elo.division.desde === "number" ? elo.division.desde : 0;
+  const hasta = elo.elo + falta.puntos;
+  return Math.max(3, Math.min(100, Math.round(((elo.elo - desde) / Math.max(1, hasta - desde)) * 100)));
+};
+
+function pintarMiElo(elo) {
+  if (!elo) {
+    $("miPuesto").textContent = "";
+    $("miElo").innerHTML = `<div class="vacio-elo">Todavía no jugaste ningún partido con este nombre. Arrancás con <b>1000</b> puntos: entrá a una sala y jugá tu primer partido.</div>`;
     return;
   }
+  $("miPuesto").textContent = `Puesto ${elo.puesto} de ${elo.total}`;
+  const jugados = elo.partidos || 0;
+  const efectividad = jugados ? Math.round((elo.ganados / jugados) * 100) : 0;
+  const falta = elo.faltaParaSubir;
+  const progreso = falta
+    ? `<div class="progreso"><small>Te faltan <b>${falta.puntos}</b> puntos para ${esc(falta.nombre)}</small>
+         <div class="barra-progreso"><i style="width:${porcentaje(elo, falta)}%"></i></div></div>`
+    : `<div class="progreso"><small>Estás en la división más alta.</small></div>`;
 
-  $("botonesTapa").innerHTML = u.admin
-    ? '<a class="boton principal grande" href="/frm/panel/">🎛️ Abrir el panel</a>'
-    : '<span class="aviso ok">¡Hola ' + Sesion.escapar(u.nick) + "! Entrá a cualquier sala con tu nombre y tu contraseña.</span>";
-
-  $("misDatos").hidden = false;
-  $("datos").innerHTML = [
-    ["ELO", u.elo],
-    ["Partidos", u.partidos],
-    ["Ganados", u.ganados],
-    ["Goles", u.goles],
-    ["Asistencias", u.asistencias],
-  ].map(([nombre, valor]) => `<div class="dato"><b>${valor ?? 0}</b><span>${nombre}</span></div>`).join("");
+  $("miElo").innerHTML = `
+    <div class="mi-elo">
+      <div class="principal-elo">
+        <div class="rotulo">Puntaje</div>
+        <div class="valor-elo">${elo.elo}</div>
+        ${chipDivision(elo.division)}
+        ${progreso}
+      </div>
+      <div class="metricas">
+        <div class="metrica"><b>#${elo.puesto}</b><span>Puesto</span></div>
+        <div class="metrica"><b>${jugados}</b><span>Partidos</span></div>
+        <div class="metrica"><b>${elo.ganados}</b><span>Ganados</span></div>
+        <div class="metrica"><b>${efectividad}%</b><span>Efectividad</span></div>
+        <div class="metrica"><b>${elo.goles}</b><span>Goles</span></div>
+        <div class="metrica"><b>${elo.perdidos}</b><span>Perdidos</span></div>
+      </div>
+    </div>`;
 }
+
+function pintarRanking() {
+  const u = Sesion.usuario();
+  const yo = u ? String(u.nick).trim().toLowerCase() : "";
+  const filtro = $("buscar").value.trim().toLowerCase();
+  const lista = filtro ? ranking.filter((j) => String(j.nombre).toLowerCase().includes(filtro)) : ranking;
+
+  if (!lista.length) {
+    $("filas").innerHTML = `<tr><td colspan="7" class="tenue">${ranking.length ? "No hay jugadores con ese nombre." : "Todavía no hay partidos jugados."}</td></tr>`;
+    return;
+  }
+  $("filas").innerHTML = lista.map((j) => `
+    <tr class="${String(j.nombre).trim().toLowerCase() === yo ? "soy-yo" : ""}">
+      <td class="puesto">${j.puesto <= 3 ? `<span class="medalla m${j.puesto}">${j.puesto}</span>` : j.puesto}</td>
+      <td class="jugador" title="${esc(j.nombre)}">${esc(j.nombre)}</td>
+      <td class="ocultar-movil">${chipDivision(j.division)}</td>
+      <td class="der num"><b>${j.elo}</b></td>
+      <td class="der num">${j.goles}</td>
+      <td class="der num ocultar-movil">${j.partidos}</td>
+      <td class="der num ocultar-movil">${j.ganados}-${j.empatados}-${j.perdidos}</td>
+    </tr>`).join("");
+}
+
+async function cargarConSesion() {
+  const u = Sesion.usuario();
+  $("saludo").textContent = "Hola, " + u.nick;
+  $("accionesCabecera").innerHTML = u.admin ? '<a class="boton" href="/frm/panel/">Panel de administración</a>' : "";
+
+  const [cuenta, tabla] = await Promise.allSettled([
+    Sesion.pedir("/api/cuenta"),
+    Sesion.pedir("/api/ranking?limite=100"),
+  ]);
+
+  if (cuenta.status === "fulfilled") pintarMiElo(cuenta.value.cuenta.elo);
+  else $("miElo").innerHTML = `<div class="vacio-elo">No se pudo cargar tu puntaje: ${esc(cuenta.reason.message)}</div>`;
+
+  if (tabla.status === "fulfilled") { ranking = tabla.value.ranking; pintarRanking(); }
+  else $("filas").innerHTML = `<tr><td colspan="7" class="tenue">No se pudo cargar el ranking.</td></tr>`;
+}
+
+function pintar() {
+  const u = Sesion.usuario();
+  Sesion.pintarBarra("derecha");
+  $("sinSesion").hidden = Boolean(u);
+  $("conSesion").hidden = !u;
+  if (u) cargarConSesion();
+}
+
+$("buscar").addEventListener("input", pintarRanking);
 
 if (new URLSearchParams(location.search).get("sinpermiso")) {
   $("avisoTapa").className = "aviso mal";
-  $("avisoTapa").textContent = "Esa parte es solo para los administradores.";
+  $("avisoTapa").textContent = "Esa sección es solo para administradores.";
 }
 
-Sesion.pintarBarra("derecha");
-pintarTapa();
+pintar();
 
-// Por si le cambiaron el rango o los puntos desde la última vez
+// Por si le cambiaron el rango desde la última vez (y el token se renueva solo)
 Sesion.refrescar().then((usuario) => {
-  if (usuario) { Sesion.pintarBarra("derecha"); pintarTapa(); }
+  if (usuario) Sesion.pintarBarra("derecha");
+  else if (!Sesion.usuario()) pintar();
 });
-Sesion.mantener();   // el token se renueva solo mientras la pestaña esté abierta
+Sesion.mantener();
 </script>
 </body>
 </html>

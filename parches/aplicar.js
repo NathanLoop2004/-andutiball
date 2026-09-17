@@ -116,6 +116,25 @@ reemplazar(
   'if(usedUsernames[player.name]&&usedUsernames[player.name]!==player.auth){if(!esAdminValido(player)){',
   'if(usedUsernames[player.name]&&usedUsernames[player.name]!==player.auth&&room.getPlayerList().some(function(o){return o.id!==player.id&&o.name===player.name})){if(!esAdminValido(player)){'
 );
+// La clave para hacerse admin (!axeso5) no va más: el admin sale SOLO de la tabla `rangos`
+// (bloque 🎖️ RANGOS). Además la clave viajaba en el mensaje de "llamar admins" al Discord del
+// autor, y cualquier mensaje que la CONTUVIERA daba admin.
+reemplazar(
+  "👑 Sin clave para hacerse admin (config)",
+  'var ClaveParaSerAdmin = "!axeso5";',
+  "var ClaveParaSerAdmin = null; // YA NO SE USA: el admin sale solo de la tabla de rangos de la base"
+);
+reemplazar(
+  "👑 Sin clave para hacerse admin (chat)",
+  "if(message.includes(ClaveParaSerAdmin)){room.setPlayerAdmin(player.id,!0);return!1}",
+  "/* clave para ser admin quitada: el admin sale de la tabla de rangos */"
+);
+reemplazar(
+  "👑 La clave ya no viaja en el aviso de llamar admins",
+  "\\n# 🔑 CLAVE PARA SER ADMINISTRADOR: ||${ClaveParaSerAdmin}|| ",
+  ""
+);
+
 // El modo automatizado (y el gana-sigue del autor) mete espectadores a la cancha en cada tick y
 // solo salteaba a los AFK. Al que le falta la clave lo sacaba nuestro bloque de usuarios y el
 // script lo volvía a meter: "X was moved to Blue" / "to Spectators" sin parar.

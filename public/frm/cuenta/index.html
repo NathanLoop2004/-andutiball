@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mi cuenta · ÑandutíBall</title>
+<link rel="icon" href="/img/logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/css/nanduti.css">
+<script src="/js/sesion.js"></script>
+<script>
+  // Sin sesión no se muestra nada: al login, y de vuelta acá después de entrar
+  if (!Sesion.usuario()) location.replace("/frm/login/?volver=" + encodeURIComponent("/frm/cuenta/"));
+</script>
+</head>
+<body>
+
+<header class="barra">
+  <a class="marca" href="/"><img src="/img/logo.svg" alt=""><span>ÑandutíBall</span></a>
+  <div class="derecha" id="derecha"></div>
+</header>
+
+<main class="contenido">
+  <div class="cabecera">
+    <div>
+      <h1>Mi cuenta</h1>
+      <p>Tus datos y la seguridad de tu cuenta.</p>
+    </div>
+  </div>
+
+  <div class="cuenta">
+    <aside class="cuenta-lado">
+      <div class="tarjeta"><div class="tarjeta-cuerpo">
+        <span class="avatar grande" id="avatar">?</span>
+        <b id="ladoNick">…</b>
+        <span class="tenue" id="ladoRango" style="font-size:13px"></span>
+        <nav>
+          <a href="#perfil" class="activo">Perfil</a>
+          <a href="#seguridad">Contraseña</a>
+          <a href="/">Mi ELO y ranking</a>
+        </nav>
+      </div></div>
+    </aside>
+
+    <div class="cuenta-principal">
+      <div class="aviso" id="avisoGeneral"></div>
+
+      <!-- Perfil -->
+      <section class="tarjeta" id="perfil">
+        <div class="tarjeta-cabeza"><h2>Perfil</h2></div>
+        <div class="tarjeta-cuerpo">
+          <dl class="lista-datos">
+            <dt>Nombre en HaxBall</dt><dd id="datoNick">…</dd>
+            <dt>Correo electrónico</dt><dd id="datoEmail">…</dd>
+            <dt>Rango</dt><dd id="datoRango">…</dd>
+            <dt>Miembro desde</dt><dd id="datoDesde">…</dd>
+            <dt>Último cambio de contraseña</dt><dd id="datoClave">…</dd>
+          </dl>
+        </div>
+      </section>
+
+      <!-- Agregar correo (solo si la cuenta no tiene) -->
+      <section class="tarjeta" id="seccionEmail" hidden>
+        <div class="tarjeta-cabeza"><h2>Agregar correo electrónico</h2></div>
+        <div class="tarjeta-cuerpo">
+          <p class="tenue" style="margin-top:0">Tu cuenta todavía no tiene correo. Lo necesitás para recibir el código que confirma el cambio de contraseña y para recuperar tu cuenta.</p>
+          <form class="formulario-angosto" id="formEmail">
+            <div class="campo">
+              <label for="nuevoEmail">Correo electrónico</label>
+              <input type="email" id="nuevoEmail" autocomplete="email" maxlength="200" required>
+            </div>
+            <div class="campo">
+              <label for="claveActualEmail">Contraseña actual</label>
+              <input type="password" id="claveActualEmail" autocomplete="current-password" required>
+              <div class="nota-campo">Para confirmar que sos vos.</div>
+            </div>
+            <div class="fila-botones"><button class="boton principal" type="submit" id="guardarEmail">Guardar correo</button></div>
+            <div class="aviso" id="avisoEmail"></div>
+          </form>
+        </div>
+      </section>
+
+      <!-- Cambiar contraseña con código por correo -->
+      <section class="tarjeta" id="seguridad">
+        <div class="tarjeta-cabeza"><h2>Cambiar contraseña</h2><span class="tenue" id="pasoTexto" style="font-size:13px">Paso 1 de 2</span></div>
+        <div class="tarjeta-cuerpo">
+          <div class="pasos"><span class="hecho" id="paso1"></span><span id="paso2"></span></div>
+
+          <!-- Paso 1: pedir el código -->
+          <div id="etapaPedir">
+            <p class="tenue" style="margin-top:0" id="textoPedir">Por seguridad, te vamos a enviar un código de 6 números a tu correo. Con ese código elegís la contraseña nueva.</p>
+            <div class="fila-botones"><button class="boton principal" type="button" id="pedirCodigo">Enviar código</button></div>
+            <div class="aviso" id="avisoPedir"></div>
+          </div>
+
+          <!-- Paso 2: código + contraseña nueva -->
+          <form class="formulario-angosto" id="etapaCambiar" hidden>
+            <p class="tenue" style="margin-top:0" id="textoEnviado"></p>
+            <div class="campo">
+              <label for="codigo">Código de verificación</label>
+              <input type="text" class="codigo" id="codigo" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="000000" required>
+            </div>
+            <div class="campo">
+              <label for="claveNueva">Contraseña nueva</label>
+              <input type="password" id="claveNueva" autocomplete="new-password" minlength="4" required>
+              <div class="nota-campo">Mínimo 4 caracteres. Es la que vas a usar en la sala con !clave.</div>
+            </div>
+            <div class="campo">
+              <label for="claveNueva2">Repetir contraseña nueva</label>
+              <input type="password" id="claveNueva2" autocomplete="new-password" minlength="4" required>
+            </div>
+            <div class="fila-botones">
+              <button class="boton principal" type="submit" id="cambiarClave">Cambiar contraseña</button>
+              <button class="boton fantasma" type="button" id="reenviar" disabled>Reenviar código</button>
+            </div>
+            <div class="aviso" id="avisoCambiar"></div>
+          </form>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
+
+<footer class="pie">ÑandutíBall · Hecho en Paraguay por Jinder</footer>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const avisar = (donde, texto, clase) => { $(donde).className = "aviso " + (clase || ""); $(donde).textContent = texto || ""; };
+const fecha = (f) => f ? new Date(f).toLocaleDateString("es-PY", { day: "numeric", month: "long", year: "numeric" }) : "—";
+let cuenta = null;
+let relojReenvio = null;
+
+function pintarCuenta() {
+  const u = Sesion.usuario() || {};
+  $("avatar").textContent = Sesion.inicial(cuenta.nick);
+  $("ladoNick").textContent = cuenta.nick;
+  $("ladoRango").textContent = u.rango || "Jugador";
+  $("datoNick").textContent = cuenta.nick;
+  $("datoEmail").innerHTML = cuenta.email ? Sesion.escapar(cuenta.email) : '<span class="tenue">Sin correo</span>';
+  $("datoRango").textContent = u.rango || "Jugador";
+  $("datoDesde").textContent = fecha(cuenta.desde);
+  $("datoClave").textContent = fecha(cuenta.claveCambiada);
+
+  $("seccionEmail").hidden = Boolean(cuenta.email);
+  $("pedirCodigo").disabled = !cuenta.email;
+  $("textoPedir").textContent = cuenta.email
+    ? `Por seguridad, te vamos a enviar un código de 6 números a ${cuenta.emailTapado}. Con ese código elegís la contraseña nueva.`
+    : "Primero agregá un correo electrónico a tu cuenta: ahí te llega el código.";
+}
+
+function irAlPaso(n) {
+  $("etapaPedir").hidden = n !== 1;
+  $("etapaCambiar").hidden = n !== 2;
+  $("paso2").className = n === 2 ? "hecho" : "";
+  $("pasoTexto").textContent = `Paso ${n} de 2`;
+}
+
+// El botón de reenviar se habilita a los 60 segundos (el servidor tampoco deja antes)
+function esperarParaReenviar(segundos) {
+  clearInterval(relojReenvio);
+  let quedan = segundos;
+  const pintar = () => {
+    $("reenviar").disabled = quedan > 0;
+    $("reenviar").textContent = quedan > 0 ? `Reenviar código (${quedan}s)` : "Reenviar código";
+  };
+  pintar();
+  relojReenvio = setInterval(() => { quedan--; pintar(); if (quedan <= 0) clearInterval(relojReenvio); }, 1000);
+}
+
+async function pedirCodigo(boton, aviso) {
+  boton.disabled = true;
+  avisar(aviso, "Enviando el código…", "info");
+  try {
+    const { enviadoA, minutos } = await Sesion.pedir("/api/cuenta/codigo", { method: "POST" });
+    avisar(aviso, "");
+    avisar("avisoCambiar", "");
+    $("textoEnviado").textContent = `Te enviamos un código a ${enviadoA}. Vence en ${minutos} minutos. Si no lo ves, revisá la carpeta de spam.`;
+    irAlPaso(2);
+    esperarParaReenviar(60);
+    $("codigo").focus();
+  } catch (error) {
+    avisar(aviso, error.message, "mal");
+    boton.disabled = false;
+    const espera = error.message.match(/Esperá (\d+) segundos/);
+    if (espera && aviso === "avisoCambiar") esperarParaReenviar(Number(espera[1]));
+  }
+}
+
+$("pedirCodigo").onclick = () => pedirCodigo($("pedirCodigo"), "avisoPedir");
+$("reenviar").onclick = () => pedirCodigo($("reenviar"), "avisoCambiar");
+$("codigo").addEventListener("input", () => { $("codigo").value = $("codigo").value.replace(/\D/g, "").slice(0, 6); });
+
+$("etapaCambiar").onsubmit = async (evento) => {
+  evento.preventDefault();
+  if (!/^\d{6}$/.test($("codigo").value)) return avisar("avisoCambiar", "El código son 6 números.", "mal");
+  if ($("claveNueva").value !== $("claveNueva2").value) return avisar("avisoCambiar", "Las dos contraseñas tienen que ser iguales.", "mal");
+  $("cambiarClave").disabled = true;
+  avisar("avisoCambiar", "Cambiando la contraseña…", "info");
+  try {
+    await Sesion.pedir("/api/cuenta/clave", {
+      method: "POST",
+      body: JSON.stringify({ codigo: $("codigo").value, clave: $("claveNueva").value }),
+    });
+    ["codigo", "claveNueva", "claveNueva2"].forEach((id) => { $(id).value = ""; });
+    clearInterval(relojReenvio);
+    irAlPaso(1);
+    $("pedirCodigo").disabled = false;
+    avisar("avisoPedir", "Listo: tu contraseña se cambió. Usala la próxima vez que entres a la web o a una sala.", "ok");
+    cargar();
+  } catch (error) {
+    avisar("avisoCambiar", error.message, "mal");
+  } finally {
+    $("cambiarClave").disabled = false;
+  }
+};
+
+$("formEmail").onsubmit = async (evento) => {
+  evento.preventDefault();
+  $("guardarEmail").disabled = true;
+  avisar("avisoEmail", "Guardando…", "info");
+  try {
+    await Sesion.pedir("/api/cuenta/email", {
+      method: "POST",
+      body: JSON.stringify({ email: $("nuevoEmail").value.trim(), clave: $("claveActualEmail").value }),
+    });
+    $("claveActualEmail").value = "";
+    avisar("avisoEmail", "");
+    avisar("avisoGeneral", "Correo guardado. Ya podés cambiar tu contraseña.", "ok");
+    await cargar();
+  } catch (error) {
+    avisar("avisoEmail", error.message, "mal");
+  } finally {
+    $("guardarEmail").disabled = false;
+  }
+};
+
+async function cargar() {
+  try {
+    cuenta = (await Sesion.pedir("/api/cuenta")).cuenta;
+    pintarCuenta();
+  } catch (error) {
+    if (/iniciar sesión|ya no existe|baneada/i.test(error.message)) {
+      try { localStorage.removeItem(Sesion.LLAVE); } catch (e) {}
+      location.replace("/frm/login/?volver=" + encodeURIComponent("/frm/cuenta/"));
+      return;
+    }
+    avisar("avisoGeneral", "No se pudieron cargar tus datos: " + error.message, "mal");
+  }
+}
+
+if (Sesion.usuario()) {
+  Sesion.pintarBarra("derecha");
+  cargar();
+  Sesion.refrescar().then((u) => { if (u) { Sesion.pintarBarra("derecha"); if (cuenta) pintarCuenta(); } });
+  Sesion.mantener();
+}
+</script>
+</body>
+</html>

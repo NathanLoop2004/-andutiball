@@ -149,8 +149,11 @@ los que están en la sala y **deja a cada uno como dice la tabla**:
 Por eso una inyección de javascript no sirve de nada: el que se pone admin a mano en la consola
 lo pierde en la próxima ronda. Y al que le sacan el admin siendo OWNER, se le devuelve.
 
-Ojo con el efecto de al lado: **el admin que se daba con `ClaveParaSerAdmin` (`!axeso5`) o a mano
-también se cae a los 5 segundos**. Si hace falta un admin temporal, va en la tabla.
+**No hay clave para hacerse admin** (se sacó `!axeso5` el 17/09/2026, a pedido del usuario): el
+parcheador deja `ClaveParaSerAdmin = null`, borra el `if(message.includes(ClaveParaSerAdmin))` del
+chat (daba admin a cualquier mensaje que la *contuviera*) y la saca del aviso de `llamarAdmins()`, que
+la mandaba al Discord **del autor**. El admin sale solo de la tabla; si hace falta uno temporal, va
+en la tabla. `prueba-rangos` lo cubre (y `sala-falsa.js` ahora guarda lo que se carga en `FormData`).
 
 Red de seguridad: si la lista llega **vacía** no se toca a nadie. Así una base caída no deja la
 sala sin admins.
@@ -319,7 +322,10 @@ public/frm/registro/index.html        crear cuenta
 public/frm/panel/index.html           el panel de siempre  ← solo admins
 public/frm/rangos/index.html          ← solo admins
 public/frm/actualizaciones/index.html ← solo admins
+public/frm/recuperar/index.html       recuperar la cuenta con un link por correo
+public/frm/cuenta/index.html          Mi cuenta: datos y cambiar la contraseña con código
 public/css/nanduti.css                estilo común (el panel trae el suyo aparte)
+public/img/logo.svg                   el logo
 public/js/sesion.js                   la sesión: token, barra de arriba, candado
 ```
 
@@ -350,6 +356,34 @@ la API sigue abierta como hasta ahora. Está `middlewares/verificarToken.js` lis
 (`verificarToken({ admin: true })`), pero antes hay que hacer que las pantallas del panel manden
 el `Authorization` en cada pedido.
 
+**Diseño (17/09/2026)**: `public/css/nanduti.css` es un sistema de tokens en `:root` con modo claro y
+oscuro (`prefers-color-scheme`), fuente Inter (Google Fonts) y un solo acento azul. Sin emojis en la
+interfaz: el logo es `public/img/logo.svg`. Lo usan solo las pantallas públicas (portada, login,
+registro, recuperar, cuenta); las del panel siguen con su `<style>` propio. Ojo: `[hidden]` va con
+`!important` porque `.caja`/`.tarjeta` tienen `display`.
+
+**La barra** (`Sesion.pintarBarra`): con sesión es un botón con avatar (`Sesion.inicial()`, la primera
+letra o número del nick) que abre un menú: Inicio, Mi cuenta, Cambiar contraseña, Panel (si es
+admin) y Cerrar sesión. Se cierra con clic afuera o Escape.
+
+**La portada con sesión** muestra *Tu ELO* (`GET /api/cuenta` → `cuenta.elo`) y el ranking
+(`GET /api/ranking?limite=100`) con buscador y tu fila marcada. El ELO sale de `elo.json`, que va
+por auth: `EloModel.deNick()` busca por nombre y, si hay varias fichas, se queda con la de más
+partidos. **`/api/ranking` no trae `clave`** (que es `auth:<PublicID>`): `/api/elo`, que sí la trae,
+queda para el panel.
+
+**Mi cuenta** (`public/frm/cuenta/`, migración `20260917120000_usuarios_codigo`): cambiar la
+contraseña pide un **código de 6 números por correo** (`CuentaModel`):
+
+- `POST /api/cuenta/codigo` → `crypto.randomInt`, guarda `sha256(id:codigo)` en `codigoHash`, vence
+  a los 10 min (`codigoVence`), y no deja pedir otro antes de 60 s (`codigoPedido`). Si el mail no
+  sale, borra el código para que pueda volver a pedir.
+- `POST /api/cuenta/clave {codigo, clave}` → compara con `timingSafeEqual`; cada error suma
+  `codigoIntentos` y a los 5 se quema. Al acertar pone la clave y borra el código **y** cualquier
+  link de recuperación pendiente.
+- `POST /api/cuenta/email {email, clave}` → para los que no tienen correo; pide la contraseña actual.
+- Todo con `verificarToken()`: **el nick sale del token**, nunca del cuerpo del pedido.
+
 **Correo y recuperar la cuenta** (migración `20260917090000_usuarios_email`):
 
 - `usuarios.email` (único, en minúsculas). La web lo **exige** (`SesionModel.registrar`); desde la
@@ -369,7 +403,7 @@ el `Authorization` en cada pedido.
   línea (los clientes de correo ignoran `<style>`).
 
 `npm run prueba-web` cubre las pantallas, el encarpetado, registrarse (con y sin correo, correo
-repetido), entrar, el rango de OWNER (agrega y saca el nick de `roles.json`, dejándolo como
+repetido), entrar, Mi cuenta (código, intentos, vencimiento, agregar correo), el ranking público, el rango de OWNER (agrega y saca el nick de `roles.json`, dejándolo como
 estaba), la renovación del token y todo el circuito de recuperar la cuenta.
 
 ## Panel y rangos (MVC)
@@ -666,7 +700,7 @@ Circuito: el bloque `📊 ELO Y DIVISIONES` del script anota quién está en can
 
 **No volver a `onGameStop`**: ahí el partido ya no existe y `room.getScores()` devuelve `null`, así que en la sala de verdad nunca se mandaba nada (la prueba no lo veía porque disparaba `onGameStop` sin cortar el partido). Un partido cortado con Stop no cuenta.
 
-**La base**: además de `elo.json`, `models/PartidoModel.js` guarda cada partido en `partidos` + `participaciones` y le suma a `usuarios` (elo, partidos, ganados, perdidos, empatados, goles). Si el nick no tiene usuario se le crea uno sin clave. Con la base apagada solo avisa por consola. El elo de la tabla `usuarios` es el que calculó `elo.json` (que va por auth), no se recalcula.
+**La base**: además de `elo.json`, `models/PartidoModel.js` guarda cada partido en `partidos` + `participaciones` y le suma a `usuarios` (elo, partidos, ganados, perdidos, empatados, goles). **Solo a los que tienen cuenta con clave** (creada en la web): al que no tiene cuenta no se le crea nada, ni usuario ni participación. Antes se le creaba un usuario sin clave y la tabla se llenó con 67 "cuentas" que nadie creó (se borraron el 17/09/2026, con respaldo en `datos/respaldo-usuarios-sin-clave-*.json`). Desde la sala tampoco se crean cuentas: `atenderUsuario()` del launcher solo acepta `verificar`. Con la base apagada solo avisa por consola. El elo de la tabla `usuarios` es el que calculó `elo.json` (que va por auth), no se recalcula.
 
 Fórmula Elo clásica por equipos: se compara el promedio de cada lado, K=32 (48 en los primeros 10 partidos). Es de suma cero. Divisiones en `DIVISIONES` (Novato → Leyenda).
 
@@ -739,7 +773,6 @@ Piezas repuestas en el bloque `🩹 PIEZAS QUE FALTABAN` (se perdieron con el co
 - **Anuncios de gol groseros**: el script original trae ~15 mensajes subidos de tono ("orto", "rosca"…). Pendiente decidir si se reemplazan.
 - **Webhooks reales en texto plano** al inicio del archivo, y `webhookPass` (sin uso). Siguen siendo del autor original los de grabaciones, llamar admins, kicks/bans, mensajes del chat, entradas/salidas, estadísticas e IPs: los replays y el chat de nuestras salas se le mandan a su Discord. El de sala abierta ya es nuestro.
 - **`WebhookSalaAbierta` está en `script.js`, que se sube a Git**: si el repo es público, esa llave queda expuesta. Se puede mover a `.env` (`WEBHOOK_SALA_ABIERTA`).
-- `ClaveParaSerAdmin = "!axeso5"`: débil y visible.
 - La clave de rangos está en texto plano en `roles.json`, que se sube a Git.
 - **La API no pide sesión**: el panel se protege del lado del navegador (`Sesion.exigirAdmin()`),
   pero `/api/estado`, `/api/kick`, `/api/rangos`… contestan a cualquiera que sepa la URL. Con el

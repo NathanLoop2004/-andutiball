@@ -24,7 +24,7 @@ function revisarEmail(email) {
 // Lo que se puede mostrar de un usuario (sin el hash de la clave)
 const sinClave = (usuario) => {
   if (!usuario) return null;
-  const { clave, recuperarHash, recuperarVence, ...resto } = usuario;
+  const { clave, recuperarHash, recuperarVence, codigoHash, codigoVence, codigoIntentos, codigoPedido, ...resto } = usuario;
   return { ...resto, registrado: Boolean(clave) };
 };
 

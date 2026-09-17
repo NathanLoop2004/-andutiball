@@ -146,13 +146,6 @@ room.onPlayerChat = function (player, message) {
 		return false;
 	}
 
-	// Clave para hacerse administrador
-	if (texto === ClaveParaSerAdmin) {
-		room.setPlayerAdmin(player.id, true);
-		room.sendAnnouncement("👑 " + player.name + " ahora es administrador.", null, 0xFFD100, "bold", 2);
-		return false;
-	}
-
 	// Chat de equipo:  t mensaje
 	if (/^t /i.test(texto) && player.team !== 0) {
 		chatDeEquipo(player, texto.slice(2));

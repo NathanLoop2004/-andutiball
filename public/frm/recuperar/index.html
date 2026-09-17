@@ -3,47 +3,61 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Ñandutí Web — Recuperar cuenta</title>
+<title>Recuperar cuenta · ÑandutíBall</title>
 <!-- El link del mail trae el token: que no viaje a otras páginas en el Referer -->
 <meta name="referrer" content="no-referrer">
+<link rel="icon" href="/img/logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="/css/nanduti.css">
-<style>[hidden] { display: none !important; }</style>
 </head>
 <body>
 
-<div class="barra">
-  <a class="marca" href="/"><span class="telar">🕸️</span> Ñandutí Web</a>
-  <div class="derecha"><a class="boton" href="/frm/login/">Iniciar sesión</a></div>
-</div>
+<header class="barra">
+  <a class="marca" href="/"><img src="/img/logo.svg" alt=""><span>ÑandutíBall</span></a>
+  <div class="derecha"><a class="boton fantasma" href="/frm/login/">Iniciar sesión</a></div>
+</header>
 
-<!-- Paso 1: sin link → pedir el correo -->
-<form class="caja" id="pedir" hidden>
-  <h2>Recuperar mi cuenta</h2>
-  <div class="ayuda">Escribí el correo con el que te registraste y te mandamos un link para cambiar la contraseña.</div>
+<main class="auth">
+  <!-- Paso 1: sin link → pedir el correo -->
+  <form class="caja" id="pedir" hidden>
+    <img class="logo-caja" src="/img/logo.svg" alt="">
+    <h1>Recuperar cuenta</h1>
+    <div class="ayuda">Escribí el correo con el que te registraste y te mandamos un link para elegir una contraseña nueva.</div>
 
-  <label for="email">Correo electrónico</label>
-  <input type="email" id="email" autocomplete="email" maxlength="200" required>
+    <div class="campo">
+      <label for="email">Correo electrónico</label>
+      <input type="email" id="email" autocomplete="email" maxlength="200" required autofocus>
+    </div>
 
-  <button class="boton principal" type="submit" id="mandar">Mandarme el link</button>
-  <div class="aviso" id="avisoPedir"></div>
-  <div class="pie-caja">¿Te acordaste? <a href="/frm/login/">Iniciá sesión</a></div>
-</form>
+    <button class="boton principal" type="submit" id="mandar">Enviar link</button>
+    <div class="aviso" id="avisoPedir"></div>
+    <div class="pie-caja"><a href="/frm/login/">Volver a iniciar sesión</a></div>
+  </form>
 
-<!-- Paso 2: llegó con el link del mail (?t=...) → elegir la clave nueva -->
-<form class="caja" id="cambiar" hidden>
-  <h2>Nueva contraseña</h2>
-  <div class="ayuda" id="paraQuien">Revisando el link…</div>
+  <!-- Paso 2: llegó con el link del mail (?t=...) → elegir la clave nueva -->
+  <form class="caja" id="cambiar" hidden>
+    <img class="logo-caja" src="/img/logo.svg" alt="">
+    <h1>Nueva contraseña</h1>
+    <div class="ayuda" id="paraQuien">Revisando el link…</div>
 
-  <label for="clave">Contraseña nueva (mínimo 4 caracteres)</label>
-  <input type="password" id="clave" autocomplete="new-password" minlength="4" required disabled>
+    <div class="campo">
+      <label for="clave">Contraseña nueva</label>
+      <input type="password" id="clave" autocomplete="new-password" minlength="4" required disabled>
+      <div class="nota-campo">Mínimo 4 caracteres.</div>
+    </div>
 
-  <label for="clave2">Repetila</label>
-  <input type="password" id="clave2" autocomplete="new-password" minlength="4" required disabled>
+    <div class="campo">
+      <label for="clave2">Repetir contraseña</label>
+      <input type="password" id="clave2" autocomplete="new-password" minlength="4" required disabled>
+    </div>
 
-  <button class="boton principal" type="submit" id="guardar" disabled>Guardar contraseña</button>
-  <div class="aviso" id="avisoCambiar"></div>
-  <div class="pie-caja"><a href="/frm/recuperar/">Pedir otro link</a></div>
-</form>
+    <button class="boton principal" type="submit" id="guardar" disabled>Guardar contraseña</button>
+    <div class="aviso" id="avisoCambiar"></div>
+    <div class="pie-caja"><a href="/frm/recuperar/">Pedir otro link</a></div>
+  </form>
+</main>
 
 <script src="/js/sesion.js"></script>
 <script>
@@ -57,13 +71,13 @@ if (!token) {
   $("pedir").onsubmit = async (evento) => {
     evento.preventDefault();
     $("mandar").disabled = true;
-    avisar("avisoPedir", "Mandando…");
+    avisar("avisoPedir", "Enviando…", "info");
     try {
       const { mensaje } = await Sesion.pedir("/api/auth/recuperar", {
         method: "POST",
         body: JSON.stringify({ email: $("email").value.trim() }),
       });
-      avisar("avisoPedir", "📧 " + mensaje, "ok");
+      avisar("avisoPedir", mensaje, "ok");
     } catch (error) {
       avisar("avisoPedir", error.message, "mal");
     }
@@ -90,14 +104,14 @@ if (!token) {
     evento.preventDefault();
     if ($("clave").value !== $("clave2").value) return avisar("avisoCambiar", "Las dos contraseñas tienen que ser iguales.", "mal");
     $("guardar").disabled = true;
-    avisar("avisoCambiar", "Guardando…");
+    avisar("avisoCambiar", "Guardando…", "info");
     try {
       const { nick } = await Sesion.pedir("/api/auth/recuperar/cambiar", {
         method: "POST",
         body: JSON.stringify({ token, clave: $("clave").value }),
       });
       ["clave", "clave2"].forEach((id) => { $(id).disabled = true; });
-      avisar("avisoCambiar", "✅ Listo, " + nick + ": ya podés entrar con tu contraseña nueva. Te llevamos al login…", "ok");
+      avisar("avisoCambiar", "Listo, " + nick + ". Ya podés entrar con tu contraseña nueva. Te llevamos al inicio de sesión…", "ok");
       setTimeout(() => { location.href = "/frm/login/"; }, 2500);
     } catch (error) {
       avisar("avisoCambiar", error.message, "mal");

@@ -39,6 +39,21 @@ function revisar(titulo, condicion, detalle) {
   revisar("Al que no está en la tabla tampoco", cualquiera.admin === false, "admin=" + cualquiera.admin);
   revisar("Y se lo saluda con su rango", sala.anuncios.some((a) => a.includes("👑 OWNER") && a.includes("JINDER")), "sí");
 
+  // ── La clave vieja (!axeso5) ya no da admin: el admin sale solo de la tabla ──
+  console.log("\n🔑 La clave vieja para ser admin:\n");
+  sala.chat(cualquiera, "!axeso5");
+  revisar("Escribir !axeso5 no da admin, ni por un segundo", cualquiera.admin === false, "admin=" + cualquiera.admin);
+  avanzar(6000);
+  sala.chat(cualquiera, "hola !axeso5 jaja");
+  revisar("Tampoco escondida adentro de un mensaje", cualquiera.admin === false, "admin=" + cualquiera.admin);
+  revisar("La clave no está en la configuración", contexto.ClaveParaSerAdmin === null, String(contexto.ClaveParaSerAdmin));
+  if (typeof contexto.llamarAdmins === "function") {
+    const antes = (sala.webhooks || []).length;
+    contexto.llamarAdmins("Random", "prueba");
+    const enviados = JSON.stringify((sala.webhooks || []).slice(antes));
+    revisar("El aviso de llamar admins no manda ninguna clave", !/CLAVE PARA SER ADMIN|axeso5/i.test(enviados), "sin clave");
+  }
+
   // ── La inyección: alguien se pone admin a mano ──
   console.log("\n💉 Alguien se mete javascript y se pone admin:\n");
   sala.room.setPlayerAdmin(cualquiera.id, true);

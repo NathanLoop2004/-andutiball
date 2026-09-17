@@ -17,3 +17,4 @@ datos/web.log
 datos/web.firma
 datos/web.recargar
 datos/prisma.firma
+datos/respaldo-*.json

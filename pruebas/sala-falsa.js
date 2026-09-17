@@ -125,7 +125,8 @@ function abrirSala(hostConfig, opciones = {}) {
       addEventListener() {}
     },
     fetch: () => Promise.resolve({ ok: true, json: () => Promise.resolve({}), text: () => Promise.resolve("") }),
-    FormData: class { append() {} get() { return null; } }, File: class {}, Blob: class {},
+    // Guarda lo que se le carga, así las pruebas pueden ver qué texto viaja al webhook
+    FormData: class { constructor() { this.datos = {}; } append(k, v) { this.datos[k] = v; } get(k) { return k in this.datos ? this.datos[k] : null; } }, File: class {}, Blob: class {},
     document: { querySelector: () => elemento, querySelectorAll: () => [], createElement: () => elemento, body: elemento },
     console: { log: noop, warn: noop, error: (...a) => errores.push(a.join(" ")) },
     setTimeout: (fn, ms) => programar(fn, ms, false),

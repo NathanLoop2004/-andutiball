@@ -40,10 +40,10 @@ const json = (cuerpo, token) => ({
 
   console.log("🕸️  Las pantallas:\n");
   const portada = await pedir(web.url + "/");
-  revisar("La portada dice Ñandutí Web", portada.status === 200 && /Ñandutí Web/.test(portada.datos), "HTTP " + portada.status);
+  revisar("La portada dice ÑandutíBall", portada.status === 200 && /ÑandutíBall/.test(portada.datos), "HTTP " + portada.status);
   revisar("Y ofrece iniciar sesión o registrarte", /\/frm\/login\//.test(portada.datos) && /\/frm\/registro\//.test(portada.datos));
 
-  for (const ruta of ["/frm/login", "/frm/registro", "/frm/recuperar", "/frm/panel", "/frm/rangos", "/frm/actualizaciones"]) {
+  for (const ruta of ["/frm/login", "/frm/registro", "/frm/recuperar", "/frm/cuenta", "/frm/panel", "/frm/rangos", "/frm/actualizaciones"]) {
     const r = await pedir(web.url + ruta);
     revisar("Abre " + ruta, r.status === 200 && /<html/.test(r.datos), "HTTP " + r.status);
   }
@@ -177,6 +177,79 @@ const json = (cuerpo, token) => ({
 
       const ficha = await pedir(web.url + "/api/auth/entrar", json({ nick, clave: nueva }));
       revisar("Lo que sale del servidor nunca trae el hash del link", !JSON.stringify(ficha.datos).includes("recuperar"));
+
+      // ── Mi cuenta: cambiar la contraseña con un código por correo ──
+      console.log("\n🔢 Mi cuenta: cambiar la contraseña con código:\n");
+      const conToken = (token, cuerpo) => cuerpo === undefined
+        ? { headers: { Authorization: "Bearer " + token } }
+        : json(cuerpo, token);
+      const tokenCuenta = ficha.datos.token;
+
+      const sinSesion = await pedir(web.url + "/api/cuenta");
+      revisar("Mi cuenta pide sesión", sinSesion.status === 401, "HTTP " + sinSesion.status);
+
+      const miCuenta = await pedir(web.url + "/api/cuenta", conToken(tokenCuenta));
+      revisar("Con sesión muestra tus datos y tu correo", miCuenta.status === 200 && miCuenta.datos.cuenta.nick === nick && miCuenta.datos.cuenta.email === email, miCuenta.datos.cuenta && miCuenta.datos.cuenta.emailTapado);
+      revisar("Tus datos no traen hashes", !/scrypt|codigoHash|recuperarHash/.test(JSON.stringify(miCuenta.datos)));
+
+      mandados.length = 0;
+      const pedido = await pedir(web.url + "/api/cuenta/codigo", json({}, tokenCuenta));
+      const codigo = mandados[0] ? (mandados[0].texto.match(/\b(\d{6})\b/) || [])[1] : null;
+      revisar("Pide el código y le llega un mail con 6 números", pedido.status === 200 && Boolean(codigo) && mandados[0].para === email, pedido.datos.enviadoA);
+      revisar("El mail del código es HTML", /<html/.test(mandados[0] ? mandados[0].html : "") && (mandados[0] ? mandados[0].html.includes(codigo.split("").join("&#8202;")) : false));
+      const guardadoCodigo = await base().usuario.findUnique({ where: { nick } });
+      revisar("En la base queda el hash del código, no el código", guardadoCodigo.codigoHash && !guardadoCodigo.codigoHash.includes(codigo));
+
+      const otraVezYa = await pedir(web.url + "/api/cuenta/codigo", json({}, tokenCuenta));
+      revisar("No deja pedir otro código enseguida", otraVezYa.status === 400 && /Esperá/.test(otraVezYa.datos.error), otraVezYa.datos.error);
+
+      const otroCodigo = codigo === "000000" ? "111111" : "000000";
+      const mal1 = await pedir(web.url + "/api/cuenta/clave", json({ codigo: otroCodigo, clave: "otra9999" }, tokenCuenta));
+      revisar("Con un código equivocado no cambia y avisa cuántos intentos quedan", mal1.status === 400 && /quedan 4/.test(mal1.datos.error), mal1.datos.error);
+
+      const claveFinal = "final4321";
+      const bienCodigo = await pedir(web.url + "/api/cuenta/clave", json({ codigo, clave: claveFinal }, tokenCuenta));
+      revisar("Con el código correcto cambia la contraseña", bienCodigo.status === 200, bienCodigo.datos.error);
+      const entraFinal = await pedir(web.url + "/api/auth/entrar", json({ nick, clave: claveFinal }));
+      const noEntraVieja = await pedir(web.url + "/api/auth/entrar", json({ nick, clave: nueva }));
+      revisar("La nueva entra y la anterior no", entraFinal.status === 200 && noEntraVieja.status === 400);
+
+      const reuso = await pedir(web.url + "/api/cuenta/clave", json({ codigo, clave: "otra9999" }, tokenCuenta));
+      revisar("El código sirve una sola vez", reuso.status === 400, reuso.datos.error);
+
+      // Cinco errores y el código se quema
+      await base().usuario.update({ where: { nick }, data: { codigoPedido: new Date(Date.now() - 120000) } });
+      mandados.length = 0;
+      await pedir(web.url + "/api/cuenta/codigo", json({}, tokenCuenta));
+      const codigo2 = mandados[0] ? (mandados[0].texto.match(/\b(\d{6})\b/) || [])[1] : null;
+      const errado = codigo2 === "000000" ? "111111" : "000000";
+      for (let i = 0; i < 5; i++) await pedir(web.url + "/api/cuenta/clave", json({ codigo: errado, clave: "otra9999" }, tokenCuenta));
+      const quemado = await pedir(web.url + "/api/cuenta/clave", json({ codigo: codigo2, clave: "otra9999" }, tokenCuenta));
+      revisar("Después de 5 errores ni el código correcto sirve", quemado.status === 400 && /muchas veces/.test(quemado.datos.error), quemado.datos.error);
+
+      // Un código vencido tampoco
+      await base().usuario.update({ where: { nick }, data: { codigoPedido: new Date(Date.now() - 120000) } });
+      mandados.length = 0;
+      await pedir(web.url + "/api/cuenta/codigo", json({}, tokenCuenta));
+      const codigo3 = mandados[0] ? (mandados[0].texto.match(/\b(\d{6})\b/) || [])[1] : null;
+      await base().usuario.update({ where: { nick }, data: { codigoVence: new Date(Date.now() - 1000) } });
+      const vencidoCodigo = await pedir(web.url + "/api/cuenta/clave", json({ codigo: codigo3, clave: "otra9999" }, tokenCuenta));
+      revisar("Un código vencido no sirve", vencidoCodigo.status === 400 && /venció/.test(vencidoCodigo.datos.error), vencidoCodigo.datos.error);
+
+      // Agregar correo: pide la contraseña actual
+      await base().usuario.update({ where: { nick }, data: { email: null } });
+      const sinCorreo = await pedir(web.url + "/api/cuenta/codigo", json({}, tokenCuenta));
+      revisar("Sin correo no se puede pedir código", sinCorreo.status === 400 && /correo/i.test(sinCorreo.datos.error), sinCorreo.datos.error);
+      const emailMalaClave = await pedir(web.url + "/api/cuenta/email", json({ email, clave: "equivocada" }, tokenCuenta));
+      revisar("Para agregar el correo hay que poner la contraseña actual", emailMalaClave.status === 400, emailMalaClave.datos.error);
+      const emailBien = await pedir(web.url + "/api/cuenta/email", json({ email, clave: claveFinal }, tokenCuenta));
+      revisar("Con la contraseña correcta se guarda el correo", emailBien.status === 200 && emailBien.datos.email === email);
+
+      // ── Ranking público ──
+      const tabla = await pedir(web.url + "/api/ranking?limite=5");
+      revisar("El ranking público responde", tabla.status === 200 && Array.isArray(tabla.datos.ranking) && tabla.datos.ranking.length <= 5, tabla.datos.ranking.length + " jugadores");
+      revisar("El ranking no muestra el auth de nadie", !/auth:|"clave"/.test(JSON.stringify(tabla.datos)));
+      revisar("Cada jugador trae puesto, ELO y goles", tabla.datos.ranking.every((j) => j.puesto && typeof j.elo === "number" && typeof j.goles === "number"));
     } finally {
       Correo.usarEnvio(null);
       delete process.env.WEB_URL;

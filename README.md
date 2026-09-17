@@ -409,13 +409,21 @@ El webhook del canal va en `WEBHOOK_WEB`. `cloudflared` ya está instalado; si a
 
 La página de ÑandutíBall: <http://localhost:8080> (o el puerto de la sala).
 
-- Arriba a la derecha: **Iniciar sesión** o **Registrarte**.
-- Es la **misma cuenta que en la sala**: si te registraste con `!registrar` en HaxBall, entrás
-  con eso; si te creás la cuenta acá, después entrás a la sala con `!clave`.
-- Si tu nick tiene rango de **OWNER / CO-OWNER / HOSTER / AYUDANTE** (los de `roles.json` marcados
-  como admin), te aparece el botón **🎛️ Panel** con todo lo de siempre: salas, mensajes, ELO,
-  bans, rangos y actualizaciones. Al que no es admin, el panel lo manda de vuelta a la portada.
-- Si ya entraste, la portada te muestra tu ELO, partidos, ganados, goles y asistencias.
+- Arriba a la derecha: **Iniciar sesión** o **Crear cuenta**.
+- Es la **misma cuenta que en la sala**: te la creás en la web y después entrás a la sala con `!clave`.
+- Con sesión, la portada muestra **Tu ELO** (puntaje, división, cuánto te falta para subir, puesto,
+  partidos, efectividad y goles) y el **ranking** de los mejores con sus goles, con buscador.
+- Tocando **tu nombre** arriba a la derecha se abre tu menú: **Mi cuenta**, **Cambiar contraseña**,
+  el **Panel** (si tu rango es de admin) y **Cerrar sesión**.
+
+### 🔢 Cambiar la contraseña (Mi cuenta)
+
+1. En **Mi cuenta** tocás **Enviar código**: te llega un mail con un **código de 6 números**.
+2. Escribís el código y la contraseña nueva. El código vence en **10 minutos**, sirve una sola vez
+   y se quema a los **5 intentos** equivocados. Para pedir otro hay que esperar 60 segundos.
+
+Si tu cuenta es de antes y no tiene correo, Mi cuenta te pide agregarlo primero (con tu contraseña
+actual). La web tiene modo claro y oscuro: sigue lo que tenga puesto tu celular o tu compu.
 
 La sesión dura **1 hora y media** y se renueva sola mientras tengas la página abierta.
 
@@ -607,7 +615,7 @@ así sobrevive a que se cierre la sala, y **las 4 salas comparten la misma tabla
 Solo cuentan los partidos que **termina un equipo ganando**: si un admin le da a Stop o se cambia
 el mapa, nadie suma ni pierde puntos. Si la base está levantada, cada partido también queda en
 las tablas `partidos` y `participaciones`, y a cada jugador se le suma en `usuarios` (ELO,
-partidos, ganados, perdidos, goles). Al que no tenía usuario se le crea uno sin clave.
+partidos, ganados, perdidos, goles). Solo se guarda a los que tienen cuenta (creada en la página): al que juega sin cuenta no se le crea nada, y su puntaje queda igual en `datos/elo.json`.
 
 En el panel hay una pestaña **ELO** con la tabla completa: puesto, división, puntos, partidos
 jugados y el historial de ganados-empatados-perdidos.
@@ -669,7 +677,7 @@ Para agregar un club, copiá una entrada de `camisetasEquipos` (línea 688) con 
 ### Administración
 | Variable | Qué hace |
 |---|---|
-| `ClaveParaSerAdmin` | Palabra que, escrita en el chat, da admin. **Cambiala** |
+| `ClaveParaSerAdmin` | Ya no se usa: el admin se da solo desde la tabla de rangos del panel |
 | `ListaDeAdmins` | Admins por `auth` (de haxball.com/playerauth) y nicks |
 | `contrasena`, `LugaresReservados` | Lugares reservados para admins |
 | `NickNamesRol1..10`, `NombreROL1..10` | Roles con prefijo y color en el chat |
@@ -802,6 +810,6 @@ del autor los de **grabaciones**, **llamar admins**, **kicks y bans**, **mensaje
 mensajes de la sala se le siguen mandando a su Discord.
 
 ### 5. 🟡 Detalles
-- `ClaveParaSerAdmin` viene como `"!axeso5"`: es fácil de adivinar.
+- ✅ Ya no hay clave para hacerse admin (`!axeso5`): el admin sale solo de la tabla de rangos.
 - `.env`, `.env.example` y `roles.json` tienen tokens y la clave de rangos, y **sí se suben a Git**.
 - El panel no pide usuario ni contraseña: no lo publiques en internet.

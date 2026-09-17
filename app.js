@@ -21,6 +21,9 @@
 //   GET  /frm/panel · /frm/rangos · /frm/actualizaciones   el panel (solo admins)
 //   GET  /api/usuarios?q=&pagina=   usuarios de a 15 (solo OWNER)
 //   POST /api/usuarios/:nick/banear · /desbanear · /clave      (solo OWNER)
+//   GET  /api/ranking             los mejores ELO para la web (sin datos internos)
+//   GET  /api/cuenta · POST /api/cuenta/codigo · /clave · /email   Mi cuenta (con sesión)
+//   GET  /frm/cuenta              la pantalla de Mi cuenta
 //   GET  /frm/usuarios            la pantalla de usuarios (solo OWNER)
 // =============================================================================
 const express = require("express");
@@ -34,6 +37,7 @@ const moderacionRouter = require("./routes/ModeracionRouter");
 const actualizacionesRouter = require("./routes/ActualizacionesRouter");
 const authRouter = require("./routes/AuthRouter");
 const usuariosRouter = require("./routes/UsuariosRouter");
+const cuentaRouter = require("./routes/CuentaRouter");
 const vistasRouter = require("./routes/VistasRouter");
 
 // sala: adaptador de la sala local { estado(), expulsar(id, motivo, banear) }
@@ -68,6 +72,7 @@ function crearApp({ sala = null, salas = [] } = {}) {
   app.use("/api", actualizacionesRouter);
   app.use("/api", authRouter);
   app.use("/api", usuariosRouter);
+  app.use("/api", cuentaRouter);
 
   // Todo lo estático sale de public/ (igual que app-centralshop)
   app.use(express.static(path.join(__dirname, "public")));

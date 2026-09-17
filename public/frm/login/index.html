@@ -3,41 +3,54 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Ñandutí Web — Iniciar sesión</title>
+<title>Iniciar sesión · ÑandutíBall</title>
+<link rel="icon" href="/img/logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="/css/nanduti.css">
 </head>
 <body>
 
-<div class="barra">
-  <a class="marca" href="/"><span class="telar">🕸️</span> Ñandutí Web</a>
-  <div class="derecha"><a class="boton" href="/frm/registro/">Registrarte</a></div>
-</div>
+<header class="barra">
+  <a class="marca" href="/"><img src="/img/logo.svg" alt=""><span>ÑandutíBall</span></a>
+  <div class="derecha"><a class="boton fantasma" href="/frm/registro/">Crear cuenta</a></div>
+</header>
 
-<form class="caja" id="formulario">
-  <h2>Iniciar sesión</h2>
-  <div class="ayuda">Con el mismo nombre y la misma contraseña que usás en la sala.</div>
+<main class="auth">
+  <form class="caja" id="formulario">
+    <img class="logo-caja" src="/img/logo.svg" alt="">
+    <h1>Iniciar sesión</h1>
+    <div class="ayuda">Usá el mismo nombre y contraseña que en las salas.</div>
 
-  <label for="nick">Tu nombre en HaxBall</label>
-  <input type="text" id="nick" autocomplete="username" maxlength="60" required>
+    <div class="campo">
+      <label for="nick">Nombre en HaxBall</label>
+      <input type="text" id="nick" autocomplete="username" maxlength="60" required autofocus>
+    </div>
 
-  <label for="clave">Contraseña</label>
-  <input type="password" id="clave" autocomplete="current-password" required>
+    <div class="campo">
+      <label for="clave">Contraseña</label>
+      <input type="password" id="clave" autocomplete="current-password" required>
+      <div class="nota-campo"><a href="/frm/recuperar/">¿Olvidaste tu contraseña?</a></div>
+    </div>
 
-  <button class="boton principal" type="submit" id="entrar">Entrar</button>
-  <div class="aviso" id="aviso"></div>
-  <div class="pie-caja"><a href="/frm/recuperar/">¿Olvidaste tu contraseña?</a></div>
-  <div class="pie-caja">¿Todavía no tenés? <a href="/frm/registro/">Creá tu cuenta</a></div>
-</form>
+    <button class="boton principal" type="submit" id="entrar">Entrar</button>
+    <div class="aviso" id="aviso"></div>
+    <div class="pie-caja">¿No tenés cuenta? <a href="/frm/registro/">Creala acá</a></div>
+  </form>
+</main>
 
 <script src="/js/sesion.js"></script>
 <script>
 const $ = (id) => document.getElementById(id);
-const volverA = new URLSearchParams(location.search).get("volver");
+// Solo se vuelve a páginas de este mismo sitio (nada de ?volver=https://otro-lado)
+const pedido = new URLSearchParams(location.search).get("volver");
+const volverA = pedido && pedido.startsWith("/") && !pedido.startsWith("//") ? pedido : null;
 
 $("formulario").onsubmit = async (evento) => {
   evento.preventDefault();
   $("entrar").disabled = true;
-  $("aviso").className = "aviso";
+  $("aviso").className = "aviso info";
   $("aviso").textContent = "Entrando…";
   try {
     const { token, usuario } = await Sesion.pedir("/api/auth/entrar", {

@@ -89,22 +89,28 @@ const enOtroProceso = (codigo, env) => {
     const borrado = await db.usuario.findUnique({ where: { id: creado.id } });
     revisar("Y borrarlo", borrado === null);
 
-    // Un partido terminado: crea el partido, los usuarios que falten y suma a sus números
+    // Un partido terminado: crea el partido y suma a los que TIENEN CUENTA (con clave).
+    // Al que no tiene cuenta no se le crea nada: su puntaje queda solo en elo.json.
     const PartidoModel = require("../models/PartidoModel");
     const { aplicarPartido } = require("../lib/elo");
-    const rojo = nick + "R", azul = nick + "B";
-    const evento = { red: [{ nombre: rojo, auth: "auth-" + rojo }], blue: [{ nombre: azul, auth: null }], ganador: 1, golesRed: 3, golesBlue: 1, mapa: "Futsal x3", goles: { [rojo]: 2 } };
+    const claves = require("../lib/claves");
+    const rojo = nick + "R", azul = nick + "B", sinCuenta = nick + "X";
+    await db.usuario.create({ data: { nick: rojo, auth: "auth-" + rojo, clave: claves.hashear("clave1234") } });
+    await db.usuario.create({ data: { nick: azul, clave: claves.hashear("clave1234") } });
+    const evento = { red: [{ nombre: rojo, auth: "auth-" + rojo }], blue: [{ nombre: azul, auth: null }, { nombre: sinCuenta, auth: "auth-" + sinCuenta }], ganador: 1, golesRed: 3, golesBlue: 1, mapa: "Futsal x3", goles: { [rojo]: 2 } };
     const partido = await PartidoModel.guardar(evento, aplicarPartido({}, evento), { clave: "prueba-" + nick, nombre: "Prueba" });
     try {
       const ganador = await db.usuario.findUnique({ where: { nick: rojo } });
       const perdedor = await db.usuario.findUnique({ where: { nick: azul } });
       const participaciones = await db.participacion.count({ where: { partidoId: partido.id } });
       revisar("Un partido terminado se guarda", partido.golesRed === 3 && partido.ganador === 1 && participaciones === 2, "partido #" + partido.id);
-      revisar("Al que gana le suma ELO, partido, victoria y goles", ganador && ganador.elo > 1000 && ganador.partidos === 1 && ganador.ganados === 1 && ganador.goles === 2 && ganador.auth === "auth-" + rojo);
+      revisar("Al que gana le suma ELO, partido, victoria y goles", ganador && ganador.elo > 1000 && ganador.partidos === 1 && ganador.ganados === 1 && ganador.goles === 2);
       revisar("Al que pierde le resta ELO y le anota la derrota", perdedor && perdedor.elo < 1000 && perdedor.perdidos === 1);
+      const creadoSolo = await db.usuario.findUnique({ where: { nick: sinCuenta } });
+      revisar("Al que jugó sin cuenta NO se le crea un usuario", creadoSolo === null, creadoSolo ? "se creó" : "no se creó");
     } finally {
       await db.partido.delete({ where: { id: partido.id } });
-      await db.usuario.deleteMany({ where: { nick: { in: [rojo, azul] } } });
+      await db.usuario.deleteMany({ where: { nick: { in: [rojo, azul, sinCuenta] } } });
       await db.sala.delete({ where: { clave: "prueba-" + nick } });
     }
   } catch (error) {

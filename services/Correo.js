@@ -59,37 +59,52 @@ async function enviar(mail) {
 
 const escapar = (t) => String(t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-// El mail para cambiar la clave. HTML con estilos en línea: los clientes de correo ignoran <style>.
-function mailRecuperar({ nick, link, minutos }) {
-  const n = escapar(nick);
-  const l = escapar(link);
-  const html = `<!doctype html>
-<html lang="es"><body style="margin:0;padding:0;background:#0f1720;font-family:Arial,Helvetica,sans-serif;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0f1720;padding:32px 12px;">
+// ── Plantilla común de los mails ──
+// Tabla + estilos en línea: los clientes de correo (Gmail, Outlook) ignoran <style> y flexbox.
+// Fondo claro y un solo color de marca: se lee bien en cualquier bandeja, clara u oscura.
+const MARCA = "#1d4ed8";
+
+function plantilla({ preencabezado, titulo, cuerpoHtml, pie }) {
+  return `<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"></head>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#111827;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapar(preencabezado)}</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:32px 12px;">
 <tr><td align="center">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#17222e;border-radius:14px;overflow:hidden;">
-    <tr><td style="background:#d52b1e;height:6px;font-size:0;line-height:0;">&nbsp;</td></tr>
-    <tr><td style="padding:28px 28px 8px;color:#ffffff;font-size:22px;font-weight:bold;">🕸️ Ñandutí Web</td></tr>
-    <tr><td style="padding:8px 28px;color:#dfe7ee;font-size:15px;line-height:1.55;">
-      Hola <b>${n}</b>,<br><br>
-      Nos pediste cambiar la contraseña de tu cuenta de ÑandutíBall. Tocá el botón para elegir una nueva:
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;">
+    <tr><td style="padding:0 4px 16px;font-size:15px;font-weight:700;color:#111827;letter-spacing:-.01em;">
+      <span style="display:inline-block;width:22px;height:22px;border-radius:6px;background:${MARCA};vertical-align:middle;margin-right:8px;"></span><span style="vertical-align:middle;">ÑandutíBall</span>
     </td></tr>
-    <tr><td align="center" style="padding:22px 28px;">
-      <a href="${l}" style="display:inline-block;background:#00c853;color:#0f1720;text-decoration:none;font-weight:bold;font-size:16px;padding:14px 28px;border-radius:10px;">Cambiar mi contraseña</a>
+    <tr><td style="background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;padding:32px;">
+      <h1 style="margin:0 0 16px;font-size:20px;line-height:1.3;font-weight:700;color:#111827;">${escapar(titulo)}</h1>
+      ${cuerpoHtml}
     </td></tr>
-    <tr><td style="padding:0 28px 8px;color:#93a1b0;font-size:13px;line-height:1.5;">
-      El link sirve una sola vez y vence en <b>${minutos} minutos</b>.<br>
-      Si el botón no anda, copiá esto en el navegador:<br>
-      <a href="${l}" style="color:#6fb3ff;word-break:break-all;">${l}</a>
+    <tr><td style="padding:16px 4px 0;font-size:12px;line-height:1.5;color:#6b7280;">
+      ${pie}<br>ÑandutíBall · el host paraguayo de HaxBall
     </td></tr>
-    <tr><td style="padding:16px 28px 28px;color:#93a1b0;font-size:13px;line-height:1.5;border-top:1px solid #243242;">
-      ¿No fuiste vos? Ignorá este correo: tu contraseña sigue igual.
-    </td></tr>
-    <tr><td style="background:#0038a8;height:6px;font-size:0;line-height:0;">&nbsp;</td></tr>
   </table>
 </td></tr>
 </table>
 </body></html>`;
+}
+
+const parrafo = (html) => `<p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#374151;">${html}</p>`;
+
+// El mail para cambiar la clave con un link (cuando te olvidaste la contraseña)
+function mailRecuperar({ nick, link, minutos }) {
+  const l = escapar(link);
+  const html = plantilla({
+    preencabezado: "Elegí una contraseña nueva para tu cuenta.",
+    titulo: "Restablecer tu contraseña",
+    cuerpoHtml:
+      parrafo(`Hola <b>${escapar(nick)}</b>, recibimos un pedido para cambiar la contraseña de tu cuenta.`) +
+      `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:8px 0 24px;"><tr><td style="border-radius:8px;background:${MARCA};">
+        <a href="${l}" style="display:inline-block;padding:12px 22px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;">Cambiar mi contraseña</a>
+      </td></tr></table>` +
+      parrafo(`El link sirve una sola vez y vence en <b>${minutos} minutos</b>.`) +
+      `<p style="margin:0;font-size:13px;line-height:1.5;color:#6b7280;">Si el botón no funciona, copiá este link en el navegador:<br><a href="${l}" style="color:${MARCA};word-break:break-all;">${l}</a></p>`,
+    pie: "¿No pediste esto? Ignorá este correo: tu contraseña no cambia.",
+  });
 
   const texto =
     `Hola ${nick},\n\n` +
@@ -97,12 +112,35 @@ function mailRecuperar({ nick, link, minutos }) {
     `El link sirve una sola vez y vence en ${minutos} minutos.\n` +
     `Si no fuiste vos, ignorá este correo.`;
 
-  return { asunto: "🕸️ Cambiá tu contraseña de ÑandutíBall", html, texto };
+  return { asunto: "Restablecer tu contraseña de ÑandutíBall", html, texto };
+}
+
+// El código de 6 números para cambiar la clave desde "Mi cuenta"
+function mailCodigo({ nick, codigo, minutos }) {
+  const digitos = String(codigo).split("").join("&#8202;");
+  const html = plantilla({
+    preencabezado: `Tu código es ${codigo}. Vence en ${minutos} minutos.`,
+    titulo: "Tu código de verificación",
+    cuerpoHtml:
+      parrafo(`Hola <b>${escapar(nick)}</b>, usá este código para cambiar la contraseña de tu cuenta:`) +
+      `<div style="margin:8px 0 24px;padding:18px;border:1px solid #e5e7eb;border-radius:10px;background:#f9fafb;text-align:center;font-family:'SFMono-Regular',Consolas,'Liberation Mono',monospace;font-size:32px;font-weight:700;letter-spacing:8px;color:#111827;">${digitos}</div>` +
+      parrafo(`Vence en <b>${minutos} minutos</b>. No se lo pases a nadie: nadie de ÑandutíBall te lo va a pedir.`),
+    pie: "¿No pediste esto? Ignorá este correo y, por las dudas, cambiá tu contraseña.",
+  });
+
+  const texto =
+    `Hola ${nick},\n\n` +
+    `Tu código para cambiar la contraseña de ÑandutíBall es: ${codigo}\n\n` +
+    `Vence en ${minutos} minutos. No se lo pases a nadie.\n` +
+    `Si no fuiste vos, ignorá este correo.`;
+
+  return { asunto: `${codigo} es tu código de ÑandutíBall`, html, texto };
 }
 
 module.exports = {
   enviar,
   hayCorreo,
   mailRecuperar,
+  mailCodigo,
   usarEnvio: (fn) => { envioDePrueba = fn || null; },
 };

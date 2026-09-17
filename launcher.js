@@ -262,17 +262,9 @@ api.on("error", (error) => {
         return contestar({ ok, motivo });
       }
 
-      if (evento.accion === "registrar") {
-        await UsuarioModel.registrar({ nick: evento.nick, clave: evento.clave, auth: evento.auth });
-        agregarMensaje("usuario", `${evento.nick} se registró`, { jugador: evento.nick });
-        await refrescarUsuarios();
-        return contestar({ ok: true });
-      }
-
-      if (evento.accion === "cambiar") {
-        await UsuarioModel.cambiarClave({ nick: evento.nick, claveVieja: evento.clave, claveNueva: evento.claveNueva });
-        return contestar({ ok: true });
-      }
+      // Desde la sala NO se crean cuentas ni se cambian claves: eso es solo en la web.
+      // Aunque alguien empuje un pedido "registrar" o "cambiar", acá no se toca la base.
+      return contestar({ ok: false, motivo: "Las cuentas se crean y se cambian solo en la página de ÑandutíBall" });
     } catch (error) {
       const sinBase = /No se pudo abrir la base|Can't reach database|ECONNREFUSED/i.test(error.message);
       if (sinBase) console.warn("⚠️ La base no responde: la sala sigue andando, sin pedir claves");

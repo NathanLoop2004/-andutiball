@@ -3,8 +3,9 @@
 // `participaciones` por jugador y los números del usuario (elo, partidos, ganados...).
 //
 // El cálculo del ELO lo sigue haciendo lib/elo.js sobre datos/elo.json; acá se guarda
-// el resultado. Si el jugador no tiene usuario todavía, se le crea uno sin clave (así el
-// que después se registra en la web ya trae sus partidos).
+// el resultado. SOLO para los que tienen cuenta (creada en la web, con clave): al que no
+// tiene cuenta NO se le crea nada. Antes se le creaba un usuario sin clave y la tabla se
+// llenó de "cuentas" que nadie creó. Su puntaje igual queda en elo.json.
 // =============================================================================
 const { base } = require("../services/ConexionBase");
 
@@ -43,12 +44,9 @@ class PartidoModel {
         const nick = String(c.nombre || "").trim();
         if (!nick) continue;
 
-        let usuario = await tx.usuario.findUnique({ where: { nick } });
-        if (!usuario) {
-          // El auth es único: solo se anota si no lo tiene otro usuario (alguien que cambió de nick)
-          const authLibre = c.auth && !(await tx.usuario.findUnique({ where: { auth: c.auth } }));
-          usuario = await tx.usuario.create({ data: { nick, auth: authLibre ? c.auth : null } });
-        }
+        // Sin cuenta (o sin clave) no se guarda nada suyo en la base
+        const usuario = await tx.usuario.findUnique({ where: { nick } });
+        if (!usuario || !usuario.clave) continue;
 
         await tx.usuario.update({
           where: { id: usuario.id },
