@@ -43,7 +43,7 @@ const json = (cuerpo, token) => ({
   revisar("La portada dice Ñandutí Web", portada.status === 200 && /Ñandutí Web/.test(portada.datos), "HTTP " + portada.status);
   revisar("Y ofrece iniciar sesión o registrarte", /\/frm\/login\//.test(portada.datos) && /\/frm\/registro\//.test(portada.datos));
 
-  for (const ruta of ["/frm/login", "/frm/registro", "/frm/panel", "/frm/rangos", "/frm/actualizaciones"]) {
+  for (const ruta of ["/frm/login", "/frm/registro", "/frm/recuperar", "/frm/panel", "/frm/rangos", "/frm/actualizaciones"]) {
     const r = await pedir(web.url + ruta);
     revisar("Abre " + ruta, r.status === 200 && /<html/.test(r.datos), "HTTP " + r.status);
   }
@@ -62,12 +62,24 @@ const json = (cuerpo, token) => ({
     const nick = "Web" + Date.now();
     const clave = "clave1234";
 
-    const alta = await pedir(web.url + "/api/auth/registrar", json({ nick, clave }));
+    const email = nick.toLowerCase() + "@prueba.nanduti";
+
+    const sinEmail = await pedir(web.url + "/api/auth/registrar", json({ nick, clave }));
+    revisar("Sin correo no se puede crear la cuenta", sinEmail.status === 400 && /correo/i.test(sinEmail.datos.error), sinEmail.datos.error);
+    const emailMal = await pedir(web.url + "/api/auth/registrar", json({ nick, clave, email: "esto-no-es-un-mail" }));
+    revisar("Un correo mal escrito se rechaza", emailMal.status === 400, emailMal.datos.error);
+
+    const alta = await pedir(web.url + "/api/auth/registrar", json({ nick, clave, email: email.toUpperCase() }));
     revisar("Se puede crear la cuenta", alta.status === 201 && Boolean(alta.datos.token), "HTTP " + alta.status);
     revisar("Vuelve el usuario, nunca la clave", alta.datos.usuario.nick === nick && !("clave" in alta.datos.usuario), Object.keys(alta.datos.usuario).join(","));
     revisar("Un usuario nuevo no es admin", alta.datos.usuario.admin === false);
+    const guardado = await base().usuario.findUnique({ where: { nick } });
+    revisar("El correo queda guardado en minúsculas", guardado && guardado.email === email, guardado && guardado.email);
 
-    const repetido = await pedir(web.url + "/api/auth/registrar", json({ nick, clave: "otra1234" }));
+    const otroConEseCorreo = await pedir(web.url + "/api/auth/registrar", json({ nick: nick + "b", clave, email }));
+    revisar("Dos cuentas no pueden tener el mismo correo", otroConEseCorreo.status === 400 && /correo/i.test(otroConEseCorreo.datos.error), otroConEseCorreo.datos.error);
+
+    const repetido = await pedir(web.url + "/api/auth/registrar", json({ nick, clave: "otra1234", email: "ladron" + Date.now() + "@prueba.nanduti" }));
     revisar("No se puede robar un nombre ya registrado", repetido.status === 400, repetido.datos.error);
 
     const mal = await pedir(web.url + "/api/auth/entrar", json({ nick, clave: "equivocada" }));
@@ -120,6 +132,55 @@ const json = (cuerpo, token) => ({
     const UsuarioModel = require("../models/UsuarioModel");
     const enLaSala = await UsuarioModel.verificar({ nick, clave });
     revisar("Ese usuario también entra en la sala con !clave", enLaSala.ok === true);
+
+    // ── Recuperar la cuenta por correo (sin mandar mails de verdad) ──
+    console.log("\n📧 Recuperar la cuenta:\n");
+    const Correo = require("../services/Correo");
+    const mandados = [];
+    Correo.usarEnvio(async (mail) => { mandados.push(mail); return { ok: true }; });
+    process.env.WEB_URL = "https://nanduti.prueba";
+    try {
+      const noExiste = await pedir(web.url + "/api/auth/recuperar", json({ email: "nadie" + Date.now() + "@prueba.nanduti" }));
+      const siExiste = await pedir(web.url + "/api/auth/recuperar", json({ email: email.toUpperCase() }));
+      revisar("Contesta lo mismo exista o no el correo (no se puede averiguar quién está)", noExiste.status === 200 && siExiste.status === 200 && noExiste.datos.mensaje === siExiste.datos.mensaje);
+      revisar("Solo le manda mail al que existe", mandados.length === 1 && mandados[0].para === email, mandados.length + " mails");
+
+      const mail = mandados[0] || { html: "", texto: "" };
+      const link = (mail.texto.match(/https:\/\/nanduti\.prueba\/frm\/recuperar\/\?t=\S+/) || [])[0];
+      revisar("El mail es HTML, con el botón y el link a la pantalla", /<a href="https:\/\/nanduti\.prueba\/frm\/recuperar\/\?t=/.test(mail.html) && /Cambiar mi contrase/.test(mail.html) && Boolean(link), link);
+      const token = link ? decodeURIComponent(link.split("?t=")[1]) : "";
+
+      const enBase = await base().usuario.findUnique({ where: { nick } });
+      revisar("En la base no queda el link tal cual, solo su hash", enBase.recuperarHash && enBase.recuperarHash !== token && !JSON.stringify(enBase).includes(token));
+
+      const revisado = await pedir(web.url + "/api/auth/recuperar?t=" + encodeURIComponent(token));
+      revisar("La pantalla reconoce el link y de quién es", revisado.status === 200 && revisado.datos.nick === nick, revisado.datos.nick);
+      const trucho = await pedir(web.url + "/api/auth/recuperar?t=" + "x".repeat(43));
+      revisar("Un link inventado no sirve", trucho.status === 400, trucho.datos.error);
+
+      const nueva = "nueva5678";
+      const cambio = await pedir(web.url + "/api/auth/recuperar/cambiar", json({ token, clave: nueva }));
+      revisar("Con el link se cambia la contraseña", cambio.status === 200, cambio.datos.error);
+      const conVieja = await pedir(web.url + "/api/auth/entrar", json({ nick, clave }));
+      const conNueva = await pedir(web.url + "/api/auth/entrar", json({ nick, clave: nueva }));
+      revisar("La vieja ya no entra y la nueva sí", conVieja.status === 400 && conNueva.status === 200);
+
+      const otraVez = await pedir(web.url + "/api/auth/recuperar/cambiar", json({ token, clave: "otra9999" }));
+      revisar("El link sirve una sola vez", otraVez.status === 400, otraVez.datos.error);
+
+      // Un link vencido tampoco
+      await pedir(web.url + "/api/auth/recuperar", json({ email }));
+      const token2 = decodeURIComponent((mandados[1] ? mandados[1].texto.match(/\?t=(\S+)/)[1] : ""));
+      await base().usuario.update({ where: { nick }, data: { recuperarVence: new Date(Date.now() - 1000) } });
+      const vencido2 = await pedir(web.url + "/api/auth/recuperar/cambiar", json({ token: token2, clave: "otra9999" }));
+      revisar("Un link vencido no sirve", vencido2.status === 400 && Boolean(token2), vencido2.datos.error);
+
+      const ficha = await pedir(web.url + "/api/auth/entrar", json({ nick, clave: nueva }));
+      revisar("Lo que sale del servidor nunca trae el hash del link", !JSON.stringify(ficha.datos).includes("recuperar"));
+    } finally {
+      Correo.usarEnvio(null);
+      delete process.env.WEB_URL;
+    }
 
     await base().usuario.delete({ where: { nick } });
   }

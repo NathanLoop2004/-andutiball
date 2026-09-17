@@ -102,8 +102,10 @@ class SesionModel {
     return { token: SesionModel.firmar(ficha), usuario: ficha };
   }
 
-  static async registrar({ nick, clave }) {
-    await UsuarioModel.registrar({ nick, clave });
+  // En la web el correo es obligatorio: es lo que permite recuperar la cuenta
+  static async registrar({ nick, clave, email }) {
+    UsuarioModel.revisarEmail(email);
+    await UsuarioModel.registrar({ nick, clave, email });
     const usuario = await UsuarioModel.buscarPorNick(nick);
     const ficha = await SesionModel.fichaDe(usuario);
     return { token: SesionModel.firmar(ficha), usuario: ficha };

@@ -11,10 +11,20 @@ const claves = require("../lib/claves");
 
 const limpiarNick = (nick) => String(nick == null ? "" : nick).trim();
 
+// El correo se guarda en minúsculas y sin espacios, así "Juan@Gmail.com" y "juan@gmail.com" son el mismo
+const limpiarEmail = (email) => String(email == null ? "" : email).trim().toLowerCase();
+const EMAIL_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+function revisarEmail(email) {
+  const limpio = limpiarEmail(email);
+  if (!limpio) throw new Error("Falta el correo electrónico");
+  if (limpio.length > 200 || !EMAIL_VALIDO.test(limpio)) throw new Error("Ese correo no es válido");
+  return limpio;
+}
+
 // Lo que se puede mostrar de un usuario (sin el hash de la clave)
 const sinClave = (usuario) => {
   if (!usuario) return null;
-  const { clave, ...resto } = usuario;
+  const { clave, recuperarHash, recuperarVence, ...resto } = usuario;
   return { ...resto, registrado: Boolean(clave) };
 };
 
@@ -47,16 +57,23 @@ class UsuarioModel {
   }
 
   // Crea el usuario con su clave, o le pone clave a uno que ya existía sin ella
-  static async registrar({ nick, clave, auth = null }) {
+  // El email es opcional acá (desde la sala no se pide); la web lo exige en SesionModel.registrar
+  static async registrar({ nick, clave, auth = null, email = null }) {
     const nombre = limpiarNick(nick);
     if (!nombre) throw new Error("Falta el nombre");
     claves.revisarClave(clave);
+    const correo = email ? revisarEmail(email) : null;
+    if (correo) {
+      const conEseCorreo = await base().usuario.findUnique({ where: { email: correo } });
+      if (conEseCorreo && conEseCorreo.nick !== nombre) throw new Error("Ese correo ya lo usa otra cuenta");
+    }
 
     const existente = await UsuarioModel.buscarPorNick(nombre);
     if (existente && existente.clave) throw new Error("Ese nombre ya tiene clave");
 
     const datos = { clave: claves.hashear(clave), claveCambiada: new Date() };
     if (auth) datos.auth = auth;
+    if (correo) datos.email = correo;
 
     const usuario = existente
       ? await base().usuario.update({ where: { id: existente.id }, data: datos })
@@ -152,4 +169,6 @@ class UsuarioModel {
 }
 
 module.exports = UsuarioModel;
+module.exports.limpiarEmail = limpiarEmail;
+module.exports.revisarEmail = revisarEmail;
 module.exports.sinClave = sinClave;

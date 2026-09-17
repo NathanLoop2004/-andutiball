@@ -1,23 +1,26 @@
-// El arrancador de todo: Ñandutí Web, el panel, las 4 salas y el túnel de Cloudflare.
+// El arrancador de todo: las 4 salas, y Ñandutí Web (panel + túnel de Cloudflare) si no estaba.
 //
 //   npm start            todo junto
 //   npm start todos      lo mismo (también: todas, todo, all)
 //   npm start 4v4        todo, pero con una sola sala (3v3 · 4v4 · futsal · realsoccer)
 //
-// Cada cosa corre en su propio proceso y todo se corta junto con Ctrl+C.
+// Cada sala corre en su propio proceso y se cortan juntas con Ctrl+C.
 //
-// La BASE DE DATOS va aparte, a propósito: tiene su compose y su propio ciclo de vida
-// (los datos no se apagan con las salas).
+// La WEB (panel + túnel) queda prendida APARTE, en segundo plano (ver web.js): así reiniciar
+// las salas no cambia el link público. Se apaga con "npm run web:bajar".
 //
-//   npm run base         levanta Postgres
-//   npm run base:migrar  crea o actualiza las tablas
+// Antes de abrir las salas deja todo listo solo (lib/preparar.js): prende la base si está
+// apagada (con docker compose, queda aparte y no se corta con Ctrl+C), aplica los cambios de
+// las tablas, vuelve a parchar script.js si cambiaron los parches, y si la web ya estaba
+// prendida pero cambió su código o el .env, le recarga el panel sin cortar el túnel.
 //
-// Si la base no está levantada, igual arranca todo: la sala no pide claves y la web no
-// deja entrar, pero nadie se queda sin jugar.
+// Si algo de eso falla, avisa y arranca igual: nadie se queda sin jugar.
 
 const { spawn } = require("child_process");
 const path = require("path");
 const { hayBase, cerrarBase, entornoActivo } = require("./services/ConexionBase");
+const Web = require("./web");
+const Preparar = require("./lib/preparar");
 
 const PANEL_PORT = Number(process.env.PANEL_PORT || 8080);
 
@@ -79,38 +82,71 @@ function lanzar(nombre, color, archivo, variables) {
 // El túnel viene prendido; se apaga con TUNEL_WEB=no en .env
 const conTunel = !/^(no|false|0)$/i.test(String(process.env.TUNEL_WEB ?? "si").trim());
 
-console.log(`\n🕸️  ÑandutíBall — levantando ${SALAS.length === 1 ? SALAS[0].nombre : "las " + SALAS.length + " salas"}, la web${conTunel ? ", el túnel" : ""} y el panel\n`);
+console.log(`\n🕸️  ÑandutíBall — levantando ${SALAS.length === 1 ? SALAS[0].nombre : "las " + SALAS.length + " salas"}\n`);
 
 // HaxBall devuelve 429 si se crean varias salas al mismo tiempo desde una misma IP.
 const RETARDO_ENTRE_SALAS = Number(process.env.RETARDO_ENTRE_SALAS_MS || 8000);
 const espera = (ms) => new Promise((r) => setTimeout(r, ms));
 
-// La base va aparte: acá solo miramos cómo está y lo decimos
-async function mirarLaBase() {
-  const ok = await hayBase().catch(() => false);
+// Todo lo que antes había que correr a mano: prender la base, aplicar los cambios de las
+// tablas y volver a parchar el script si cambiaron los parches (ver lib/preparar.js)
+async function prepararTodo() {
+  const ok = await Preparar.prepararBase({ hayBase, cerrarBase });
   await cerrarBase().catch(() => {});
   if (ok) {
     console.log(`🗄️  Base de datos: conectada ${GRIS}(${entornoActivo})${RESET}`);
+    Preparar.prepararTablas();
   } else {
-    console.log(`🗄️  Base de datos: ${GRIS}apagada — las salas no van a pedir clave y la web no deja entrar${RESET}`);
-    console.log(`   ${GRIS}👉 Para levantarla, en otra terminal:  npm run base${RESET}`);
+    console.log(`   ${GRIS}Sin base: las salas no van a pedir clave y la web no deja entrar${RESET}`);
+  }
+  Preparar.prepararScript();
+  console.log("");
+}
+
+// La web (panel + túnel) va aparte y NO se corta con las salas: si ya estaba prendida no se
+// toca (el link público sigue igual), y si no, se la deja corriendo en segundo plano.
+async function asegurarLaWeb() {
+  const e = await Web.estado();
+  if (e.prendida || e.panel) {
+    const link = Web.linkPublico();
+    console.log(`🕸️  Ñandutí Web: ya estaba prendida${link ? ` — el link sigue igual: ${link}` : ""}`);
+
+    // Si cambió el código de la web o el .env, se recarga solo el panel (el túnel no se toca)
+    if (e.prendida && Web.firmaDelPanel() !== Web.firmaConLaQueArranco()) {
+      console.log(`   🔄 Cambió el código de la web o el .env: recargo el panel ${GRIS}(el link no cambia)${RESET}`);
+      const antes = Web.firmaConLaQueArranco();
+      Web.pedirRecarga();
+      for (let i = 0; i < 40 && Web.firmaConLaQueArranco() === antes; i++) await espera(500);
+      for (let i = 0; i < 30 && !(await Web.contestaElPanel()); i++) await espera(500);
+      console.log(`   ${(await Web.contestaElPanel()) ? "✅ Panel recargado" : "⚠️ El panel todavía no contesta, mirá " + Web.ARCHIVO_LOG}`);
+    } else if (!e.prendida) {
+      console.log(`   ${GRIS}(está corriendo en otra terminal: no la puedo recargar sola. Cortala y volvé a correr npm start)${RESET}`);
+    }
+    console.log("");
+    return;
+  }
+  const pid = Web.prenderEnSegundoPlano();
+  console.log(`🕸️  Ñandutí Web: la dejo prendida en segundo plano ${GRIS}(pid ${pid})${RESET}`);
+  console.log(`   ${GRIS}No se apaga con Ctrl+C: reiniciar las salas no cambia el link. Para apagarla: npm run web:bajar${RESET}`);
+  console.log(`   ${GRIS}Lo que va pasando: ${Web.ARCHIVO_LOG}${RESET}`);
+
+  // Esperamos a que el panel conteste y, si hay túnel, a que salga el link nuevo
+  for (let i = 0; i < 30 && !(await Web.contestaElPanel()); i++) await espera(500);
+  if (conTunel) {
+    const antes = Web.linkPublico();
+    for (let i = 0; i < 40; i++) {
+      const ahora = Web.linkPublico();
+      if (ahora && ahora !== antes) break;
+      await espera(500);
+    }
   }
   console.log("");
 }
 
 (async () => {
-  await mirarLaBase();
+  await prepararTodo();
 
-  lanzar("panel", "\x1b[34m", "panel/server.js", {
-    PANEL_PORT: String(PANEL_PORT),
-    SALAS: SALAS.map((s) => `${s.clave}|${s.nombre}|http://localhost:${s.puerto}`).join(","),
-  });
-
-  // El túnel de Cloudflare saca la web afuera de localhost y avisa el link en el Discord
-  // (un solo mensaje, que se va actualizando). Se apaga con TUNEL_WEB=no en .env.
-  if (conTunel) {
-    lanzar("tunel", "\x1b[36m", "tunel.js", { TUNEL_PUERTO: String(PANEL_PORT) });
-  }
+  await asegurarLaWeb();
 
   for (let i = 0; i < SALAS.length; i++) {
     const sala = SALAS[i];
@@ -129,8 +165,9 @@ async function mirarLaBase() {
   console.log(`\n${GRIS}Los links de las salas van a ir apareciendo acá abajo.${RESET}`);
   console.log(`🕸️  Ñandutí Web: http://localhost:${PANEL_PORT}`);
   console.log(`🖥️  Panel (admins): http://localhost:${PANEL_PORT}/frm/panel`);
-  if (conTunel) console.log(`${GRIS}🌐 El link público va a salir acá abajo, y se avisa en el Discord${RESET}`);
-  console.log(`${GRIS}Cortá todo con Ctrl+C${RESET}\n`);
+  const link = Web.linkPublico();
+  if (link) console.log(`🌐 Link público: ${link}`);
+  console.log(`${GRIS}Ctrl+C corta las salas. La web sigue prendida (npm run web:bajar para apagarla)${RESET}\n`);
 })();
 
 const cerrarTodo = () => {

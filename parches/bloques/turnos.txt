@@ -18,7 +18,7 @@
 // jugadores por su cuenta, se pisan entre sí; de eso también se encarga ese bloque.
 
 var SeleccionPorTurnos = false;    // se prende solo según el modo de la sala
-var SegundosParaElegir = 10;       // lo que tiene el capitán para elegir
+var SegundosParaElegir = 15;       // lo que tiene el capitán para elegir
 var EcharAlQueNoElige = true;      // true: se va de la sala | false: pasa a espectador y al final de la fila
 var SegundosDeCuenta = 3;          // los últimos segundos se cuentan en el chat (3… 2… 1…)
 

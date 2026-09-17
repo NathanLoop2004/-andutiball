@@ -50,11 +50,27 @@ automática y avisos a Discord. Puede levantar **4 salas a la vez**: tres de Fut
 ### Todo junto (sin Docker)
 
 ```powershell
-npm run base     # la base de datos, una sola vez (queda prendida aparte)
-npm start        # Ñandutí Web + el panel + las 4 salas + el túnel de Cloudflare
+npm start        # todo junto: la base, las tablas, el script, la web y las 4 salas
 ```
 
-**`npm start` levanta todo junto** y se corta todo junto con Ctrl+C. Te avisa al arrancar si la
+**`npm start` se encarga solo de todo**, no hay que correr nada antes:
+
+- si la **base** está apagada, la prende (queda prendida aparte);
+- aplica los **cambios de las tablas** que falten (nunca borra datos);
+- si se tocó algo de los **parches**, vuelve a parchar `script.js`;
+- si la **web** ya estaba prendida y cambió su código o el `.env`, la recarga **sin cambiar el link**.
+
+Si algo de eso falla, te avisa y arranca igual.
+
+**La web y el túnel quedan prendidos aparte**, en segundo plano: podés reiniciar las salas todas
+las veces que quieras y **el link público no cambia**. Si el túnel o la web se caen, se vuelven a
+prender solos (y el Discord se actualiza). Lo que va pasando queda en `datos/web.log`.
+
+    npm run web:estado   # ¿está prendida? ¿cuál es el link?
+    npm run web:bajar    # apagarla
+    npm run web          # prenderla en esta terminal, sin salas
+
+**`npm start` levanta las salas** y Ctrl+C corta solo las salas. Te avisa al arrancar si la
 base está prendida o no (si está apagada arranca igual: las salas no piden clave y la web no
 deja entrar, pero se puede jugar).
 
@@ -274,21 +290,21 @@ más de 6 en la x3, más de 8 en la x4. Los AFK no cuentan.
 3. El capitán escribe **`!7`** (o `!elegir 7`). Va con `!`: un número suelto en el chat es hablar, no elegir.
 4. Se alterna: Red elige uno, después Blue, hasta llenar los dos equipos.
 
-**El que no elige, deja el lugar.** El capitán tiene **10 segundos**; sobre el final el bot
+**El que no elige, deja el lugar.** El capitán tiene **15 segundos**; sobre el final el bot
 cuenta en el chat:
 
 ```
 ⏳ Pibe1 elige en 3…
 ⏳ Pibe1 elige en 2…
 ⏳ Pibe1 elige en 1…
-⏳ Pibe1 no eligió en 10 segundos. Elige el que sigue.
+⏳ Pibe1 no eligió en 15 segundos. Elige el que sigue.
 ```
 
 Y sale de la sala. La elección pasa al que ya estaba en su equipo; si el equipo queda vacío,
 entra de capitán el primero que estaba esperando. A los **admins no se los echa**: por ellos
 elige el bot y la ronda sigue.
 
-Se configura arriba del bloque `🎽 SELECCIÓN POR TURNOS`: `SegundosParaElegir` (10),
+Se configura arriba del bloque `🎽 SELECCIÓN POR TURNOS`: `SegundosParaElegir` (15),
 `SegundosDeCuenta` (3) y `EcharAlQueNoElige`. Con `EcharAlQueNoElige = false` no lo echa de la
 sala: lo manda a espectadores y al final de la fila.
 
@@ -402,6 +418,25 @@ La página de ÑandutíBall: <http://localhost:8080> (o el puerto de la sala).
 - Si ya entraste, la portada te muestra tu ELO, partidos, ganados, goles y asistencias.
 
 La sesión dura **1 hora y media** y se renueva sola mientras tengas la página abierta.
+
+### 📧 Correo y "¿Olvidaste tu contraseña?"
+
+Para crear la cuenta se pide **correo electrónico** (dos cuentas no pueden tener el mismo). Si
+te olvidás la contraseña:
+
+1. En el login tocás **¿Olvidaste tu contraseña?** y escribís tu correo.
+2. Te llega un mail con el botón **Cambiar mi contraseña**. El link vence en **30 minutos** y
+   sirve **una sola vez**.
+3. Te lleva a la página para elegir la nueva. Es la misma que usás en la sala con `!clave`.
+
+La página contesta lo mismo aunque el correo no esté registrado, así nadie puede averiguar qué
+correos tienen cuenta. Los que se registraron antes de esto no tienen correo: el OWNER les puede
+poner una clave nueva desde la pantalla de usuarios.
+
+Para que el mail salga de verdad hay que poner el SMTP en `.env` (ver `.env.example`). Con Gmail:
+verificación en 2 pasos + una **contraseña de aplicación** en
+<https://myaccount.google.com/apppasswords>. Sin eso la web anda igual y el mail (con el link) se
+muestra en la consola.
 
 Las pantallas viven en `public/frm/<pantalla>/index.html` (el mismo encarpetado que usa
 app-centralshop), con `public/css/` y `public/js/` compartidos.

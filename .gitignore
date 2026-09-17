@@ -12,3 +12,8 @@ postgres/
 # El id del mensaje de Discord que avisa el link de la web
 datos/tunel.json
 
+datos/web.pid
+datos/web.log
+datos/web.firma
+datos/web.recargar
+datos/prisma.firma

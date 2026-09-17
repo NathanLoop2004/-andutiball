@@ -92,6 +92,35 @@ function revisar(titulo, condicion, detalle) {
   revisar("Y manda a la página a crear la cuenta", dijo("https://prueba.trycloudflare.com/frm/registro/"), "con el link");
   revisar("La clave escrita no queda en el chat", !dijo("miclave99"), "no se filtró");
 
+  // ── 2b) La sala automática no lo mete y lo saca sin parar ──
+  // El modo automatizado del autor mete espectadores en cada tick. En HaxBall de verdad cada
+  // setPlayerTeam dispara onPlayerTeamChange, y nuestro bloque lo volvía a sacar: un bucle.
+  console.log("\n🔁 En la sala automática:\n");
+  const sala3 = abrirSala("hosts/todos.json");
+  sala3.contexto.__usuariosActualizar(["JINDER"]);
+  const moverOriginal = sala3.room.setPlayerTeam;
+  let movidas = 0, adentro = false, jinderId = null;
+  sala3.room.setPlayerTeam = function (id, equipo) {
+    const antes = sala3.room.getPlayer(id);
+    const cambia = antes && antes.team !== equipo;
+    const r = moverOriginal.apply(this, arguments);
+    if (cambia && id === jinderId) movidas++;
+    if (cambia && !adentro && sala3.room.onPlayerTeamChange) {
+      adentro = true;
+      try { sala3.room.onPlayerTeamChange(sala3.room.getPlayer(id), sala3.room.getPlayer(0)); } finally { adentro = false; }
+    }
+    return r;
+  };
+  sala3.entra(1, "Pibe1");
+  sala3.avanzar(900);
+  const jinder = sala3.entra(2, "JINDER");
+  jinderId = jinder.id;
+  sala3.avanzar(20000);
+  revisar("Sin la clave, el acomodo automático no lo mete a la cancha", movidas === 0 && jinder.team === 0, movidas + " movidas en 20 s");
+  sala3.contexto.__usuarioRespuesta({ id: jinder.id, accion: "verificar", ok: true });
+  sala3.avanzar(10000);
+  revisar("Con la clave puesta, lo mete a jugar", jinder.team !== 0, "equipo " + jinder.team);
+
   // ── 3) El aviso cada 2 minutos ──
   console.log("\n📝 El aviso para registrarse:\n");
   const sala2 = abrirSala("hosts/3v3.json");

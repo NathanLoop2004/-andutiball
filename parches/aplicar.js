@@ -116,6 +116,15 @@ reemplazar(
   'if(usedUsernames[player.name]&&usedUsernames[player.name]!==player.auth){if(!esAdminValido(player)){',
   'if(usedUsernames[player.name]&&usedUsernames[player.name]!==player.auth&&room.getPlayerList().some(function(o){return o.id!==player.id&&o.name===player.name})){if(!esAdminValido(player)){'
 );
+// El modo automatizado (y el gana-sigue del autor) mete espectadores a la cancha en cada tick y
+// solo salteaba a los AFK. Al que le falta la clave lo sacaba nuestro bloque de usuarios y el
+// script lo volvía a meter: "X was moved to Blue" / "to Spectators" sin parar.
+reemplazar(
+  "🔐 El acomodo del autor no mete al que le falta la clave",
+  "p.team===0&&!afkPlayerIDs.has(p.id)",
+  'p.team===0&&!afkPlayerIDs.has(p.id)&&!(typeof tieneRangoSinVerificar=="function"&&tieneRangoSinVerificar(p))',
+  'typeof tieneRangoSinVerificar=="function"'
+);
 reemplazar(
   "💬 Palabras sueltas que prendían el AFK",
   'const afkKeywords=["mtm","meteme","volvi","estoy","listo"];',

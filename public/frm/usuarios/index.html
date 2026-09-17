@@ -99,10 +99,11 @@ function pintar(datos) {
 
   document.getElementById("tabla").innerHTML = `
     <table>
-      <tr><th>Nombre</th><th>Estado</th><th>Clave</th><th>ELO</th><th>Partidos</th><th>G-E-P</th><th>Goles</th><th>Auth</th><th>Visto</th><th></th></tr>
+      <tr><th>Nombre</th><th>Correo</th><th>Estado</th><th>Clave</th><th>ELO</th><th>Partidos</th><th>G-E-P</th><th>Goles</th><th>Auth</th><th>Visto</th><th></th></tr>
       ${datos.usuarios.map((u) => `
         <tr>
           <td><b>${esc(u.nick)}</b></td>
+          <td>${u.email ? esc(u.email) : '<span class="motivo">sin correo</span>'}</td>
           <td>${u.baneado
             ? `<span class="etiqueta ban">baneado</span>${u.motivoBan ? `<div class="motivo">${esc(u.motivoBan)}</div>` : ""}`
             : '<span class="etiqueta ok">activo</span>'}</td>

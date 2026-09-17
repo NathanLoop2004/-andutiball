@@ -9,6 +9,7 @@ class VistasController {
   static portada = pantalla();                            // Ñandutí Web
   static login = pantalla("frm", "login");
   static registro = pantalla("frm", "registro");
+  static recuperar = pantalla("frm", "recuperar");   // pedir el mail y cambiar la clave con el link
 
   // Las de siempre, ahora bajo /frm (se dejan los atajos viejos)
   static panel = pantalla("frm", "panel");

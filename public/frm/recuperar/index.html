@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ñandutí Web — Recuperar cuenta</title>
+<!-- El link del mail trae el token: que no viaje a otras páginas en el Referer -->
+<meta name="referrer" content="no-referrer">
+<link rel="stylesheet" href="/css/nanduti.css">
+<style>[hidden] { display: none !important; }</style>
+</head>
+<body>
+
+<div class="barra">
+  <a class="marca" href="/"><span class="telar">🕸️</span> Ñandutí Web</a>
+  <div class="derecha"><a class="boton" href="/frm/login/">Iniciar sesión</a></div>
+</div>
+
+<!-- Paso 1: sin link → pedir el correo -->
+<form class="caja" id="pedir" hidden>
+  <h2>Recuperar mi cuenta</h2>
+  <div class="ayuda">Escribí el correo con el que te registraste y te mandamos un link para cambiar la contraseña.</div>
+
+  <label for="email">Correo electrónico</label>
+  <input type="email" id="email" autocomplete="email" maxlength="200" required>
+
+  <button class="boton principal" type="submit" id="mandar">Mandarme el link</button>
+  <div class="aviso" id="avisoPedir"></div>
+  <div class="pie-caja">¿Te acordaste? <a href="/frm/login/">Iniciá sesión</a></div>
+</form>
+
+<!-- Paso 2: llegó con el link del mail (?t=...) → elegir la clave nueva -->
+<form class="caja" id="cambiar" hidden>
+  <h2>Nueva contraseña</h2>
+  <div class="ayuda" id="paraQuien">Revisando el link…</div>
+
+  <label for="clave">Contraseña nueva (mínimo 4 caracteres)</label>
+  <input type="password" id="clave" autocomplete="new-password" minlength="4" required disabled>
+
+  <label for="clave2">Repetila</label>
+  <input type="password" id="clave2" autocomplete="new-password" minlength="4" required disabled>
+
+  <button class="boton principal" type="submit" id="guardar" disabled>Guardar contraseña</button>
+  <div class="aviso" id="avisoCambiar"></div>
+  <div class="pie-caja"><a href="/frm/recuperar/">Pedir otro link</a></div>
+</form>
+
+<script src="/js/sesion.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const avisar = (donde, texto, clase) => { $(donde).className = "aviso " + (clase || ""); $(donde).textContent = texto; };
+const token = new URLSearchParams(location.search).get("t");
+
+if (!token) {
+  $("pedir").hidden = false;
+
+  $("pedir").onsubmit = async (evento) => {
+    evento.preventDefault();
+    $("mandar").disabled = true;
+    avisar("avisoPedir", "Mandando…");
+    try {
+      const { mensaje } = await Sesion.pedir("/api/auth/recuperar", {
+        method: "POST",
+        body: JSON.stringify({ email: $("email").value.trim() }),
+      });
+      avisar("avisoPedir", "📧 " + mensaje, "ok");
+    } catch (error) {
+      avisar("avisoPedir", error.message, "mal");
+    }
+    // Un respiro antes de dejar pedir otro, para no llenar la bandeja
+    setTimeout(() => { $("mandar").disabled = false; }, 30000);
+  };
+} else {
+  $("cambiar").hidden = false;
+  // El token no tiene que quedar en el historial ni viajar en el Referer a otras páginas
+  history.replaceState(null, "", "/frm/recuperar/");
+
+  Sesion.pedir("/api/auth/recuperar?t=" + encodeURIComponent(token))
+    .then(({ nick }) => {
+      $("paraQuien").textContent = "Elegí una contraseña nueva para " + nick + ". Es la misma que vas a usar en la sala con !clave.";
+      ["clave", "clave2", "guardar"].forEach((id) => { $(id).disabled = false; });
+      $("clave").focus();
+    })
+    .catch((error) => {
+      $("paraQuien").textContent = "";
+      avisar("avisoCambiar", error.message, "mal");
+    });
+
+  $("cambiar").onsubmit = async (evento) => {
+    evento.preventDefault();
+    if ($("clave").value !== $("clave2").value) return avisar("avisoCambiar", "Las dos contraseñas tienen que ser iguales.", "mal");
+    $("guardar").disabled = true;
+    avisar("avisoCambiar", "Guardando…");
+    try {
+      const { nick } = await Sesion.pedir("/api/auth/recuperar/cambiar", {
+        method: "POST",
+        body: JSON.stringify({ token, clave: $("clave").value }),
+      });
+      ["clave", "clave2"].forEach((id) => { $(id).disabled = true; });
+      avisar("avisoCambiar", "✅ Listo, " + nick + ": ya podés entrar con tu contraseña nueva. Te llevamos al login…", "ok");
+      setTimeout(() => { location.href = "/frm/login/"; }, 2500);
+    } catch (error) {
+      avisar("avisoCambiar", error.message, "mal");
+      $("guardar").disabled = false;
+    }
+  };
+}
+</script>
+</body>
+</html>

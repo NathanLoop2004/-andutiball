@@ -43,9 +43,25 @@ Contexto para trabajar en este proyecto. La documentación para personas está e
 
 ## Base de datos (Postgres + Prisma)
 
-La base **NO** la levanta `npm start`, a propósito: tiene su propio compose y su propio ciclo de
-vida (los datos no se apagan con las salas). `todas.js` solo mira cómo está con `hayBase()` y lo
-avisa; si está apagada, arranca igual.
+La base tiene su propio compose y su propio ciclo de vida (los datos no se apagan con las salas),
+**pero `npm start` la prende si está apagada** (`lib/preparar.js`, `docker compose up -d`: queda
+aparte, Ctrl+C no la corta). Si no hay Docker o falla, avisa y arranca igual.
+
+**`npm start` se autoaplica** (`prepararTodo()` en `todas.js` → `lib/preparar.js`), en este orden:
+
+1. `prepararBase`: prende la base si hace falta y espera hasta 40 s a que conteste.
+2. `prepararTablas`: `prisma migrate deploy` (solo aplica migraciones pendientes, **nunca borra**;
+   no es `migrate dev`) y `prisma generate` **solo si cambió el schema** (hash en `datos/prisma.firma`).
+3. `prepararScript`: si algo de `parches/` o `mapas/` es más nuevo que `script.js`, corre
+   `parches/aplicar.js` + `node --check`. Si queda roto, vuelve a `script.anterior.js`.
+4. `asegurarLaWeb`: si la web no está, la prende en segundo plano; si está y cambió
+   `Web.firmaDelPanel()` (mtimes de app.js, routes, controllers, models, services, lib, middlewares,
+   panel, el cliente de Prisma + el contenido del `.env`), deja `datos/web.recargar` y el
+   supervisor **recarga solo el panel** con el `.env` releído (`util.parseEnv`). El túnel no se
+   toca, así que el link no cambia. `public/` no cuenta: son estáticos y se leen del disco.
+
+Lo que **no** se recarga solo: cambios en `web.js` o `tunel.js` (hace falta `npm run web:bajar`, y
+el link cambia), y variables que se **borran** del `.env` (el supervisor las sigue teniendo).
 
 
 Base **aparte de las salas**, con su propio compose para poder levantarla sola:
@@ -189,6 +205,14 @@ El bloque **redefine `tieneRangoSinVerificar()`** (gana la última declaración)
 mientras falte la clave: con eso el arranque automático, la selección por turnos y el acomodo ya
 lo dejan afuera solos, sin tocar esos bloques.
 
+**Pero el acomodo del autor no la miraba**: `movePlayersIfNeeded` (modo automatizado, sala
+`todos`) y los filtros de gana-sigue metían espectadores en cada tick salteando solo a los AFK
+(`p.team===0&&!afkPlayerIDs.has(p.id)`). Nuestro `onPlayerTeamChange` lo sacaba y el script lo
+volvía a meter: "JINDER was moved to Blue / to Spectators" sin parar. El parcheador le agrega
+`tieneRangoSinVerificar(p)` a esos 7 filtros (`🔐 El acomodo del autor no mete al que le falta la
+clave`). La sala falsa **no** dispara `onPlayerTeamChange` al hacer `setPlayerTeam` (HaxBall sí):
+por eso no se veía, y `pruebas/usuarios.js` lo dispara a mano en la parte "sala automática".
+
 `npm run prueba-usuarios` cubre las tres puntas: el hash, el flujo en la sala (con el puente
 falseado) y el modelo contra la base.
 
@@ -251,8 +275,23 @@ y deja la web en una URL pública `https://…trycloudflare.com`. No hace falta 
 `winget install Cloudflare.cloudflared`, o se le pasa la ruta con `CLOUDFLARED_BIN` en `.env`.
 El link **cambia en cada arranque**: es la contra de los quick tunnels.
 
-**Con `TUNEL_WEB=si` en `.env`, `npm start` lo levanta junto con las salas** (un proceso hijo más
-en `todas.js`, igual que el panel).
+**La web (panel + túnel) vive APARTE de las salas** (`web.js`, desde el 17/09/2026). Antes
+`todas.js` los lanzaba como hijos y Ctrl+C los cortaba junto con las salas: como las salas se
+reinician seguido (vencen los tokens), el link cambiaba a cada rato y se rompían los links del
+mail de recuperación. Ahora:
+
+- `npm start` mira `Web.estado()` (pid en `datos/web.pid` vivo, o el puerto 8080 contesta). Si no
+  está, `prenderEnSegundoPlano()` la lanza `detached` + `unref`, con la salida en `datos/web.log`;
+  si está, no la toca. Ctrl+C corta solo las salas.
+- `web.js --supervisor` prende `panel/server.js` (siempre con las 4 salas: la apagada sale en rojo)
+  y `tunel.js` (salvo `TUNEL_WEB=no`), y **los vuelve a prender si se caen** (5 s, 10 s… hasta 1 min).
+  Si el túnel vuelve con otro link, `tunel.js` edita el mensaje del Discord y las salas lo leen solas.
+- `npm run web` (primer plano) · `web:bajar` (taskkill /T /F del árbol; como así `tunel.js` no alcanza
+  a avisar, el mensaje de "apagada" lo manda `bajar`) · `web:estado`.
+- La web relee el `.env` cuando `npm start` le recarga el panel (ver “Base de datos”): no hace
+  falta bajarla para cambiar SMTP, JWT_SECRET o webhooks. Solo `WEBHOOK_WEB` (del túnel) necesita `web:bajar`.
+- Probado a mano en el 18080 con `TUNEL_WEB=no`: sobrevive al proceso que la lanza, se levanta sola
+  al matarle el panel y `bajar` la apaga. No tiene prueba automática (no se abre un túnel en los tests).
 
 **El aviso al Discord es UN SOLO MENSAJE que se va actualizando** (`services/WebhookWeb.js`):
 
@@ -311,8 +350,27 @@ la API sigue abierta como hasta ahora. Está `middlewares/verificarToken.js` lis
 (`verificarToken({ admin: true })`), pero antes hay que hacer que las pantallas del panel manden
 el `Authorization` en cada pedido.
 
-`npm run prueba-web` cubre las pantallas, el encarpetado, registrarse, entrar, el rango de OWNER
-(agrega y saca el nick de `roles.json`, dejándolo como estaba) y la renovación del token.
+**Correo y recuperar la cuenta** (migración `20260917090000_usuarios_email`):
+
+- `usuarios.email` (único, en minúsculas). La web lo **exige** (`SesionModel.registrar`); desde la
+  sala no se pide, por eso en `UsuarioModel.registrar` es opcional. Los usuarios viejos quedan con `null`.
+- `RecuperarModel`: `pedir({email})` genera 32 bytes al azar, guarda **solo el SHA-256** en
+  `recuperarHash` con `recuperarVence` (30 min) y manda el mail; `revisar(t)` y `cambiar({token, clave})`
+  lo usan y lo borran (una sola vez). `pedir` contesta **lo mismo** exista o no el correo.
+- El link del mail sale de `WEB_URL` → la URL de `datos/tunel.json` → localhost. **Nunca del
+  `Host` del pedido**: con un Host falso alguien haría que el mail apunte a su página.
+- `sinClave()` saca también `recuperarHash`/`recuperarVence`.
+- Rutas: `POST /api/auth/recuperar`, `GET /api/auth/recuperar?t=`, `POST /api/auth/recuperar/cambiar`;
+  pantalla `public/frm/recuperar/` (sin `?t` pide el correo; con `?t` cambia la clave y borra el
+  token de la barra con `history.replaceState`).
+- `services/Correo.js` manda por SMTP con **nodemailer** (`SMTP_HOST/PORT/USUARIO/CLAVE`,
+  `CORREO_REMITENTE`). Sin SMTP no falla: imprime el mail en la consola. Las pruebas lo cambian
+  con `Correo.usarEnvio(fn)`, así **no sale ningún mail de verdad**. El HTML va con estilos en
+  línea (los clientes de correo ignoran `<style>`).
+
+`npm run prueba-web` cubre las pantallas, el encarpetado, registrarse (con y sin correo, correo
+repetido), entrar, el rango de OWNER (agrega y saca el nick de `roles.json`, dejándolo como
+estaba), la renovación del token y todo el circuito de recuperar la cuenta.
 
 ## Panel y rangos (MVC)
 
@@ -420,7 +478,7 @@ Bloque `🎽 SELECCIÓN POR TURNOS` (`parches/bloques/turnos.txt`). Los dos prim
 
 Ya **no** se prende desde `hosts/*.json`: lo prende y lo apaga `aplicarModoDeEquipos()` (bloque 🔀 MODOS DE EQUIPOS) según el modo de la sala, y por eso los enganches del bloque se registran siempre (antes el IIFE cortaba con `if (!SeleccionPorTurnos) return`, y el modo no se podía cambiar en caliente). Exige `modoJueganTodos`, `modoJueganAlgunos` y `automatizadoActivado` en `false`: si el script acomoda jugadores por su cuenta, se pisan entre sí; de eso también se encarga ese bloque.
 
-**El reloj del capitán**: `SegundosParaElegir` (10) con cuenta regresiva en el chat los últimos
+**El reloj del capitán**: `SegundosParaElegir` (15) con cuenta regresiva en el chat los últimos
 `SegundosDeCuenta` (3). `prepararCuentaRegresiva()` arma un setTimeout por segundo y
 `frenarReloj()` los limpia todos (si eligió, no se cuenta al pedo). Al vencer, `seAcaboElTiempo()`
 echa al capitán (`EcharAlQueNoElige`, o lo manda a espectadores y al final de la fila) y
