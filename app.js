@@ -23,6 +23,8 @@
 //   POST /api/usuarios/:nick/banear · /desbanear · /clave      (solo OWNER)
 //   GET  /api/ranking             los mejores ELO para la web (sin datos internos)
 //   GET  /api/cuenta · POST /api/cuenta/codigo · /clave · /email   Mi cuenta (con sesión)
+//   /api/config/:sala/parametros · /comandos   Configuración de las salas (OWNER, CO-OWNER, HOSTER, AYUDANTE)
+//   GET  /frm/config              la pantalla de Configuración
 //   GET  /frm/cuenta              la pantalla de Mi cuenta
 //   GET  /frm/usuarios            la pantalla de usuarios (solo OWNER)
 // =============================================================================
@@ -38,6 +40,7 @@ const actualizacionesRouter = require("./routes/ActualizacionesRouter");
 const authRouter = require("./routes/AuthRouter");
 const usuariosRouter = require("./routes/UsuariosRouter");
 const cuentaRouter = require("./routes/CuentaRouter");
+const configRouter = require("./routes/ConfigRouter");
 const vistasRouter = require("./routes/VistasRouter");
 
 // sala: adaptador de la sala local { estado(), expulsar(id, motivo, banear) }
@@ -73,6 +76,7 @@ function crearApp({ sala = null, salas = [] } = {}) {
   app.use("/api", authRouter);
   app.use("/api", usuariosRouter);
   app.use("/api", cuentaRouter);
+  app.use("/api", configRouter);
 
   // Todo lo estático sale de public/ (igual que app-centralshop)
   app.use(express.static(path.join(__dirname, "public")));

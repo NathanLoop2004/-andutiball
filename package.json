@@ -41,7 +41,8 @@
     "sala": "node --env-file-if-exists=.env launcher.js",
     "web": "node --env-file-if-exists=.env web.js",
     "web:bajar": "node --env-file-if-exists=.env web.js bajar",
-    "web:estado": "node --env-file-if-exists=.env web.js estado"
+    "web:estado": "node --env-file-if-exists=.env web.js estado",
+    "prueba-config": "node --env-file-if-exists=.env pruebas/config.js"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",

@@ -11,6 +11,7 @@ router.get("/frm/login", VistasController.login);
 router.get("/frm/registro", VistasController.registro);
 router.get("/frm/recuperar", VistasController.recuperar);
 router.get("/frm/cuenta", VistasController.cuenta);
+router.get("/frm/config", VistasController.config);   // OWNER, CO-OWNER, HOSTER, AYUDANTE
 router.get("/frm/panel", VistasController.panel);
 router.get("/frm/rangos", VistasController.rangos);
 router.get("/frm/actualizaciones", VistasController.actualizaciones);

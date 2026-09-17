@@ -71,6 +71,33 @@ model Sala {
   @@map("salas")
 }
 
+// Los parámetros de juego de cada sala, cambiados desde el panel (Configuración).
+// Solo se guarda lo que alguien cambió: si no hay fila, vale lo de hosts/<sala>.json o lo
+// que trae script.js. El catálogo de qué se puede tocar está en lib/parametros.js.
+model ParametroSala {
+  id            Int      @id @default(autoincrement())
+  sala          String   // clave de la sala: 3v3 · 4v4 · todos · realsoccer
+  nombre        String   // la variable de script.js (TiempoDeJuego, LimiteDeGoles…)
+  valor         Json
+  cambiadoPor   String?
+  cambiado      DateTime @updatedAt
+
+  @@unique([sala, nombre])
+  @@map("parametros_sala")
+}
+
+// Comandos apagados. sala = "*" los apaga en todas las salas.
+model ComandoApagado {
+  id          Int      @id @default(autoincrement())
+  sala        String
+  comando     String   // con el "!": !afk, !elo…
+  apagadoPor  String?
+  apagado     DateTime @default(now())
+
+  @@unique([sala, comando])
+  @@map("comandos_apagados")
+}
+
 model Partido {
   id        Int       @id @default(autoincrement())
   sala      Sala?     @relation(fields: [salaClave], references: [clave])

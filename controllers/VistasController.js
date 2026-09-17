@@ -10,6 +10,7 @@ class VistasController {
   static login = pantalla("frm", "login");
   static registro = pantalla("frm", "registro");
   static recuperar = pantalla("frm", "recuperar");
+  static config = pantalla("frm", "config");         // parámetros de las salas y comandos
   static cuenta = pantalla("frm", "cuenta");         // Mi cuenta (la pantalla pide sesión)   // pedir el mail y cambiar la clave con el link
 
   // Las de siempre, ahora bajo /frm (se dejan los atajos viejos)

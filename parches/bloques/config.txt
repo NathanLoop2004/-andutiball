@@ -1,0 +1,92 @@
+
+
+// ▇▇▇▇▇▇▇▇▇ ⚙️ CONFIGURACIÓN DESDE LA BASE — ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// Los parámetros de juego y los comandos apagados se manejan desde el panel (Configuración),
+// y los guarda la base (tablas parametros_sala y comandos_apagados).
+//
+//   · Al abrir la sala, el launcher ya escribe en el script los valores de la base.
+//   · Después manda cada pocos segundos window.__configSala({ parametros, comandosApagados }).
+//     Acá se aplica SOLO lo que cambió desde la última vez: si un admin usa un comando de la sala
+//     (por ejemplo !ganasigue), la base no se lo vuelve a pisar a cada rato.
+//   · Minutos por partido y límite de goles se aplican cuando no hay partido (HaxBall no deja
+//     cambiarlos en pleno juego): si hay uno en curso, quedan para cuando termine.
+//
+// Va antes de 🤫 COMANDOS SIN ECO, así corta los comandos apagados antes que cualquier otro bloque.
+
+var ConfigDesdeLaBase = true;
+var configVista = window.__CONFIG_INICIAL && window.__CONFIG_INICIAL.parametros ? JSON.parse(JSON.stringify(window.__CONFIG_INICIAL.parametros)) : null;
+var comandosApagados = window.__CONFIG_INICIAL && Array.isArray(window.__CONFIG_INICIAL.comandosApagados) ? window.__CONFIG_INICIAL.comandosApagados.slice() : [];
+var limitesPendientes = {};   // TiempoDeJuego / LimiteDeGoles esperando que termine el partido
+
+function hayPartidoEnCurso() {
+	try { return room.getScores() !== null; } catch (e) { return false; }
+}
+
+function aplicarLimite(nombre, valor) {
+	if (hayPartidoEnCurso()) { limitesPendientes[nombre] = valor; return; }
+	try {
+		if (nombre === "TiempoDeJuego") room.setTimeLimit(valor);
+		if (nombre === "LimiteDeGoles") room.setScoreLimit(valor);
+		delete limitesPendientes[nombre];
+	} catch (e) {
+		limitesPendientes[nombre] = valor;
+	}
+}
+
+// Cambia la variable del script por su nombre. Como este bloque vive en el mismo script, el eval
+// llega también a las variables declaradas con let (modoJueganTodos, maxPlayersPerTeam…).
+function asignarParametro(nombre, valor) {
+	if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(nombre)) return false;
+	try {
+		window.__valorDeConfig = valor;
+		eval(nombre + " = window.__valorDeConfig");
+		delete window.__valorDeConfig;
+	} catch (e) {
+		console.warn("⚙️ No se pudo aplicar " + nombre + ": " + e.message);
+		return false;
+	}
+	if (nombre === "TiempoDeJuego" || nombre === "LimiteDeGoles") aplicarLimite(nombre, valor);
+	if (nombre === "ModoDeEquipos" && typeof aplicarModoDeEquipos === "function") {
+		try { aplicarModoDeEquipos(); } catch (e) {}
+	}
+	return true;
+}
+
+window.__configSala = function (datos) {
+	if (!ConfigDesdeLaBase || !datos) return;
+	if (Array.isArray(datos.comandosApagados)) comandosApagados = datos.comandosApagados.map(function (c) { return String(c).toLowerCase(); });
+
+	var nuevos = datos.parametros || {};
+	// La primera vez sin valores de arranque solo se anota lo que hay: ya está en el script
+	if (!configVista) { configVista = JSON.parse(JSON.stringify(nuevos)); return; }
+
+	var cambiados = [];
+	Object.keys(nuevos).forEach(function (nombre) {
+		if (JSON.stringify(nuevos[nombre]) === JSON.stringify(configVista[nombre])) return;
+		if (asignarParametro(nombre, nuevos[nombre])) cambiados.push(nombre);
+		configVista[nombre] = nuevos[nombre];
+	});
+	if (cambiados.length) console.log("⚙️ Configuración aplicada desde el panel: " + cambiados.join(", "));
+};
+
+(function () {
+	// Lo que quedó esperando a que termine el partido
+	var anteriorStop = room.onGameStop;
+	room.onGameStop = function (byPlayer) {
+		if (typeof anteriorStop === "function") anteriorStop(byPlayer);
+		Object.keys(limitesPendientes).forEach(function (nombre) { aplicarLimite(nombre, limitesPendientes[nombre]); });
+	};
+
+	// Los comandos apagados no llegan a ningún otro bloque ni al script
+	var anteriorChat = room.onPlayerChat;
+	room.onPlayerChat = function (player, message) {
+		var primera = String(message).trim().split(/\s+/)[0].toLowerCase();
+		if (primera.charAt(0) === "!" && comandosApagados.indexOf(primera) !== -1) {
+			room.sendAnnouncement("🚫 El comando " + primera + " está desactivado en esta sala.", player.id, 0xFF6B6B, "bold", 2);
+			return false;
+		}
+		return typeof anteriorChat === "function" ? anteriorChat(player, message) : true;
+	};
+
+	console.log("⚙️ Configuración desde la base: activa (" + comandosApagados.length + " comandos apagados)");
+})();

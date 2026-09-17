@@ -3,97 +3,83 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ÑandutíBall — Rangos</title>
-<style>
-  :root {
-    color-scheme: dark;
-    --fondo: #0f1419; --tarjeta: #171d24; --borde: #262f3a; --texto: #e7edf3;
-    --suave: #93a1b0; --verde: #2ecc71; --rojo: #e74c3c; --acento: #ffd100;
-  }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: var(--fondo); color: var(--texto); font: 14px/1.5 system-ui, "Segoe UI", sans-serif; padding: 16px; }
-  h1 { font-size: 20px; margin: 0 0 4px; }
-  .sub { color: var(--suave); font-size: 13px; margin-bottom: 16px; }
-  a.volver { color: var(--acento); text-decoration: none; }
-  .caja { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 12px; padding: 14px; margin-bottom: 16px; max-width: 760px; }
-  .caja h2 { font-size: 15px; margin: 0 0 10px; }
-  label { display: block; color: var(--suave); font-size: 12px; margin-bottom: 4px; }
-  input[type=text], input[type=password] { background: #101720; border: 1px solid var(--borde); color: var(--texto); border-radius: 8px; padding: 7px 10px; font: inherit; width: 100%; max-width: 320px; }
-  button { background: #1f2a36; border: 1px solid var(--borde); color: var(--texto); border-radius: 8px; padding: 7px 12px; font: inherit; cursor: pointer; }
-  button:hover { border-color: var(--acento); }
-  button.guardar { background: var(--acento); color: #14181d; border-color: var(--acento); font-weight: 600; }
-  button.quitar { background: none; border: 0; color: var(--rojo); padding: 0 2px; cursor: pointer; font-size: 15px; line-height: 1; }
-  .rol { border-top: 1px solid var(--borde); padding: 12px 0; }
-  .rol:first-of-type { border-top: 0; }
-  .rol .titulo { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .rol .titulo b { font-size: 15px; }
-  .etiqueta { font-size: 11px; color: var(--suave); border: 1px solid var(--borde); border-radius: 999px; padding: 1px 8px; }
-  .etiqueta.admin { color: var(--acento); border-color: #4a412a; }
-  .nicks { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
-  .nick { display: flex; align-items: center; gap: 6px; background: #101720; border: 1px solid var(--borde); border-radius: 999px; padding: 3px 6px 3px 11px; }
-  .agregar { display: flex; gap: 6px; flex-wrap: wrap; }
-  .agregar input { max-width: 220px; }
-  .vacio { color: var(--suave); font-size: 13px; }
-  .aviso { margin-top: 10px; font-size: 13px; min-height: 20px; }
-  .ok { color: var(--verde); } .mal { color: var(--rojo); }
-  .nota { color: var(--suave); font-size: 12px; margin-top: 8px; }
-</style>
+<title>Rangos · ÑandutíBall</title>
+<link rel="icon" href="/img/logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/css/nanduti.css">
+<script src="/js/tema.js"></script>
 <script src="/js/sesion.js"></script>
 </head>
 <body>
-<script>if (!Sesion.exigirAdmin()) { document.documentElement.innerHTML = ""; }</script>
-<h1>🎖️ Rangos</h1>
-<div class="sub"><a class="volver" href="/frm/panel">← volver al panel</a> · los cambios se aplican en las salas encendidas sin reiniciarlas</div>
+<script>if (!Sesion.exigirAdmin()) { document.documentElement.innerHTML = ""; } else { Sesion.mantener(); }</script>
 
-<div class="caja">
-  <h2>🔐 Clave para jugar</h2>
-  <label for="clave">Los jugadores con rango tienen que escribirla en el chat para salir de espectadores</label>
-  <input type="password" id="clave" placeholder="dejar vacío para no cambiarla" autocomplete="new-password">
-  <div class="nota" id="estadoClave"></div>
-</div>
+<header class="barra ancha">
+  <a class="marca" href="/"><img src="/img/logo.svg" alt=""><span>ÑandutíBall</span></a>
+  <div class="derecha" id="derecha"></div>
+</header>
 
-<div class="caja">
-  <h2>👥 Roles y jugadores</h2>
-  <div id="roles"></div>
-  <div style="margin-top:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap">
-    <button class="guardar" id="guardar">Guardar cambios</button>
-    <button id="recargar">Descartar</button>
-    <span class="aviso" id="aviso"></span>
+<main class="contenido ancho">
+  <div class="cabecera">
+    <div>
+      <h1>Rangos</h1>
+      <p>Quién tiene cada rango y cuáles dan admin. Las salas encendidas lo toman en unos segundos, sin reiniciarlas.</p>
+    </div>
+    <div class="acciones">
+      <button class="boton" id="recargar">Descartar cambios</button>
+      <button class="boton principal" id="guardar">Guardar cambios</button>
+    </div>
   </div>
-</div>
+
+  <div class="aviso" id="aviso" role="status"></div>
+  <div class="tarjeta" id="roles" style="margin-top:14px"><div class="tarjeta-cuerpo tenue">Cargando…</div></div>
+</main>
+
+<footer class="pie">ÑandutíBall · Panel de administración</footer>
 
 <script>
-let datos = { roles: [], tieneClave: false };
+Sesion.pintarBarra("derecha");
+Sesion.pintarNavAdmin("rangos");
+Sesion.refrescar().then((u) => { if (u) { Sesion.pintarBarra("derecha"); Sesion.pintarNavAdmin("rangos"); } });
 
+let datos = { roles: [] };
+let sinGuardar = false;
 const esc = (t) => String(t ?? "").replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
 
-function pintar() {
-  document.getElementById("estadoClave").textContent = datos.tieneClave
-    ? "Ya hay una clave puesta. Escribí una nueva solo si querés cambiarla."
-    : "⚠️ No hay ninguna clave puesta: los rangos entran sin que se les pida nada.";
+function avisar(texto, clase) {
+  const aviso = document.getElementById("aviso");
+  aviso.className = "aviso " + (clase || "");
+  aviso.textContent = texto || "";
+}
 
+function marcarCambios() {
+  sinGuardar = true;
+  avisar("Tenés cambios sin guardar.", "info");
+}
+
+function pintar() {
   document.getElementById("roles").innerHTML = datos.roles
-    .map(
-      (rol, i) => `
+    .map((rol, i) => `
       <div class="rol">
         <div class="titulo">
           <b>${esc(rol.nombre)}</b>
           ${rol.admin ? '<span class="etiqueta admin">da admin</span>' : '<span class="etiqueta">sin admin</span>'}
-          <button data-admin="${i}">${rol.admin ? "quitar admin" : "dar admin"}</button>
+          <span class="tenue" style="font-size:13px">${rol.nicks.length} ${rol.nicks.length === 1 ? "jugador" : "jugadores"}</span>
+          <label style="display:flex;gap:8px;align-items:center;margin:0 0 0 auto;font-weight:500">
+            Da admin <span class="interruptor"><input type="checkbox" data-admin="${i}" ${rol.admin ? "checked" : ""}><span></span></span>
+          </label>
         </div>
         <div class="nicks">
-          ${
-            rol.nicks.length
-              ? rol.nicks.map((n, j) => `<span class="nick">${esc(n)} <button class="quitar" data-quitar="${i}-${j}" title="quitar">×</button></span>`).join("")
-              : '<span class="vacio">Nadie en este rol.</span>'
-          }
+          ${rol.nicks.length
+            ? rol.nicks.map((n, j) => `<span class="nick">${esc(n)}<button data-quitar="${i}-${j}" title="Quitar a ${esc(n)}" aria-label="Quitar a ${esc(n)}">×</button></span>`).join("")
+            : '<span class="tenue" style="font-size:13px">Nadie tiene este rango.</span>'}
         </div>
         <div class="agregar">
-          <input type="text" placeholder="nick exacto del jugador" data-input="${i}">
-          <button data-agregar="${i}">Agregar</button>
+          <input type="text" placeholder="Nick exacto del jugador" data-input="${i}" aria-label="Agregar jugador a ${esc(rol.nombre)}">
+          <button class="boton chico" data-agregar="${i}">Agregar</button>
         </div>
-      </div>`
-    )
+      </div>`)
     .join("");
 
   document.querySelectorAll("[data-agregar]").forEach((b) =>
@@ -105,6 +91,7 @@ function pintar() {
       if (!datos.roles[i].nicks.includes(nick)) datos.roles[i].nicks.push(nick);
       input.value = "";
       pintar();
+      marcarCambios();
     })
   );
   document.querySelectorAll("[data-input]").forEach((input) =>
@@ -117,47 +104,50 @@ function pintar() {
       const [i, j] = b.dataset.quitar.split("-").map(Number);
       datos.roles[i].nicks.splice(j, 1);
       pintar();
+      marcarCambios();
     })
   );
-  document.querySelectorAll("[data-admin]").forEach((b) =>
-    b.addEventListener("click", () => {
-      const i = +b.dataset.admin;
-      datos.roles[i].admin = !datos.roles[i].admin;
+  document.querySelectorAll("[data-admin]").forEach((c) =>
+    c.addEventListener("change", () => {
+      datos.roles[+c.dataset.admin].admin = c.checked;
       pintar();
+      marcarCambios();
     })
   );
 }
 
 async function cargar() {
-  const res = await fetch("/api/rangos", { cache: "no-store" });
-  datos = await res.json();
-  document.getElementById("clave").value = "";
-  pintar();
+  try {
+    const res = await fetch("/api/rangos", { cache: "no-store" });
+    datos = await res.json();
+    sinGuardar = false;
+    avisar("");
+    pintar();
+  } catch (error) {
+    avisar("No se pudieron cargar los rangos: " + error.message, "mal");
+  }
 }
 
 document.getElementById("guardar").addEventListener("click", async () => {
-  const aviso = document.getElementById("aviso");
-  const clave = document.getElementById("clave").value;
   try {
     const res = await fetch("/api/rangos", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ roles: datos.roles, clave }),
+      body: JSON.stringify({ roles: datos.roles }),
     });
-    if (!res.ok) throw new Error((await res.json()).error || "error al guardar");
-    datos = await res.json();
-    document.getElementById("clave").value = "";
+    const respuesta = await res.json();
+    if (!res.ok) throw new Error(respuesta.error || "error al guardar");
+    datos = respuesta;
+    sinGuardar = false;
     pintar();
-    aviso.className = "aviso ok";
-    aviso.textContent = "✅ Guardado y aplicado en las salas encendidas.";
+    avisar(respuesta.aviso || "Guardado. Las salas encendidas lo toman en unos segundos.", respuesta.aviso ? "info" : "ok");
   } catch (error) {
-    aviso.className = "aviso mal";
-    aviso.textContent = "❌ " + error.message;
+    avisar(error.message, "mal");
   }
-  setTimeout(() => (aviso.textContent = ""), 4000);
 });
 
 document.getElementById("recargar").addEventListener("click", cargar);
+window.addEventListener("beforeunload", (e) => { if (sinGuardar) { e.preventDefault(); e.returnValue = ""; } });
 cargar();
 </script>
 </body>

@@ -14,6 +14,8 @@ const EstadoModel = require("./models/EstadoModel");
 const UsuarioModel = require("./models/UsuarioModel");
 const RangoModel = require("./models/RangoModel");
 const PartidoModel = require("./models/PartidoModel");
+const ConfigModel = require("./models/ConfigModel");
+const Parametros = require("./lib/parametros");
 const WebhookWeb = require("./services/WebhookWeb");
 const { leerRoles } = require("./lib/roles");
 const { ARCHIVO: ARCHIVO_RANGOS, leerRangos, guardarRangos, sinClave } = require("./lib/rangos");
@@ -419,6 +421,23 @@ api.on("error", (error) => {
   // desde el primero que entra. Si la base está apagada, la lista queda vacía.
   await refrescarUsuarios();
 
+  // Los parámetros cambiados desde el panel (tabla parametros_sala) pisan a hosts/<sala>.json.
+  // Si la base está apagada, la sala abre con lo del JSON, como siempre.
+  const claveSala = salaElegida || "";
+  try {
+    if (claveSala) {
+      const cambios = await ConfigModel.cambiosDeLaSala(claveSala);
+      const { texto, aplicadas } = Parametros.aplicarAlScript(roomScript, cambios);
+      new Function(texto);   // por las dudas: si algo rompe la sintaxis, se abre sin estos cambios
+      roomScript = texto;
+      if (aplicadas.length) console.log(`⚙️ Parámetros desde el panel: ${aplicadas.join(", ")}`);
+      const inicial = await ConfigModel.paraLaSala(claveSala);
+      await frame.evaluate((datos) => { window.__CONFIG_INICIAL = datos; }, inicial);
+    }
+  } catch (error) {
+    console.warn("⚠️ No se leyeron los parámetros de la base (se usa hosts/*.json): " + String(error.message).split("\n")[0]);
+  }
+
   // Si el script nunca asigna un handler espiado, igual lo enganchamos al arrancar
   await frame.evaluate(roomScript);
   console.log("✅ script.js cargado. Esperando el link de la sala...");
@@ -430,6 +449,21 @@ api.on("error", (error) => {
   const SEGUNDOS_RANGOS = Number(process.env.SEGUNDOS_RANGOS || 5);
   await refrescarRangos();
   setInterval(refrescarRangos, SEGUNDOS_RANGOS * 1000);
+
+  // Parámetros y comandos apagados desde el panel: la sala aplica solo lo que cambió
+  let avisamosConfigCaida = false;
+  const refrescarConfig = async () => {
+    if (!claveSala) return;
+    try {
+      const datos = await ConfigModel.paraLaSala(claveSala);
+      avisamosConfigCaida = false;
+      await frame.evaluate((d) => { if (window.__configSala) window.__configSala(d); }, datos);
+    } catch (error) {
+      if (!avisamosConfigCaida) console.warn("⚠️ No se pudo leer la configuración de la base: la sala sigue con la que tiene");
+      avisamosConfigCaida = true;
+    }
+  };
+  setInterval(refrescarConfig, SEGUNDOS_RANGOS * 1000);
 
   // El link de la web puede aparecer después (el túnel tarda unos segundos en abrir)
   await refrescarLinkWeb();

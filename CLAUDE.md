@@ -22,7 +22,7 @@ Contexto para trabajar en este proyecto. La documentación para personas está e
 - `services/`: la conexión a la base por entorno y los webhooks (actualizaciones, link de la web).
 - `prisma/` + `docker-compose.base.yml`: las tablas y la base, que va **aparte** de las salas.
 - `tunel.js`, `actualizacion.js`, `sembrar.js`: los comandos sueltos (túnel de Cloudflare, novedades, sembrar la base).
-- `pruebas/`: 17 pruebas que corren sin gastar tokens (ver “Probar sin gastar tokens”).
+- `pruebas/`: 19 pruebas que corren sin gastar tokens (ver “Probar sin gastar tokens”).
 
 ## Despliegue (launcher.js)
 
@@ -132,6 +132,64 @@ personas con el mismo nombre a la vez sí.
 
 Ojo al probar: `connections` y `usedUsernames` son `let` del script, **no** propiedades del
 contexto del `vm` — en las pruebas se leen con `sala.leer("usedUsernames")`.
+
+## Configuración de las salas desde el panel (parámetros y comandos)
+
+Pantalla `public/frm/config/` (Configuración). La pueden usar **OWNER, CO-OWNER, HOSTER y
+AYUDANTE**: `lib/permisos.js` → `puedeConfigurar()`, middleware `middlewares/puedeConfigurar.js`
+(vuelve a mirar el rango en la tabla en cada pedido).
+
+**Los rangos se comparan por palabra** (`palabraDelRango`: letras y guiones en mayúsculas).
+Los nombres de la tabla traen emojis ("🗦👑🗧 OWNER") y antes `esOwner` comparaba el nombre
+entero: **el OWNER de verdad no era OWNER** y la pantalla de usuarios lo rechazaba. Ojo:
+"🔧 SUBAYUDANTE" da "SUBAYUDANTE", así que no cuenta como AYUDANTE.
+
+**Parámetros** (`lib/parametros.js`, tabla `parametros_sala`): un catálogo de ~38 variables de
+`script.js` con tipo, límites, grupo y `aplica`:
+
+- `"reinicio"` (nombre, cupo, contraseña, mapa, intervalos): el launcher los escribe en el
+  script al abrir la sala, igual que `hosts/*.json` y **pisándolos** (`Parametros.aplicarAlScript`).
+- `"vivo"`: el launcher manda cada `SEGUNDOS_RANGOS` `window.__configSala({parametros, comandosApagados})`
+  y el bloque `⚙️ CONFIGURACIÓN DESDE LA BASE` (`parches/bloques/config.txt`) aplica **solo lo que
+  cambió** desde la última vez (`configVista`; el punto de partida es `window.__CONFIG_INICIAL`).
+  Así un comando de la sala (`!ganasigue`) no queda pisado por la base cada 5 s.
+- La asignación es con `eval(nombre + " = ...")` **dentro del bloque**, porque varias son `let` del
+  script (no son propiedades de `window`). El nombre se valida con regex y solo llegan los del catálogo.
+- `TiempoDeJuego` / `LimiteDeGoles` llaman a `room.setTimeLimit/setScoreLimit`, que HaxBall solo
+  acepta sin partido: si hay uno, quedan en `limitesPendientes` y se aplican en `onGameStop`.
+- En la tabla **solo quedan los cambios**: volver al valor de fábrica borra la fila. Fábrica =
+  `hosts/<sala>.json` y, si no está ahí, lo que dice la declaración en `script.js`.
+
+**Comandos apagados** (tabla `comandos_apagados`, `sala = "*"` = todas): la lista sale de todos
+los `"!algo"` que hay como texto en `script.js` (`comandosDelScript()`, ~180). El bloque envuelve
+`onPlayerChat` **antes que 🤫 COMANDOS SIN ECO** (va justo antes en la lista del parcheador), así
+corta el comando antes que cualquier otro bloque y que el script. `!clave` y `!login` no se pueden
+apagar (`COMANDOS_PROTEGIDOS`).
+
+API (`routes/ConfigRouter.js`): `GET /api/config/salas` · `GET|PUT|DELETE /api/config/:sala/parametros[/:nombre]`
+· `GET|POST /api/config/:sala/comandos` (`{comando, activo, todas}`). El que cambia algo queda en
+`cambiadoPor` / `apagadoPor`.
+
+`npm run prueba-config` cubre los rangos por palabra, la sala aplicando en vivo (incluido un `let`,
+el límite que espera al fin del partido y que la base no pise un cambio hecho en la sala), los
+comandos apagados, el modelo contra la base y la API con permisos (sin sesión, sin rango,
+SUBAYUDANTE, HOSTER). Deja las tablas como estaban.
+
+## Panel y modo oscuro
+
+Todas las pantallas del panel (salas, configuración, rangos, usuarios, actualizaciones) usan
+`nanduti.css` (antes cada una tenía su `<style>`). `Sesion.pintarNavAdmin(activo)` dibuja la barra
+de secciones según lo que puede el usuario (`admin`, `configura`, `owner` vienen en la ficha de
+sesión). Las pantallas anchas usan `.barra.ancha` + `.contenido.ancho` (1280 px).
+
+**Modo claro/oscuro**: `public/js/tema.js` va en el `<head>` sin defer (así no parpadea), pone
+`data-tema` en `<html>` desde `localStorage` y agrega el botón al final de cada `.barra`. En el CSS,
+los tokens oscuros están dos veces: en `:root[data-tema="oscuro"]` y en
+`@media (prefers-color-scheme: dark) { :root:not([data-tema="claro"]) }`. Si se toca un color
+oscuro, hay que cambiarlo en los dos lugares.
+
+La pantalla de rangos ya no tiene el recuadro "Clave para jugar": los rangos no piden clave
+desde que salen de la base, y el POST sin `clave` conserva la que haya.
 
 ## Rangos: manda la tabla (contra las inyecciones)
 
@@ -724,7 +782,7 @@ El cupo de las 4 salas es 30 (`CantidadDeJugadores` en `hosts/*.json`), el máxi
 
 ## Probar sin gastar tokens
 
-Son 17 y **todas tienen que quedar en verde antes de commitear**:
+Son 19 y **todas tienen que quedar en verde antes de commitear**:
 
 | Comando | Qué mira |
 |---|---|
@@ -746,6 +804,7 @@ Son 17 y **todas tienen que quedar en verde antes de commitear**:
 | `prueba-actualizaciones` | Las novedades: se guardan primero, se mandan después |
 | `prueba-elo` | El cálculo, el circuito y el color del nombre |
 | `prueba-mapas` | Que HaxBall valide los 4 mapas |
+| `prueba-config` | Parámetros y comandos desde el panel: en vivo, en la base y con permisos |
 
 Las que hablan con la base **no fallan si está apagada**: avisan y saltean esa parte.
 
@@ -817,7 +876,7 @@ Cosas que costaron encontrar y conviene no volver a pisar:
 
 1. Tocar los **bloques** en `parches/bloques/` (nunca el final de `script.js` a mano) y correr
    `npm run parchar`.
-2. `node --check script.js` y las **17 pruebas en verde**. No commitear con una en rojo: ya pasó
+2. `node --check script.js` y las **19 pruebas en verde**. No commitear con una en rojo: ya pasó
    una vez de pushear con `prueba-discord` fallando.
 3. Actualizar `README.md` (para la gente) y este archivo (para el que siga programando).
 4. Commit y push.

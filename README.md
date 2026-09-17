@@ -118,7 +118,8 @@ La sala levanta con su panel. Si el nombre está mal escrito, te dice cuáles ha
 Muestra una tarjeta por sala, con luz **verde si está encendida** y **roja si no**, más los
 jugadores, el mapa, el marcador y el link para entrar. Adentro tiene pestañas: **Cancha** (quién
 está en cada equipo), **Mensajes** (chat, entradas, salidas, goles y expulsiones en vivo),
-**Jugadores**, **ELO**, **Bans**, **Roles** y **Config**.
+**Jugadores**, **ELO**, **Bans** y **Rangos**. Arriba tiene las secciones del panel: Salas,
+Configuración, Rangos, Usuarios (solo el OWNER) y Actualizaciones.
 
 Se actualiza cada 2 segundos **sin moverte de donde estabas leyendo**: solo sigue al último
 mensaje si ya estabas abajo del todo, y si no cambió nada no redibuja.
@@ -186,6 +187,7 @@ npm run prueba-usuarios  # las claves: en la sala y contra la base
 npm run prueba-nicks     # que no te echen por tu propio nombre
 npm run prueba-rangos    # que un admin puesto a mano se caiga solo
 npm run prueba-web       # la portada, el login y el panel solo para admins
+npm run prueba-config    # parámetros y comandos desde el panel, con permisos
 npm run prueba-tunel     # el aviso del link (un mensaje que se actualiza)
 npm run prueba-espia     # que el panel no repita los mensajes
 npm run prueba-chat      # hablar normal no dispara comandos
@@ -448,6 +450,28 @@ muestra en la consola.
 
 Las pantallas viven en `public/frm/<pantalla>/index.html` (el mismo encarpetado que usa
 app-centralshop), con `public/css/` y `public/js/` compartidos.
+
+## ⚙️ Configuración de las salas
+
+En el panel, la sección **Configuración** deja cambiar los parámetros de juego de cada sala y
+apagar comandos. La pueden usar **OWNER, CO-OWNER, HOSTER y AYUDANTE**.
+
+- **Parámetros**: minutos por partido, límite de goles, modo de equipos, jugadores por equipo,
+  segundos para elegir, arranque automático, cupo, nombre de la sala y más, agrupados. Se guardan
+  solos al cambiarlos.
+  - Los marcados **en vivo** llegan a la sala en unos segundos, sin reiniciarla. Los minutos y el
+    límite de goles se aplican desde el próximo partido.
+  - Los marcados **al reiniciar la sala** (nombre, cupo, contraseña, mapa inicial…) se usan la
+    próxima vez que se abra.
+  - Cada cambio queda con el nombre de quien lo hizo, y se puede **volver al valor de fábrica**.
+- **Comandos**: un interruptor por comando, para una sala o para todas. Al que escribe un comando
+  apagado, el bot le avisa que está desactivado. `!clave` y `!login` no se pueden apagar.
+
+Todo se guarda en la base (`parametros_sala` y `comandos_apagados`). Si la base está apagada, las
+salas abren con lo de `hosts/*.json`, como siempre.
+
+**Modo oscuro**: todas las pantallas (la web y el panel) tienen un botón arriba a la derecha para
+cambiar entre claro y oscuro. Lo que elegís queda guardado en tu navegador.
 
 ## 🎖️ Rangos
 

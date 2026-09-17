@@ -93,6 +93,7 @@ const Sesion = {
       panel: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>',
       inicio: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/></svg>',
       salir: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>',
+      config: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>',
       flecha: '<svg class="flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
     };
 
@@ -112,6 +113,7 @@ const Sesion = {
           <a role="menuitem" href="/frm/cuenta/">${icono.cuenta} Mi cuenta</a>
           <a role="menuitem" href="/frm/cuenta/#seguridad">${icono.clave} Cambiar contraseña</a>
           ${u.admin ? `<a role="menuitem" href="/frm/panel/">${icono.panel} Panel de administración</a>` : ""}
+          ${u.configura ? `<a role="menuitem" href="/frm/config/">${icono.config} Configuración de salas</a>` : ""}
           <div class="linea"></div>
           <button type="button" role="menuitem" class="peligro" id="salir">${icono.salir} Cerrar sesión</button>
         </div>
@@ -146,6 +148,40 @@ const Sesion = {
     if (!u) { location.href = "/frm/login/?volver=" + encodeURIComponent(location.pathname); return false; }
     if (!u.owner) { location.href = "/?sinpermiso=1"; return false; }
     return true;
+  },
+
+  // Configuración de salas: OWNER, CO-OWNER, HOSTER y AYUDANTE (la API igual lo vuelve a revisar)
+  exigirConfig() {
+    const u = Sesion.usuario();
+    if (!u) { location.href = "/frm/login/?volver=" + encodeURIComponent(location.pathname); return false; }
+    if (!u.configura) { location.href = "/?sinpermiso=1"; return false; }
+    return true;
+  },
+
+  // La barra de secciones del panel. Cada una aparece según lo que puede hacer el rango.
+  // activo: "salas" | "config" | "rangos" | "usuarios" | "actualizaciones"
+  pintarNavAdmin(activo) {
+    const u = Sesion.usuario() || {};
+    const i = (d) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+    const secciones = [
+      { id: "salas", href: "/frm/panel/", nombre: "Salas", ver: u.admin, icono: i('<rect x="3" y="4" width="18" height="14" rx="2"/><path d="M12 4v14M3 11h18"/>') },
+      { id: "config", href: "/frm/config/", nombre: "Configuración", ver: u.configura, icono: i('<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>') },
+      { id: "rangos", href: "/frm/rangos/", nombre: "Rangos", ver: u.admin, icono: i('<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/>') },
+      { id: "usuarios", href: "/frm/usuarios/", nombre: "Usuarios", ver: u.owner, icono: i('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6"/>') },
+      { id: "actualizaciones", href: "/frm/actualizaciones/", nombre: "Actualizaciones", ver: u.admin, icono: i('<path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/>') },
+    ];
+    let nav = document.querySelector(".admin-nav");
+    if (!nav) {
+      nav = document.createElement("nav");
+      nav.className = "admin-nav";
+      nav.setAttribute("aria-label", "Secciones del panel");
+      const barra = document.querySelector(".barra");
+      if (barra) barra.after(nav); else document.body.prepend(nav);
+    }
+    nav.innerHTML = secciones
+      .filter((s) => s.ver)
+      .map((s) => `<a href="${s.href}" class="${s.id === activo ? "activo" : ""}"${s.id === activo ? ' aria-current="page"' : ""}>${s.icono}${s.nombre}</a>`)
+      .join("");
   },
 
   escapar(t) {

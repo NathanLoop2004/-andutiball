@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Configuración · ÑandutíBall</title>
+<link rel="icon" href="/img/logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/css/nanduti.css">
+<script src="/js/tema.js"></script>
+<script src="/js/sesion.js"></script>
+<script>if (!Sesion.usuario()) location.replace("/frm/login/?volver=" + encodeURIComponent("/frm/config/"));</script>
+</head>
+<body>
+
+<header class="barra ancha">
+  <a class="marca" href="/"><img src="/img/logo.svg" alt=""><span>ÑandutíBall</span></a>
+  <div class="derecha" id="derecha"></div>
+</header>
+
+<main class="contenido ancho">
+  <div class="cabecera">
+    <div>
+      <h1>Configuración de salas</h1>
+      <p>Los parámetros de juego y los comandos de cada sala. Lo pueden cambiar OWNER, CO-OWNER, HOSTER y AYUDANTE.</p>
+    </div>
+  </div>
+
+  <div class="pestanas" id="salas" role="tablist" aria-label="Salas"></div>
+  <div class="aviso" id="aviso" role="status"></div>
+
+  <div class="tarjeta" style="margin-bottom:18px">
+    <div class="subpestanas" role="tablist">
+      <button data-vista="parametros" aria-selected="true">Parámetros</button>
+      <button data-vista="comandos" aria-selected="false">Comandos</button>
+    </div>
+    <div class="tarjeta-cuerpo" style="padding:14px 22px">
+      <span class="tenue" id="ayudaVista" style="font-size:14px"></span>
+    </div>
+  </div>
+
+  <div id="vistaParametros"></div>
+
+  <div id="vistaComandos" hidden>
+    <div class="tarjeta">
+      <div class="tarjeta-cabeza" style="flex-wrap:wrap">
+        <input type="search" id="buscarComando" placeholder="Buscar comando" aria-label="Buscar comando" style="max-width:260px">
+        <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+          <label style="display:flex;gap:8px;align-items:center;margin:0;font-weight:500">
+            <span class="interruptor"><input type="checkbox" id="soloApagados"><span></span></span> Solo los apagados
+          </label>
+          <label style="display:flex;gap:8px;align-items:center;margin:0;font-weight:500">
+            <span class="interruptor"><input type="checkbox" id="enTodas"><span></span></span> Al apagar, apagar en todas las salas
+          </label>
+        </div>
+      </div>
+      <div class="comandos" id="comandos"></div>
+    </div>
+  </div>
+</main>
+
+<footer class="pie">ÑandutíBall · Panel de administración</footer>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = Sesion.escapar;
+let salas = [];
+let salaAbierta = null;
+let vista = "parametros";
+let comandos = [];
+
+function avisar(texto, clase) {
+  $("aviso").className = "aviso " + (clase || "");
+  $("aviso").textContent = texto || "";
+  clearTimeout(avisar._t);
+  if (texto && clase !== "mal") avisar._t = setTimeout(() => avisar(""), 4000);
+}
+
+const fecha = (f) => f ? new Date(f).toLocaleString("es-PY", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "";
+const mostrarValor = (p, v) => {
+  if (v === null || v === undefined || v === "") return "vacío";
+  if (p.tipo === "bool") return v ? "sí" : "no";
+  if (p.tipo === "opciones" && p.etiquetas && p.etiquetas[v]) return p.etiquetas[v];
+  return String(v);
+};
+
+function pintarSalas() {
+  $("salas").innerHTML = salas.map((s) => `<button role="tab" data-sala="${esc(s.clave)}" aria-selected="${s.clave === salaAbierta}">${esc(s.nombre.replace(/^.*\|\s*/, "").replace(/\s*🇵🇾\s*$/, ""))}</button>`).join("");
+}
+
+function control(p) {
+  const id = "p-" + p.nombre;
+  if (p.tipo === "bool") {
+    return `<span class="interruptor"><input type="checkbox" id="${id}" data-param="${p.nombre}" ${p.valor ? "checked" : ""} aria-label="${esc(p.etiqueta)}"><span></span></span>`;
+  }
+  if (p.tipo === "entero") {
+    return `<input type="number" id="${id}" data-param="${p.nombre}" value="${p.valor ?? ""}" min="${p.min}" max="${p.max}" step="1" style="max-width:120px" aria-label="${esc(p.etiqueta)}">`;
+  }
+  if (p.tipo === "opciones") {
+    return `<select id="${id}" data-param="${p.nombre}" aria-label="${esc(p.etiqueta)}">${p.opciones.map((o) => `<option value="${esc(o)}" ${o === p.valor ? "selected" : ""}>${esc((p.etiquetas && p.etiquetas[o]) || o)}</option>`).join("")}</select>`;
+  }
+  return `<input type="text" id="${id}" data-param="${p.nombre}" value="${esc(p.valor ?? "")}" maxlength="${p.max}" aria-label="${esc(p.etiqueta)}">`;
+}
+
+function pintarParametros(datos) {
+  $("vistaParametros").innerHTML = datos.grupos.map((g) => {
+    const lista = datos.parametros.filter((p) => p.grupo === g.id);
+    if (!lista.length) return "";
+    return `<section class="tarjeta config-grupo">
+      <div class="tarjeta-cabeza"><h2>${esc(g.nombre)}</h2></div>
+      ${lista.map((p) => `
+        <div class="parametro ${p.cambiado ? "cambiado" : ""}" id="fila-${p.nombre}">
+          <div>
+            <div class="p-nombre">${esc(p.etiqueta)}
+              ${p.aplica === "vivo" ? '<span class="etiqueta vivo" title="La sala lo toma a los pocos segundos">en vivo</span>' : '<span class="etiqueta reinicio" title="Se usa al abrir la sala">al reiniciar la sala</span>'}
+            </div>
+            ${p.ayuda ? `<div class="p-ayuda">${esc(p.ayuda)}</div>` : ""}
+            <div class="p-meta">${p.cambiado
+              ? `Cambiado${p.cambiadoPor ? " por " + esc(p.cambiadoPor) : ""}${p.cuando ? " · " + fecha(p.cuando) : ""} · de fábrica: ${esc(mostrarValor(p, p.porDefecto))} · <button data-restablecer="${p.nombre}">Volver al de fábrica</button>`
+              : "Valor de fábrica"}</div>
+          </div>
+          <div class="p-control">${control(p)}</div>
+        </div>`).join("")}
+    </section>`;
+  }).join("");
+}
+
+async function cargarParametros() {
+  $("vistaParametros").innerHTML = '<div class="tarjeta"><div class="tarjeta-cuerpo tenue">Cargando…</div></div>';
+  try {
+    pintarParametros(await Sesion.pedir(`/api/config/${encodeURIComponent(salaAbierta)}/parametros`));
+  } catch (error) {
+    manejarError(error);
+    $("vistaParametros").innerHTML = `<div class="tarjeta"><div class="tarjeta-cuerpo">${esc(error.message)}</div></div>`;
+  }
+}
+
+async function guardarParametro(nombre, valor) {
+  const fila = $("fila-" + nombre);
+  if (fila) fila.classList.add("guardando");
+  try {
+    const r = await Sesion.pedir(`/api/config/${encodeURIComponent(salaAbierta)}/parametros/${encodeURIComponent(nombre)}`, {
+      method: "PUT",
+      body: JSON.stringify({ valor }),
+    });
+    avisar(r.aplica === "vivo" ? "Guardado. La sala lo toma en unos segundos." : "Guardado. Se aplica la próxima vez que se abra la sala.", "ok");
+  } catch (error) {
+    manejarError(error);
+    avisar(error.message, "mal");
+  }
+  cargarParametros();
+}
+
+function manejarError(error) {
+  if (/iniciar sesión/i.test(error.message)) location.replace("/frm/login/?volver=" + encodeURIComponent("/frm/config/"));
+  if (/solo para OWNER/i.test(error.message)) location.replace("/?sinpermiso=1");
+}
+
+$("vistaParametros").addEventListener("change", (e) => {
+  const el = e.target.closest("[data-param]");
+  if (!el) return;
+  let valor;
+  if (el.type === "checkbox") valor = el.checked;
+  else if (el.type === "number") valor = el.value === "" ? null : Number(el.value);
+  else valor = el.value;
+  guardarParametro(el.dataset.param, valor);
+});
+$("vistaParametros").addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-restablecer]");
+  if (!b) return;
+  try {
+    await Sesion.pedir(`/api/config/${encodeURIComponent(salaAbierta)}/parametros/${encodeURIComponent(b.dataset.restablecer)}`, { method: "DELETE" });
+    avisar("Volvió al valor de fábrica.", "ok");
+  } catch (error) { avisar(error.message, "mal"); }
+  cargarParametros();
+});
+
+// ── Comandos ──
+function pintarComandos() {
+  const filtro = $("buscarComando").value.trim().toLowerCase();
+  const soloApagados = $("soloApagados").checked;
+  const lista = comandos.filter((c) => (!filtro || c.comando.includes(filtro)) && (!soloApagados || c.apagadoAca || c.apagadoEnTodas));
+  if (!lista.length) {
+    $("comandos").innerHTML = `<div class="tarjeta-cuerpo tenue" style="grid-column:1/-1">${soloApagados ? "No hay comandos apagados en esta sala." : "No hay comandos con ese nombre."}</div>`;
+    return;
+  }
+  $("comandos").innerHTML = lista.map((c) => {
+    const apagado = c.apagadoAca || c.apagadoEnTodas;
+    const detalle = c.protegido ? "no se puede apagar" : c.apagadoEnTodas ? "apagado en todas" : c.apagadoAca ? "apagado en esta sala" : "";
+    return `<div class="comando ${apagado ? "apagado" : ""}">
+      <div><code>${esc(c.comando)}</code>${detalle ? `<small>${detalle}${c.apagadoPor ? " · " + esc(c.apagadoPor) : ""}</small>` : ""}</div>
+      <span class="interruptor"><input type="checkbox" data-comando="${esc(c.comando)}" ${apagado ? "" : "checked"} ${c.protegido ? "disabled" : ""} aria-label="${esc(c.comando)} ${apagado ? "apagado" : "prendido"}"><span></span></span>
+    </div>`;
+  }).join("");
+}
+
+async function cargarComandos() {
+  $("comandos").innerHTML = '<div class="tarjeta-cuerpo tenue" style="grid-column:1/-1">Cargando…</div>';
+  try {
+    comandos = (await Sesion.pedir(`/api/config/${encodeURIComponent(salaAbierta)}/comandos`)).comandos;
+    pintarComandos();
+  } catch (error) {
+    manejarError(error);
+    $("comandos").innerHTML = `<div class="tarjeta-cuerpo" style="grid-column:1/-1">${esc(error.message)}</div>`;
+  }
+}
+
+$("comandos").addEventListener("change", async (e) => {
+  const el = e.target.closest("[data-comando]");
+  if (!el) return;
+  const c = comandos.find((x) => x.comando === el.dataset.comando);
+  const url = `/api/config/${encodeURIComponent(salaAbierta)}/comandos`;
+  try {
+    if (el.checked) {
+      // Prender: se saca de esta sala y, si estaba apagado en todas, también de ahí
+      await Sesion.pedir(url, { method: "POST", body: JSON.stringify({ comando: c.comando, activo: true }) });
+      if (c.apagadoEnTodas) await Sesion.pedir(url, { method: "POST", body: JSON.stringify({ comando: c.comando, activo: true, todas: true }) });
+      avisar(`${c.comando} prendido${c.apagadoEnTodas ? " en todas las salas" : ""}.`, "ok");
+    } else {
+      const todas = $("enTodas").checked;
+      await Sesion.pedir(url, { method: "POST", body: JSON.stringify({ comando: c.comando, activo: false, todas }) });
+      avisar(`${c.comando} apagado ${todas ? "en todas las salas" : "en esta sala"}. Se aplica en unos segundos.`, "ok");
+    }
+  } catch (error) {
+    avisar(error.message, "mal");
+  }
+  cargarComandos();
+});
+$("buscarComando").addEventListener("input", pintarComandos);
+$("soloApagados").addEventListener("change", pintarComandos);
+
+// ── Salas y vistas ──
+function abrir() {
+  pintarSalas();
+  $("vistaParametros").hidden = vista !== "parametros";
+  $("vistaComandos").hidden = vista !== "comandos";
+  document.querySelectorAll("[data-vista]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.vista === vista)));
+  $("ayudaVista").textContent = vista === "parametros"
+    ? "Los cambios se guardan solos. Los marcados «en vivo» se aplican en unos segundos; los otros, la próxima vez que se abra la sala."
+    : "Un comando apagado no hace nada: al que lo escribe le avisa que está desactivado. !clave y !login no se pueden apagar.";
+  if (vista === "parametros") cargarParametros(); else cargarComandos();
+}
+
+$("salas").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-sala]");
+  if (!b) return;
+  salaAbierta = b.dataset.sala;
+  try { localStorage.setItem("nanduti_config_sala", salaAbierta); } catch (err) {}
+  abrir();
+});
+document.querySelectorAll("[data-vista]").forEach((b) => b.addEventListener("click", () => { vista = b.dataset.vista; abrir(); }));
+
+async function iniciar() {
+  const u = await Sesion.refrescar();
+  if (!u) return location.replace("/frm/login/?volver=" + encodeURIComponent("/frm/config/"));
+  if (!Sesion.exigirConfig()) return;
+  Sesion.pintarBarra("derecha");
+  Sesion.pintarNavAdmin("config");
+  Sesion.mantener();
+  try {
+    salas = (await Sesion.pedir("/api/config/salas")).salas;
+    let guardada = null;
+    try { guardada = localStorage.getItem("nanduti_config_sala"); } catch (err) {}
+    salaAbierta = salas.some((s) => s.clave === guardada) ? guardada : salas[0] && salas[0].clave;
+    abrir();
+  } catch (error) {
+    manejarError(error);
+    avisar(error.message, "mal");
+  }
+}
+
+if (Sesion.usuario()) {
+  Sesion.pintarBarra("derecha");
+  Sesion.pintarNavAdmin("config");
+  iniciar();
+}
+</script>
+</body>
+</html>

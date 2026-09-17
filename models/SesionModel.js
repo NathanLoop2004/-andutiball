@@ -43,10 +43,12 @@ async function rangoDe(nick) {
 }
 
 // El OWNER es el único que ve la pantalla de usuarios
-const esOwner = (rango) => Boolean(rango && String(rango.nombre).trim().toUpperCase() === "OWNER");
+// Se compara la palabra del rango, sin emojis (ver lib/permisos.js)
+const { esOwner, puedeConfigurar } = require("../lib/permisos");
 
 class SesionModel {
   static esOwner = esOwner;
+  static puedeConfigurar = puedeConfigurar;
   static rangoDe = rangoDe;
 
   // Lo que se le manda al navegador: nunca el hash de la clave
@@ -63,6 +65,7 @@ class SesionModel {
       rango: rango ? rango.nombre : null,
       admin: rango ? rango.admin : false,
       owner: esOwner(rango),
+      configura: puedeConfigurar(rango),   // puede tocar los parámetros de las salas
     };
   }
 

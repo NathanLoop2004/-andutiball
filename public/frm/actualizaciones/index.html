@@ -3,84 +3,65 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ÑandutíBall — Actualizaciones</title>
-<style>
-  :root {
-    color-scheme: dark;
-    --fondo: #0f1419; --tarjeta: #171d24; --borde: #262f3a; --texto: #e7edf3;
-    --suave: #93a1b0; --verde: #2ecc71; --rojo: #e74c3c; --acento: #ffd100; --discord: #5865f2;
-  }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: var(--fondo); color: var(--texto); font: 14px/1.5 system-ui, "Segoe UI", sans-serif; padding: 16px; }
-  h1 { font-size: 20px; margin: 0 0 4px; }
-  .sub { color: var(--suave); font-size: 13px; margin-bottom: 16px; }
-  a.volver { color: var(--acento); text-decoration: none; }
-  .caja { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 12px; padding: 14px; margin-bottom: 16px; max-width: 760px; }
-  .caja h2 { font-size: 15px; margin: 0 0 10px; }
-  label { display: block; color: var(--suave); font-size: 12px; margin-bottom: 4px; }
-  input[type=text], textarea { background: #101720; border: 1px solid var(--borde); color: var(--texto); border-radius: 8px; padding: 8px 10px; font: inherit; width: 100%; }
-  textarea { min-height: 90px; resize: vertical; }
-  .fila { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
-  button { background: #1f2a36; border: 1px solid var(--borde); color: var(--texto); border-radius: 8px; padding: 7px 12px; font: inherit; cursor: pointer; }
-  button:hover { border-color: var(--acento); }
-  button:disabled { opacity: .5; cursor: default; }
-  button.guardar { background: var(--acento); color: #14181d; border-color: var(--acento); font-weight: 600; }
-  button.enviar { background: var(--discord); border-color: var(--discord); color: #fff; font-weight: 600; }
-  button.quitar { background: none; border: 0; color: var(--rojo); padding: 0 2px; font-size: 15px; }
-  .item { border-top: 1px solid var(--borde); padding: 12px 0; }
-  .item:first-of-type { border-top: 0; }
-  .item .arriba { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .item .texto { white-space: pre-wrap; margin: 6px 0; }
-  .item.enviada .texto { color: var(--suave); }
-  .etiqueta { font-size: 11px; border: 1px solid var(--borde); border-radius: 999px; padding: 1px 8px; color: var(--suave); }
-  .etiqueta.pendiente { color: var(--acento); border-color: #4a412a; }
-  .etiqueta.enviada { color: var(--verde); border-color: #23503a; }
-  .etiqueta.error { color: var(--rojo); border-color: #5a2b28; }
-  .cuando { color: var(--suave); font-size: 12px; }
-  .vacio { color: var(--suave); font-size: 13px; }
-  .aviso { font-size: 13px; min-height: 20px; }
-  .ok { color: var(--verde); } .mal { color: var(--rojo); }
-  .nota { color: var(--suave); font-size: 12px; margin-top: 8px; }
-</style>
+<title>Actualizaciones · ÑandutíBall</title>
+<link rel="icon" href="/img/logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/css/nanduti.css">
+<script src="/js/tema.js"></script>
 <script src="/js/sesion.js"></script>
 </head>
 <body>
-<script>if (!Sesion.exigirAdmin()) { document.documentElement.innerHTML = ""; }</script>
-<h1>📣 Actualizaciones</h1>
-<div class="sub">
-  <a class="volver" href="/frm/panel">← volver al panel</a> ·
-  se guardan acá primero y recién salen al Discord cuando les das <b>Enviar</b>
-</div>
+<script>if (!Sesion.exigirAdmin()) { document.documentElement.innerHTML = ""; } else { Sesion.mantener(); }</script>
 
-<div class="caja">
-  <h2>✍️ Cargar una novedad</h2>
-  <label for="titulo">Título (opcional)</label>
-  <input type="text" id="titulo" placeholder="📣 Novedades de ÑandutíBall" maxlength="250">
-  <div style="height:10px"></div>
-  <label for="mensaje">Contala como se la contarías a alguien que entra a jugar</label>
-  <textarea id="mensaje" placeholder="Ahora el partido arranca solo cuando hay 2 jugadores, sin esperar a un admin."></textarea>
-  <div class="fila">
-    <button class="guardar" id="guardar">Guardar</button>
-    <button class="enviar" id="guardarYEnviar">Guardar y enviar al Discord</button>
-    <span class="aviso" id="aviso"></span>
+<header class="barra ancha">
+  <a class="marca" href="/"><img src="/img/logo.svg" alt=""><span>ÑandutíBall</span></a>
+  <div class="derecha" id="derecha"></div>
+</header>
+
+<main class="contenido ancho">
+  <div class="cabecera">
+    <div>
+      <h1>Actualizaciones</h1>
+      <p>Las novedades para el Discord. Se guardan acá primero y recién salen cuando les das <b>Enviar</b>.</p>
+    </div>
   </div>
-  <div class="nota" id="estadoWebhook"></div>
-</div>
 
-<div class="caja">
-  <h2>🕗 Esperando para salir</h2>
-  <div id="pendientes"><span class="vacio">Cargando…</span></div>
-  <div class="fila" id="filaPendientes" hidden>
-    <button class="enviar" id="enviarTodas">Enviar todas</button>
-  </div>
-</div>
+  <section class="tarjeta">
+    <div class="tarjeta-cabeza"><h2>Cargar una novedad</h2><span class="tenue" id="estadoWebhook" style="font-size:13px"></span></div>
+    <div class="tarjeta-cuerpo">
+      <div class="campo" style="margin-top:0">
+        <label for="titulo">Título (opcional)</label>
+        <input type="text" id="titulo" placeholder="📣 Novedades de ÑandutíBall" maxlength="250">
+      </div>
+      <div class="campo">
+        <label for="mensaje">Mensaje</label>
+        <textarea id="mensaje" placeholder="Ahora el partido arranca solo cuando hay 2 jugadores, sin esperar a un admin."></textarea>
+        <div class="nota-campo">Contala como se la contarías a alguien que entra a jugar: qué cambia en la sala, sin palabras técnicas.</div>
+      </div>
+      <div class="fila-botones">
+        <button class="boton" id="guardar">Guardar</button>
+        <button class="boton principal" id="guardarYEnviar">Guardar y enviar al Discord</button>
+      </div>
+      <div class="aviso" id="aviso" role="status"></div>
+    </div>
+  </section>
 
-<div class="caja">
-  <h2>✅ Ya enviadas</h2>
-  <div id="enviadas"><span class="vacio">Cargando…</span></div>
-</div>
+  <div class="seccion-titulo"><h2>Esperando para salir</h2><button class="boton chico" id="enviarTodas" hidden>Enviar todas</button></div>
+  <section class="tarjeta" id="pendientes"><div class="tarjeta-cuerpo tenue">Cargando…</div></section>
+
+  <div class="seccion-titulo"><h2>Ya enviadas</h2></div>
+  <section class="tarjeta" id="enviadas"><div class="tarjeta-cuerpo tenue">Cargando…</div></section>
+</main>
+
+<footer class="pie">ÑandutíBall · Panel de administración</footer>
 
 <script>
+Sesion.pintarBarra("derecha");
+Sesion.pintarNavAdmin("actualizaciones");
+Sesion.refrescar().then((u) => { if (u) { Sesion.pintarBarra("derecha"); Sesion.pintarNavAdmin("actualizaciones"); } });
+
 const $ = (id) => document.getElementById(id);
 const aviso = (texto, mal) => { $("aviso").textContent = texto; $("aviso").className = "aviso " + (mal ? "mal" : "ok"); };
 const escapar = (t) => String(t).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
@@ -96,21 +77,21 @@ async function pedir(url, opciones) {
 function dibujar(lista, donde, esPendiente) {
   const caja = $(donde);
   if (!lista.length) {
-    caja.innerHTML = '<span class="vacio">' + (esPendiente ? "No hay nada esperando." : "Todavía no se mandó ninguna.") + "</span>";
+    caja.innerHTML = '<div class="tarjeta-cuerpo tenue">' + (esPendiente ? "No hay nada esperando." : "Todavía no se mandó ninguna.") + "</div>";
     return;
   }
   caja.innerHTML = lista.map((a) => `
-    <div class="item ${a.estado}">
+    <div class="item">
       <div class="arriba">
         <span class="etiqueta ${a.estado}">${a.estado}</span>
         ${a.titulo ? "<b>" + escapar(a.titulo) + "</b>" : ""}
         <span class="cuando">${cuando(a.creada)}${a.origen === "commit" ? " · desde un cambio en el bot" : ""}</span>
       </div>
       <div class="texto">${escapar(a.mensaje)}</div>
-      ${a.error ? '<div class="mal">⚠️ ' + escapar(a.error) + "</div>" : ""}
-      <div class="fila">
-        ${a.estado !== "enviada" ? '<button class="enviar" data-enviar="' + a.id + '">Enviar al Discord</button>' : ""}
-        <button class="quitar" data-borrar="${a.id}" title="Borrar">✕</button>
+      ${a.error ? '<div class="aviso mal">' + escapar(a.error) + "</div>" : ""}
+      <div class="fila-botones" style="margin-top:12px">
+        ${a.estado !== "enviada" ? '<button class="boton chico principal" data-enviar="' + a.id + '">Enviar al Discord</button>' : ""}
+        <button class="boton chico peligro" data-borrar="${a.id}">Borrar</button>
       </div>
     </div>`).join("");
 }
@@ -121,15 +102,11 @@ async function cargar() {
     const pendientes = actualizaciones.filter((a) => a.estado !== "enviada");
     dibujar(pendientes, "pendientes", true);
     dibujar(actualizaciones.filter((a) => a.estado === "enviada"), "enviadas", false);
-    $("filaPendientes").hidden = pendientes.length < 2;
-    $("estadoWebhook").textContent = hayWebhook
-      ? "🔗 El webhook del Discord está configurado."
-      : "⚠️ Falta WEBHOOK_ACTUALIZACIONES en el .env: se pueden guardar, pero no enviar.";
+    $("enviarTodas").hidden = pendientes.length < 2;
+    $("estadoWebhook").textContent = hayWebhook ? "Discord conectado" : "Falta WEBHOOK_ACTUALIZACIONES en el .env: se pueden guardar, pero no enviar";
   } catch (error) {
-    const texto = /base/i.test(error.message)
-      ? "La base de datos no está levantada. Corré: npm run base"
-      : error.message;
-    $("pendientes").innerHTML = '<span class="mal">' + escapar(texto) + "</span>";
+    const texto = /base/i.test(error.message) ? "La base de datos no está levantada." : error.message;
+    $("pendientes").innerHTML = '<div class="tarjeta-cuerpo mal">' + escapar(texto) + "</div>";
     $("enviadas").innerHTML = "";
   }
 }
@@ -146,7 +123,7 @@ async function guardar(enviando) {
     if (enviando) await pedir("/api/actualizaciones/" + actualizacion.id + "/enviar", { method: "POST" });
     $("mensaje").value = "";
     $("titulo").value = "";
-    aviso(enviando ? "Enviada al Discord ✅" : "Guardada. Sale cuando le des enviar.");
+    aviso(enviando ? "Enviada al Discord." : "Guardada. Sale cuando le des enviar.");
     cargar();
   } catch (error) {
     aviso(error.message, true);
@@ -164,23 +141,22 @@ $("enviarTodas").onclick = async () => {
 };
 
 document.addEventListener("click", async (evento) => {
-  const enviar = evento.target.dataset && evento.target.dataset.enviar;
-  const borrar = evento.target.dataset && evento.target.dataset.borrar;
+  const boton = evento.target.closest("[data-enviar],[data-borrar]");
+  if (!boton) return;
   try {
-    if (enviar) {
-      evento.target.disabled = true;
-      await pedir("/api/actualizaciones/" + enviar + "/enviar", { method: "POST" });
-      aviso("Enviada al Discord ✅");
-      cargar();
+    if (boton.dataset.enviar) {
+      boton.disabled = true;
+      await pedir("/api/actualizaciones/" + boton.dataset.enviar + "/enviar", { method: "POST" });
+      aviso("Enviada al Discord.");
     }
-    if (borrar) {
-      await pedir("/api/actualizaciones/" + borrar, { method: "DELETE" });
-      cargar();
+    if (boton.dataset.borrar) {
+      if (!confirm("¿Borrar esta novedad?")) return;
+      await pedir("/api/actualizaciones/" + boton.dataset.borrar, { method: "DELETE" });
     }
   } catch (error) {
     aviso(error.message, true);
-    cargar();
   }
+  cargar();
 });
 
 cargar();

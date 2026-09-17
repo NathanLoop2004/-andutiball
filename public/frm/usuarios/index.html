@@ -3,44 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ÑandutíBall — Usuarios</title>
-<style>
-  :root {
-    color-scheme: dark;
-    --fondo: #0f1419; --tarjeta: #171d24; --borde: #262f3a; --texto: #e7edf3;
-    --suave: #93a1b0; --verde: #2ecc71; --rojo: #e74c3c; --acento: #ffd100;
-  }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: var(--fondo); color: var(--texto); font: 14px/1.5 system-ui, "Segoe UI", sans-serif; padding: 16px; }
-  h1 { font-size: 20px; margin: 0 0 4px; }
-  .sub { color: var(--suave); font-size: 13px; margin-bottom: 16px; }
-  a.volver { color: var(--acento); text-decoration: none; }
-  .caja { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 12px; padding: 14px; margin-bottom: 16px; max-width: 1100px; }
-  input[type=text], input[type=password] { background: #101720; border: 1px solid var(--borde); color: var(--texto); border-radius: 8px; padding: 7px 10px; font: inherit; }
-  button { background: #1f2a36; border: 1px solid var(--borde); color: var(--texto); border-radius: 8px; padding: 5px 10px; font: inherit; cursor: pointer; white-space: nowrap; }
-  button:hover { border-color: var(--acento); }
-  button:disabled { opacity: .45; cursor: default; border-color: var(--borde); }
-  button.rojo { color: var(--rojo); }
-  button.verde { color: var(--verde); }
-  .buscador { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-  .buscador input { flex: 1; min-width: 180px; max-width: 360px; }
-  .total { color: var(--suave); font-size: 13px; }
-  .tabla { overflow-x: auto; margin-top: 12px; }
-  table { width: 100%; border-collapse: collapse; min-width: 760px; }
-  th, td { text-align: left; padding: 8px 6px; border-top: 1px solid var(--borde); vertical-align: middle; }
-  th { color: var(--suave); font-weight: 500; font-size: 12px; border-top: 0; }
-  td.num { font-variant-numeric: tabular-nums; }
-  .etiqueta { font-size: 11px; border: 1px solid var(--borde); border-radius: 999px; padding: 1px 8px; color: var(--suave); }
-  .etiqueta.ban { color: var(--rojo); border-color: #5a2a26; }
-  .etiqueta.ok { color: var(--verde); border-color: #24503a; }
-  .acciones { display: flex; gap: 6px; flex-wrap: wrap; }
-  .motivo { color: var(--suave); font-size: 12px; }
-  .paginas { display: flex; gap: 8px; align-items: center; justify-content: center; margin-top: 12px; flex-wrap: wrap; }
-  .aviso { min-height: 20px; font-size: 13px; margin-top: 8px; }
-  .ok { color: var(--verde); } .mal { color: var(--rojo); }
-  .nota { color: var(--suave); font-size: 12px; max-width: 1100px; }
-  .vacio { color: var(--suave); padding: 16px 0; text-align: center; }
-</style>
+<title>Usuarios · ÑandutíBall</title>
+<link rel="icon" href="/img/logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/css/nanduti.css">
+<script src="/js/tema.js"></script>
 <script src="/js/sesion.js"></script>
 </head>
 <body>
@@ -49,28 +18,45 @@
   if (!Sesion.usuario()) { Sesion.exigirOwner(); document.documentElement.innerHTML = ""; }
   else Sesion.refrescar().then(() => { if (Sesion.exigirOwner()) Sesion.mantener(); });
 </script>
-<h1>👥 Usuarios</h1>
-<div class="sub"><a class="volver" href="/frm/panel">← volver al panel</a> · solo el OWNER ve esta pantalla</div>
 
-<div class="caja">
-  <div class="buscador">
-    <input type="text" id="q" placeholder="Buscar por nombre…" autocomplete="off">
-    <span class="total" id="total"></span>
-  </div>
-  <div class="aviso" id="aviso"></div>
-  <div class="tabla" id="tabla"></div>
-  <div class="paginas">
-    <button id="anterior">← Anterior</button>
-    <span class="total" id="pagina"></span>
-    <button id="siguiente">Siguiente →</button>
-  </div>
-</div>
+<header class="barra ancha">
+  <a class="marca" href="/"><img src="/img/logo.svg" alt=""><span>ÑandutíBall</span></a>
+  <div class="derecha" id="derecha"></div>
+</header>
 
-<p class="nota">🔐 Las claves no se pueden ver: se guardan con un hash que no se puede revertir (ni nosotros podemos
-leerlas). Si alguien se olvidó la suya, poné una nueva con <b>Clave nueva</b> y pasásela.
-Un usuario baneado no puede entrar a ninguna sala ni a la web.</p>
+<main class="contenido ancho">
+  <div class="cabecera">
+    <div>
+      <h1>Usuarios</h1>
+      <p>Las cuentas creadas en la web. Solo el OWNER ve esta pantalla.</p>
+    </div>
+  </div>
+
+  <div class="aviso" id="aviso" role="status"></div>
+
+  <section class="tarjeta" style="margin-top:14px">
+    <div class="tarjeta-cabeza">
+      <input type="search" id="q" placeholder="Buscar por nombre" autocomplete="off" aria-label="Buscar por nombre" style="max-width:280px">
+      <span class="tenue" id="total" style="font-size:13px"></span>
+    </div>
+    <div class="tabla-caja" id="tabla"><div class="tarjeta-cuerpo tenue">Cargando…</div></div>
+    <div class="paginas">
+      <button class="boton chico" id="anterior">← Anterior</button>
+      <span class="tenue" id="pagina" style="font-size:13px"></span>
+      <button class="boton chico" id="siguiente">Siguiente →</button>
+    </div>
+  </section>
+
+  <p class="tenue" style="font-size:13px;margin-top:16px">Las contraseñas no se pueden ver: se guardan con un hash que no se puede revertir. Si alguien se olvidó la suya, puede recuperarla por correo, o le ponés una nueva con <b>Clave nueva</b> y se la pasás. Un usuario baneado no puede entrar a ninguna sala ni a la web.</p>
+</main>
+
+<footer class="pie">ÑandutíBall · Panel de administración</footer>
 
 <script>
+Sesion.pintarBarra("derecha");
+Sesion.pintarNavAdmin("usuarios");
+Sesion.refrescar().then((u) => { if (u) { Sesion.pintarBarra("derecha"); Sesion.pintarNavAdmin("usuarios"); } });
+
 const esc = Sesion.escapar;
 let estado = { q: "", pagina: 1, paginas: 1 };
 
@@ -93,34 +79,32 @@ function pintar(datos) {
   document.getElementById("siguiente").disabled = datos.pagina >= datos.paginas;
 
   if (!datos.usuarios.length) {
-    document.getElementById("tabla").innerHTML = '<div class="vacio">No hay usuarios' + (estado.q ? " con ese nombre" : "") + ".</div>";
+    document.getElementById("tabla").innerHTML = '<div class="tarjeta-cuerpo tenue">No hay usuarios' + (estado.q ? " con ese nombre" : "") + ".</div>";
     return;
   }
 
   document.getElementById("tabla").innerHTML = `
-    <table>
-      <tr><th>Nombre</th><th>Correo</th><th>Estado</th><th>Clave</th><th>ELO</th><th>Partidos</th><th>G-E-P</th><th>Goles</th><th>Auth</th><th>Visto</th><th></th></tr>
-      ${datos.usuarios.map((u) => `
+    <table class="tabla">
+      <thead><tr><th>Nombre</th><th>Correo</th><th>Estado</th><th class="der">ELO</th><th class="der">PJ</th><th class="der">G-E-P</th><th class="der">Goles</th><th>Visto</th><th class="der">Acciones</th></tr></thead>
+      <tbody>${datos.usuarios.map((u) => `
         <tr>
-          <td><b>${esc(u.nick)}</b></td>
-          <td>${u.email ? esc(u.email) : '<span class="motivo">sin correo</span>'}</td>
+          <td class="jugador">${esc(u.nick)}</td>
+          <td>${u.email ? esc(u.email) : '<span class="tenue">sin correo</span>'}</td>
           <td>${u.baneado
-            ? `<span class="etiqueta ban">baneado</span>${u.motivoBan ? `<div class="motivo">${esc(u.motivoBan)}</div>` : ""}`
+            ? `<span class="etiqueta ban" title="${esc(u.motivoBan || "")}">baneado</span>`
             : '<span class="etiqueta ok">activo</span>'}</td>
-          <td>${u.registrado ? "🔒 puesta" : '<span class="motivo">sin clave</span>'}</td>
-          <td class="num">${u.elo}</td>
-          <td class="num">${u.partidos}</td>
-          <td class="num">${u.ganados}-${u.empatados}-${u.perdidos}</td>
-          <td class="num">${u.goles}</td>
-          <td><span class="motivo">${u.auth ? esc(u.auth.slice(0, 12)) + "…" : "—"}</span></td>
-          <td><span class="motivo">${fecha(u.visto)}</span></td>
-          <td><div class="acciones">
+          <td class="der num">${u.elo}</td>
+          <td class="der num">${u.partidos}</td>
+          <td class="der num">${u.ganados}-${u.empatados}-${u.perdidos}</td>
+          <td class="der num">${u.goles}</td>
+          <td class="tenue">${fecha(u.visto)}</td>
+          <td class="der"><div class="acciones" style="justify-content:flex-end">
             ${u.baneado
-              ? `<button class="verde" data-desbanear="${esc(u.nick)}">Desbanear</button>`
-              : `<button class="rojo" data-banear="${esc(u.nick)}">Banear</button>`}
-            <button data-clave="${esc(u.nick)}">Clave nueva</button>
+              ? `<button class="boton chico exito" data-desbanear="${esc(u.nick)}">Desbanear</button>`
+              : `<button class="boton chico peligro" data-banear="${esc(u.nick)}">Banear</button>`}
+            <button class="boton chico" data-clave="${esc(u.nick)}">Clave nueva</button>
           </div></td>
-        </tr>`).join("")}
+        </tr>`).join("")}</tbody>
     </table>`;
 }
 
@@ -130,7 +114,7 @@ async function cargar() {
     pintar(await Sesion.pedir("/api/usuarios?" + params));
   } catch (error) {
     if (/solo para el OWNER|iniciar sesión/i.test(error.message)) { location.href = "/?sinpermiso=1"; return; }
-    avisar("❌ " + error.message, false);
+    avisar(error.message, false);
   }
 }
 
@@ -139,7 +123,7 @@ async function accion(nick, que, cuerpo) {
     await Sesion.pedir("/api/usuarios/" + encodeURIComponent(nick) + "/" + que, { method: "POST", body: JSON.stringify(cuerpo || {}) });
     return true;
   } catch (error) {
-    avisar("❌ " + error.message, false);
+    avisar(error.message, false);
     return false;
   }
 }
@@ -152,18 +136,18 @@ document.getElementById("tabla").addEventListener("click", async (e) => {
     const nick = b.dataset.banear;
     const motivo = prompt("¿Por qué se banea a " + nick + "? (lo va a ver al querer entrar)", "");
     if (motivo === null) return;
-    if (await accion(nick, "banear", { motivo })) { avisar("🚫 " + nick + " quedó baneado. Las salas lo echan en unos segundos.", true); cargar(); }
+    if (await accion(nick, "banear", { motivo })) { avisar(nick + " quedó baneado. Las salas lo echan en unos segundos.", true); cargar(); }
   }
   if (b.dataset.desbanear) {
     const nick = b.dataset.desbanear;
     if (!confirm("¿Desbanear a " + nick + "?")) return;
-    if (await accion(nick, "desbanear")) { avisar("✅ " + nick + " ya puede volver a entrar.", true); cargar(); }
+    if (await accion(nick, "desbanear")) { avisar(nick + " ya puede volver a entrar.", true); cargar(); }
   }
   if (b.dataset.clave) {
     const nick = b.dataset.clave;
     const clave = prompt("Clave nueva para " + nick + " (se la tenés que pasar vos):", "");
     if (!clave) return;
-    if (await accion(nick, "clave", { clave })) avisar("🔑 " + nick + " ya tiene la clave nueva.", true), cargar();
+    if (await accion(nick, "clave", { clave })) { avisar(nick + " ya tiene la clave nueva.", true); cargar(); }
   }
 });
 

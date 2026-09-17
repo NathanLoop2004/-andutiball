@@ -3,138 +3,50 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ÑandutíBall — Panel</title>
-<style>
-  :root {
-    color-scheme: dark;
-    --fondo: #0f1419;
-    --tarjeta: #171d24;
-    --hueco: #101720;
-    --borde: #262f3a;
-    --texto: #e7edf3;
-    --suave: #93a1b0;
-    --verde: #2ecc71;
-    --rojo: #e74c3c;
-    --acento: #ffd100;
-  }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: var(--fondo); color: var(--texto); font: 14px/1.5 system-ui, "Segoe UI", sans-serif; padding: 16px; }
-  header { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
-  h1 { font-size: 20px; margin: 0; }
-  header a { color: var(--acento); text-decoration: none; font-size: 13px; }
-  header .resumen { color: var(--suave); font-size: 13px; }
-
-  /* Pestañas de salas */
-  .salas-tabs { display: flex; gap: 6px; flex-wrap: wrap; border-bottom: 1px solid var(--borde); padding-bottom: 0; }
-  .salas-tabs button {
-    display: flex; align-items: center; gap: 8px;
-    background: none; border: 1px solid transparent; border-bottom: 0;
-    color: var(--suave); padding: 9px 14px; border-radius: 10px 10px 0 0;
-    cursor: pointer; font: inherit; font-size: 14px; position: relative; top: 1px;
-  }
-  .salas-tabs button:hover { color: var(--texto); }
-  .salas-tabs button[aria-selected="true"] { color: var(--texto); background: var(--tarjeta); border-color: var(--borde); font-weight: 600; }
-  .luz { width: 10px; height: 10px; border-radius: 50%; flex: none; background: var(--rojo); box-shadow: 0 0 7px var(--rojo); }
-  .luz.on { background: var(--verde); box-shadow: 0 0 7px var(--verde); }
-
-  /* Cuerpo de la sala elegida */
-  .sala { background: var(--tarjeta); border: 1px solid var(--borde); border-top: 0; border-radius: 0 0 12px 12px; padding: 14px; }
-  .datos { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
-  .chip { background: var(--hueco); border: 1px solid var(--borde); border-radius: 999px; padding: 4px 10px; font-size: 12px; color: var(--suave); }
-  .chip b { color: var(--texto); font-weight: 600; }
-  .chip.alerta { color: #ffb4ab; border-color: #5a2a25; background: #2a1512; }
-  .chip a { color: var(--acento); }
-
-  .vistas { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: -1px; }
-  .vistas button { background: none; border: 1px solid transparent; color: var(--suave); padding: 6px 12px; border-radius: 8px 8px 0 0; cursor: pointer; font: inherit; font-size: 13px; }
-  .vistas button[aria-selected="true"] { color: var(--texto); background: var(--hueco); border-color: var(--borde); border-bottom-color: var(--hueco); }
-  .vista { background: var(--hueco); border: 1px solid var(--borde); border-radius: 0 8px 8px 8px; height: 52vh; min-height: 300px; overflow: auto; padding: 10px; }
-
-  .linea { display: flex; gap: 8px; padding: 3px 0; border-bottom: 1px solid #161d26; font-size: 13px; }
-  .linea:last-child { border-bottom: 0; }
-  .hora { color: #5d6b7a; font-variant-numeric: tabular-nums; flex: none; }
-  .quien { color: var(--acento); }
-  .tipo-entra .txt { color: var(--verde); }
-  .tipo-sale .txt { color: var(--suave); }
-  .tipo-ban .txt, .tipo-kick .txt { color: var(--rojo); }
-  .tipo-gol .txt { color: var(--acento); }
-  .vacio { color: var(--suave); padding: 12px 2px; }
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th { text-align: left; color: var(--suave); font-weight: 500; padding: 4px 6px; border-bottom: 1px solid var(--borde); }
-  td { padding: 4px 6px; border-bottom: 1px solid #161d26; }
-  .eq-1 { color: #ff8d8d; } .eq-2 { color: #63f2ff; } .eq-0 { color: var(--suave); }
-  .pie { color: var(--suave); font-size: 12px; margin-top: 14px; }
-
-  /* Cancha en vivo (estilo bolitas tipo videollamada) */
-  .cancha { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  .cancha h3 { margin: 0 0 8px; font-size: 13px; letter-spacing: 0.4px; text-transform: uppercase; color: var(--suave); }
-  .lado { background: var(--hueco); border: 1px solid var(--borde); border-radius: 12px; padding: 12px; min-height: 180px; }
-  .lado-red h3 { color: #ff8d8d; }
-  .lado-blue h3 { color: #63f2ff; }
-  .lado-spect h3 { color: var(--suave); }
-  .bolitas { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; }
-  .bolita { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 92px; text-align: center; }
-  .circulo {
-    width: 72px; height: 72px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 26px; font-weight: 700; color: #fff;
-    box-shadow: 0 0 0 3px rgba(255,255,255,0.06), 0 4px 14px rgba(0,0,0,0.4);
-    position: relative;
-    animation: aparecer 0.35s ease;
-  }
-  .circulo.red   { background: linear-gradient(135deg, #e74c3c, #c0392b); }
-  .circulo.blue  { background: linear-gradient(135deg, #3498db, #1f6fa8); }
-  .circulo.spect { background: linear-gradient(135deg, #7f8c8d, #4d5859); color: #dfe6e9; }
-  .circulo .corona { position: absolute; top: -4px; right: -4px; font-size: 20px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6)); }
-  .nombre { font-size: 12px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--texto); }
-  .cancha-vacia { color: var(--suave); font-size: 12px; padding: 8px 2px; }
-  .cancha-full { grid-column: 1 / -1; }
-  @keyframes aparecer { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-
-  /* Botones de acción (kick / ban) */
-  .acciones button { background: #2a1512; color: #ffb4ab; border: 1px solid #5a2a25; padding: 3px 9px; border-radius: 6px; font-size: 12px; cursor: pointer; margin-right: 4px; }
-  .acciones button:hover { background: #5a2a25; color: #fff; }
-  .acciones button.ban { background: #4a1a1a; color: #ff8080; border-color: #7a2a2a; }
-  .acciones button.ban:hover { background: #7a2a2a; color: #fff; }
-  .bolita { cursor: pointer; }
-  .bolita:hover .circulo { filter: brightness(1.15); }
-  .menu-bolita { position: fixed; background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 8px; padding: 4px; box-shadow: 0 6px 20px rgba(0,0,0,0.5); z-index: 100; display: flex; gap: 4px; }
-
-  /* Tabla de ELO */
-  .escala { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
-  table.elo td { vertical-align: middle; }
-  table.elo .pos { color: var(--suave); width: 28px; }
-  table.elo .ge { color: var(--suave); font-variant-numeric: tabular-nums; }
-  .barra-celda { width: 30%; min-width: 70px; }
-  .barra { display: block; height: 7px; border-radius: 4px; opacity: 0.75; }
-</style>
+<title>Salas · ÑandutíBall</title>
+<link rel="icon" href="/img/logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/css/nanduti.css">
+<script src="/js/tema.js"></script>
 <script src="/js/sesion.js"></script>
 </head>
 <body>
 <script>if (!Sesion.exigirAdmin()) { document.documentElement.innerHTML = ""; } else { Sesion.mantener(); }</script>
-<header>
-  <h1>🕸️ ÑandutíBall</h1>
-  <a href="/frm/rangos">🎖️ Administrar rangos →</a>
-  <a href="/frm/actualizaciones">📣 Actualizaciones →</a>
-  <a href="/frm/usuarios" id="linkUsuarios" hidden>👥 Usuarios →</a>
-  <script>Sesion.refrescar().then(() => { document.getElementById("linkUsuarios").hidden = !Sesion.esOwner(); });</script>
-  <a href="/">← Ñandutí Web</a>
-  <span class="resumen" id="resumen">Cargando…</span>
+
+<header class="barra ancha">
+  <a class="marca" href="/"><img src="/img/logo.svg" alt=""><span>ÑandutíBall</span></a>
+  <div class="derecha" id="derecha"></div>
 </header>
 
-<div class="salas-tabs" id="salasTabs"></div>
-<div class="sala" id="sala"></div>
-<div class="pie">Se actualiza cada 2 segundos · hecho por Jinder</div>
+<main class="contenido ancho">
+  <div class="cabecera">
+    <div>
+      <h1>Salas</h1>
+      <p id="resumen">Cargando…</p>
+    </div>
+    <span class="tenue" style="font-size:13px">Se actualiza cada 2 segundos</span>
+  </div>
+
+  <div class="pestanas" id="salasTabs" role="tablist" aria-label="Salas"></div>
+  <div class="tarjeta" id="sala"></div>
+</main>
+
+<footer class="pie">ÑandutíBall · Panel de administración</footer>
 
 <script>
+Sesion.pintarBarra("derecha");
+Sesion.pintarNavAdmin("salas");
+Sesion.refrescar().then((u) => { if (u) { Sesion.pintarBarra("derecha"); Sesion.pintarNavAdmin("salas"); } });
+
 const VISTAS = [
   { id: "cancha", nombre: "Cancha" },
   { id: "mensajes", nombre: "Mensajes" },
   { id: "jugadores", nombre: "Jugadores" },
   { id: "elo", nombre: "ELO" },
   { id: "bans", nombre: "Bans" },
-  { id: "roles", nombre: "Roles" },
-  { id: "config", nombre: "Config" },
+  { id: "roles", nombre: "Rangos" },
 ];
 
 let salas = [];
@@ -143,22 +55,21 @@ let vistaAbierta = "cancha";     // pestaña de adentro
 let ultimaFirma = "";            // para no redibujar si nada cambió
 let cambioDeVista = false;       // true cuando el usuario cambia de pestaña o de sala
 
-const esc = (t) => String(t ?? "").replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]));
+const esc = (t) => String(t ?? "").replace(/[<>&"]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;" }[c]));
 const hora = (iso) => (iso ? new Date(iso).toLocaleTimeString("es-PY", { hour12: false }) : "");
 const viva = (s) => s.ok && s.estado.encendida;
-// Nombre pintado con el color de su división de ELO (y su emoji si lo tiene)
+const nombreCorto = (n) => String(n || "").replace(/^.*\|\s*/, "").replace(/\s*🇵🇾\s*$/, "") || n;
+// Nombre pintado con el color de su división de ELO
 const nombreConElo = (j) =>
   typeof j.color === "number"
-    ? `<span style="color:#${j.color.toString(16).padStart(6, "0")}" title="${esc(j.division)} · ${j.elo} pts">${j.emoji || ""} ${esc(j.nombre)}</span>`
+    ? `<span style="color:#${j.color.toString(16).padStart(6, "0")}" title="${esc(j.division)} · ${j.elo} pts">${esc(j.nombre)}</span>`
     : esc(j.nombre);
 
 function pintarTabs() {
   document.getElementById("salasTabs").innerHTML = salas
-    .map(
-      (s) => `<button data-sala="${esc(s.clave)}" aria-selected="${s.clave === salaAbierta}">
-        <span class="luz ${viva(s) ? "on" : ""}"></span>${esc(s.nombre)}
-      </button>`
-    )
+    .map((s) => `<button role="tab" data-sala="${esc(s.clave)}" aria-selected="${s.clave === salaAbierta}">
+        <span class="luz ${viva(s) ? "on" : ""}"></span>${esc(nombreCorto(s.nombre))}
+      </button>`)
     .join("");
 
   document.querySelectorAll("[data-sala]").forEach((b) =>
@@ -177,25 +88,27 @@ function pintarTabs() {
 function pintarSala() {
   const sala = salas.find((s) => s.clave === salaAbierta);
   const caja = document.getElementById("sala");
-  if (!sala) return (caja.innerHTML = `<div class="vacio">Elegí una sala.</div>`);
+  if (!sala) return (caja.innerHTML = `<div class="tarjeta-cuerpo vacio">Elegí una sala.</div>`);
 
   const e = sala.estado;
   const chips = !sala.ok
-    ? `<span class="chip alerta">no responde: ${esc(sala.error)}</span>`
+    ? `<span class="chip alerta">No responde: ${esc(sala.error)}</span>`
     : viva(sala)
     ? [
-        `<span class="chip">👥 <b>${e.jugadores.length}</b>/${e.config.CantidadDeJugadores ?? "?"}</span>`,
-        `<span class="chip">🗺️ <b>${esc(e.config.MapaPorDefecto ?? "—")}</b></span>`,
-        `<span class="chip">⚽ <b>${e.partido.red}</b> - <b>${e.partido.blue}</b></span>`,
-        e.partido.enJuego ? `<span class="chip">▶️ en juego</span>` : `<span class="chip">⏸️ parado</span>`,
-        e.link ? `<span class="chip"><a href="${esc(e.link)}" target="_blank" rel="noopener">abrir sala ↗</a></span>` : "",
+        `<span class="chip exito">Encendida</span>`,
+        `<span class="chip">Jugadores <b>${e.jugadores.length}</b>/${e.config.CantidadDeJugadores ?? "?"}</span>`,
+        `<span class="chip">Mapa <b>${esc(e.config.MapaPorDefecto ?? "—")}</b></span>`,
+        `<span class="chip">Marcador <b>${e.partido.red}</b> – <b>${e.partido.blue}</b></span>`,
+        `<span class="chip">${e.partido.enJuego ? "En juego" : "Sin partido"}</span>`,
+        e.link ? `<a class="boton chico" href="${esc(e.link)}" target="_blank" rel="noopener">Abrir sala ↗</a>` : "",
+        Sesion.usuario() && Sesion.usuario().configura ? `<a class="boton chico" href="/frm/config/">Configurar</a>` : "",
       ].join("")
-    : `<span class="chip alerta">${esc(e.problema || "esperando el link de la sala…")}</span>`;
+    : `<span class="chip alerta">${esc(e.problema || "Esperando el link de la sala…")}</span>`;
 
   const html = `
-    <div class="datos">${chips}</div>
-    <div class="vistas">
-      ${VISTAS.map((v) => `<button data-vista="${v.id}" aria-selected="${v.id === vistaAbierta}">${v.nombre}</button>`).join("")}
+    <div class="chips">${chips}</div>
+    <div class="subpestanas" role="tablist">
+      ${VISTAS.map((v) => `<button role="tab" data-vista="${v.id}" aria-selected="${v.id === vistaAbierta}">${v.nombre}</button>`).join("")}
     </div>
     <div class="vista" id="vista">${sala.ok ? contenido(vistaAbierta, e) : `<div class="vacio">No se pudo conectar con esta sala.</div>`}</div>
   `;
@@ -205,13 +118,10 @@ function pintarSala() {
   if (firma === ultimaFirma) return;
   ultimaFirma = firma;
 
-  // Guardamos dónde estaba mirando el usuario antes de redibujar.
-  // Sin esto, cada actualización lo mandaba de vuelta arriba del todo.
+  // Guardamos dónde estaba mirando el usuario antes de redibujar
   const vistaVieja = document.getElementById("vista");
   const scrollPrevio = vistaVieja ? vistaVieja.scrollTop : 0;
-  const estabaAbajo = vistaVieja
-    ? vistaVieja.scrollTop + vistaVieja.clientHeight >= vistaVieja.scrollHeight - 30
-    : true;
+  const estabaAbajo = vistaVieja ? vistaVieja.scrollTop + vistaVieja.clientHeight >= vistaVieja.scrollHeight - 30 : true;
 
   caja.innerHTML = html;
 
@@ -222,13 +132,9 @@ function pintarSala() {
       pintarSala();
     })
   );
-
-  // Botones Kick/Ban de la vista Jugadores
   caja.querySelectorAll("[data-accion]").forEach((b) =>
     b.addEventListener("click", () => ejecutarAccion(b.dataset.accion, Number(b.dataset.jugador), b.dataset.nombre))
   );
-
-  // Click en una bolita: menú flotante con Kick / Ban
   caja.querySelectorAll(".bolita[data-jugador]").forEach((b) =>
     b.addEventListener("click", (ev) => {
       ev.stopPropagation();
@@ -236,7 +142,6 @@ function pintarSala() {
     })
   );
 
-  // Volvemos a dejarlo donde estaba. Solo seguimos al último mensaje si ya estaba abajo del todo.
   const vista = document.getElementById("vista");
   if (cambioDeVista) {
     vista.scrollTop = vistaAbierta === "mensajes" ? vista.scrollHeight : 0;
@@ -252,10 +157,10 @@ function abrirMenuBolita(elemento, idJugador, nombre) {
   document.querySelectorAll(".menu-bolita").forEach((m) => m.remove());
   const rect = elemento.getBoundingClientRect();
   const menu = document.createElement("div");
-  menu.className = "menu-bolita acciones";
-  menu.innerHTML = `<button>Kick</button><button class="ban">Ban</button>`;
-  menu.style.left = rect.left + "px";
-  menu.style.top = rect.bottom + 4 + "px";
+  menu.className = "menu-bolita";
+  menu.innerHTML = `<button class="boton chico">Expulsar</button><button class="boton chico peligro">Banear</button>`;
+  menu.style.left = Math.min(rect.left, window.innerWidth - 200) + "px";
+  menu.style.top = rect.bottom + 6 + "px";
   document.body.appendChild(menu);
   const [btnKick, btnBan] = menu.querySelectorAll("button");
   btnKick.addEventListener("click", () => { menu.remove(); ejecutarAccion("kick", idJugador, nombre); });
@@ -266,17 +171,12 @@ function abrirMenuBolita(elemento, idJugador, nombre) {
 async function ejecutarAccion(accion, idJugador, nombre) {
   const etiqueta = accion === "ban" ? "banear" : "expulsar";
   if (!confirm(`¿Seguro que querés ${etiqueta} a ${nombre}?`)) return;
-  const motivo = prompt(`Motivo (opcional):`, "") || "";
+  const motivo = prompt("Motivo (opcional):", "") || "";
   try {
-    const res = await fetch(`/api/${accion}/${salaAbierta}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: idJugador, motivo }),
-    });
-    const datos = await res.json();
-    if (!datos.ok) alert("Falló: " + (datos.error || "sin detalle"));
+    const datos = await Sesion.pedir(`/api/${accion}/${salaAbierta}`, { method: "POST", body: JSON.stringify({ id: idJugador, motivo }) });
+    if (datos.ok === false) alert("Falló: " + (datos.error || "sin detalle"));
   } catch (error) {
-    alert("Error de red: " + error.message);
+    alert("No se pudo: " + error.message);
   }
 }
 
@@ -287,108 +187,79 @@ function contenido(vista, e) {
     const spect = e.jugadores.filter((j) => j.equipo === 0);
     if (!e.jugadores.length) return `<div class="vacio">Todavía no hay nadie en la sala.</div>`;
     const pintar = (j, clase) => {
-      const inicial = esc((j.nombre || "?").trim().charAt(0).toUpperCase() || "?");
-      return `<div class="bolita" data-jugador="${j.id}" data-nombre="${esc(j.nombre)}" title="Click para expulsar o banear a ${esc(j.nombre)}">
-        <div class="circulo ${clase}">${inicial}${j.admin ? '<span class="corona">👑</span>' : ""}</div>
+      const inicial = esc(Sesion.inicial(j.nombre).toUpperCase());
+      return `<div class="bolita" data-jugador="${j.id}" data-nombre="${esc(j.nombre)}" title="Clic para expulsar o banear a ${esc(j.nombre)}">
+        <div class="circulo ${clase}">${inicial}${j.admin ? '<span class="corona" title="Admin">★</span>' : ""}</div>
         <div class="nombre">${nombreConElo(j)}</div>
       </div>`;
     };
-    const lado = (titulo, jugadores, clase, extraClase) =>
-      `<div class="lado lado-${clase} ${extraClase || ""}">
-        <h3>${titulo} (${jugadores.length})</h3>
-        <div class="bolitas">${jugadores.length ? jugadores.map((j) => pintar(j, clase)).join("") : `<div class="cancha-vacia">Sin jugadores</div>`}</div>
+    const lado = (titulo, color, jugadores, clase, extra) =>
+      `<div class="lado ${extra || ""}">
+        <h3><i style="background:${color}"></i>${titulo} · ${jugadores.length}</h3>
+        <div class="bolitas">${jugadores.length ? jugadores.map((j) => pintar(j, clase)).join("") : `<div class="vacio" style="padding:4px 0">Sin jugadores</div>`}</div>
       </div>`;
     return `<div class="cancha">
-      ${lado("🔴 Red", red, "red")}
-      ${lado("🔵 Blue", blue, "blue")}
-      ${lado("👁️ Espectadores", spect, "spect", "cancha-full")}
+      ${lado("Red", "#dc2626", red, "red")}
+      ${lado("Blue", "#2563eb", blue, "blue")}
+      ${lado("Espectadores", "#64748b", spect, "spect", "cancha-full")}
     </div>`;
   }
 
   if (vista === "mensajes") {
     if (!e.mensajes.length) return `<div class="vacio">Todavía no hay mensajes.</div>`;
     return e.mensajes
-      .map(
-        (m) => `<div class="linea tipo-${esc(m.tipo)}">
-            <span class="hora">${hora(m.hora)}</span>
-            ${m.tipo === "chat" ? `<span class="quien">${esc(m.jugador)}:</span>` : ""}
-            <span class="txt">${esc(m.texto)}</span>
-          </div>`
-      )
+      .map((m) => `<div class="linea tipo-${esc(m.tipo)}">
+          <span class="hora">${hora(m.hora)}</span>
+          <span>${m.tipo === "chat" ? `<span class="quien">${esc(m.jugador)}</span> ` : ""}<span class="txt">${esc(m.texto)}</span></span>
+        </div>`)
       .join("");
   }
 
   if (vista === "jugadores") {
     if (!e.jugadores.length) return `<div class="vacio">No hay nadie en la sala.</div>`;
-    return `<table><tr><th>ID</th><th>Nombre</th><th>Equipo</th><th>Admin</th><th>Acciones</th></tr>
-      ${e.jugadores
-        .map(
-          (j) => `<tr><td>${j.id}</td><td>${nombreConElo(j)}</td>
-            <td class="eq-${j.equipo}">${j.equipo === 1 ? "🔴 Red" : j.equipo === 2 ? "🔵 Blue" : "👁️ Espectador"}</td>
-            <td>${j.admin ? "👑" : ""}</td>
-            <td class="acciones">
-              <button data-accion="kick" data-jugador="${j.id}" data-nombre="${esc(j.nombre)}">Kick</button>
-              <button class="ban" data-accion="ban" data-jugador="${j.id}" data-nombre="${esc(j.nombre)}">Ban</button>
-            </td></tr>`
-        )
-        .join("")}</table>`;
+    return `<table class="tabla tabla-panel"><thead><tr><th>ID</th><th>Nombre</th><th>Equipo</th><th>Admin</th><th class="der">Acciones</th></tr></thead><tbody>
+      ${e.jugadores.map((j) => `<tr><td class="tenue">${j.id}</td><td class="jugador">${nombreConElo(j)}</td>
+          <td>${j.equipo === 1 ? '<span class="etiqueta ban">Red</span>' : j.equipo === 2 ? '<span class="etiqueta acento">Blue</span>' : '<span class="etiqueta">Espectador</span>'}</td>
+          <td>${j.admin ? '<span class="etiqueta pendiente">admin</span>' : ""}</td>
+          <td class="der"><div class="acciones" style="justify-content:flex-end">
+            <button class="boton chico" data-accion="kick" data-jugador="${j.id}" data-nombre="${esc(j.nombre)}">Expulsar</button>
+            <button class="boton chico peligro" data-accion="ban" data-jugador="${j.id}" data-nombre="${esc(j.nombre)}">Banear</button>
+          </div></td></tr>`).join("")}</tbody></table>`;
   }
 
   if (vista === "elo") {
     const ranking = e.elo || [];
     const divisiones = e.divisiones || [];
     const escala = divisiones.length
-      ? `<div class="escala">${divisiones
-          .map((d) => `<span class="chip" style="border-color:#${d.color}55;color:#${d.color}">${d.emoji} ${esc(d.nombre)} · ${d.desde}+</span>`)
+      ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">${divisiones
+          .map((d) => `<span class="division"><i style="background:#${d.color}"></i>${esc(d.nombre)} · ${d.desde}+</span>`)
           .join("")}</div>`
       : "";
-    if (!ranking.length) {
-      return escala + `<div class="vacio">Todavía no hay partidos jugados. El puntaje arranca en 1000 y se mueve al terminar cada partido.</div>`;
-    }
-    // La barra muestra qué tan cerca está del tope de la tabla
+    if (!ranking.length) return escala + `<div class="vacio">Todavía no hay partidos jugados. El puntaje arranca en 1000.</div>`;
     const tope = Math.max(...ranking.map((f) => f.elo), 1);
-    return (
-      escala +
-      `<table class="elo"><tr><th>#</th><th>Jugador</th><th>División</th><th>Puntos</th><th>PJ</th><th>G-E-P</th><th></th></tr>
-      ${ranking
-        .map(
-          (f, i) => `<tr>
-            <td class="pos">${i + 1}</td>
-            <td>${esc(f.nombre)}</td>
-            <td style="color:#${f.division.color}">${f.division.emoji} ${esc(f.division.nombre)}</td>
-            <td><b>${f.elo}</b></td>
-            <td>${f.partidos}</td>
-            <td class="ge">${f.ganados}-${f.empatados}-${f.perdidos}</td>
-            <td class="barra-celda"><span class="barra" style="width:${Math.round((f.elo / tope) * 100)}%;background:#${f.division.color}"></span></td>
-          </tr>`
-        )
-        .join("")}</table>`
-    );
+    return escala + `<table class="tabla tabla-panel"><thead><tr><th class="puesto">#</th><th>Jugador</th><th>División</th><th class="der">ELO</th><th class="der">PJ</th><th class="der">G-E-P</th><th style="width:22%"></th></tr></thead><tbody>
+      ${ranking.map((f, i) => `<tr>
+          <td class="puesto">${i + 1}</td>
+          <td class="jugador">${esc(f.nombre)}</td>
+          <td><span class="division"><i style="background:#${f.division.color}"></i>${esc(f.division.nombre)}</span></td>
+          <td class="der num"><b>${f.elo}</b></td>
+          <td class="der num">${f.partidos}</td>
+          <td class="der num">${f.ganados}-${f.empatados}-${f.perdidos}</td>
+          <td><span class="barra-elo" style="width:${Math.round((f.elo / tope) * 100)}%;background:#${f.division.color}"></span></td>
+        </tr>`).join("")}</tbody></table>`;
   }
 
   if (vista === "bans") {
     if (!e.bans.length) return `<div class="vacio">No hay baneados en esta sesión.</div>`;
-    return `<table><tr><th>Hora</th><th>Jugador</th><th>Motivo</th><th>Por</th></tr>
-      ${e.bans
-        .map((b) => `<tr><td>${hora(b.hora)}</td><td>${esc(b.jugador)}</td><td>${esc(b.motivo || "—")}</td><td>${esc(b.por)}</td></tr>`)
-        .join("")}</table>`;
+    return `<table class="tabla tabla-panel"><thead><tr><th>Hora</th><th>Jugador</th><th>Motivo</th><th>Por</th></tr></thead><tbody>
+      ${e.bans.map((b) => `<tr><td class="tenue">${hora(b.hora)}</td><td class="jugador">${esc(b.jugador)}</td><td>${esc(b.motivo || "—")}</td><td>${esc(b.por)}</td></tr>`).join("")}</tbody></table>`;
   }
 
-  if (vista === "roles") {
-    const r = e.roles;
-    const rangos = e.rangos && e.rangos.roles ? e.rangos.roles.filter((x) => x.nicks.length) : [];
-    const tablaRangos = rangos.length
-      ? `<table><tr><th>Rango</th><th>Jugadores</th><th>Da admin</th></tr>
-         ${rangos.map((x) => `<tr><td>${esc(x.nombre)}</td><td>${esc(x.nicks.join(", "))}</td><td>${x.admin ? "👑" : ""}</td></tr>`).join("")}</table>`
-      : `<div class="vacio">No hay rangos cargados. Se editan en <a href="/rangos">Administrar rangos</a>.</div>`;
-    return `<b>Rangos con clave</b>${tablaRangos}
-      <div class="vacio">Clave para ser admin en el chat: <b>${esc(r.claveAdmin || "—")}</b></div>`;
-  }
-
-  const filas = Object.entries(e.config);
-  if (!filas.length) return `<div class="vacio">Esta sala usa la configuración por defecto del script.</div>`;
-  return `<table><tr><th>Variable</th><th>Valor</th></tr>
-    ${filas.map(([k, v]) => `<tr><td>${esc(k)}</td><td>${esc(JSON.stringify(v))}</td></tr>`).join("")}</table>`;
+  // Rangos
+  const rangos = e.rangos && e.rangos.roles ? e.rangos.roles.filter((x) => x.nicks.length) : [];
+  if (!rangos.length) return `<div class="vacio">No hay rangos cargados. Se editan en <a href="/frm/rangos/">Rangos</a>.</div>`;
+  return `<table class="tabla tabla-panel"><thead><tr><th>Rango</th><th>Jugadores</th><th>Da admin</th></tr></thead><tbody>
+    ${rangos.map((x) => `<tr><td class="jugador">${esc(x.nombre)}</td><td style="white-space:normal">${esc(x.nicks.join(", "))}</td><td>${x.admin ? '<span class="etiqueta admin">sí</span>' : ""}</td></tr>`).join("")}</tbody></table>`;
 }
 
 async function actualizar() {

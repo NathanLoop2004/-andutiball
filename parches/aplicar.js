@@ -303,6 +303,7 @@ const BLOQUES = [
   { archivo: "modos.txt", marca: "🔀 MODOS DE EQUIPOS", nombre: "🔀 Modos de equipos", siFalta: () => true },
   { archivo: "usuarios.txt", marca: "🔐 USUARIOS Y CLAVES", nombre: "🔐 Usuarios y claves", siFalta: () => true },
   { archivo: "aviso-discord.txt", marca: "📣 AVISO DE SALA ABIERTA", nombre: "📣 Aviso de sala abierta", siFalta: () => true },
+  { archivo: "config.txt", marca: "⚙️ CONFIGURACIÓN DESDE LA BASE", nombre: "⚙️ Configuración desde la base", siFalta: () => true },
   { archivo: "comandos-sin-eco.txt", marca: "🤫 COMANDOS SIN ECO", nombre: "🤫 Comandos sin eco", siFalta: () => true },
   { contenido: bloqueMapas, marca: "🗺️ MAPAS DE FUTSAL", nombre: null, siFalta: () => Boolean(bloqueMapas) },
 ];
