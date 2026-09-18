@@ -5,7 +5,8 @@
 //   · La sala (launcher): se lo pide a la página de Puppeteer, que termina
 //     llamando a room.kickPlayer(id, motivo, ban).
 //   · El panel: no tiene la sala en la mano, así que reenvía el pedido a la sala
-//     que corresponda (/api/kick o /api/ban de esa sala).
+//     que corresponda (/api/kick o /api/ban de esa sala), con el MISMO Authorization del que
+//     lo pidió: la sala vuelve a revisar el rango (ver middlewares/puedeModerar.js).
 // =============================================================================
 const EstadoModel = require("./EstadoModel");
 const SalasModel = require("./SalasModel");
@@ -18,7 +19,7 @@ class ModeracionModel {
   }
 
   // Devuelve { status, ok, error? } — el status lo usa el controller
-  static async expulsar({ sala = null, salas = [] } = {}, { claveSala, id, motivo, banear } = {}) {
+  static async expulsar({ sala = null, salas = [] } = {}, { claveSala, id, motivo, banear, autorizacion } = {}) {
     if (!Number.isInteger(id)) return { status: 400, ok: false, error: "Falta el id del jugador" };
     const razon = String(motivo || ModeracionModel.motivoPorDefecto(banear)).slice(0, MOTIVO_MAXIMO);
 
@@ -26,7 +27,7 @@ class ModeracionModel {
     if (salas.length) {
       const remota = SalasModel.buscar(salas, claveSala);
       if (!remota) return { status: 404, ok: false, error: "sala no encontrada" };
-      return ModeracionModel.reenviar(remota, { id, motivo: razon }, banear);
+      return ModeracionModel.reenviar(remota, { id, motivo: razon }, banear, autorizacion);
     }
 
     if (!sala) return { status: 404, ok: false, error: "Esta instancia no maneja ninguna sala" };
@@ -38,11 +39,11 @@ class ModeracionModel {
     }
   }
 
-  static async reenviar(remota, cuerpo, banear) {
+  static async reenviar(remota, cuerpo, banear, autorizacion) {
     try {
       const respuesta = await fetch(`${remota.url}/api/${banear ? "ban" : "kick"}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: Object.assign({ "Content-Type": "application/json" }, autorizacion ? { Authorization: autorizacion } : {}),
         body: JSON.stringify(cuerpo),
       });
       const texto = await respuesta.text();

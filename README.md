@@ -498,6 +498,27 @@ Arriba de todo en la portada pasan las imágenes que se cargan desde el panel, e
 La imagen se guarda en la base (`imagenes_carrusel`). La portada la ve cualquiera, con o sin
 cuenta. El ranking de la portada va de a 10 jugadores por página, con buscador.
 
+## 🛠️ Ajustes de la web (solo el OWNER)
+
+En el panel, la sección **Ajustes** tiene los interruptores de lo que se le pide a la gente para
+crear su cuenta. Solo los ve y los cambia el OWNER, y se aplican al instante:
+
+| Interruptor | Para qué |
+|---|---|
+| Pedir el código por correo | Apagalo si el correo deja de andar: la cuenta se crea sin confirmar la dirección |
+| Revisar que el correo exista | Apaga el control de las reglas de Gmail y del dominio |
+| Pedir correo electrónico | Apagado, se puede crear la cuenta sin correo (después no se puede recuperar) |
+| Dejar crear cuentas nuevas | Apagado, nadie se registra; los que ya tienen cuenta entran igual |
+
+## 👮 Quién puede expulsar y banear
+
+El panel de **Salas** (ver quién está conectado en cada sala) y el botón de **expulsar** los tienen
+OWNER, CO-OWNER, HOSTER y **AYUDANTE**. **Banear** lo pueden todos esos **menos el AYUDANTE**: el
+botón ni le aparece, y si lo intenta por otro lado, el servidor lo rechaza.
+
+El AYUDANTE también entra a **Configuración** y **Carrusel**. Lo único que no puede es **banear**,
+ni entrar a Rangos, Usuarios o Ajustes.
+
 ## ⚙️ Configuración de las salas
 
 En el panel, la sección **Configuración** deja cambiar los parámetros de juego de cada sala y
@@ -653,6 +674,26 @@ npm run prueba-mapas     # HaxBall los valida
 ```
 
 Para ver un mapa sin abrir una sala: `node pruebas/render.js mapas/nanduti-futsal-x3.hbs vista.png`
+
+## 🪙 Monedas
+
+Cada cuenta tiene sus **monedas**, que se ganan jugando. **Solo cobra el equipo que gana el
+partido**: si perdés o empatás no se suma nada, aunque hayas hecho goles.
+
+| Por | Ganás | Máximo por partido |
+|---|---|---|
+| Ganar el partido | 1 moneda | — |
+| Cada gol | 1 moneda | 3 (el hat-trick es el tope) |
+| Cada asistencia | 1 moneda | 3 |
+| Cada atajada del arquero | 0,30 monedas | 3 |
+
+Al terminar el partido, **a cada uno le llega en privado** lo que ganó y cuánto le quedó; el resto
+solo ve el aviso general. En la sala, `!monedas` te dice tu saldo.
+
+Las monedas se ven en la **portada** ("Tus monedas", con los últimos movimientos) y en **Mi cuenta →
+Monedas**, con todo el historial: cuándo, por qué y el saldo que quedó.
+
+Solo suman las cuentas de la web que pusieron su `!clave` en la sala, igual que el ELO.
 
 ## 📊 ELO y divisiones
 

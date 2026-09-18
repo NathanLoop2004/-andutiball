@@ -53,12 +53,24 @@ const json = (cuerpo, token) => ({
     encarpetado.every((f) => fs.existsSync(path.join(__dirname, "..", f))), encarpetado.length + " archivos");
 
   const panel = await pedir(web.url + "/frm/panel");
-  revisar("El panel pide ser admin antes de mostrarse", /exigirAdmin/.test(panel.datos), "candado puesto");
+  revisar("El panel pide sesión antes de mostrarse", /exigirSalas/.test(panel.datos), "candado puesto");
 
   console.log("\n🔐 Sesión:\n");
   if (!(await hayBase())) {
     console.log("  ⏭️  La base no está levantada, salteamos el registro. 👉 npm run base\n");
   } else {
+    // Los ajustes de la web los cambia el OWNER en vivo: para probar, se fijan los de fábrica
+    // y al final quedan como estaban (si no, la prueba depende de cómo esté el sitio hoy).
+    const AjustesModel = require("../models/AjustesModel");
+    const ajustesAntes = await base().ajuste.findMany();
+    for (const a of AjustesModel.CATALOGO) await AjustesModel.guardar(a.clave, a.porDefecto, null);
+    AjustesModel.olvidarCache();
+    const dejarLosAjustesComoEstaban = async () => {
+      await base().ajuste.deleteMany({});
+      for (const a of ajustesAntes) await base().ajuste.create({ data: { clave: a.clave, valor: a.valor, cambiadoPor: a.cambiadoPor, cambiado: a.cambiado } });
+      AjustesModel.olvidarCache();
+    };
+
     const nick = "Web" + Date.now();
     const clave = "clave1234";
 
@@ -150,6 +162,37 @@ const json = (cuerpo, token) => ({
       const comoOwner = await pedir(web.url + "/api/auth/entrar", json({ nick, clave }));
       revisar("Con rango de OWNER entra como admin", comoOwner.datos.usuario.admin === true, comoOwner.datos.usuario.rango);
       revisar("El token también lo dice", SesionModel.leerToken(comoOwner.datos.token).admin === true);
+
+      // ── Ajustes de la web: solo el OWNER, y el registro los respeta ──
+      const AjustesModel = require("../models/AjustesModel");
+      const tokenOwner = comoOwner.datos.token;
+      const sinSesion = await pedir(web.url + "/api/ajustes");
+      revisar("Los ajustes piden sesión", sinSesion.status === 401, sinSesion.datos.error);
+      const tokenJugador = SesionModel.firmar({ nick: "SinRango" + Date.now(), admin: false });
+      const comoJugador = await pedir(web.url + "/api/ajustes", { headers: { Authorization: "Bearer " + tokenJugador } });
+      revisar("Un jugador no puede ver los ajustes", comoJugador.status === 403, comoJugador.datos.error);
+      const lista = await pedir(web.url + "/api/ajustes", { headers: { Authorization: "Bearer " + tokenOwner } });
+      revisar("El OWNER ve los ajustes", lista.status === 200 && lista.datos.ajustes.some((a) => a.clave === "pedirCodigoDeCorreo"), (lista.datos.ajustes || []).length + " ajustes");
+
+      const publicos = await pedir(web.url + "/api/ajustes/publicos");
+      revisar("La pantalla de registro puede saber qué se pide", publicos.status === 200 && publicos.datos.pedirCodigoDeCorreo === true);
+
+      try {
+        const apagar = await pedir(web.url + "/api/ajustes/pedirCodigoDeCorreo", { method: "PUT", headers: { "Content-Type": "application/json", Authorization: "Bearer " + tokenOwner }, body: JSON.stringify({ valor: false }) });
+        revisar("El OWNER puede apagar el código por correo", apagar.status === 200 && apagar.datos.valor === false, apagar.datos.error);
+
+        const nickSinCodigo = "WebSinCodigo" + Date.now();
+        const sinCodigo = await pedir(web.url + "/api/auth/registrar", json({ nick: nickSinCodigo, clave, email: nickSinCodigo.toLowerCase() + "@prueba.nanduti" }));
+        revisar("Con el código apagado, la cuenta se crea sin código", sinCodigo.status === 201 && Boolean(sinCodigo.datos.token), sinCodigo.datos.error);
+        await base().usuario.deleteMany({ where: { nick: nickSinCodigo } });
+
+        const otroJugador = await pedir(web.url + "/api/ajustes/pedirCodigoDeCorreo", { method: "PUT", headers: { "Content-Type": "application/json", Authorization: "Bearer " + tokenJugador }, body: JSON.stringify({ valor: true }) });
+        revisar("Un jugador no puede cambiar los ajustes", otroJugador.status === 403, otroJugador.datos.error);
+      } finally {
+        await AjustesModel.guardar("pedirCodigoDeCorreo", true, null);   // queda como estaba
+        AjustesModel.olvidarCache();
+      }
+      revisar("Volver al valor de fábrica no deja nada guardado", (await base().ajuste.findMany()).length === 0);
     } finally {
       await RangoModel.quitarNick(nick);   // la tabla queda como estaba
     }
@@ -289,6 +332,7 @@ const json = (cuerpo, token) => ({
     }
 
     await base().usuario.delete({ where: { nick } });
+    await dejarLosAjustesComoEstaban();
   }
 
   web.servidor.close();

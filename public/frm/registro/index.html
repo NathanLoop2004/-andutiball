@@ -92,12 +92,30 @@ $("otroCodigo").onclick = async (evento) => {
   try { await pedirCodigo(); } catch (error) { avisar("mal", error.message); }
 };
 
+// El OWNER puede apagar el código por correo (y hasta el correo) desde Ajustes
+let ajustes = { pedirCodigoDeCorreo: true, pedirCorreo: true, permitirRegistro: true };
+fetch("/api/ajustes/publicos")
+  .then((r) => r.json())
+  .then((r) => {
+    if (!r || !r.ok) return;
+    ajustes = r;
+    if (!ajustes.pedirCorreo) {
+      $("email").required = false;
+      $("email").closest(".campo").querySelector(".nota-campo").textContent = "Opcional, pero sin correo no vas a poder recuperar la cuenta.";
+    }
+    if (!ajustes.permitirRegistro) {
+      $("crear").disabled = true;
+      avisar("mal", "Por ahora no se pueden crear cuentas nuevas. Probá más tarde.");
+    }
+  })
+  .catch(() => {});
+
 $("formulario").onsubmit = async (evento) => {
   evento.preventDefault();
   if ($("clave").value !== $("clave2").value) return avisar("mal", "Las dos contraseñas tienen que ser iguales.");
   $("crear").disabled = true;
   try {
-    if ($("pasoCodigo").hidden) {
+    if (ajustes.pedirCodigoDeCorreo && $("pasoCodigo").hidden) {
       await pedirCodigo();
     } else {
       avisar("info", "Creando tu cuenta…");

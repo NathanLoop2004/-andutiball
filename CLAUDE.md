@@ -22,7 +22,7 @@ Contexto para trabajar en este proyecto. La documentación para personas está e
 - `services/`: la conexión a la base por entorno y los webhooks (actualizaciones, link de la web).
 - `prisma/` + `docker-compose.base.yml`: las tablas y la base, que va **aparte** de las salas.
 - `tunel.js`, `actualizacion.js`, `sembrar.js`: los comandos sueltos (túnel de Cloudflare, novedades, sembrar la base).
-- `pruebas/`: 22 pruebas que corren sin gastar tokens (ver “Probar sin gastar tokens”).
+- `pruebas/`: 23 pruebas que corren sin gastar tokens (ver “Probar sin gastar tokens”).
 
 ## Despliegue (launcher.js)
 
@@ -248,10 +248,20 @@ lo que crea.
 
 | Sección | Quién | Dónde se controla |
 |---|---|---|
-| Salas | rangos con admin | `Sesion.exigirAdmin()` (la API de salas sigue abierta) |
+| Salas (ver quién está y **expulsar**) | rangos con admin + OWNER, CO-OWNER, HOSTER, AYUDANTE | `Sesion.exigirSalas()` + `middlewares/puedeModerar.js` |
+| **Banear** | OWNER, CO-OWNER, HOSTER (el AYUDANTE **no**) | `puedeModerar({ banear: true })` |
+| Ajustes de la web | OWNER | `middlewares/soloOwner.js` |
 | Configuración, Carrusel | OWNER, CO-OWNER, HOSTER, AYUDANTE | `middlewares/puedeConfigurar.js` |
 | **Rangos** | **OWNER y CO-OWNER** | `middlewares/puedeVerRangos.js` (`GET|POST /api/rangos`, `GET /api/rangos/usuarios`) |
 | Usuarios | OWNER | `middlewares/soloOwner.js` |
+
+**Moderación (17/09/2026).** `/api/kick` y `/api/ban` **ya piden sesión** (eran la única parte
+abierta del panel). `lib/permisos.js` → `puedeExpulsar` (OWNER, CO-OWNER, HOSTER, AYUDANTE) y
+`puedeBanear` (los mismos menos AYUDANTE). El AYUDANTE entra al panel de Salas aunque su rango no
+dé admin en HaxBall (son cosas distintas: admin de sala ≠ permiso del panel) y no ve el botón de
+banear. El panel **reenvía el mismo `Authorization`** a la sala (`ModeracionModel.reenviar`), así
+la sala vuelve a revisar el rango: protegerlo en un solo lado no alcanzaba, porque las dos puntas
+usan el mismo `app.js`. La ficha de sesión trae `modera` y `banea`.
 
 Todos vuelven a mirar el rango en la tabla en cada pedido. La ficha de sesión trae `admin`,
 `configura`, `rangos` y `owner`, y `Sesion.pintarNavAdmin()` muestra solo lo que corresponde. En
@@ -279,6 +289,27 @@ oscuro, hay que cambiarlo en los dos lugares.
 
 La pantalla de rangos ya no tiene el recuadro "Clave para jugar": los rangos no piden clave
 desde que salen de la base, y el POST sin `clave` conserva la que haya.
+
+## Ajustes de la web (solo OWNER)
+
+Pantalla `public/frm/ajustes/` + tabla `ajustes` (migración `20260917220000_ajustes`,
+`models/AjustesModel.js`). Son interruptores para apagar cosas cuando algo de afuera se rompe —
+nacieron porque Gmail bloqueó la cuenta y nadie podía registrarse:
+
+| Clave | De fábrica | Qué apaga |
+|---|---|---|
+| `pedirCodigoDeCorreo` | true | El código de 6 números al crear la cuenta |
+| `revisarQueExistaElCorreo` | true | Las reglas de Gmail y el MX del dominio (`lib/correos.js`) |
+| `pedirCorreo` | true | Que el correo sea obligatorio |
+| `permitirRegistro` | true | Crear cuentas nuevas (los que ya tienen entran igual) |
+
+Igual que los parámetros de las salas: en la tabla **solo queda lo que se cambió**. `valores()`
+cachea 10 s y, si la base está apagada, devuelve los de fábrica (la web no se cae). `RegistroModel`
+los mira en `revisarDatos()`. La pantalla de registro lee `GET /api/ajustes/publicos` (sin sesión)
+y se adapta sola. `GET|PUT /api/ajustes` van con `soloOwner`.
+
+**Ojo en las pruebas**: `prueba-web` los pone en fábrica y los deja como estaban al final. Si se
+corta a la mitad, quedan los de fábrica.
 
 ## Rangos: manda la tabla (contra las inyecciones)
 
@@ -919,6 +950,41 @@ API: `GET /api/elo`. El panel lo muestra en la pestaña **ELO** (también viene 
 
 `npm run prueba-elo` corre el cálculo (`pruebas/elo.js`) y el circuito completo (`pruebas/elo-integracion.js`, con `ELO_FILE` a un archivo temporal para no pisar la tabla real).
 
+## Monedas (🪙)
+
+Tablas `monedas` (nick → saldo) y `movimientos_monedas` (el historial), migración
+`20260918090000_monedas`. **El saldo va en CENTÉSIMAS** (1 moneda = 100) para que 0,30 no arrastre
+decimales rotos; `MonedasModel.enMonedas()` lo pasa a monedas y `aCentesimas()` al revés.
+
+**Solo cobra el equipo que GANA**, y solo quien tiene cuenta en la web con la clave puesta (el
+mismo filtro del ELO, `EloSalasModel.conCuenta`):
+
+| Por | Paga | Tope por partido |
+|---|---|---|
+| Ganar el partido | 1 | — |
+| Cada gol | 1 | 3 (el hat-trick) |
+| Cada asistencia | 1 | 3 |
+| Cada atajada | 0,30 | 3 |
+
+`MonedasModel.calcular()` hace la cuenta (sin base) y `porPartido()` la guarda con su movimiento.
+`acreditar()` sirve también para gastar (monto negativo) y **no deja saldo negativo**.
+
+**Las atajadas las cuenta el bloque `🪙 MONEDAS`** (`parches/bloques/monedas.txt`): el script del
+autor no las lleva. Es atajada cuando la pelota va al arco (`xspeed` ≥ `VelocidadParaAtajada` y
+`|x|` ≥ `DistanciaAlArcoParaAtajada`) y la toca el arquero del equipo que defiende (el suyo más
+cerca de su arco). No se cuentan dos seguidas del mismo (`SegundosEntreAtajadas`) y, si el gol entra
+igual en 1,2 s, se descuenta. Rojo defiende la x negativa y azul la positiva.
+
+El evento `elo-partido` ahora lleva también `asistencias` (del `playerAssists` del autor) y
+`atajadas`. El launcher, después de guardar el partido, llama a `repartirMonedas()` y le manda a la
+página `window.__monedasAviso(premios)`: **el detalle de lo que ganó cada uno va en privado** (a su
+id) y solo el aviso general sale para todos. `refrescarMonedas()` deja `window.__MONEDAS` para que
+`!monedas` conteste sin tocar la base.
+
+En la web: `CuentaModel.ficha` trae `monedas`, `ganadas`, `gastadas` e `historial`; la portada
+muestra "Tus monedas" con los últimos 5 movimientos y **Mi cuenta** tiene la sección Monedas con
+la tabla completa. `npm run prueba-monedas` cubre el reparto, la sala y la base.
+
 ## Sin límite de espectadores
 
 Dos parches, porque el script original echaba gente que solo miraba:
@@ -933,7 +999,7 @@ El cupo de las 4 salas es 30 (`CantidadDeJugadores` en `hosts/*.json`), el máxi
 
 ## Probar sin gastar tokens
 
-Son 22 y **todas tienen que quedar en verde antes de commitear**:
+Son 23 y **todas tienen que quedar en verde antes de commitear**:
 
 | Comando | Qué mira |
 |---|---|
@@ -959,6 +1025,7 @@ Son 22 y **todas tienen que quedar en verde antes de commitear**:
 | `prueba-carrusel` | Las imágenes del carrusel: archivos seguros, portada pública y panel con permisos |
 | `prueba-elo-salas` | ELO por sala: tablas separadas, el procedimiento del general y el modo sin base |
 | `prueba-discord-vincular` | Vincular Discord: autorizar, entrar al servidor, sin guardar tokens |
+| `prueba-monedas` | Las monedas: paga solo el que gana, los topes, las atajadas y el historial |
 
 Las que hablan con la base **no fallan si está apagada**: avisan y saltean esa parte.
 
@@ -1030,7 +1097,7 @@ Cosas que costaron encontrar y conviene no volver a pisar:
 
 1. Tocar los **bloques** en `parches/bloques/` (nunca el final de `script.js` a mano) y correr
    `npm run parchar`.
-2. `node --check script.js` y las **22 pruebas en verde**. No commitear con una en rojo: ya pasó
+2. `node --check script.js` y las **23 pruebas en verde**. No commitear con una en rojo: ya pasó
    una vez de pushear con `prueba-discord` fallando.
 3. Actualizar `README.md` (para la gente) y este archivo (para el que siga programando).
 4. Commit y push.

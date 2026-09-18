@@ -13,7 +13,7 @@
 <script src="/js/sesion.js"></script>
 </head>
 <body>
-<script>if (!Sesion.exigirAdmin()) { document.documentElement.innerHTML = ""; } else { Sesion.mantener(); }</script>
+<script>if (!Sesion.exigirSalas()) { document.documentElement.innerHTML = ""; } else { Sesion.mantener(); }</script>
 
 <header class="barra ancha">
   <a class="marca" href="/"><img src="/img/logo.svg" alt=""><span>ÑandutíBall</span></a>
@@ -158,13 +158,14 @@ function abrirMenuBolita(elemento, idJugador, nombre) {
   const rect = elemento.getBoundingClientRect();
   const menu = document.createElement("div");
   menu.className = "menu-bolita";
-  menu.innerHTML = `<button class="boton chico">Expulsar</button><button class="boton chico peligro">Banear</button>`;
+  const puedeBanear = (Sesion.usuario() || {}).banea;
+  menu.innerHTML = `<button class="boton chico">Expulsar</button>` + (puedeBanear ? `<button class="boton chico peligro">Banear</button>` : "");
   menu.style.left = Math.min(rect.left, window.innerWidth - 200) + "px";
   menu.style.top = rect.bottom + 6 + "px";
   document.body.appendChild(menu);
   const [btnKick, btnBan] = menu.querySelectorAll("button");
   btnKick.addEventListener("click", () => { menu.remove(); ejecutarAccion("kick", idJugador, nombre); });
-  btnBan.addEventListener("click", () => { menu.remove(); ejecutarAccion("ban", idJugador, nombre); });
+  if (btnBan) btnBan.addEventListener("click", () => { menu.remove(); ejecutarAccion("ban", idJugador, nombre); });
   setTimeout(() => document.addEventListener("click", () => menu.remove(), { once: true }), 0);
 }
 
@@ -188,7 +189,7 @@ function contenido(vista, e) {
     if (!e.jugadores.length) return `<div class="vacio">Todavía no hay nadie en la sala.</div>`;
     const pintar = (j, clase) => {
       const inicial = esc(Sesion.inicial(j.nombre).toUpperCase());
-      return `<div class="bolita" data-jugador="${j.id}" data-nombre="${esc(j.nombre)}" title="Clic para expulsar o banear a ${esc(j.nombre)}">
+      return `<div class="bolita" data-jugador="${j.id}" data-nombre="${esc(j.nombre)}" title="Clic para expulsar${(Sesion.usuario() || {}).banea ? " o banear" : ""} a ${esc(j.nombre)}">
         <div class="circulo ${clase}">${inicial}${j.admin ? '<span class="corona" title="Admin">★</span>' : ""}</div>
         <div class="nombre">${nombreConElo(j)}</div>
       </div>`;
@@ -223,7 +224,7 @@ function contenido(vista, e) {
           <td>${j.admin ? '<span class="etiqueta pendiente">admin</span>' : ""}</td>
           <td class="der"><div class="acciones" style="justify-content:flex-end">
             <button class="boton chico" data-accion="kick" data-jugador="${j.id}" data-nombre="${esc(j.nombre)}">Expulsar</button>
-            <button class="boton chico peligro" data-accion="ban" data-jugador="${j.id}" data-nombre="${esc(j.nombre)}">Banear</button>
+            ${(Sesion.usuario() || {}).banea ? `<button class="boton chico peligro" data-accion="ban" data-jugador="${j.id}" data-nombre="${esc(j.nombre)}">Banear</button>` : ""}
           </div></td></tr>`).join("")}</tbody></table>`;
   }
 

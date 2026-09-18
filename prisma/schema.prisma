@@ -277,3 +277,41 @@ model EloGeneral {
   @@index([elo])
   @@map("elo_general")
 }
+
+// Ajustes generales de la web: los cambia solo el OWNER (ver models/AjustesModel.js).
+// Solo se guarda lo que se cambió; el resto sale del catálogo.
+model Ajuste {
+  clave       String   @id
+  valor       Json
+  cambiadoPor String?
+  cambiado    DateTime @default(now())
+
+  @@map("ajustes")
+}
+
+// Las monedas de cada cuenta. El saldo va en CENTÉSIMAS (1 moneda = 100), así 0,30 no se rompe.
+model Monedas {
+  nick        String   @id
+  saldo       Int      @default(0)
+  ganadas     Int      @default(0)
+  gastadas    Int      @default(0)
+  actualizado DateTime @default(now())
+
+  @@map("monedas")
+}
+
+// Cada suma o resta de monedas, para poder mostrar el historial
+model MovimientoMonedas {
+  id           Int      @id @default(autoincrement())
+  nick         String
+  monto        Int
+  motivo       String
+  detalle      String?
+  sala         String?
+  partidoId    Int?
+  saldoDespues Int
+  creado       DateTime @default(now())
+
+  @@index([nick, creado])
+  @@map("movimientos_monedas")
+}

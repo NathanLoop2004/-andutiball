@@ -44,7 +44,7 @@ async function rangoDe(nick) {
 
 // El OWNER es el único que ve la pantalla de usuarios
 // Se compara la palabra del rango, sin emojis (ver lib/permisos.js)
-const { esOwner, puedeConfigurar, puedeVerRangos } = require("../lib/permisos");
+const { esOwner, puedeConfigurar, puedeVerRangos, puedeExpulsar, puedeBanear } = require("../lib/permisos");
 
 class SesionModel {
   static esOwner = esOwner;
@@ -68,6 +68,8 @@ class SesionModel {
       owner: esOwner(rango),
       configura: puedeConfigurar(rango),   // puede tocar los parámetros de las salas
       rangos: puedeVerRangos(rango),       // puede ver y cambiar los rangos (OWNER y CO-OWNER)
+      modera: puedeExpulsar(rango),        // ve las salas y puede expulsar (incluye AYUDANTE)
+      banea: puedeBanear(rango),           // además puede banear (el AYUDANTE no)
     };
   }
 
@@ -108,9 +110,9 @@ class SesionModel {
   }
 
   // En la web el correo es obligatorio y tiene que ser real: primero se pide un código
-  // (RegistroModel.pedirCodigo) y la cuenta se crea recién con ese código.
+  // (RegistroModel.pedirCodigo) y la cuenta se crea recién con ese código. Qué se pide lo decide
+  // el OWNER en Ajustes (AjustesModel): puede apagar el código o el correo si algo no anda.
   static async registrar({ nick, clave, email, codigo }) {
-    UsuarioModel.revisarEmail(email);
     await require("./RegistroModel").confirmar({ nick, clave, email, codigo });
     const usuario = await UsuarioModel.buscarPorNick(nick);
     const ficha = await SesionModel.fichaDe(usuario);

@@ -13,6 +13,7 @@ class ModeracionController {
         id,
         motivo,
         banear,
+        autorizacion: req.headers.authorization,   // el panel se lo reenvía a la sala
       });
       res.status(status).json(resto);
     } catch (error) { next(error); }

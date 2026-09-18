@@ -1,0 +1,135 @@
+
+
+// ▇▇▇▇▇▇▇▇▇ 🪙 MONEDAS — ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// Las monedas se ganan jugando y se guardan en la cuenta de la web (Node las suma: ver
+// models/MonedasModel.js). Acá adentro solo hacemos dos cosas:
+//
+//   1. Contar las ATAJADAS del arquero, que el script del autor no lleva. Es una atajada cuando
+//      la pelota va al arco (rápido y cerca) y la toca el arquero del equipo que defiende: el de
+//      ese equipo que está más atrás. Si igual entra el gol en el próximo segundo, no cuenta.
+//   2. Avisarle a cada uno lo que ganó, EN PRIVADO (lo de ganar el partido sí sale para todos).
+//
+// El reparto (solo para el equipo que gana, y solo cuentas de la web con la clave puesta):
+//   🏆 ganar 1 · ⚽ gol 1 (hasta 3) · 🅰️ asistencia 1 (hasta 3) · 🧤 atajada 0,30 (hasta 3)
+
+var ContarAtajadas = true;
+var VelocidadParaAtajada = 3;            // qué tan fuerte tiene que ir la pelota al arco
+var DistanciaAlArcoParaAtajada = 250;    // qué tan cerca del arco (en x) tiene que estar
+var SegundosEntreAtajadas = 2;           // no se cuentan dos atajadas seguidas del mismo arquero
+var atajadasDelPartido = {};             // nombre → cuántas atajó en este partido
+var ultimaAtajada = null;                // { nombre, equipo, cuando }: por si el gol entra igual
+
+function sumarAtajada(nombre, equipo) {
+	atajadasDelPartido[nombre] = (atajadasDelPartido[nombre] || 0) + 1;
+	ultimaAtajada = { nombre: nombre, equipo: equipo, cuando: Date.now() };
+}
+
+// El arquero es el del equipo que defiende que está más cerca de su propio arco
+function arqueroDe(equipo) {
+	var suyos = room.getPlayerList().filter(function (j) { return j.team === equipo && j.position; });
+	if (!suyos.length) return null;
+	return suyos.reduce(function (mejor, j) {
+		if (!mejor) return j;
+		return equipo === 1 ? (j.position.x < mejor.position.x ? j : mejor) : (j.position.x > mejor.position.x ? j : mejor);
+	}, null);
+}
+
+function revisarAtajada() {
+	if (!ContarAtajadas) return;
+	var pelota;
+	try { pelota = room.getDiscProperties(0); } catch (e) { return; }
+	if (!pelota || typeof pelota.x !== "number") return;
+
+	// ¿A qué arco va? El rojo defiende la izquierda (x negativo) y el azul la derecha
+	var defiende = 0;
+	if (pelota.xspeed <= -VelocidadParaAtajada && pelota.x <= -DistanciaAlArcoParaAtajada) defiende = 1;
+	else if (pelota.xspeed >= VelocidadParaAtajada && pelota.x >= DistanciaAlArcoParaAtajada) defiende = 2;
+	if (!defiende) return;
+
+	var arquero = arqueroDe(defiende);
+	if (!arquero || arquero.id === 0) return;
+	if (ultimaAtajada && ultimaAtajada.nombre === arquero.name && Date.now() - ultimaAtajada.cuando < SegundosEntreAtajadas * 1000) return;
+
+	var radio = 10;
+	try { radio = room.getPlayerDiscProperties(arquero.id).radius || 15; } catch (e) { radio = 15; }
+	var dx = arquero.position.x - pelota.x;
+	var dy = arquero.position.y - pelota.y;
+	var distancia = Math.sqrt(dx * dx + dy * dy);
+	if (distancia <= radio + (pelota.radius || 6) + 1) sumarAtajada(arquero.name, defiende);
+}
+
+// Lo que Node devuelve después del partido: [{ nombre, total, lineas, saldo }]
+// El aviso de lo que ganó cada uno va SOLO a esa persona.
+function textoMonedas(centesimas) {
+	var valor = Math.round(Number(centesimas || 0)) / 100;
+	var texto = valor.toFixed(2).replace(/\.00$/, "").replace(/(\.\d)0$/, "$1").replace(".", ",");
+	return texto;
+}
+
+var NOMBRES_DE_PREMIO = { ganar: "ganar el partido", gol: "goles", asistencia: "asistencias", atajada: "atajadas" };
+
+window.__monedasAviso = function (lista) {
+	if (!Array.isArray(lista) || !lista.length) return;
+	var jugadores = room.getPlayerList();
+	for (var i = 0; i < lista.length; i++) {
+		var premio = lista[i];
+		var quien = null;
+		for (var j = 0; j < jugadores.length; j++) {
+			if (String(jugadores[j].name).toLowerCase() === String(premio.nombre).toLowerCase()) { quien = jugadores[j]; break; }
+		}
+		if (!quien) continue;   // se fue de la sala: las monedas ya están en su cuenta igual
+		var detalle = (premio.lineas || [])
+			.map(function (l) { return l.motivo === "ganar" ? "🏆 ganar el partido +" + textoMonedas(l.monto) : "⚽ " + l.cantidad + " " + NOMBRES_DE_PREMIO[l.motivo] + " +" + textoMonedas(l.monto); })
+			.join(" · ");
+		room.sendAnnouncement("🪙 Ganaste " + textoMonedas(premio.total) + " monedas — " + detalle, quien.id, 0xFFD100, "bold", 2);
+		if (premio.saldo !== null && premio.saldo !== undefined) {
+			room.sendAnnouncement("   Tenés " + textoMonedas(premio.saldo) + " monedas en tu cuenta de la web.", quien.id, 0x93A1B0, "small", 0);
+		}
+	}
+	room.sendAnnouncement("🪙 Los que ganan el partido se llevan monedas. Miralas en tu cuenta de ÑandutíBall.", null, 0xFFD100, "small", 0);
+};
+
+(function () {
+	var anteriorTick = room.onGameTick;
+	room.onGameTick = function () {
+		if (typeof anteriorTick === "function") anteriorTick();
+		try { revisarAtajada(); } catch (e) {}
+	};
+
+	// Cada partido arranca de cero
+	var anteriorStart = room.onGameStart;
+	room.onGameStart = function (byPlayer) {
+		if (typeof anteriorStart === "function") anteriorStart(byPlayer);
+		atajadasDelPartido = {};
+		ultimaAtajada = null;
+	};
+
+	// Si el gol entra igual justo después, esa no era atajada
+	var anteriorGol = room.onTeamGoal;
+	room.onTeamGoal = function (equipo) {
+		if (ultimaAtajada && ultimaAtajada.equipo !== equipo && Date.now() - ultimaAtajada.cuando < 1200) {
+			var nombre = ultimaAtajada.nombre;
+			if (atajadasDelPartido[nombre]) atajadasDelPartido[nombre]--;
+			ultimaAtajada = null;
+		}
+		if (typeof anteriorGol === "function") return anteriorGol(equipo);
+	};
+
+	// !monedas: lo que tiene en la cuenta (se lo pasa Node en window.__MONEDAS)
+	var anteriorChat = room.onPlayerChat;
+	room.onPlayerChat = function (player, message) {
+		var bajo = String(message).trim().toLowerCase();
+		if (bajo === "!monedas" || bajo === "!plata") {
+			var mias = (window.__MONEDAS || {})[String(player.name).toLowerCase()];
+			if (mias === undefined || mias === null) {
+				room.sendAnnouncement("🪙 Todavía no tenés monedas. Se ganan al ganar un partido: hacé goles, asistencias y atajadas.", player.id, 0xFFD100, "bold", 0);
+			} else {
+				room.sendAnnouncement("🪙 Tenés " + textoMonedas(mias) + " monedas.", player.id, 0xFFD100, "bold", 0);
+			}
+			return false;
+		}
+		return typeof anteriorChat === "function" ? anteriorChat(player, message) : true;
+	};
+
+	console.log("🪙 Monedas: se cuentan las atajadas y se avisa lo que gana cada uno");
+})();

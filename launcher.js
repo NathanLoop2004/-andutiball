@@ -16,6 +16,7 @@ const RangoModel = require("./models/RangoModel");
 const PartidoModel = require("./models/PartidoModel");
 const ConfigModel = require("./models/ConfigModel");
 const EloSalasModel = require("./models/EloSalasModel");
+const MonedasModel = require("./models/MonedasModel");
 const Parametros = require("./lib/parametros");
 const WebhookWeb = require("./services/WebhookWeb");
 const { leerRoles } = require("./lib/roles");
@@ -361,6 +362,37 @@ api.on("error", (error) => {
     }
   };
 
+  // Monedas: solo cobra el equipo que GANA, y solo el que tiene cuenta con su clave puesta.
+  // Lo que ganó cada uno se le avisa EN PRIVADO en la sala (window.__monedasAviso).
+  const repartirMonedas = async (evento, partidoId) => {
+    try {
+      const permitidos = await EloSalasModel.conCuenta(evento);
+      const tieneCuenta = (j) => j.verificado === true && permitidos.has(String(j.nombre || "").trim().toLowerCase());
+      const premios = await MonedasModel.porPartido(evento, { sala: salaElegida || null, partidoId, puedeCobrar: tieneCuenta });
+      if (!premios.length) return;
+      const resumen = premios.map((p) => `${p.nombre} +${MonedasModel.enMonedas(p.total)}`).join(" · ");
+      agregarMensaje("monedas", `🪙 Monedas: ${resumen}`);
+      console.log(`🪙 Monedas repartidas — ${resumen}`);
+      await frame.evaluate((lista) => window.__monedasAviso && window.__monedasAviso(lista), premios).catch(() => {});
+      await refrescarMonedas();
+    } catch (error) {
+      console.warn(`⚠️ Las monedas no se repartieron: ${String(error.message).split("\n")[0]}`);
+    }
+  };
+
+  // El saldo de los que están en la sala, para que !monedas conteste sin consultar la base
+  const refrescarMonedas = async () => {
+    try {
+      const jugadores = await frame.evaluate(() => (window.__sala ? window.__sala.getPlayerList().map((j) => j.name) : []));
+      if (!jugadores || !jugadores.length) return;
+      const saldos = {};
+      for (const nombre of jugadores) saldos[String(nombre).toLowerCase()] = await MonedasModel.saldo(nombre);
+      await frame.evaluate((d) => { window.__MONEDAS = d; }, saldos);
+    } catch (error) {
+      // Sin base no pasa nada: !monedas contesta que todavía no tiene monedas
+    }
+  };
+
   // Resultado de un partido: actualiza el ELO, lo guarda y le devuelve la tabla a la sala
   // Cada partido mueve SOLO el ELO de esta sala (tabla elo_<sala>); el general lo recalcula el
   // procedimiento actualizar_elo_general() de la base (ver models/EloSalasModel.js). Sin base, lo
@@ -410,7 +442,10 @@ api.on("error", (error) => {
 
     // Y a la base: usuarios, partido y participaciones. Si está apagada, queda solo en elo.json
     PartidoModel.guardar(evento, cambiosSala, { clave: salaElegida || "sala", nombre: hostConfig.NombreHost || salaElegida || "sala" }, eloGeneral)
-      .then((p) => p && console.log(`💾 Partido #${p.id} guardado en la base`))
+      .then((p) => {
+        if (p) console.log(`💾 Partido #${p.id} guardado en la base`);
+        return repartirMonedas(evento, p ? p.id : null);
+      })
       .catch((error) => console.warn(`⚠️ El partido no se guardó en la base: ${String(error.message).split("\n")[0]}`));
 
     // Los que cambiaron de división se anuncian en la sala

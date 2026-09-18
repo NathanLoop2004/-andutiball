@@ -39,6 +39,7 @@
         <span class="tenue" id="ladoRango" style="font-size:13px"></span>
         <nav>
           <a href="#perfil" class="activo">Perfil</a>
+          <a href="#monedas">Monedas</a>
           <a href="#discord">Discord</a>
           <a href="#seguridad">Contraseña</a>
           <a href="/">Mi ELO y ranking</a>
@@ -60,6 +61,16 @@
             <dt>Miembro desde</dt><dd id="datoDesde">…</dd>
             <dt>Último cambio de contraseña</dt><dd id="datoClave">…</dd>
           </dl>
+        </div>
+      </section>
+
+      <!-- Monedas: se ganan jugando (ver models/MonedasModel.js) -->
+      <section class="tarjeta" id="monedas">
+        <div class="tarjeta-cabeza"><h2>Monedas</h2><span class="etiqueta" id="saldoMonedas">…</span></div>
+        <div class="tarjeta-cuerpo">
+          <p class="tenue">Se ganan cuando <b>ganás el partido</b>: 1 moneda por ganar, 1 por cada gol y 1 por cada
+            asistencia (hasta 3 de cada uno) y 0,30 por cada atajada. Si perdés o empatás, no se suma nada.</p>
+          <div id="historialMonedas"></div>
         </div>
       </section>
 
@@ -214,6 +225,22 @@ $("desvincularDiscord").onclick = async () => {
   }
 }
 
+const monedasTexto = (n) => Number(n || 0).toFixed(2).replace(/\.00$/, "").replace(/(\.\d)0$/, "$1").replace(".", ",");
+
+function pintarMonedas() {
+  $("saldoMonedas").textContent = "🪙 " + monedasTexto(cuenta.monedas);
+  const historial = cuenta.historial || [];
+  $("historialMonedas").innerHTML = historial.length
+    ? `<table class="tabla"><thead><tr><th>Cuándo</th><th>Por qué</th><th class="der">Monedas</th><th class="der">Saldo</th></tr></thead><tbody>
+        ${historial.map((m) => `<tr>
+          <td class="tenue">${new Date(m.cuando).toLocaleString("es-PY")}</td>
+          <td>${Sesion.escapar(m.detalle || m.motivo)}${m.sala ? ` <span class="tenue">(${Sesion.escapar(m.sala)})</span>` : ""}</td>
+          <td class="der"><b>${m.monto >= 0 ? "+" : ""}${monedasTexto(m.monto)}</b></td>
+          <td class="der tenue">${monedasTexto(m.saldo)}</td></tr>`).join("")}
+       </tbody></table>`
+    : `<p class="tenue">Todavía no tenés movimientos.</p>`;
+}
+
 function pintarCuenta() {
   const u = Sesion.usuario() || {};
   $("avatar").textContent = Sesion.inicial(cuenta.nick);
@@ -224,6 +251,8 @@ function pintarCuenta() {
   $("datoRango").textContent = u.rango || "Jugador";
   $("datoDesde").textContent = fecha(cuenta.desde);
   $("datoClave").textContent = fecha(cuenta.claveCambiada);
+
+  pintarMonedas();
 
   $("seccionEmail").hidden = Boolean(cuenta.email);
   pintarDiscord();

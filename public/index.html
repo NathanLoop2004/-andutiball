@@ -84,6 +84,11 @@
       <button class="boton discord" type="button" id="vincularDiscordInicio">Vincular con Discord</button>
     </div>
 
+    <div class="seccion-titulo"><h2>Tus monedas</h2></div>
+    <div class="tarjeta" id="misMonedas">
+      <div class="vacio-elo">Cargando…</div>
+    </div>
+
     <div class="seccion-titulo"><h2>Tu ELO general</h2><span id="miPuesto"></span></div>
     <div class="tarjeta" id="miElo">
       <div class="vacio-elo">Cargando…</div>
@@ -363,6 +368,22 @@ function pintarEloSalas(lista) {
   ).join("");
 }
 
+// Las monedas se ganan al GANAR un partido: 1 por el partido, 1 por gol y por asistencia
+// (hasta 3 de cada uno) y 0,30 por atajada.
+const monedasTexto = (n) => Number(n || 0).toFixed(2).replace(/\.00$/, "").replace(/(\.\d)0$/, "$1").replace(".", ",");
+
+function pintarMisMonedas(cuenta) {
+  const historial = (cuenta.historial || []).slice(0, 5);
+  $("misMonedas").innerHTML = `
+    <div class="tarjeta-cuerpo">
+      <div class="monedas-saldo"><span class="monedas-numero">🪙 ${monedasTexto(cuenta.monedas)}</span>
+        <span class="tenue">ganadas en total: ${monedasTexto(cuenta.ganadas)}</span></div>
+      ${historial.length
+        ? `<ul class="monedas-historial">${historial.map((m) => `<li><b>+${monedasTexto(m.monto)}</b> <span class="tenue">${esc(m.detalle || m.motivo)}</span><small>${new Date(m.cuando).toLocaleDateString("es-PY")}</small></li>`).join("")}</ul>`
+        : `<p class="tenue">Todavía no ganaste monedas. Ganá un partido: te llevás 1 moneda, más 1 por cada gol y asistencia (hasta 3) y 0,30 por atajada.</p>`}
+    </div>`;
+}
+
 async function cargarMiElo() {
   const u = Sesion.usuario();
   $("saludo").textContent = "Hola, " + u.nick;
@@ -370,6 +391,7 @@ async function cargarMiElo() {
   try {
     const { cuenta } = await Sesion.pedir("/api/cuenta");
     pintarMiElo(cuenta.elo);
+    pintarMisMonedas(cuenta);
     $("avisoDiscordInicio").hidden = Boolean(cuenta.discord) || !cuenta.discordDisponible;
     pintarEloSalas(cuenta.eloPorSala);
   } catch (error) {

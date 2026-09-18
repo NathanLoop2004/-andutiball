@@ -5,7 +5,7 @@
 // 1. La sala (sin base): aplica en vivo SOLO lo que cambió, deja los límites para cuando no hay
 //    partido, y corta los comandos apagados antes que el script.
 // 2. El modelo contra la base: validar, guardar, volver al de fábrica, apagar comandos.
-// 3. La API: solo OWNER, CO-OWNER, HOSTER y AYUDANTE.
+// 3. La API: OWNER, CO-OWNER, HOSTER y AYUDANTE (el AYUDANTE configura y expulsa, pero no banea).
 //
 // Si la base no está levantada, hace la parte 1 y saltea las otras.
 
@@ -26,8 +26,12 @@ function revisar(titulo, condicion, detalle) {
   revisar("🗦👑🗧 OWNER es OWNER (antes no lo reconocía por los emojis)", Permisos.esOwner({ nombre: "🗦👑🗧 OWNER" }));
   revisar("OWNER, CO-OWNER, HOSTER y AYUDANTE pueden configurar",
     ["🗦👑🗧 OWNER", "🤝 CO-OWNER", "🌐 HOSTER", "🛠️ AYUDANTE"].every((n) => Permisos.puedeConfigurar({ nombre: n })));
-  revisar("SUBAYUDANTE, COLABORADOR y ASISTENTE no",
-    ["🔧 SUBAYUDANTE", "🧉 COLABORADOR", "💡 ASISTENTE"].every((n) => !Permisos.puedeConfigurar({ nombre: n })));
+  revisar("El AYUDANTE ve las salas, configura y expulsa, pero NO banea",
+    Permisos.puedeExpulsar({ nombre: "🛠️ AYUDANTE" }) && Permisos.puedeConfigurar({ nombre: "🛠️ AYUDANTE" }) && !Permisos.puedeBanear({ nombre: "🛠️ AYUDANTE" }));
+  revisar("El HOSTER sí puede banear, y el OWNER también",
+    Permisos.puedeBanear({ nombre: "🌐 HOSTER" }) && Permisos.puedeBanear({ nombre: "🗦👑🗧 OWNER" }));
+  revisar("SUBAYUDANTE, COLABORADOR y ASISTENTE no tocan nada",
+    ["🔧 SUBAYUDANTE", "🧉 COLABORADOR", "💡 ASISTENTE"].every((n) => !Permisos.puedeConfigurar({ nombre: n }) && !Permisos.puedeExpulsar({ nombre: n })));
 
   // ── 1) La sala ──
   console.log("\n🏟️  En la sala:\n");

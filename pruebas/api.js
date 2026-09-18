@@ -20,7 +20,10 @@ const path = require("path");
 const temporal = fs.mkdtempSync(path.join(os.tmpdir(), "nanduti-api-"));
 process.env.ROLES_FILE = path.join(temporal, "roles.json");
 process.env.ELO_FILE = path.join(temporal, "elo.json");
-fs.writeFileSync(process.env.ROLES_FILE, JSON.stringify({ clave: "secreta", roles: [{ id: "owner", nombre: "OWNER", admin: true, nicks: ["Jinder"] }] }));
+fs.writeFileSync(process.env.ROLES_FILE, JSON.stringify({ clave: "secreta", roles: [
+  { id: "owner", nombre: "OWNER", admin: true, nicks: ["Jinder"] },
+  { id: "ayudante", nombre: "🛠️ AYUDANTE", admin: false, nicks: ["Ayu"] },
+] }));
 fs.writeFileSync(process.env.ELO_FILE, JSON.stringify({ "auth:a1": { nombre: "Ana", puntos: 1300, partidos: 12 } }));
 
 const { crearApp } = require("../app");
@@ -63,6 +66,8 @@ const json = (cuerpo, token) => ({ method: "POST", headers: { "Content-Type": "a
 // Los rangos son solo de OWNER y CO-OWNER: una sesión de Jinder, que es OWNER en el roles.json de prueba
 const tokenOwner = require("../models/SesionModel").firmar({ nick: "Jinder", rango: "OWNER", admin: true });
 const conOwner = { headers: { Authorization: "Bearer " + tokenOwner } };
+// El AYUDANTE ve las salas y expulsa, pero no banea
+const tokenAyudante = require("../models/SesionModel").firmar({ nick: "Ayu", rango: "🛠️ AYUDANTE", admin: false });
 
 (async () => {
   const sala = await escuchar(crearApp({ sala: salaFalsa }));
@@ -85,20 +90,34 @@ const conOwner = { headers: { Authorization: "Bearer " + tokenOwner } };
   r = await pedir(`${sala.url}/api/rangos`, conOwner);
   revisar("GET /api/rangos no filtra la clave", r.status === 200 && r.datos.clave === undefined && r.datos.tieneClave === true, JSON.stringify(Object.keys(r.datos)));
 
-  r = await pedir(`${sala.url}/api/rangos`, json({ roles: [{ id: "owner", nombre: "OWNER", admin: true, nicks: ["Jinder", "Nathan"] }] }, tokenOwner));
+  r = await pedir(`${sala.url}/api/rangos`, json({ roles: [
+    { id: "owner", nombre: "OWNER", admin: true, nicks: ["Jinder", "Nathan"] },
+    { id: "ayudante", nombre: "🛠️ AYUDANTE", admin: false, nicks: ["Ayu"] },
+  ] }, tokenOwner));
   const guardado = JSON.parse(fs.readFileSync(process.env.ROLES_FILE, "utf8"));
   revisar("POST /api/rangos guarda y conserva la clave", r.status === 200 && guardado.clave === "secreta" && guardado.roles[0].nicks.length === 2, `clave=${guardado.clave}`);
 
   r = await pedir(`${sala.url}/api/kick`, json({ id: 1, motivo: "prueba" }));
+  revisar("POST /api/kick sin sesión da 401", r.status === 401, `HTTP ${r.status}`);
+
+  r = await pedir(`${sala.url}/api/kick`, json({ id: 1, motivo: "prueba" }, tokenOwner));
   revisar("POST /api/kick expulsa en la sala", r.status === 200 && r.datos.ok === true && expulsados.length === 1 && expulsados[0].banear === false, JSON.stringify(expulsados[0]));
 
-  r = await pedir(`${sala.url}/api/ban`, json({ id: 2 }));
+  r = await pedir(`${sala.url}/api/ban`, json({ id: 2 }, tokenOwner));
   revisar("POST /api/ban banea con motivo por defecto", r.status === 200 && expulsados[1].banear === true && expulsados[1].motivo === "Baneado desde el panel", expulsados[1]?.motivo);
 
-  r = await pedir(`${sala.url}/api/kick`, json({ motivo: "sin id" }));
+  // El AYUDANTE: expulsa sí, banea no
+  const antesAyu = expulsados.length;
+  r = await pedir(`${sala.url}/api/kick`, json({ id: 3, motivo: "lo echa el ayudante" }, tokenAyudante));
+  revisar("Un AYUDANTE puede expulsar", r.status === 200 && expulsados.length === antesAyu + 1, `HTTP ${r.status}`);
+  r = await pedir(`${sala.url}/api/ban`, json({ id: 3 }, tokenAyudante));
+  revisar("Un AYUDANTE no puede banear", r.status === 403 && /no pueden banear/i.test(r.datos.error || ""), r.datos.error);
+  revisar("Y el ban rechazado no llega a la sala", expulsados.length === antesAyu + 1, expulsados.length + " expulsados");
+
+  r = await pedir(`${sala.url}/api/kick`, json({ motivo: "sin id" }, tokenOwner));
   revisar("POST /api/kick sin id da 400", r.status === 400 && r.datos.ok === false, `HTTP ${r.status} ${r.datos.error}`);
 
-  r = await pedir(`${sala.url}/api/kick`, json({ id: 99 }));
+  r = await pedir(`${sala.url}/api/kick`, json({ id: 99 }, tokenOwner));
   revisar("Si la sala no está lista, 400 con el motivo", r.status === 400 && /todavía no está lista/.test(r.datos.error || ""), r.datos.error);
 
   r = await pedir(`${sala.url}/`);
@@ -119,10 +138,13 @@ const conOwner = { headers: { Authorization: "Bearer " + tokenOwner } };
   revisar("GET /api/estado da 404 (el panel no maneja salas)", r.status === 404, `HTTP ${r.status}`);
 
   const antes = expulsados.length;
-  r = await pedir(`${panel.url}/api/kick/3v3`, json({ id: 7, motivo: "desde el panel" }));
-  revisar("POST /api/kick/3v3 se reenvía a la sala", r.status === 200 && r.datos.ok === true && expulsados.length === antes + 1 && expulsados[antes].id === 7, JSON.stringify(expulsados[antes]));
+  r = await pedir(`${panel.url}/api/kick/3v3`, json({ id: 7, motivo: "desde el panel" }, tokenAyudante));
+  revisar("POST /api/kick/3v3 se reenvía a la sala (con la sesión del que lo pidió)", r.status === 200 && r.datos.ok === true && expulsados.length === antes + 1 && expulsados[antes].id === 7, JSON.stringify(expulsados[antes]));
 
-  r = await pedir(`${panel.url}/api/kick/noexiste`, json({ id: 7 }));
+  r = await pedir(`${panel.url}/api/ban/3v3`, json({ id: 7 }, tokenAyudante));
+  revisar("Y el panel tampoco deja banear al AYUDANTE", r.status === 403, `HTTP ${r.status}`);
+
+  r = await pedir(`${panel.url}/api/kick/noexiste`, json({ id: 7 }, tokenOwner));
   revisar("POST a una sala que no existe da 404", r.status === 404 && /no encontrada/.test(r.datos.error || ""), r.datos.error);
 
   r = await pedir(`${panel.url}/api/rangos`, conOwner);

@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ajustes · ÑandutíBall</title>
+<link rel="icon" href="/img/logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/css/nanduti.css">
+<script src="/js/tema.js"></script>
+<script src="/js/sesion.js"></script>
+<script>if (!Sesion.usuario()) location.replace("/frm/login/?volver=" + encodeURIComponent("/frm/ajustes/"));</script>
+</head>
+<body>
+
+<header class="barra ancha">
+  <a class="marca" href="/"><img src="/img/logo.svg" alt=""><span>ÑandutíBall</span></a>
+  <div class="derecha" id="derecha"></div>
+</header>
+
+<main class="contenido ancho">
+  <div class="cabecera">
+    <div>
+      <h1>Ajustes de la web</h1>
+      <p>Lo que se le pide a la gente para crear su cuenta. Esto lo cambia solo el OWNER.</p>
+    </div>
+  </div>
+
+  <div class="aviso info" style="margin-bottom:16px">
+    Si el correo deja de funcionar, apagá <b>Pedir el código por correo</b>: la gente va a poder
+    crear su cuenta igual. Acordate de volver a prenderlo cuando el correo ande.
+  </div>
+
+  <div id="vista"><div class="tarjeta"><div class="tarjeta-cuerpo tenue">Cargando…</div></div></div>
+  <div class="aviso" id="aviso"></div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (t) => String(t == null ? "" : t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+Sesion.pintarBarra($("derecha"));
+Sesion.pintarNavAdmin("ajustes");
+if (!(Sesion.usuario() || {}).owner) location.replace("/?sinpermiso=1");
+
+function avisar(texto, clase) {
+  $("aviso").className = "aviso" + (texto ? " " + clase : "");
+  $("aviso").textContent = texto;
+  clearTimeout(avisar._t);
+  if (texto && clase !== "mal") avisar._t = setTimeout(() => avisar(""), 4000);
+}
+
+function pintar(ajustes) {
+  const grupos = [...new Set(ajustes.map((a) => a.grupo))];
+  $("vista").innerHTML = grupos.map((grupo) => `
+    <section class="tarjeta" style="margin-bottom:16px">
+      <div class="tarjeta-cabeza"><h2>${esc(grupo)}</h2></div>
+      <div class="tarjeta-cuerpo" style="display:grid;gap:14px">
+        ${ajustes.filter((a) => a.grupo === grupo).map((a) => `
+          <div style="display:flex;gap:14px;align-items:flex-start;justify-content:space-between">
+            <div>
+              <label for="aj-${esc(a.clave)}"><b>${esc(a.etiqueta)}</b></label>
+              <div class="tenue" style="font-size:13px;margin-top:2px">${esc(a.ayuda)}</div>
+              ${a.cambiadoPor ? `<div class="tenue" style="font-size:12px;margin-top:2px">Cambiado por ${esc(a.cambiadoPor)}</div>` : ""}
+            </div>
+            <span class="interruptor">
+              <input type="checkbox" id="aj-${esc(a.clave)}" data-ajuste="${esc(a.clave)}" ${a.valor ? "checked" : ""} aria-label="${esc(a.etiqueta)}">
+              <span></span>
+            </span>
+          </div>`).join("")}
+      </div>
+    </section>`).join("");
+}
+
+async function cargar() {
+  try {
+    const r = await Sesion.pedir("/api/ajustes");
+    pintar(r.ajustes);
+  } catch (error) {
+    if (/iniciar sesión/i.test(error.message)) return location.replace("/frm/login/?volver=" + encodeURIComponent("/frm/ajustes/"));
+    if (/solo para el OWNER/i.test(error.message)) return location.replace("/?sinpermiso=1");
+    $("vista").innerHTML = `<div class="tarjeta"><div class="tarjeta-cuerpo">${esc(error.message)}</div></div>`;
+  }
+}
+
+$("vista").addEventListener("change", async (e) => {
+  const el = e.target.closest("[data-ajuste]");
+  if (!el) return;
+  el.disabled = true;
+  try {
+    await Sesion.pedir("/api/ajustes/" + encodeURIComponent(el.dataset.ajuste), { method: "PUT", body: JSON.stringify({ valor: el.checked }) });
+    avisar("Guardado. Ya está andando.", "ok");
+  } catch (error) {
+    avisar(error.message, "mal");
+    el.checked = !el.checked;
+  }
+  el.disabled = false;
+  cargar();
+});
+
+cargar();
+</script>
+</body>
+</html>

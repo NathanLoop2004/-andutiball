@@ -157,11 +157,11 @@ var CantidadCambiarTamano = 1;
 // ▇▇▇▇▇▇▇ ⚽👕 CAMISETAS POR DEFECTO ⚽👕 ▇▇▇▇▇▇▇
 
 // CAMISETA EQUIPO RED 🔴
-var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
+var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
 var NombreEquipoRojo = "OLIMPIA";
 
 // CAMISETA EQUIPO BLUE 🔵
-var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
+var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
 var NombreEquipoAzul = "CERRO PORTEÑO";
 
 
@@ -20587,8 +20587,11 @@ function avisoPermitido(texto, destino) {
 //
 //   · Al abrir la sala, el launcher ya escribe en el script los valores de la base.
 //   · Después manda cada pocos segundos window.__configSala({ parametros, comandosApagados }).
-//     Acá se aplica SOLO lo que cambió desde la última vez: si un admin usa un comando de la sala
+//     Se aplica lo que cambió desde la última vez: si un admin usa un comando de la sala
 //     (por ejemplo !ganasigue), la base no se lo vuelve a pisar a cada rato.
+//   · Y AL REVÉS: los interruptores de ConfigSincronizada (los que se prenden con un comando,
+//     como !powershot) se GUARDAN en la base cuando alguien los cambia acá adentro. Así la web
+//     muestra lo que pasa de verdad en la sala y las dos puntas quedan iguales.
 //   · Minutos por partido y límite de goles se aplican cuando no hay partido (HaxBall no deja
 //     cambiarlos en pleno juego): si hay uno en curso, quedan para cuando termine.
 //
@@ -20598,6 +20601,11 @@ var ConfigDesdeLaBase = true;
 var configVista = window.__CONFIG_INICIAL && window.__CONFIG_INICIAL.parametros ? JSON.parse(JSON.stringify(window.__CONFIG_INICIAL.parametros)) : null;
 var comandosApagados = window.__CONFIG_INICIAL && Array.isArray(window.__CONFIG_INICIAL.comandosApagados) ? window.__CONFIG_INICIAL.comandosApagados.slice() : [];
 var limitesPendientes = {};   // TiempoDeJuego / LimiteDeGoles esperando que termine el partido
+
+// Los que un admin puede cambiar con un comando adentro de la sala: si los cambia acá, se guardan
+// en la base (los demás los mueve el script solo y no tiene sentido guardarlos).
+var ConfigSincronizada = ["powerShotMode", "combaMode", "GolDeOroActivado", "FairPlayActivado", "cambioCami", "CamisetasGanaSigue", "ModoDeEquipos"];
+var configPorGuardar = {};    // nombre → { valor, hasta }: lo que ya se mandó a guardar
 
 function hayPartidoEnCurso() {
 	try { return room.getScores() !== null; } catch (e) { return false; }
@@ -20658,6 +20666,40 @@ function soltarPowershot() {
 	} catch (e) {}
 }
 
+// Lee el valor que tiene ahora la variable del script (null si no existe)
+function leerParametro(nombre) {
+	if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(nombre)) return null;
+	try { return eval("typeof " + nombre + " === 'undefined' ? null : " + nombre); } catch (e) { return null; }
+}
+
+// ¿Alguien lo cambió acá adentro (con un comando) desde la última vez? Entonces manda la sala y
+// se le avisa al launcher para que lo guarde en la base.
+function guardarCambiosDeLaSala(nuevos) {
+	var ahora = Date.now();
+	for (var i = 0; i < ConfigSincronizada.length; i++) {
+		var nombre = ConfigSincronizada[i];
+		if (!Object.prototype.hasOwnProperty.call(nuevos, nombre)) continue;
+		var actual = leerParametro(nombre);
+		var pendiente = configPorGuardar[nombre];
+		if (pendiente) {
+			// Ya se mandó a guardar: se espera a que la base lo devuelva (o se larga a los 20 s)
+			if (JSON.stringify(nuevos[nombre]) === JSON.stringify(pendiente.valor) || ahora > pendiente.hasta) delete configPorGuardar[nombre];
+			else { nuevos[nombre] = pendiente.valor; configVista[nombre] = pendiente.valor; }
+			continue;
+		}
+		if (JSON.stringify(actual) === JSON.stringify(configVista[nombre])) continue;   // nadie lo tocó acá
+		if (JSON.stringify(nuevos[nombre]) !== JSON.stringify(configVista[nombre])) continue;   // también cambió en la web: manda la web
+		configPorGuardar[nombre] = { valor: actual, hasta: ahora + 20000 };
+		configVista[nombre] = actual;
+		nuevos[nombre] = actual;
+		try {
+			window.__panelCola = window.__panelCola || [];
+			window.__panelCola.push({ tipo: "config-sala", nombre: nombre, valor: actual });
+		} catch (e) {}
+		console.log("⚙️ Cambiado en la sala, se guarda en la base: " + nombre + " = " + JSON.stringify(actual));
+	}
+}
+
 window.__configSala = function (datos) {
 	if (!ConfigDesdeLaBase || !datos) return;
 	if (Array.isArray(datos.comandosApagados)) comandosApagados = datos.comandosApagados.map(function (c) { return String(c).toLowerCase(); });
@@ -20665,6 +20707,8 @@ window.__configSala = function (datos) {
 	var nuevos = datos.parametros || {};
 	// La primera vez sin valores de arranque solo se anota lo que hay: ya está en el script
 	if (!configVista) { configVista = JSON.parse(JSON.stringify(nuevos)); return; }
+
+	guardarCambiosDeLaSala(nuevos);   // lo que se cambió con un comando va a la base
 
 	var cambiados = [];
 	Object.keys(nuevos).forEach(function (nombre) {

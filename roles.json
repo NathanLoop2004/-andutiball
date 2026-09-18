@@ -13,7 +13,9 @@
       "id": "rol2",
       "nombre": "🤝 CO-OWNER",
       "admin": true,
-      "nicks": []
+      "nicks": [
+        "Faxss"
+      ]
     },
     {
       "id": "rol3",
@@ -26,7 +28,9 @@
       "nombre": "🛠️ AYUDANTE",
       "admin": false,
       "nicks": [
-        "rj"
+        "rj",
+        ".!ferzz",
+        "xenoz nakano"
       ]
     },
     {

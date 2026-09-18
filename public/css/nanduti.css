@@ -556,3 +556,11 @@ input[type=number]:focus { outline: none; border-color: var(--acento); box-shado
 .aviso-discord span { font-size: 14px; }
 .discord-celda { display: inline-flex; align-items: center; gap: 8px; }
 .discord-celda img { border-radius: 50%; flex: none; }
+
+/* 🪙 Monedas (portada y Mi cuenta) */
+.monedas-saldo { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.monedas-numero { font-size: 32px; font-weight: 700; color: var(--texto); }
+.monedas-historial { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 8px; }
+.monedas-historial li { display: flex; align-items: baseline; gap: 10px; border-top: 1px solid var(--borde); padding-top: 8px; }
+.monedas-historial li b { color: var(--verde); }
+.monedas-historial li small { margin-left: auto; color: var(--tenue); }

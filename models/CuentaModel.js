@@ -19,6 +19,7 @@ const Correo = require("../services/Correo");
 const Correos = require("../lib/correos");
 const EloModel = require("./EloModel");
 const DiscordModel = require("./DiscordModel");
+const MonedasModel = require("./MonedasModel");
 const { revisarEmail } = require("./UsuarioModel");
 
 const MINUTOS_CODIGO = 10;
@@ -64,6 +65,7 @@ class CuentaModel {
       claveCambiada: u.claveCambiada,
       elo: EloModel.deNick(u.nick),          // el general
       eloPorSala: EloModel.porSala(u.nick),  // [{ sala, nombre, elo }]
+      ...(await MonedasModel.fichaDe(u.nick)),   // monedas, ganadas, gastadas, historial
       discord: u.discordId ? { usuario: u.discordUsuario, avatar: u.discordAvatar, vinculado: u.discordVinculado } : null,
       discordDisponible: DiscordModel.disponible(),
     };

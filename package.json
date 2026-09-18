@@ -45,7 +45,8 @@
     "prueba-config": "node --env-file-if-exists=.env pruebas/config.js",
     "prueba-carrusel": "node --env-file-if-exists=.env pruebas/carrusel.js",
     "prueba-elo-salas": "node --env-file-if-exists=.env pruebas/elo-salas.js",
-    "prueba-discord-vincular": "node --env-file-if-exists=.env pruebas/discord-vincular.js"
+    "prueba-discord-vincular": "node --env-file-if-exists=.env pruebas/discord-vincular.js",
+    "prueba-monedas": "node --env-file-if-exists=.env pruebas/monedas.js"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",

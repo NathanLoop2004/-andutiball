@@ -7,6 +7,9 @@
 //
 // Si el correo no existe, el código nunca llega y la cuenta no se crea.
 //
+// El OWNER puede apagar cada control desde el panel (Ajustes → Crear cuenta): el código por
+// correo, la revisión de que el correo exista, pedir correo, o el registro entero.
+//
 // Lo pendiente vive en memoria (se pierde si se reinicia la web: se pide otro código). Se guarda
 // solo el hash del código, atado al correo y al nick, así no sirve para otra cuenta. La contraseña
 // no se guarda: el navegador la vuelve a mandar al confirmar.
@@ -17,6 +20,7 @@ const claves = require("../lib/claves");
 const Correos = require("../lib/correos");
 const Correo = require("../services/Correo");
 const UsuarioModel = require("./UsuarioModel");
+const AjustesModel = require("./AjustesModel");
 
 const MINUTOS_CODIGO = 10;
 const INTENTOS_MAXIMOS = 5;
@@ -42,24 +46,38 @@ function limpiarVencidos() {
   for (const [correo, p] of pendientes) if (p.vence < ahora) pendientes.delete(correo);
 }
 
-// Lo que tiene que estar bien antes de mandar el código (y otra vez al confirmar)
+// Lo que tiene que estar bien antes de mandar el código (y otra vez al confirmar).
+// Lo que se pide depende de los ajustes que maneja el OWNER (AjustesModel).
 async function revisarDatos({ nick, email, clave }) {
+  const ajustes = await AjustesModel.valores();
+  if (!ajustes.permitirRegistro) throw new Error("Por ahora no se pueden crear cuentas nuevas. Probá más tarde.");
+
   const nombre = String(nick == null ? "" : nick).trim();
   if (!nombre) throw new Error("Falta el nombre");
   claves.revisarClave(clave);
-  const correo = await Correos.revisarQueExista(email);
+
+  let correo = null;
+  if (ajustes.pedirCorreo || String(email || "").trim()) {
+    correo = ajustes.revisarQueExistaElCorreo
+      ? await Correos.revisarQueExista(email)
+      : UsuarioModel.revisarEmail(email);
+  }
 
   const existente = await UsuarioModel.buscarPorNick(nombre);
   if (existente && existente.clave) throw new Error("Ese nombre ya tiene clave");
-  const conEseCorreo = await base().usuario.findUnique({ where: { email: correo } });
-  if (conEseCorreo && conEseCorreo.nick !== nombre) throw new Error("Ese correo ya lo usa otra cuenta");
-  return { nombre, correo };
+  if (correo) {
+    const conEseCorreo = await base().usuario.findUnique({ where: { email: correo } });
+    if (conEseCorreo && conEseCorreo.nick !== nombre) throw new Error("Ese correo ya lo usa otra cuenta");
+  }
+  return { nombre, correo, ajustes };
 }
 
 class RegistroModel {
   static async pedirCodigo({ nick, email, clave }) {
     limpiarVencidos();
-    const { nombre, correo } = await revisarDatos({ nick, email, clave });
+    const { nombre, correo, ajustes } = await revisarDatos({ nick, email, clave });
+    if (!ajustes.pedirCodigoDeCorreo) throw new Error("Ahora mismo la cuenta se crea sin código: probá de nuevo.");
+    if (!correo) throw new Error("Falta el correo electrónico");
 
     const anterior = pendientes.get(correo);
     if (anterior) {
@@ -84,7 +102,12 @@ class RegistroModel {
 
   static async confirmar({ nick, email, clave, codigo }) {
     limpiarVencidos();
-    const { nombre, correo } = await revisarDatos({ nick, email, clave });
+    const { nombre, correo, ajustes } = await revisarDatos({ nick, email, clave });
+    // El OWNER puede apagar el código por correo (por ejemplo, si el correo no anda)
+    if (!ajustes.pedirCodigoDeCorreo) {
+      if (correo) pendientes.delete(correo);
+      return UsuarioModel.registrar({ nick: nombre, clave, email: correo });
+    }
     const limpio = String(codigo || "").replace(/\s+/g, "");
     if (!limpio) throw new Error("Falta el código que te mandamos al correo.");
     if (!/^\d{6}$/.test(limpio)) throw new Error("El código son 6 números.");

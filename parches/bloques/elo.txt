@@ -145,6 +145,8 @@ function jugadoresEnCancha() {
 				golesBlue: marcador.blue,
 				mapa: mapaDelPartido,
 				goles: goles,
+				asistencias: (function () { var a = {}; if (typeof playerAssists !== "undefined") for (var n in playerAssists) a[n] = playerAssists[n]; return a; })(),
+				atajadas: (function () { var a = {}; if (typeof atajadasDelPartido !== "undefined") for (var n in atajadasDelPartido) a[n] = atajadasDelPartido[n]; return a; })(),
 			});
 		}
 		eloDelPartido = null;
