@@ -1,6 +1,6 @@
 
 
-// ▇▇▇▇▇▇▇▇▇ 🔀 MODOS DE EQUIPOS — ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// ▇▇▇▇▇▇▇▇▇ 🔀 MODOS DE EQUIPOS — ÑandutíHax ▇▇▇▇▇▇▇▇▇
 // Tres formas de armar los equipos, que un admin cambia desde el chat:
 //
 //   !ganasigue   El bot arma los equipos y el que gana se queda; el que pierde sale.
@@ -47,13 +47,36 @@ function hayJugadoresDeMas() {
 // Durante un partido no reacomodamos nada (salvo que un admin lo pida): se mueve gente en pleno juego.
 function aplicarModoDeEquipos(forzar) {
 	if (ModoDeEquipos === "config") return;
-	if (!forzar && room.getScores() !== null) return;
+
+	// Con un partido en curso no movemos a nadie, PERO sí dejamos prender la elección: eso no
+	// mueve jugadores y hace que el arranque automático pause el partido para que elijan
+	// (antes había que esperar a que terminara y parecía un gana-sigue).
+	if (!forzar && room.getScores() !== null) {
+		var toca = ModoDeEquipos === "elegir" || (ModoDeEquipos === "combinado" && hayJugadoresDeMas());
+		if (toca && !SeleccionPorTurnos) {
+			SeleccionPorTurnos = true;
+			ganasigueEnabled = false;
+			modoJueganTodos = false;
+			modoJueganAlgunos = false;
+			automatizadoActivado = false;
+			room.sendAnnouncement("🎽 Hay gente esperando: ahora los equipos se eligen. El partido se pausa cuando haya lugar.", null, 0xFFD100, "bold", 2);
+		}
+		return;
+	}
 
 	if (ModoDeEquipos === "ganasigue") {
 		SeleccionPorTurnos = false;
-		ganasigueEnabled = true;
-		// El gana-sigue necesita los equipos armados: si la sala no acomoda sola, la ponemos a acomodar
-		if (!modoJueganTodos) modoJueganAlgunos = true;
+		// El gana-sigue del autor (ganasigueEnabled) deja al ganador en SU lado y rellena el otro,
+		// y encima reinicia el partido por su cuenta: por eso parecía que empezaba todo de cero.
+		// Lo apagamos y la rotación la hacemos nosotros (rotarGanaSigue): el ganador pasa a Red.
+		ganasigueEnabled = false;
+		// El acomodo del autor (movePlayersIfNeeded, que corre con modoJueganAlgunos) equilibra
+		// los equipos moviendo gente en pleno juego: con eso el ganador nunca se queda. En
+		// gana-sigue lo apagamos y llenamos nosotros los lugares que queden (llenarGanaSigue).
+		automatizadoActivado = false;
+		modoJueganTodos = false;
+		modoJueganAlgunos = false;
+		llenarGanaSigue();
 		return;
 	}
 
@@ -91,6 +114,77 @@ function cambiarModoDeEquipos(modo, quien) {
 	if (typeof ultimoAvisoTurno !== "undefined") ultimoAvisoTurno = "";
 	if (typeof revisarTurnos === "function") setTimeout(revisarTurnos, 500);
 	if (typeof revisarArranque === "function") setTimeout(revisarArranque, 900);
+}
+
+// Llena los lugares libres con los que esperan (en gana-sigue lo hacemos nosotros, porque el
+// acomodo del autor mueve a los que ya están jugando y rompe el "el ganador se queda").
+function llenarGanaSigue() {
+	if (ModoDeEquipos !== "ganasigue") return;
+	var cupo = (typeof cupoPorEquipo === "function") ? cupoPorEquipo() : (typeof maxPlayersPerTeam !== "undefined" ? maxPlayersPerTeam : 3);
+	var enSala = room.getPlayerList().filter(function (j) { return j.id !== 0; });
+	var red = enSala.filter(function (j) { return j.team === 1; }).length;
+	var blue = enSala.filter(function (j) { return j.team === 2; }).length;
+	var esperan = (typeof espectadoresListos === "function")
+		? espectadoresListos()
+		: enSala.filter(function (j) { return j.team === 0; });
+
+	for (var i = 0; i < esperan.length; i++) {
+		if (red >= cupo && blue >= cupo) return;
+		if (red <= blue && red < cupo) { room.setPlayerTeam(esperan[i].id, 1); red++; }
+		else if (blue < cupo) { room.setPlayerTeam(esperan[i].id, 2); blue++; }
+	}
+}
+
+// GANA Y SIGUE: el que gana SE QUEDA y juega de Red; el que pierde sale y va al final de la fila,
+// y entran los que estaban esperando, de Blue. Antes se vaciaba la cancha entera y arrancaba todo
+// de cero, que es justo lo que un gana-sigue no hace.
+function rotarGanaSigue(scores, foto) {
+	if (ModoDeEquipos !== "ganasigue") return;
+	var marcador = scores || room.getScores();
+	if (!marcador) return;
+	var ganador = marcador.red > marcador.blue ? 1 : marcador.blue > marcador.red ? 2 : 0;
+	if (!ganador) {
+		room.sendAnnouncement("🤝 Empate: no se queda nadie, se vuelven a armar los equipos.", null, 0xFFD100, "bold", 2);
+		return;
+	}
+
+	// La foto es de CUANDO se ganó: para cuando corre esto, el script del autor ya movió gente
+	var estan = {};
+	room.getPlayerList().forEach(function (j) { estan[j.id] = true; });
+	var jugaron = (foto || []).filter(function (j) { return estan[j.id]; });
+	var ganadores = jugaron.filter(function (j) { return j.equipo === ganador; });
+	var perdedores = jugaron.filter(function (j) { return j.equipo !== ganador; });
+	if (!ganadores.length) return;
+
+	room.stopGame();   // primero se cierra el partido, así se pueden mover los equipos tranquilos
+
+	// Cancha limpia: mandamos a todos a espectadores y la armamos nosotros
+	room.getPlayerList().forEach(function (j) { if (j.id !== 0 && j.team !== 0) room.setPlayerTeam(j.id, 0); });
+
+	// Los que perdieron van al final de la fila, así entran los que estaban esperando
+	try { room.reorderPlayers(perdedores.map(function (j) { return j.id; }), false); } catch (e) { /* sala vieja */ }
+
+	// El ganador se queda y siempre pasa a Red
+	ganadores.forEach(function (j) { room.setPlayerTeam(j.id, 1); });
+
+	// Y se llena Blue con los que esperan (sin AFK y sin los que no pusieron la clave).
+	// Los que acaban de perder van últimos: solo entran si no hay suficiente gente esperando.
+	var cupo = (typeof cupoPorEquipo === "function") ? cupoPorEquipo() : (typeof maxPlayersPerTeam !== "undefined" ? maxPlayersPerTeam : 3);
+	var jugoYPerdio = {};
+	perdedores.forEach(function (j) { jugoYPerdio[j.id] = true; });
+	var esGanador = {};
+	ganadores.forEach(function (j) { esGanador[j.id] = true; });
+	var libres = ((typeof espectadoresListos === "function")
+		? espectadoresListos()
+		: room.getPlayerList().filter(function (j) { return j.id !== 0 && j.team === 0; })
+	).filter(function (j) { return !esGanador[j.id]; });
+	var fila = libres.filter(function (j) { return !jugoYPerdio[j.id]; }).concat(libres.filter(function (j) { return jugoYPerdio[j.id]; }));
+	for (var i = 0; i < fila.length && i < cupo; i++) room.setPlayerTeam(fila[i].id, 2);
+
+	room.sendAnnouncement(
+		"🏆 Gana y sigue: " + (ganador === 1 ? "🔴 el Red" : "🔵 el Blue") + " ganó y se queda (ahora juega de Red). Entran los que esperaban.",
+		null, 0xFFD100, "bold", 2
+	);
 }
 
 // Terminó el partido: si hay gente esperando y el modo es con elección, se vacía la cancha
@@ -156,11 +250,20 @@ function rearmarTrasElPartido() {
 
 	var anteriorVictoria = room.onTeamVictory;
 	room.onTeamVictory = function (scores) {
+		// La foto de los equipos se saca ANTES de que corra el script del autor, que ya mueve gente
+		var marcador = scores || room.getScores();
+		var foto = room.getPlayerList()
+			.filter(function (j) { return j.id !== 0 && j.team !== 0; })
+			.map(function (j) { return { id: j.id, nombre: j.name, equipo: j.team }; });
 		if (typeof anteriorVictoria === "function") anteriorVictoria(scores);
+		setTimeout(function () { rotarGanaSigue(marcador, foto); }, 3500);
 		setTimeout(rearmarTrasElPartido, 3500);
 	};
 
-	setInterval(function () { aplicarModoDeEquipos(false); }, 2000);
+	setInterval(function () {
+		aplicarModoDeEquipos(false);
+		llenarGanaSigue();   // en gana-sigue los lugares libres los llenamos nosotros
+	}, 2000);
 	aplicarModoDeEquipos(true);
 	console.log("🔀 Modo de equipos: " + nombreDelModo(ModoDeEquipos) + " (!ganasigue · !elegir · !combinado · !modo)");
 })();

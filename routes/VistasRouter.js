@@ -11,8 +11,10 @@ router.get("/frm/login", VistasController.login);
 router.get("/frm/registro", VistasController.registro);
 router.get("/frm/recuperar", VistasController.recuperar);
 router.get("/frm/cuenta", VistasController.cuenta);
+router.get("/frm/inventario", VistasController.inventario);   // lo que compró cada uno
 router.get("/frm/config", VistasController.config);
-router.get("/frm/carrusel", VistasController.carrusel);   // OWNER, CO-OWNER, HOSTER, AYUDANTE   // OWNER, CO-OWNER, HOSTER, AYUDANTE
+router.get("/frm/carrusel", VistasController.carrusel);
+router.get("/frm/equipos", VistasController.equipos);   // camisetas y clásicos   // OWNER, CO-OWNER, HOSTER, AYUDANTE   // OWNER, CO-OWNER, HOSTER, AYUDANTE
 router.get("/frm/panel", VistasController.panel);
 router.get("/frm/rangos", VistasController.rangos);
 router.get("/frm/actualizaciones", VistasController.actualizaciones);

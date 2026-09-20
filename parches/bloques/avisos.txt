@@ -1,6 +1,6 @@
 
 
-// ▇▇▇▇▇▇▇▇▇ 🔕 AVISOS SIN SPAM — ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// ▇▇▇▇▇▇▇▇▇ 🔕 AVISOS SIN SPAM — ÑandutíHax ▇▇▇▇▇▇▇▇▇
 // El script del autor manda varios carteles en CADA partido (a los pocos segundos de arrancar):
 // el tutorial de YouTube, "Escribí !help", el Anuncio y el Anuncio2 ("ESTÁN JUGANDO" sí sale en cada partido). Con partidos
 // de 3 minutos eso llenaba el chat. No se sacan: cada uno sale como mucho una vez cada tantos

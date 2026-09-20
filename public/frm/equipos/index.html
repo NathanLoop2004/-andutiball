@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Equipos · ÑandutíHax</title>
+<link rel="icon" href="/img/logo-chico.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/css/nanduti.css">
+<script src="/js/tema.js"></script>
+<script src="/js/sesion.js"></script>
+<script>if (!Sesion.usuario()) location.replace("/frm/login/?volver=" + encodeURIComponent("/frm/equipos/"));</script>
+</head>
+<body>
+
+<header class="barra ancha">
+  <a class="marca" href="/"><img src="/img/logo-chico.png" alt=""><span>ÑandutíHax</span></a>
+  <div class="derecha" id="derecha"></div>
+</header>
+
+<main class="contenido ancho">
+  <div class="cabecera">
+    <div>
+      <h1>Equipos y clásicos</h1>
+      <p>Las camisetas de los clubes y los cruces del cambio automático. Las salas los toman en unos segundos, sin reiniciar.</p>
+    </div>
+    <button class="boton principal" type="button" id="nuevoEquipo">Agregar equipo</button>
+  </div>
+
+  <div class="pestanas" id="pestanas" role="tablist">
+    <button data-vista="equipos" role="tab" aria-selected="true">Camisetas</button>
+    <button data-vista="clasicos" role="tab" aria-selected="false">Clásicos</button>
+    <button data-vista="tienda" role="tab" aria-selected="false" id="pestanaTienda" hidden>Tienda</button>
+  </div>
+
+  <div class="aviso" id="aviso"></div>
+
+  <!-- Camisetas -->
+  <section id="vistaEquipos">
+    <div class="tarjeta">
+      <div class="tarjeta-cuerpo tenue" id="cargandoEquipos">Cargando…</div>
+      <div class="tabla-envoltorio" id="tablaEquipos" hidden>
+        <table class="tabla">
+          <thead><tr><th>Camiseta</th><th>Equipo</th><th>Clave</th><th>Colores</th><th class="der">Ángulo</th><th>En uso</th><th class="der">Acciones</th></tr></thead>
+          <tbody id="cuerpoEquipos"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Clásicos -->
+  <section id="vistaClasicos" hidden>
+    <div class="tarjeta" style="margin-bottom:16px">
+      <div class="tarjeta-cabeza"><h2>Agregar un clásico</h2></div>
+      <div class="tarjeta-cuerpo">
+        <p class="tenue">El de la izquierda juega de rojo y el de la derecha de azul. La <b>demanda</b> es cuánto se repite ese cruce: cuanto más alta, más seguido sale.</p>
+        <div class="clasico-form">
+          <select id="clasicoRed" aria-label="Equipo rojo"></select>
+          <span class="tenue">vs</span>
+          <select id="clasicoBlue" aria-label="Equipo azul"></select>
+          <input type="number" id="clasicoDemanda" value="300" min="1" max="5000" step="10" aria-label="Demanda">
+          <button class="boton principal" type="button" id="agregarClasico">Agregar</button>
+        </div>
+        <div class="clasico-vista" id="vistaClasicoNuevo"></div>
+      </div>
+    </div>
+
+    <div class="tarjeta">
+      <div class="tarjeta-cuerpo tenue" id="cargandoClasicos">Cargando…</div>
+      <div class="tabla-envoltorio" id="tablaClasicos" hidden>
+        <table class="tabla">
+          <thead><tr><th>Clásico</th><th>Rojo</th><th>Azul</th><th class="der">Demanda</th><th>Activo</th><th class="der">Acciones</th></tr></thead>
+          <tbody id="cuerpoClasicos"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+  <!-- Tienda: precios de las camisetas (solo OWNER y CO-OWNER) -->
+  <section id="vistaTienda" hidden>
+    <div class="aviso info" style="margin-bottom:16px">
+      Lo que pongas acá sale en la portada, en la vidriera que se mueve sola. La gente las compra
+      con las monedas que gana jugando, y después las usa en la sala con <b>!camisetas</b>.
+    </div>
+    <div class="tarjeta">
+      <div class="tarjeta-cuerpo tenue" id="cargandoTienda">Cargando…</div>
+      <div class="tabla-envoltorio" id="tablaTienda" hidden>
+        <table class="tabla">
+          <thead><tr><th>Camiseta</th><th>Equipo</th><th class="der">Precio (monedas)</th><th>En la tienda</th><th>Descripción</th><th class="der">Vendidas</th></tr></thead>
+          <tbody id="cuerpoTienda"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- Editor de la camiseta -->
+<div class="fondo-modal" id="fondoModal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloModal">
+    <div class="modal-cabeza"><h2 id="tituloModal">Camiseta</h2><button class="boton chico" type="button" id="cerrarModal">Cerrar</button></div>
+    <div class="modal-cuerpo">
+      <div class="editor-camiseta">
+        <div class="camiseta-grande" id="vistaPrevia"><span id="numeroPrevia">10</span></div>
+        <div class="editor-campos">
+          <label>Nombre <input type="text" id="edNombre" maxlength="30" placeholder="OLIMPIA"></label>
+          <label>Clave <input type="text" id="edClave" maxlength="12" placeholder="oli"></label>
+          <label>Descripción <input type="text" id="edDescripcion" maxlength="80" placeholder="CLUB OLIMPIA (Decano)"></label>
+          <label>División <input type="text" id="edDivision" maxlength="40" placeholder="Primera división"></label>
+          <div class="colores-fila">
+            <label>Franja 1 <input type="color" id="edColor1"></label>
+            <label>Franja 2 <input type="color" id="edColor2"></label>
+            <label>Franja 3 <input type="color" id="edColor3"></label>
+            <label>Número <input type="color" id="edColorTexto"></label>
+          </div>
+          <label>Ángulo de las franjas: <b id="valorAngulo">0</b>°
+            <input type="range" id="edAngulo" min="0" max="360" step="5" value="0">
+          </label>
+          <label class="linea"><span class="interruptor"><input type="checkbox" id="edActivo" checked><span></span></span> En uso (entra en los sorteos)</label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-pie">
+      <button class="boton peligro" type="button" id="borrarEquipo">Borrar</button>
+      <button class="boton principal" type="button" id="guardarEquipo">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (t) => String(t == null ? "" : t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const hex = (c) => "#" + String(c || "000000").replace(/^#/, "");
+const sinNumeral = (c) => String(c || "").replace(/^#/, "").toUpperCase();
+
+let datos = { equipos: [], clasicos: [] };
+let editando = null;   // la clave del equipo que se está editando, o null si es nuevo
+
+Sesion.pintarBarra($("derecha"));
+Sesion.pintarNavAdmin("equipos");
+if (!(Sesion.usuario() || {}).configura) location.replace("/?sinpermiso=1");
+
+function avisar(texto, clase) {
+  $("aviso").className = "aviso" + (texto ? " " + clase : "");
+  $("aviso").textContent = texto;
+  clearTimeout(avisar._t);
+  if (texto && clase !== "mal") avisar._t = setTimeout(() => avisar(""), 4000);
+}
+
+// La camiseta como la dibuja HaxBall: 3 franjas en el ángulo elegido
+function fondoCamiseta(equipo) {
+  const c = [hex(equipo.color1 || equipo.colores?.[0]), hex(equipo.color2 || equipo.colores?.[1]), hex(equipo.color3 || equipo.colores?.[2])];
+  return `linear-gradient(${(equipo.angulo || 0) + 90}deg, ${c[0]} 0 33.34%, ${c[1]} 33.34% 66.67%, ${c[2]} 66.67% 100%)`;
+}
+
+const camisetaChica = (equipo) => `<span class="camiseta" style="background:${fondoCamiseta(equipo)}" title="${esc(equipo.nombre)}"></span>`;
+
+function pintarEquipos() {
+  $("cargandoEquipos").hidden = true;
+  $("tablaEquipos").hidden = false;
+  $("cuerpoEquipos").innerHTML = datos.equipos.map((e) => `
+    <tr>
+      <td>${camisetaChica(e)}</td>
+      <td><b>${esc(e.nombre)}</b>${e.descripcion ? `<div class="tenue" style="font-size:12px">${esc(e.descripcion)}</div>` : ""}</td>
+      <td class="tenue">${esc(e.clave)}</td>
+      <td class="tenue" style="font-size:12px">${esc(e.color1)} · ${esc(e.color2)} · ${esc(e.color3)}</td>
+      <td class="der tenue">${e.angulo}°</td>
+      <td>${e.activo ? '<span class="etiqueta ok">Sí</span>' : '<span class="etiqueta">No</span>'}</td>
+      <td class="der"><button class="boton chico" data-editar="${esc(e.clave)}">Editar</button></td>
+    </tr>`).join("");
+}
+
+function pintarClasicos() {
+  $("cargandoClasicos").hidden = true;
+  $("tablaClasicos").hidden = false;
+  const de = (clave) => datos.equipos.find((e) => e.clave === clave) || { nombre: clave, color1: "333333", color2: "333333", color3: "333333", angulo: 0 };
+  $("cuerpoClasicos").innerHTML = datos.clasicos.map((c) => {
+    const rojo = de(c.red);
+    const azul = de(c.blue);
+    return `<tr>
+      <td>${camisetaChica(rojo)} ${camisetaChica(azul)}</td>
+      <td><b>${esc(rojo.nombre)}</b></td>
+      <td><b>${esc(azul.nombre)}</b></td>
+      <td class="der"><input type="number" class="demanda" data-demanda="${c.id}" value="${c.demanda}" min="1" max="5000" step="10"></td>
+      <td><span class="interruptor"><input type="checkbox" data-activo="${c.id}" ${c.activo ? "checked" : ""} aria-label="Activo"><span></span></span></td>
+      <td class="der"><button class="boton chico peligro" data-borrar-clasico="${c.id}">Borrar</button></td>
+    </tr>`;
+  }).join("");
+
+  const opciones = datos.equipos.map((e) => `<option value="${esc(e.clave)}">${esc(e.nombre)}</option>`).join("");
+  for (const id of ["clasicoRed", "clasicoBlue"]) {
+    const antes = $(id).value;
+    $(id).innerHTML = opciones;
+    if (antes) $(id).value = antes;
+  }
+  if (datos.equipos[1] && !$("clasicoBlue").value) $("clasicoBlue").value = datos.equipos[1].clave;
+  pintarVistaClasicoNuevo();
+}
+
+function pintarVistaClasicoNuevo() {
+  const de = (clave) => datos.equipos.find((e) => e.clave === clave);
+  const rojo = de($("clasicoRed").value);
+  const azul = de($("clasicoBlue").value);
+  $("vistaClasicoNuevo").innerHTML = rojo && azul
+    ? `<div class="camiseta grande" style="background:${fondoCamiseta(rojo)}"></div>
+       <span class="tenue">${esc(rojo.nombre)} vs ${esc(azul.nombre)}</span>
+       <div class="camiseta grande" style="background:${fondoCamiseta(azul)}"></div>`
+    : "";
+}
+
+async function cargar() {
+  try {
+    datos = await Sesion.pedir("/api/equipos");
+    pintarEquipos();
+    pintarClasicos();
+  } catch (error) {
+    if (/iniciar sesión/i.test(error.message)) return location.replace("/frm/login/?volver=" + encodeURIComponent("/frm/equipos/"));
+    if (/solo para/i.test(error.message)) return location.replace("/?sinpermiso=1");
+    avisar(error.message, "mal");
+  }
+}
+
+// ── El editor ──
+function abrirEditor(clave) {
+  editando = clave;
+  const e = datos.equipos.find((x) => x.clave === clave) || { nombre: "", clave: "", angulo: 0, colorTexto: "FFFFFF", color1: "FFFFFF", color2: "000000", color3: "FFFFFF", activo: true };
+  $("tituloModal").textContent = clave ? "Camiseta de " + e.nombre : "Equipo nuevo";
+  $("edNombre").value = e.nombre;
+  $("edClave").value = e.clave || "";
+  $("edClave").disabled = Boolean(clave);
+  $("edDescripcion").value = e.descripcion || "";
+  $("edDivision").value = e.division || "";
+  $("edColor1").value = hex(e.color1);
+  $("edColor2").value = hex(e.color2);
+  $("edColor3").value = hex(e.color3);
+  $("edColorTexto").value = hex(e.colorTexto);
+  $("edAngulo").value = e.angulo;
+  $("edActivo").checked = e.activo !== false;
+  $("borrarEquipo").hidden = !clave;
+  actualizarVistaPrevia();
+  $("fondoModal").hidden = false;
+}
+
+function equipoDelEditor() {
+  return {
+    clave: $("edClave").value.trim().toLowerCase(),
+    nombre: $("edNombre").value.trim(),
+    descripcion: $("edDescripcion").value.trim(),
+    division: $("edDivision").value.trim(),
+    angulo: Number($("edAngulo").value),
+    colorTexto: sinNumeral($("edColorTexto").value),
+    color1: sinNumeral($("edColor1").value),
+    color2: sinNumeral($("edColor2").value),
+    color3: sinNumeral($("edColor3").value),
+    activo: $("edActivo").checked,
+  };
+}
+
+function actualizarVistaPrevia() {
+  const e = equipoDelEditor();
+  $("vistaPrevia").style.background = fondoCamiseta(e);
+  $("numeroPrevia").style.color = hex(e.colorTexto);
+  $("valorAngulo").textContent = e.angulo;
+}
+
+for (const id of ["edColor1", "edColor2", "edColor3", "edColorTexto", "edAngulo"]) $(id).addEventListener("input", actualizarVistaPrevia);
+$("cerrarModal").onclick = () => { $("fondoModal").hidden = true; };
+$("fondoModal").addEventListener("click", (e) => { if (e.target === $("fondoModal")) $("fondoModal").hidden = true; });
+$("nuevoEquipo").onclick = () => abrirEditor(null);
+
+$("guardarEquipo").onclick = async () => {
+  const equipo = equipoDelEditor();
+  try {
+    if (editando) await Sesion.pedir("/api/equipos/" + encodeURIComponent(editando), { method: "PUT", body: JSON.stringify(equipo) });
+    else await Sesion.pedir("/api/equipos", { method: "POST", body: JSON.stringify(equipo) });
+    $("fondoModal").hidden = true;
+    avisar("Guardado. Las salas lo toman en unos segundos.", "ok");
+    cargar();
+  } catch (error) { avisar(error.message, "mal"); }
+};
+
+$("borrarEquipo").onclick = async () => {
+  if (!editando || !confirm("¿Borrar esta camiseta?")) return;
+  try {
+    await Sesion.pedir("/api/equipos/" + encodeURIComponent(editando), { method: "DELETE" });
+    $("fondoModal").hidden = true;
+    avisar("Borrado.", "ok");
+    cargar();
+  } catch (error) { avisar(error.message, "mal"); }
+};
+
+$("cuerpoEquipos").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-editar]");
+  if (b) abrirEditor(b.dataset.editar);
+});
+
+// ── Los clásicos ──
+for (const id of ["clasicoRed", "clasicoBlue"]) $(id).addEventListener("change", pintarVistaClasicoNuevo);
+
+$("agregarClasico").onclick = async () => {
+  try {
+    await Sesion.pedir("/api/equipos/clasicos", {
+      method: "POST",
+      body: JSON.stringify({ red: $("clasicoRed").value, blue: $("clasicoBlue").value, demanda: Number($("clasicoDemanda").value) }),
+    });
+    avisar("Clásico agregado.", "ok");
+    cargar();
+  } catch (error) { avisar(error.message, "mal"); }
+};
+
+$("cuerpoClasicos").addEventListener("change", async (e) => {
+  const demanda = e.target.closest("[data-demanda]");
+  const activo = e.target.closest("[data-activo]");
+  const id = Number((demanda || activo || {}).dataset?.demanda || (activo || {}).dataset?.activo);
+  if (!id) return;
+  const clasico = datos.clasicos.find((c) => c.id === id);
+  if (!clasico) return;
+  try {
+    await Sesion.pedir("/api/equipos/clasicos", {
+      method: "POST",
+      body: JSON.stringify({
+        id,
+        red: clasico.red,
+        blue: clasico.blue,
+        demanda: demanda ? Number(demanda.value) : clasico.demanda,
+        activo: activo ? activo.checked : clasico.activo,
+      }),
+    });
+    avisar("Guardado.", "ok");
+    cargar();
+  } catch (error) { avisar(error.message, "mal"); cargar(); }
+});
+
+$("cuerpoClasicos").addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-borrar-clasico]");
+  if (!b || !confirm("¿Borrar este clásico?")) return;
+  try {
+    await Sesion.pedir("/api/equipos/clasicos/" + b.dataset.borrarClasico, { method: "DELETE" });
+    avisar("Borrado.", "ok");
+    cargar();
+  } catch (error) { avisar(error.message, "mal"); }
+});
+
+// ── Tienda (solo OWNER y CO-OWNER) ──
+const puedeVender = Boolean((Sesion.usuario() || {}).rangos);
+if (puedeVender) $("pestanaTienda").hidden = false;
+
+async function cargarTienda() {
+  if (!puedeVender) return;
+  try {
+    const r = await Sesion.pedir("/api/tienda/panel");
+    $("cargandoTienda").hidden = true;
+    $("tablaTienda").hidden = false;
+    $("cuerpoTienda").innerHTML = r.camisetas.map((c) => `
+      <tr>
+        <td><span class="camiseta" style="background:${fondoCamiseta({ colores: c.colores, angulo: c.angulo })}"></span></td>
+        <td><b>${esc(c.nombre)}</b><div class="tenue" style="font-size:12px">${esc(c.clave)}</div></td>
+        <td class="der"><input type="number" class="demanda" data-precio="${esc(c.clave)}" value="${c.precio || ""}" min="0" max="1000" step="0.5" placeholder="—"></td>
+        <td><span class="interruptor"><input type="checkbox" data-en-tienda="${esc(c.clave)}" ${c.enTienda ? "checked" : ""} aria-label="En la tienda"><span></span></span></td>
+        <td><input type="text" data-detalle="${esc(c.clave)}" value="${esc(c.detalle || "")}" maxlength="200" placeholder="Una línea para el que la mira" style="width:100%"></td>
+        <td class="der tenue">${c.vendidas}</td>
+      </tr>`).join("");
+  } catch (error) { avisar(error.message, "mal"); }
+}
+
+$("cuerpoTienda").addEventListener("change", async (e) => {
+  const campo = e.target.closest("[data-precio], [data-en-tienda], [data-detalle]");
+  if (!campo) return;
+  const clave = campo.dataset.precio || campo.dataset.enTienda || campo.dataset.detalle;
+  const fila = campo.closest("tr");
+  const cuerpo = {
+    precio: fila.querySelector("[data-precio]").value,
+    enTienda: fila.querySelector("[data-en-tienda]").checked,
+    detalle: fila.querySelector("[data-detalle]").value,
+  };
+  try {
+    await Sesion.pedir("/api/tienda/" + encodeURIComponent(clave), { method: "PUT", body: JSON.stringify(cuerpo) });
+    avisar("Guardado. Ya sale en la portada.", "ok");
+  } catch (error) {
+    avisar(error.message, "mal");
+    cargarTienda();
+  }
+});
+
+// ── Pestañas ──
+$("pestanas").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-vista]");
+  if (!b) return;
+  document.querySelectorAll("#pestanas button").forEach((p) => p.setAttribute("aria-selected", String(p === b)));
+  $("vistaEquipos").hidden = b.dataset.vista !== "equipos";
+  $("vistaClasicos").hidden = b.dataset.vista !== "clasicos";
+  $("vistaTienda").hidden = b.dataset.vista !== "tienda";
+  $("nuevoEquipo").hidden = b.dataset.vista !== "equipos";
+  if (b.dataset.vista === "tienda") cargarTienda();
+});
+
+cargar();
+</script>
+</body>
+</html>

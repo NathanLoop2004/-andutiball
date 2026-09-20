@@ -1,6 +1,6 @@
 
 
-// ▇▇▇▇▇▇▇▇▇ 🔐 USUARIOS Y CLAVES — ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// ▇▇▇▇▇▇▇▇▇ 🔐 USUARIOS Y CLAVES — ÑandutíHax ▇▇▇▇▇▇▇▇▇
 // Cada usuario tiene su clave atada a su nombre, para que nadie le use el nick.
 //
 //   · Si el nombre con el que entrás ESTÁ registrado → se te pide la clave (!clave ...).
@@ -239,7 +239,7 @@ window.__usuariosActualizar = function (nicks) {
 		// Si alguien igual lo intenta, se le pasa el link (y su clave no queda en el chat).
 		if (comando === "!registrar" || comando === "!registro" || comando === "!cambiarclave" || comando === "!cuenta") {
 			var donde = linkParaRegistrarse();
-			room.sendAnnouncement("🌐 Las cuentas se crean y se cambian en la página de ÑandutíBall:", jugador.id, 0x00C853, "bold", 2);
+			room.sendAnnouncement("🌐 Las cuentas se crean y se cambian en la página de ÑandutíHax:", jugador.id, 0x00C853, "bold", 2);
 			if (donde) room.sendAnnouncement("   " + donde, jugador.id, 0x00C853, "bold", 0);
 			room.sendAnnouncement("   Acá adentro solo se pone la clave:  !clave tu-contraseña", jugador.id, 0x93A1B0, "small", 0);
 			return false;

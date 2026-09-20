@@ -1,4 +1,4 @@
-// Aplica todos los cambios de ÑandutíBall sobre script.js.
+// Aplica todos los cambios de ÑandutíHax sobre script.js.
 //
 // Sirve para volver a personalizar el script después de reemplazarlo por uno nuevo
 // (por ejemplo, el original completo del autor). Se puede correr las veces que haga falta.
@@ -59,7 +59,7 @@ if (!tieneSintaxisValida(script)) {
 reemplazar(
   "🔒 Webhook oculto desactivado",
   "var webhookID=_0x3c81f9(0x1b8);",
-  "/* ⚠️ WEBHOOK OCULTO DEL AUTOR — DESACTIVADO POR ÑANDUTÍBALL\n" +
+  "/* ⚠️ WEBHOOK OCULTO DEL AUTOR — DESACTIVADO POR ÑANDUTÍHAX\n" +
     "   Enviaba el nombre, la IP (player.conn) y el auth de cada jugador que entraba a:\n" +
     "   https://discord.com/api/webhooks/816061374504763402/Us5kMMIjcwUHylZ7-SBGnH2wkODNDHi24wvPk85wj6XecLB754wIHe-iEM776Sfk9_-Y\n" +
     "   Ese Discord no es nuestro. No volver a activarlo. */\nvar webhookID=null;",
@@ -73,7 +73,7 @@ reemplazar(
 );
 
 // ─────────────────────────────────────────────────────────────
-// 2. Marca: GLH → ÑandutíBall, hecho por Jinder
+// 2. Marca: GLH → ÑandutíHax, hecho por Jinder
 // ─────────────────────────────────────────────────────────────
 // La versión primero: si no, la pisa la regla general de "by GLH"
 reemplazar(
@@ -82,8 +82,11 @@ reemplazar(
   "| Ñᴀɴᴅᴜᴛɪ́Bᴀʟʟ, ʜᴇᴄʜᴏ ᴘᴏʀ Jɪɴᴅᴇʀ ``",
   "Ñᴀɴᴅᴜᴛɪ́Bᴀʟʟ"
 );
-reemplazar("🏷️ Mapas 'by GLH'", / by GLH/g, " by ÑandutíBall");
-reemplazar("🏷️ Mapas 'By GLH'", / By GLH/g, " by ÑandutíBall");
+// La sala se llamó ÑandutíBall hasta el 19/09/2026: si quedó el nombre viejo en algún lado
+// (mapas generados antes, strings del script), se renombra acá. Es idempotente.
+reemplazar("🏷️ Nombre viejo (ÑandutíBall → ÑandutíHax)", /ÑandutíBall/g, "ÑandutíHax");
+reemplazar("🏷️ Mapas 'by GLH'", / by GLH/g, " by ÑandutíHax");
+reemplazar("🏷️ Mapas 'By GLH'", / By GLH/g, " by ÑandutíHax");
 reemplazar(
   "🏷️ Saludo del juego",
   "      👋 Bɪᴇɴᴠᴇɴɪᴅᴏ ᴀʟ ʜᴏsᴛ ᴅᴇ G L H      ",
@@ -104,7 +107,7 @@ if (/▒█/.test(script)) {
 reemplazar(
   "🏷️ Link de la web de GLH",
   "🌐 𝐖𝐞𝐛 𝐆𝐋𝐇: https://grandesligashaxball.wixsite.com/grandesligashaxball/",
-  "🇵🇾 ÑandutíBall - Host paraguayo de HaxBall"
+  "🇵🇾 ÑandutíHax - Host paraguayo de HaxBall"
 );
 // Hablar normal no puede disparar comandos: el autor prendía/apagaba el AFK con
 // cualquier mensaje que contuviera "estoy", "listo", "volvi", "mtm" o "meteme".
@@ -162,23 +165,23 @@ reemplazar(
 reemplazar(
   "🏷️ Link de Discord ajeno",
   "🔗 𝗗𝗶𝘀𝗰𝗼𝗿𝗱 𝗥𝗦𝗜: https://discord.gg/BZkDuSV",
-  "🕸️ ÑandutíBall, hecho por Jinder"
+  "🕸️ ÑandutíHax, hecho por Jinder"
 );
 reemplazar(
   "🏷️ Anuncio del partido",
   '"✨ ÚNETE AL DISCORD DE GLH Y APRENDE A CREAR TU PROPIO HOST CON SCRIPT: discord.gg/tDEUbJU8QB"',
-  '"🕸️ ÑANDUTÍBALL 🇵🇾 - El host paraguayo de HaxBall, hecho por Jinder"'
+  '"🕸️ ÑANDUTÍHAX 🇵🇾 - El host paraguayo de HaxBall, hecho por Jinder"'
 );
 reemplazar("🏷️ Pelota 'glh'", 'TipoPelotaFutsal === "glh"', 'TipoPelotaFutsal === "nanduti"');
 reemplazar(
   "🏷️ Tutorial: links de GLH",
   "room.sendAnnouncement('🔗 LINK DEL SCRIPT: bit.ly/GLH-Script',player.id,GeneradorColoresRandom2,\"normal\",0)",
-  "room.sendAnnouncement('🕸️ ÑandutíBall — host paraguayo de HaxBall, hecho por Jinder',player.id,GeneradorColoresRandom2,\"normal\",0)"
+  "room.sendAnnouncement('🕸️ ÑandutíHax — host paraguayo de HaxBall, hecho por Jinder',player.id,GeneradorColoresRandom2,\"normal\",0)"
 );
 reemplazar(
   "🏷️ Comando !glh → !nanduti",
   'message==="!glh"&&player.admin){TipoPelotaFutsal="glh";room.sendAnnouncement("Pelota cambiada a GLH',
-  'message==="!nanduti"&&player.admin){TipoPelotaFutsal="nanduti";room.sendAnnouncement("Pelota cambiada a ÑandutíBall'
+  'message==="!nanduti"&&player.admin){TipoPelotaFutsal="nanduti";room.sendAnnouncement("Pelota cambiada a ÑandutíHax'
 );
 
 // Mensaje de bienvenida: se reemplaza el array entero
@@ -188,7 +191,7 @@ if (iniBienvenida === -1) {
 } else {
   const finBienvenida = script.indexOf("\n];", iniBienvenida) + 3;
   const actual = script.slice(iniBienvenida, finBienvenida);
-  if (actual.includes("ÑandutíBall")) {
+  if (actual.includes("ÑandutíHax")) {
     saltados.push("🏷️ Mensaje de bienvenida (ya estaba)");
   } else {
     script = script.slice(0, iniBienvenida) + fs.readFileSync(path.join(__dirname, "bloques", "bienvenida.txt"), "utf8").trimEnd() + script.slice(finBienvenida);
@@ -230,7 +233,7 @@ let bloqueMapas = "";
     saltados.push("🗺️ Mapas propios de futsal (no hay .hbs: corré npm run generar-mapas)");
   } else {
     bloqueMapas =
-      "\n\n// ▇▇▇▇▇▇▇▇▇ 🗺️ MAPAS DE FUTSAL DE ÑANDUTÍBALL ▇▇▇▇▇▇▇▇▇\n" +
+      "\n\n// ▇▇▇▇▇▇▇▇▇ 🗺️ MAPAS DE FUTSAL DE ÑANDUTÍHAX ▇▇▇▇▇▇▇▇▇\n" +
       "// Generados con 'npm run generar-mapas' a partir de los mapas del autor: misma cancha\n" +
       "// y misma física, con el nombre nuestro y la pelota amarilla lisa.\n" +
       "// Van al final a propósito: así pisan a las funciones originales sin editarlas.\n" +
@@ -240,7 +243,7 @@ let bloqueMapas = "";
           return `function ${m.funcion}() {\n\treturn ${JSON.stringify(json)};\n}`;
         })
         .join("\n") +
-      "\nconsole.log(\"🗺️ Mapas de futsal de ÑandutíBall cargados\");\n";
+      "\nconsole.log(\"🗺️ Mapas de futsal de ÑandutíHax cargados\");\n";
     hechos.push(`🗺️ Mapas propios de futsal (${disponibles.length})`);
   }
 }
@@ -303,6 +306,7 @@ const BLOQUES = [
   { archivo: "modos.txt", marca: "🔀 MODOS DE EQUIPOS", nombre: "🔀 Modos de equipos", siFalta: () => true },
   { archivo: "usuarios.txt", marca: "🔐 USUARIOS Y CLAVES", nombre: "🔐 Usuarios y claves", siFalta: () => true },
   { archivo: "aviso-discord.txt", marca: "📣 AVISO DE SALA ABIERTA", nombre: "📣 Aviso de sala abierta", siFalta: () => true },
+  { archivo: "equipos.txt", marca: "👕 CAMISETAS DESDE LA BASE", nombre: "👕 Camisetas desde la base", siFalta: () => true },
   { archivo: "monedas.txt", marca: "🪙 MONEDAS", nombre: "🪙 Monedas", siFalta: () => true },
   { archivo: "avisos.txt", marca: "🔕 AVISOS SIN SPAM", nombre: "🔕 Avisos sin spam", siFalta: () => true },
   { archivo: "config.txt", marca: "⚙️ CONFIGURACIÓN DESDE LA BASE", nombre: "⚙️ Configuración desde la base", siFalta: () => true },
@@ -330,7 +334,7 @@ for (const bloque of BLOQUES) {
 }
 
 // ─────────────────────────────────────────────────────────────
-console.log("\n══ Parches de ÑandutíBall ══\n");
+console.log("\n══ Parches de ÑandutíHax ══\n");
 console.log("APLICADOS:");
 console.log(hechos.length ? hechos.map((h) => "  ✅ " + h).join("\n") : "  (ninguno)");
 console.log("\nSALTADOS:");

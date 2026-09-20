@@ -5,7 +5,7 @@
 // CÓMO SE GANAN (solo el equipo que GANA el partido, y solo cuentas de la web con su clave puesta):
 //
 //   🏆 Ganar el partido ............ 1 moneda, para todos los del equipo ganador
-//   ⚽ Cada gol .................... 1 moneda, hasta 3 por partido (el hat-trick es el tope)
+//   ⚽ Cada gol .................... 0,30 monedas, hasta 3 goles por partido (el hat-trick es el tope)
 //   🅰️ Cada asistencia ............. 1 moneda, hasta 3 por partido
 //   🧤 Cada atajada del arquero .... 0,30 monedas, hasta 3 monedas por partido
 //
@@ -20,14 +20,14 @@ const CENTESIMAS = 100;
 
 const PREMIOS = {
   ganar: 1 * CENTESIMAS,
-  gol: 1 * CENTESIMAS,
+  gol: 0.3 * CENTESIMAS,
   asistencia: 1 * CENTESIMAS,
   atajada: 0.3 * CENTESIMAS,
 };
 
 // Topes por partido (en centésimas): el hat-trick es lo máximo que paga
 const TOPES = {
-  gol: 3 * CENTESIMAS,
+  gol: 3 * 0.3 * CENTESIMAS,   // 3 goles = 0,90: del cuarto en adelante ya no suma
   asistencia: 3 * CENTESIMAS,
   atajada: 3 * CENTESIMAS,
 };

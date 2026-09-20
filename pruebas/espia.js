@@ -50,7 +50,7 @@ sala.onGameTick = tick;
 revisar("onGameTick no se toca", salaCruda.onGameTick === tick);
 
 // ── 2) Con el script de verdad y todos nuestros bloques ──
-console.log("\n🏟️  Con script.js entero y los bloques de ÑandutíBall:\n");
+console.log("\n🏟️  Con script.js entero y los bloques de ÑandutíHax:\n");
 
 const salaFalsa = abrirSala("hosts/3v3.json", { espiar: true });
 const ana = salaFalsa.entra(1, "Ana");

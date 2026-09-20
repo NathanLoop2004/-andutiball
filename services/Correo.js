@@ -1,13 +1,17 @@
 // =============================================================================
 // Correo — manda los mails de Ñandutí Web (por ahora: recuperar la cuenta).
 //
-// Va por SMTP con nodemailer. Se configura en .env:
+// Va por Resend o SMTP. Se configura en .env:
 //
+//   RESEND_API_KEY=re_...
+//   CORREO_REMITENTE="ÑandutíHax <soporte@nandutihax.com>"
+//
+// Alternativa SMTP:
 //   SMTP_HOST=smtp.gmail.com
 //   SMTP_PORT=465                 465 = SSL · 587 = STARTTLS
 //   SMTP_USUARIO=tu-cuenta@gmail.com
 //   SMTP_CLAVE=xxxx xxxx xxxx xxxx  con Gmail: una "contraseña de aplicación", no tu clave normal
-//   CORREO_REMITENTE="ÑandutíBall <tu-cuenta@gmail.com>"
+//   CORREO_REMITENTE="ÑandutíHax <tu-cuenta@gmail.com>"
 //
 // Sin SMTP configurado NO falla: muestra el mail (con el link) en la consola, para poder
 // probar en la compu sin mandar nada.
@@ -15,12 +19,29 @@
 // Las pruebas cambian el envío con Correo.usarEnvio(fn) para no mandar mails de verdad.
 // =============================================================================
 const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 
 let envioDePrueba = null;
 let transporte = null;
+let resend = null;
 
 function hayCorreo() {
-  return Boolean(process.env.SMTP_HOST && process.env.SMTP_USUARIO && process.env.SMTP_CLAVE);
+  return Boolean(
+    (process.env.RESEND_API_KEY && process.env.CORREO_REMITENTE) ||
+    (process.env.SMTP_HOST && process.env.SMTP_USUARIO && process.env.SMTP_CLAVE)
+  );
+}
+
+// Con RESEND_API_KEY puesta se manda por Resend (no por SMTP). No se mira la forma de la clave:
+// las de Resend empiezan con "re_", pero si cambia el formato no queremos dejar de mandar correos
+// en silencio — si la clave está mal, Resend contesta con un error claro y se ve en el log.
+function hayResend() {
+  return Boolean(String(process.env.RESEND_API_KEY || "").trim() && process.env.CORREO_REMITENTE);
+}
+
+function clienteResend() {
+  if (!resend) resend = new Resend(process.env.RESEND_API_KEY);
+  return resend;
 }
 
 function armarTransporte() {
@@ -47,13 +68,24 @@ async function enviar(mail) {
     return { ok: true, enConsola: true };
   }
 
-  await armarTransporte().sendMail({
-    from: process.env.CORREO_REMITENTE || process.env.SMTP_USUARIO,
-    to: mail.para,
-    subject: mail.asunto,
-    html: mail.html,
-    text: mail.texto,
-  });
+  if (hayResend()) {
+    const { error } = await clienteResend().emails.send({
+      from: process.env.CORREO_REMITENTE,
+      to: mail.para,
+      subject: mail.asunto,
+      html: mail.html,
+      text: mail.texto,
+    });
+    if (error) throw new Error(error.message || "Resend rechazó el correo");
+  } else {
+    await armarTransporte().sendMail({
+      from: process.env.CORREO_REMITENTE || process.env.SMTP_USUARIO,
+      to: mail.para,
+      subject: mail.asunto,
+      html: mail.html,
+      text: mail.texto,
+    });
+  }
   return { ok: true };
 }
 
@@ -73,14 +105,14 @@ function plantilla({ preencabezado, titulo, cuerpoHtml, pie }) {
 <tr><td align="center">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;">
     <tr><td style="padding:0 4px 16px;font-size:15px;font-weight:700;color:#111827;letter-spacing:-.01em;">
-      <span style="display:inline-block;width:22px;height:22px;border-radius:6px;background:${MARCA};vertical-align:middle;margin-right:8px;"></span><span style="vertical-align:middle;">ÑandutíBall</span>
+      <span style="display:inline-block;width:22px;height:22px;border-radius:6px;background:${MARCA};vertical-align:middle;margin-right:8px;"></span><span style="vertical-align:middle;">ÑandutíHax</span>
     </td></tr>
     <tr><td style="background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;padding:32px;">
       <h1 style="margin:0 0 16px;font-size:20px;line-height:1.3;font-weight:700;color:#111827;">${escapar(titulo)}</h1>
       ${cuerpoHtml}
     </td></tr>
     <tr><td style="padding:16px 4px 0;font-size:12px;line-height:1.5;color:#6b7280;">
-      ${pie}<br>ÑandutíBall · el host paraguayo de HaxBall
+      ${pie}<br>ÑandutíHax · el host paraguayo de HaxBall
     </td></tr>
   </table>
 </td></tr>
@@ -108,11 +140,11 @@ function mailRecuperar({ nick, link, minutos }) {
 
   const texto =
     `Hola ${nick},\n\n` +
-    `Para cambiar la contraseña de tu cuenta de ÑandutíBall entrá a:\n${link}\n\n` +
+    `Para cambiar la contraseña de tu cuenta de ÑandutíHax entrá a:\n${link}\n\n` +
     `El link sirve una sola vez y vence en ${minutos} minutos.\n` +
     `Si no fuiste vos, ignorá este correo.`;
 
-  return { asunto: "Restablecer tu contraseña de ÑandutíBall", html, texto };
+  return { asunto: "Restablecer tu contraseña de ÑandutíHax", html, texto };
 }
 
 // El código de 6 números para cambiar la clave desde "Mi cuenta"
@@ -124,17 +156,17 @@ function mailCodigo({ nick, codigo, minutos, para = "cambiar la contraseña de t
     cuerpoHtml:
       parrafo(`Hola <b>${escapar(nick)}</b>, usá este código para ${escapar(para)}:`) +
       `<div style="margin:8px 0 24px;padding:18px;border:1px solid #e5e7eb;border-radius:10px;background:#f9fafb;text-align:center;font-family:'SFMono-Regular',Consolas,'Liberation Mono',monospace;font-size:32px;font-weight:700;letter-spacing:8px;color:#111827;">${digitos}</div>` +
-      parrafo(`Vence en <b>${minutos} minutos</b>. No se lo pases a nadie: nadie de ÑandutíBall te lo va a pedir.`),
+      parrafo(`Vence en <b>${minutos} minutos</b>. No se lo pases a nadie: nadie de ÑandutíHax te lo va a pedir.`),
     pie: "¿No pediste esto? Ignorá este correo y, por las dudas, cambiá tu contraseña.",
   });
 
   const texto =
     `Hola ${nick},\n\n` +
-    `Tu código para ${para} en ÑandutíBall es: ${codigo}\n\n` +
+    `Tu código para ${para} en ÑandutíHax es: ${codigo}\n\n` +
     `Vence en ${minutos} minutos. No se lo pases a nadie.\n` +
     `Si no fuiste vos, ignorá este correo.`;
 
-  return { asunto: `${codigo} es tu código de ÑandutíBall`, html, texto };
+  return { asunto: `${codigo} es tu código de ÑandutíHax`, html, texto };
 }
 
 module.exports = {

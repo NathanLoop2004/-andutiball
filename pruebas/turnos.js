@@ -69,7 +69,8 @@ for (let ronda = 1; ronda <= 8; ronda++) {
     const cap = capitanDe(equipo);
     const elegido = libres()[0];
     if (!cap || !elegido) continue;
-    chat(cap, "!" + numero(elegido));
+    // Se elige escribiendo el número pelado (la mitad de las rondas con "!", que también vale)
+    chat(cap, (ronda % 2 ? "" : "!") + numero(elegido));
     avanzar(1500);
     if (elegido.team !== 0) {
       console.log(`     ronda ${ronda}: ${cap.name} (${equipo === 1 ? "🔴" : "🔵"}) eligió a ${elegido.name}`);

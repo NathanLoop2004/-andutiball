@@ -1,0 +1,219 @@
+
+
+// ▇▇▇▇▇▇▇▇▇ 👕 CAMISETAS DESDE LA BASE — ÑandutíHax ▇▇▇▇▇▇▇▇▇
+// Las camisetas de los clubes y los clásicos (qué cruces salen y cuánto se repiten) se editan
+// desde el panel (Equipos) y se guardan en la base. El launcher las manda cada tanto con
+// window.__equiposSala({equipos, clasicos}) y acá se rearman las dos listas del script:
+//
+//   camisetasEquipos  → "<clave>/titular/<red|blue>" con el código /colors de cada club
+//   opciones          → los cruces del cambio automático, con su "demanda" (cuánto se repite)
+//
+// Se aplica EN VIVO: el próximo partido ya sale con lo que diga la base, sin reiniciar la sala.
+// Si la base está apagada, la sala se queda con lo que ya tenía (lo que dejó el parcheador).
+
+var CamisetasDesdeLaBase = true;
+var equiposDeLaBase = [];      // [{ clave, nombre, angulo, texto, colores: [3] }]
+var clasicosDeLaBase = [];     // [{ red, blue, demanda }]
+var firmaEquipos = "";         // para no rearmar todo cada 30 segundos al pedo
+
+function codigoDeCamiseta(equipo, lado) {
+	return "/colors " + lado + " " + equipo.angulo + " " + equipo.texto + " " + equipo.colores.join(" ");
+}
+
+// Arma el partido de un cruce: le pone la camiseta a cada lado y deja los nombres puestos
+function armarPartido(rojo, azul) {
+	return function () {
+		redAngle = rojo.angulo;
+		redTextColor = parseInt(rojo.texto, 16);
+		redColor = rojo.colores.map(function (c) { return parseInt(c, 16); });
+		room.setTeamColors(1, redAngle, redTextColor, redColor);
+		teamRed = rojo.nombre;
+
+		blueAngle = azul.angulo;
+		blueTextColor = parseInt(azul.texto, 16);
+		blueColor = azul.colores.map(function (c) { return parseInt(c, 16); });
+		room.setTeamColors(2, blueAngle, blueTextColor, blueColor);
+		teamBlue = azul.nombre;
+	};
+}
+
+window.__equiposSala = function (datos) {
+	if (!CamisetasDesdeLaBase || !datos || !Array.isArray(datos.equipos)) return;
+	var firma = JSON.stringify(datos);
+	if (firma === firmaEquipos) return;   // no cambió nada
+	firmaEquipos = firma;
+
+	equiposDeLaBase = datos.equipos;
+	clasicosDeLaBase = Array.isArray(datos.clasicos) ? datos.clasicos : [];
+	if (!equiposDeLaBase.length) return;
+
+	var porClave = {};
+	var lista = {};
+	for (var i = 0; i < equiposDeLaBase.length; i++) {
+		var equipo = equiposDeLaBase[i];
+		porClave[equipo.clave] = equipo;
+		lista[equipo.clave + "/titular/red"] = { codigo: codigoDeCamiseta(equipo, "red"), nombreEquipo: equipo.nombre };
+		lista[equipo.clave + "/titular/blue"] = { codigo: codigoDeCamiseta(equipo, "blue"), nombreEquipo: equipo.nombre };
+	}
+	camisetasEquipos = lista;
+
+	// Los clásicos: cada uno es una opción del cambio automático
+	var nuevas = [];
+	for (var j = 0; j < clasicosDeLaBase.length; j++) {
+		var cruce = clasicosDeLaBase[j];
+		var rojo = porClave[cruce.red];
+		var azul = porClave[cruce.blue];
+		if (!rojo || !azul) continue;
+		nuevas.push({ partido: armarPartido(rojo, azul), demanda: cruce.demanda });
+	}
+	if (nuevas.length) opciones = nuevas;
+
+	console.log("👕 Camisetas desde la base: " + equiposDeLaBase.length + " equipos y " + nuevas.length + " clásicos");
+};
+
+// ── Las camisetas compradas (la tienda de la web) ──
+// window.__MIS_CAMISETAS: nick en minúscula → [{clave, nombre}] (lo que compró)
+// window.__CAMISETA_PUESTA: nick en minúscula → {clave, nombre, angulo, texto, colores}
+//
+// LA CAMISETA LA PONE EL CAPITÁN, y solo cuando los equipos se arman eligiendo (modos "elegir"
+// y "combinado"): es el que eligió a su equipo, así que es el que decide con qué juegan. Si el
+// capitán se va, la pone el que quede de capitán. En gana-sigue o cuando el bot acomoda solo,
+// no hay capitán y salen las camisetas del sorteo de siempre.
+var CamisetasCompradasActivas = true;
+
+// ¿Se están eligiendo los equipos? (lo prende el bloque 🔀 MODOS DE EQUIPOS)
+function hayCapitanes() {
+	return typeof SeleccionPorTurnos !== "undefined" && SeleccionPorTurnos === true;
+}
+
+// El capitán de un equipo: el primero de ese equipo en la lista (el que eligió)
+function capitanDelEquipo(equipo) {
+	if (typeof capitanDe === "function") {
+		try { return capitanDe(equipo); } catch (e) {}
+	}
+	var suyos = room.getPlayerList().filter(function (j) { return j.team === equipo && j.id !== 0; });
+	return suyos.length ? suyos[0] : null;
+}
+
+// ¿Esta persona manda la camiseta de su equipo?
+function esCapitan(jugador) {
+	if (!jugador || jugador.team === 0) return false;
+	var cap = capitanDelEquipo(jugador.team);
+	return Boolean(cap && cap.id === jugador.id);
+}
+
+function camisetasDe(jugador) {
+	var lista = (window.__MIS_CAMISETAS || {})[String(jugador.name).toLowerCase()];
+	return Array.isArray(lista) ? lista : [];
+}
+
+function camisetaPuestaDe(jugador) {
+	return (window.__CAMISETA_PUESTA || {})[String(jugador.name).toLowerCase()] || null;
+}
+
+function ponerCamisetaDelEquipo(equipo) {
+	if (!CamisetasCompradasActivas || !hayCapitanes()) return false;
+	var capitan = capitanDelEquipo(equipo);
+	if (!capitan) return false;
+	var puesta = camisetaPuestaDe(capitan);
+	if (!puesta) return false;
+
+	room.setTeamColors(
+		equipo,
+		puesta.angulo,
+		parseInt(puesta.texto, 16),
+		puesta.colores.map(function (c) { return parseInt(c, 16); })
+	);
+	if (equipo === 1) teamRed = puesta.nombre; else teamBlue = puesta.nombre;
+	room.sendAnnouncement(
+		(equipo === 1 ? "🔴" : "🔵") + " Juegan con la camiseta de " + puesta.nombre + ", que eligió el capitán " + capitan.name,
+		null, 0xFFD100, "small", 0
+	);
+	return true;
+}
+
+(function () {
+	// La camiseta comprada pisa a la del sorteo, pero después del cambio automático
+	var anteriorStart = room.onGameStart;
+	room.onGameStart = function (byPlayer) {
+		if (typeof anteriorStart === "function") anteriorStart(byPlayer);
+		setTimeout(function () {
+			try { ponerCamisetaDelEquipo(1); ponerCamisetaDelEquipo(2); } catch (e) {}
+		}, 300);
+	};
+
+	// Si se va el capitán, la camiseta la pone el que queda de capitán
+	var anteriorSalida = room.onPlayerLeave;
+	room.onPlayerLeave = function (jugador) {
+		if (typeof anteriorSalida === "function") anteriorSalida(jugador);
+		if (!hayCapitanes() || !jugador || jugador.team === 0) return;
+		var equipo = jugador.team;
+		setTimeout(function () {
+			try { ponerCamisetaDelEquipo(equipo); } catch (e) {}
+		}, 1200);
+	};
+
+	// !camisetas: qué clubes hay cargados (para ver que la base llegó)
+	var anteriorChat = room.onPlayerChat;
+	room.onPlayerChat = function (player, message) {
+		var bajo = String(message).trim().toLowerCase();
+		// !camisetas → las que compró · !camiseta <nombre> → se la pone · !camiseta ninguna → se la saca
+		if (bajo === "!camisetas" || bajo.indexOf("!camiseta ") === 0 || bajo === "!camiseta") {
+			var mias = camisetasDe(player);
+			var puesta = camisetaPuestaDe(player);
+
+			if (bajo === "!camisetas" || bajo === "!camiseta") {
+				if (!mias.length) {
+					room.sendAnnouncement("👕 Todavía no tenés camisetas. Se compran con monedas en la web de ÑandutíHax.", player.id, 0xFFD100, "bold", 2);
+					if (window.__WEB_URL) room.sendAnnouncement("   " + window.__WEB_URL, player.id, 0x00C853, "small", 0);
+					return false;
+				}
+				room.sendAnnouncement("👕 Tus camisetas: " + mias.map(function (c) { return c.nombre; }).join(" · "), player.id, 0xFFD100, "bold", 2);
+				room.sendAnnouncement("   Te ponés una con  !camiseta " + mias[0].nombre.toLowerCase() + "   (o !camiseta ninguna para sacártela)", player.id, 0x93A1B0, "small", 0);
+				if (puesta) room.sendAnnouncement("   Ahora tenés puesta la de " + puesta.nombre + ".", player.id, 0x93A1B0, "small", 0);
+				return false;
+			}
+
+			if (hayCapitanes() && player.team !== 0 && !esCapitan(player)) {
+				var cap = capitanDelEquipo(player.team);
+				room.sendAnnouncement(
+					"👕 La camiseta del equipo la elige el capitán" + (cap ? " (" + cap.name + ")" : "") + ". La tuya la podés cambiar cuando te toque serlo.",
+					player.id, 0xFF6B6B, "bold", 2
+				);
+				return false;
+			}
+
+			var pedida = String(message).trim().slice(10).trim().toLowerCase();
+			if (pedida === "ninguna" || pedida === "sacar" || pedida === "-") {
+				avisarAlPanel({ tipo: "camiseta", nick: player.name, clave: null });
+				room.sendAnnouncement("👕 Te sacaste la camiseta: volvés a la del sorteo.", player.id, 0xFFD100, "bold", 0);
+				return false;
+			}
+			var elegida = null;
+			for (var k = 0; k < mias.length; k++) {
+				if (mias[k].clave === pedida || mias[k].nombre.toLowerCase() === pedida) { elegida = mias[k]; break; }
+			}
+			if (!elegida) {
+				room.sendAnnouncement("👕 Esa camiseta no es tuya. Las tuyas: " + (mias.length ? mias.map(function (c) { return c.nombre; }).join(" · ") : "ninguna todavía"), player.id, 0xFF6B6B, "bold", 2);
+				return false;
+			}
+			avisarAlPanel({ tipo: "camiseta", nick: player.name, clave: elegida.clave });
+			room.sendAnnouncement("👕 Te pusiste la de " + elegida.nombre + ". La vas a usar en el próximo partido.", player.id, 0xFFD100, "bold", 2);
+			return false;
+		}
+
+		if (bajo === "!equipos" || bajo === "!clubes") {
+			if (!equiposDeLaBase.length) {
+				room.sendAnnouncement("👕 Las camisetas son las que trae la sala (la base no contestó).", player.id, 0xFFD100, "bold", 0);
+			} else {
+				room.sendAnnouncement("👕 " + equiposDeLaBase.length + " camisetas y " + clasicosDeLaBase.length + " clásicos cargados desde la web.", player.id, 0xFFD100, "bold", 0);
+				room.sendAnnouncement("   " + equiposDeLaBase.map(function (e) { return e.nombre; }).join(" · "), player.id, 0x93A1B0, "small", 0);
+			}
+			return false;
+		}
+		return typeof anteriorChat === "function" ? anteriorChat(player, message) : true;
+	};
+
+	window.__equiposSala(window.__EQUIPOS_INICIAL);
+	console.log("👕 Camisetas desde la base: activas");
+})();

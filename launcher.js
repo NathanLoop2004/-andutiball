@@ -17,6 +17,9 @@ const PartidoModel = require("./models/PartidoModel");
 const ConfigModel = require("./models/ConfigModel");
 const EloSalasModel = require("./models/EloSalasModel");
 const MonedasModel = require("./models/MonedasModel");
+const EquiposModel = require("./models/EquiposModel");
+const TiendaModel = require("./models/TiendaModel");
+const RachasModel = require("./models/RachasModel");
 const Parametros = require("./lib/parametros");
 const WebhookWeb = require("./services/WebhookWeb");
 const { leerRoles } = require("./lib/roles");
@@ -217,6 +220,12 @@ api.on("error", (error) => {
         break;
       // Un admin lo cambió con un comando adentro de la sala (!powershot, !ganasigue…): a la base,
       // así la web muestra lo que pasa de verdad.
+      // Alguien se puso una camiseta con !camiseta en la sala
+      case "camiseta":
+        TiendaModel.elegir(evento.nick, evento.clave)
+          .then(() => refrescarCamisetas())
+          .catch((error) => console.warn(`⚠️ No se pudo guardar la camiseta de ${evento.nick}: ${String(error.message).split("\n")[0]}`));
+        break;
       case "config-sala":
         if (salaElegida) {
           ConfigModel.guardar(salaElegida, evento.nombre, evento.valor, "la sala")
@@ -293,7 +302,7 @@ api.on("error", (error) => {
 
       // Desde la sala NO se crean cuentas ni se cambian claves: eso es solo en la web.
       // Aunque alguien empuje un pedido "registrar" o "cambiar", acá no se toca la base.
-      return contestar({ ok: false, motivo: "Las cuentas se crean y se cambian solo en la página de ÑandutíBall" });
+      return contestar({ ok: false, motivo: "Las cuentas se crean y se cambian solo en la página de ÑandutíHax" });
     } catch (error) {
       const sinBase = /No se pudo abrir la base|Can't reach database|ECONNREFUSED/i.test(error.message);
       if (sinBase) console.warn("⚠️ La base no responde: la sala sigue andando, sin pedir claves");
@@ -359,6 +368,34 @@ api.on("error", (error) => {
       // Sin base no se le pide clave a nadie
       await frame.evaluate(() => { window.__USUARIOS = []; }).catch(() => {});
       return null;
+    }
+  };
+
+  // Rachas: cuántas viene ganando seguidas cada uno. Se avisa en la sala cuando llega a 3, 5, 10…
+  const anotarRachas = async (evento) => {
+    try {
+      const permitidos = await EloSalasModel.conCuenta(evento);
+      const tieneCuenta = (j) => j.verificado === true && permitidos.has(String(j.nombre || "").trim().toLowerCase());
+      const equipo = (lado) => (evento[lado] || []).filter(tieneCuenta).map((j) => j.nombre);
+      if (!evento.ganador) return;   // en un empate no hay racha que sumar, pero sí se corta
+      const ganadores = equipo(evento.ganador === 1 ? "red" : "blue");
+      const perdedores = equipo(evento.ganador === 1 ? "blue" : "red");
+      const novedades = await RachasModel.anotarPartido({ ganadores, perdedores });
+
+      const lineas = [];
+      for (const n of novedades) {
+        if (n.record && n.actual >= 3) lineas.push(`🔥 ${n.nick} hizo su mejor racha: ${n.actual} seguidas`);
+        else if (n.premio) lineas.push(`🔥 ${n.nick} lleva ${n.actual} ganadas seguidas`);
+        else if (n.cortada) lineas.push(`💔 Se le cortó la racha a ${n.nick} (venía de ${n.cortada})`);
+      }
+      if (!lineas.length) return;
+      agregarMensaje("racha", lineas.join(" · "));
+      await frame.evaluate((textos) => {
+        if (!window.__sala) return;
+        for (const t of textos) window.__sala.sendAnnouncement(t, null, 0xFF8C00, "bold", 2);
+      }, lineas).catch(() => {});
+    } catch (error) {
+      console.warn(`⚠️ Las rachas no se anotaron: ${String(error.message).split("\n")[0]}`);
     }
   };
 
@@ -444,7 +481,7 @@ api.on("error", (error) => {
     PartidoModel.guardar(evento, cambiosSala, { clave: salaElegida || "sala", nombre: hostConfig.NombreHost || salaElegida || "sala" }, eloGeneral)
       .then((p) => {
         if (p) console.log(`💾 Partido #${p.id} guardado en la base`);
-        return repartirMonedas(evento, p ? p.id : null);
+        return repartirMonedas(evento, p ? p.id : null).then(() => anotarRachas(evento));
       })
       .catch((error) => console.warn(`⚠️ El partido no se guardó en la base: ${String(error.message).split("\n")[0]}`));
 
@@ -553,6 +590,30 @@ api.on("error", (error) => {
 
   // Parámetros y comandos apagados desde el panel: la sala aplica solo lo que cambió
   let avisamosConfigCaida = false;
+  // Las camisetas y los clásicos: se editan en el panel (Equipos) y la sala los toma en vivo
+  let avisamosEquiposCaidos = false;
+  const refrescarEquipos = async () => {
+    try {
+      const datos = await EquiposModel.paraLaSala();
+      avisamosEquiposCaidos = false;
+      await frame.evaluate((d) => { if (window.__equiposSala) window.__equiposSala(d); }, datos);
+    } catch (error) {
+      if (!avisamosEquiposCaidos) console.warn("⚠️ No se pudieron leer las camisetas de la base: la sala usa las suyas");
+      avisamosEquiposCaidos = true;
+    }
+  };
+
+  // Las camisetas compradas: qué tiene cada uno y cuál se puso (tienda de la web)
+  const refrescarCamisetas = async () => {
+    try {
+      const nombres = await frame.evaluate(() => (window.__sala ? window.__sala.getPlayerList().map((j) => j.name) : []));
+      const [puestas, compradas] = await Promise.all([TiendaModel.paraLaSala(), TiendaModel.deVariasCuentas(nombres)]);
+      await frame.evaluate((p, c) => { window.__CAMISETA_PUESTA = p; window.__MIS_CAMISETAS = c; }, puestas, compradas);
+    } catch (error) {
+      // Sin base no pasa nada: !camisetas avisa que todavía no tiene ninguna
+    }
+  };
+
   const refrescarConfig = async () => {
     if (!claveSala) return;
     try {
@@ -569,6 +630,11 @@ api.on("error", (error) => {
     }
   };
   setInterval(refrescarConfig, SEGUNDOS_RANGOS * 1000);
+
+  await refrescarEquipos();
+  setInterval(refrescarEquipos, 30000);   // las camisetas no cambian tan seguido
+  await refrescarCamisetas();
+  setInterval(refrescarCamisetas, 20000);
 
   // El link de la web puede aparecer después (el túnel tarda unos segundos en abrir)
   await refrescarLinkWeb();

@@ -1,6 +1,6 @@
 
 
-// ▇▇▇▇▇▇▇▇▇ 🪙 MONEDAS — ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// ▇▇▇▇▇▇▇▇▇ 🪙 MONEDAS — ÑandutíHax ▇▇▇▇▇▇▇▇▇
 // Las monedas se ganan jugando y se guardan en la cuenta de la web (Node las suma: ver
 // models/MonedasModel.js). Acá adentro solo hacemos dos cosas:
 //
@@ -10,7 +10,7 @@
 //   2. Avisarle a cada uno lo que ganó, EN PRIVADO (lo de ganar el partido sí sale para todos).
 //
 // El reparto (solo para el equipo que gana, y solo cuentas de la web con la clave puesta):
-//   🏆 ganar 1 · ⚽ gol 1 (hasta 3) · 🅰️ asistencia 1 (hasta 3) · 🧤 atajada 0,30 (hasta 3)
+//   🏆 ganar 1 · ⚽ gol 0,30 (hasta 3 goles) · 🅰️ asistencia 1 (hasta 3) · 🧤 atajada 0,30 (hasta 3)
 
 var ContarAtajadas = true;
 var VelocidadParaAtajada = 3;            // qué tan fuerte tiene que ir la pelota al arco
@@ -86,7 +86,7 @@ window.__monedasAviso = function (lista) {
 			room.sendAnnouncement("   Tenés " + textoMonedas(premio.saldo) + " monedas en tu cuenta de la web.", quien.id, 0x93A1B0, "small", 0);
 		}
 	}
-	room.sendAnnouncement("🪙 Los que ganan el partido se llevan monedas. Miralas en tu cuenta de ÑandutíBall.", null, 0xFFD100, "small", 0);
+	room.sendAnnouncement("🪙 Los que ganan el partido se llevan monedas. Miralas en tu cuenta de ÑandutíHax.", null, 0xFFD100, "small", 0);
 };
 
 (function () {

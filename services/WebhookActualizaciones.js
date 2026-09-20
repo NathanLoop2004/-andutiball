@@ -9,8 +9,8 @@
 // =============================================================================
 
 const COLOR = 0x00c853;
-const NOMBRE = "ÑandutíBall 🇵🇾";
-const TITULO_POR_DEFECTO = "📣 Novedades de ÑandutíBall";
+const NOMBRE = "ÑandutíHax 🇵🇾";
+const TITULO_POR_DEFECTO = "📣 Novedades de ÑandutíHax";
 
 function urlDelWebhook() {
   return (process.env.WEBHOOK_ACTUALIZACIONES || "").trim();

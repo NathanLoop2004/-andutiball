@@ -1,6 +1,6 @@
 
 
-// ▇▇▇▇▇▇▇▇▇ 🤫 COMANDOS SIN ECO — ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// ▇▇▇▇▇▇▇▇▇ 🤫 COMANDOS SIN ECO — ÑandutíHax ▇▇▇▇▇▇▇▇▇
 // Lo que empieza con "!" es un comando: se ejecuta, pero NO se muestra en el chat.
 // Así nadie ve tu clave cuando escribís "!clave loquesea", ni se llena la sala de
 // comandos de los demás.

@@ -1,13 +1,14 @@
 
 
-// ▇▇▇▇▇▇▇▇▇ 🎽 SELECCIÓN POR TURNOS — ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// ▇▇▇▇▇▇▇▇▇ 🎽 SELECCIÓN POR TURNOS — ÑandutíHax ▇▇▇▇▇▇▇▇▇
 // En vez de que el bot acomode a todos de una, los equipos se arman eligiendo por turnos:
 // elige Red 1, después Blue 1, y así hasta llenar los dos (3v3, 4v4, lo que diga el cupo).
 //
 // Cómo funciona en la cancha:
 //   · Los dos primeros espectadores pasan solos a Red y Blue: son los capitanes.
 //   · El bot avisa de quién es el turno y lista a los espectadores con su número.
-//   · El capitán escribe !7 (o !elegir 7). También vale para los admins.
+//   · El capitán escribe el número del que quiere: 7 (también vale !7 o !elegir 7).
+//     El número suelto SOLO cuenta como elección si le toca elegir a esa persona.
 //     Va con ! a propósito: escribir un número pelado es hablar, no elegir.
 //   · Sobre el final se cuenta 3… 2… 1… en el chat.
 //   · Si el capitán no elige en SegundosParaElegir, se va de la sala y elige el que sigue
@@ -18,7 +19,7 @@
 // jugadores por su cuenta, se pisan entre sí; de eso también se encarga ese bloque.
 
 var SeleccionPorTurnos = false;    // se prende solo según el modo de la sala
-var SegundosParaElegir = 15;       // lo que tiene el capitán para elegir
+var SegundosParaElegir = 35;       // lo que tiene el capitán para elegir (elegir y pensar lleva su tiempo)
 var EcharAlQueNoElige = true;      // true: se va de la sala | false: pasa a espectador y al final de la fila
 var SegundosDeCuenta = 3;          // los últimos segundos se cuentan en el chat (3… 2… 1…)
 
@@ -257,12 +258,13 @@ function revisarTurnos() {
 		setTimeout(revisarTurnos, 2000);
 	};
 
-	// El capitán elige con "!7" o con "!elegir 7". Siempre con !, para que un número
-	// suelto en el chat sea un número y no una elección.
+	// El capitán elige escribiendo el número: "7". También valen "!7" y "!elegir 7".
+	// El número suelto solo cuenta si a esa persona le toca elegir (puedeElegir), así que
+	// para el resto de la sala un número sigue siendo un número.
 	var anteriorChat = room.onPlayerChat;
 	room.onPlayerChat = function (player, message) {
 		var texto = String(message).trim();
-		var m = texto.match(/^!(?:elegir\s*)?(\d{1,3})$/i);
+		var m = texto.match(/^!?(?:elegir\s*)?(\d{1,3})$/i);
 		if (m && espectadoresListos().length && puedeElegir(player)) {
 			elegirJugador(player, parseInt(m[1], 10));
 			return false;

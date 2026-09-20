@@ -154,12 +154,12 @@ room.stopGame();
 if (room.onGameStop) room.onGameStop(null);
 const evento2 = (contexto.window.__panelCola || []).find((e) => e.tipo === "elo-partido");
 const tabla2 = elo.leerElo();
-const antesAna = tabla2["auth:auth-Ana"].elo;
+const antesAna = tabla2["cuenta:ana"].elo;
 const cambios2 = elo.aplicarPartido(tabla2, evento2);
 elo.guardarElo(tabla2);
 console.log("  " + cambios2.map((c) => `${c.nombre} ${c.delta >= 0 ? "+" : ""}${c.delta}`).join("  "));
-revisar(tabla2["auth:auth-Ana"].elo < antesAna, "Ana baja al perder el segundo");
-revisar(tabla2["auth:auth-Ana"].partidos === 2, "lleva la cuenta de partidos jugados");
+revisar(tabla2["cuenta:ana"].elo < antesAna, "Ana baja al perder el segundo");
+revisar(tabla2["cuenta:ana"].partidos === 2, "lleva la cuenta de partidos jugados");
 
 // ── Lo que ve el panel ──
 console.log("\n══ Lo que muestra el panel ══");

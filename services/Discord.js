@@ -4,7 +4,7 @@
 // No es para iniciar sesión: el usuario ya entró a la web con su cuenta, y esto solo le asocia
 // su Discord. Se piden dos permisos ("scopes"):
 //   identify     → saber quién es (id, usuario, avatar)
-//   guilds.join  → poder agregarlo al servidor de ÑandutíBall
+//   guilds.join  → poder agregarlo al servidor de ÑandutíHax
 //
 // Se configura en .env (ver .env.example):
 //   DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET   la aplicación del portal de Discord

@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mi inventario · ÑandutíHax</title>
+<link rel="icon" href="/img/logo-chico.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/css/nanduti.css">
+<script src="/js/tema.js"></script>
+<script src="/js/sesion.js"></script>
+<script>if (!Sesion.usuario()) location.replace("/frm/login/?volver=" + encodeURIComponent("/frm/inventario/"));</script>
+</head>
+<body>
+
+<header class="barra">
+  <a class="marca" href="/"><img src="/img/logo-chico.png" alt=""><span>ÑandutíHax</span></a>
+  <div class="derecha" id="derecha"></div>
+</header>
+
+<main class="contenido">
+  <div class="cabecera">
+    <div>
+      <h1>Mi inventario</h1>
+      <p>Lo que compraste con tus monedas. Tocá una casilla para usarla o venderla.</p>
+    </div>
+    <div class="bolsa" title="Tus monedas">🪙 <b id="saldo">…</b></div>
+  </div>
+
+  <div class="aviso" id="aviso"></div>
+
+  <div class="cofre">
+    <div class="cofre-titulo">Camisetas</div>
+    <div class="casillero" id="casillero"></div>
+
+    <div class="cofre-titulo" style="margin-top:18px">Puesta</div>
+    <div class="casillero puesta" id="casilleroPuesta"></div>
+  </div>
+
+  <!-- Lo que hay en la casilla elegida -->
+  <section class="tarjeta" id="detalle" hidden>
+    <div class="tarjeta-cuerpo detalle-item">
+      <div class="camiseta-grande" id="itemCamiseta"><span id="itemNumero">10</span></div>
+      <div class="detalle-datos">
+        <h2 id="itemNombre">—</h2>
+        <p class="tenue" id="itemTexto"></p>
+        <dl class="lista-datos">
+          <dt>Pagaste</dt><dd id="itemPagado">—</dd>
+          <dt>Te dan si la vendés</dt><dd id="itemVale">—</dd>
+          <dt>La compraste</dt><dd id="itemCuando">—</dd>
+        </dl>
+        <div class="acciones">
+          <button class="boton principal" type="button" id="usar">Usar</button>
+          <button class="boton peligro" type="button" id="vender">Vender</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (t) => String(t == null ? "" : t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const monedasTexto = (n) => Number(n || 0).toFixed(2).replace(/\.00$/, "").replace(/(\.\d)0$/, "$1").replace(".", ",");
+const fondoCamiseta = (c) => `linear-gradient(${(c.angulo || 0) + 90}deg, #${c.colores[0]} 0 33.34%, #${c.colores[1]} 33.34% 66.67%, #${c.colores[2]} 66.67% 100%)`;
+
+const CASILLAS = 18;   // 3 filas de 6, como un cofre
+let inventario = { camisetas: [], puesta: null };
+let elegida = null;
+
+Sesion.pintarBarra($("derecha"));
+Sesion.mantener();
+
+function avisar(texto, clase) {
+  $("aviso").className = "aviso" + (texto ? " " + clase : "");
+  $("aviso").textContent = texto;
+  clearTimeout(avisar._t);
+  if (texto && clase !== "mal") avisar._t = setTimeout(() => avisar(""), 5000);
+}
+
+function pintar() {
+  const casillas = [];
+  for (let i = 0; i < Math.max(CASILLAS, inventario.camisetas.length); i++) {
+    const c = inventario.camisetas[i];
+    if (!c) {
+      casillas.push('<div class="casilla vacia" aria-hidden="true"></div>');
+      continue;
+    }
+    casillas.push(`
+      <button class="casilla${inventario.puesta === c.clave ? " puesta" : ""}${elegida === c.clave ? " elegida" : ""}"
+              type="button" data-clave="${esc(c.clave)}" title="${esc(c.nombre)} · vale ${monedasTexto(c.vale)} 🪙">
+        <span class="casilla-camiseta" style="background:${fondoCamiseta(c)}"></span>
+        <span class="casilla-nombre">${esc(c.nombre)}</span>
+      </button>`);
+  }
+  $("casillero").innerHTML = casillas.join("");
+
+  const puesta = inventario.camisetas.find((c) => c.clave === inventario.puesta);
+  $("casilleroPuesta").innerHTML = puesta
+    ? `<button class="casilla puesta" type="button" data-clave="${esc(puesta.clave)}">
+         <span class="casilla-camiseta" style="background:${fondoCamiseta(puesta)}"></span>
+         <span class="casilla-nombre">${esc(puesta.nombre)}</span>
+       </button>`
+    : '<div class="casilla vacia"><span class="tenue" style="font-size:11px">sin camiseta</span></div>';
+
+  if (!inventario.camisetas.length) {
+    avisar("Todavía no tenés nada. Las camisetas se compran en la portada, con las monedas que ganás jugando.", "info");
+  }
+}
+
+function abrir(clave) {
+  const c = inventario.camisetas.find((x) => x.clave === clave);
+  if (!c) return;
+  elegida = clave;
+  $("itemCamiseta").style.background = fondoCamiseta(c);
+  $("itemNumero").style.color = "#" + c.colorTexto;
+  $("itemNombre").textContent = c.nombre;
+  $("itemTexto").textContent = c.detalle || c.descripcion || "";
+  $("itemPagado").textContent = monedasTexto(c.pagada) + " 🪙";
+  $("itemVale").textContent = monedasTexto(c.vale) + " 🪙  (30% menos de lo que pagaste)";
+  $("itemCuando").textContent = new Date(c.comprada).toLocaleDateString("es-PY");
+  $("usar").textContent = inventario.puesta === clave ? "Sacármela" : "Usar";
+  $("vender").textContent = "Vender por " + monedasTexto(c.vale) + " 🪙";
+  $("detalle").hidden = false;
+  pintar();
+}
+
+async function cargar() {
+  try {
+    const [mias, cuenta] = await Promise.all([Sesion.pedir("/api/tienda/mias"), Sesion.pedir("/api/cuenta")]);
+    inventario = mias;
+    $("saldo").textContent = monedasTexto(cuenta.cuenta.monedas);
+    if (elegida && !inventario.camisetas.some((c) => c.clave === elegida)) {
+      elegida = null;
+      $("detalle").hidden = true;
+    }
+    pintar();
+  } catch (error) {
+    if (/iniciar sesión/i.test(error.message)) return location.replace("/frm/login/?volver=" + encodeURIComponent("/frm/inventario/"));
+    avisar(error.message, "mal");
+  }
+}
+
+document.addEventListener("click", (e) => {
+  const casilla = e.target.closest(".casilla[data-clave]");
+  if (casilla) abrir(casilla.dataset.clave);
+});
+
+$("usar").onclick = async () => {
+  if (!elegida) return;
+  const sacar = inventario.puesta === elegida;
+  try {
+    await Sesion.pedir("/api/tienda/elegir", { method: "POST", body: JSON.stringify({ clave: sacar ? null : elegida }) });
+    avisar(sacar ? "Te la sacaste: volvés a la camiseta del sorteo." : "Listo. Si sos capitán, tu equipo juega con esta.", "ok");
+    await cargar();
+    if (elegida) abrir(elegida);
+  } catch (error) { avisar(error.message, "mal"); }
+};
+
+$("vender").onclick = async () => {
+  if (!elegida) return;
+  const c = inventario.camisetas.find((x) => x.clave === elegida);
+  if (!c || !confirm(`¿Vender la camiseta de ${c.nombre}? Te devuelven ${monedasTexto(c.vale)} monedas de las ${monedasTexto(c.pagada)} que pagaste.`)) return;
+  try {
+    const r = await Sesion.pedir("/api/tienda/vender", { method: "POST", body: JSON.stringify({ clave: elegida }) });
+    elegida = null;
+    $("detalle").hidden = true;
+    avisar(`Vendiste la de ${r.vendida} por ${monedasTexto(r.devuelto)} 🪙. Te quedan ${monedasTexto(r.saldo)} monedas.`, "ok");
+    cargar();
+  } catch (error) { avisar(error.message, "mal"); }
+};
+
+cargar();
+</script>
+</body>
+</html>

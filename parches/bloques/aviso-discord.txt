@@ -1,6 +1,6 @@
 
 
-// ▇▇▇▇▇▇▇▇▇ 📣 AVISO DE SALA ABIERTA — ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// ▇▇▇▇▇▇▇▇▇ 📣 AVISO DE SALA ABIERTA — ÑandutíHax ▇▇▇▇▇▇▇▇▇
 // Cuando HaxBall entrega el link de la sala (onRoomLink), se avisa al Discord con una
 // tarjeta (embed): nombre de la sala, mapa, cupo, modo y el botón para entrar.
 //
@@ -15,7 +15,7 @@ var AvisoSalaAbierta = true;          // false para no avisar nada
 var WebhookSalaAbierta = "https://discord.com/api/webhooks/1549587917314326648/C-MCs-1bd1h_H42bV1byqyDuTIAikoFza_X3ddzcnfqE2Q9Ig4TL4MVGSMWHGi5QIthB";
 var DiscordDeLaSala = "https://discord.gg/TGRug4BGG";
 var TagSalaAbierta = "@here";         // "@here", "@everyone", un ID de rol, o "" para no avisar a nadie
-var NombreDelAvisador = "ÑandutíBall 🇵🇾";
+var NombreDelAvisador = "ÑandutíHax 🇵🇾";
 var ColorSalaAbierta = 0x00C853;      // el color de la barra lateral de la tarjeta
 
 // ── La plantilla ──
@@ -23,7 +23,7 @@ var ColorSalaAbierta = 0x00C853;      // el color de la barra lateral de la tarj
 var TituloSalaAbierta = "🟢 ¡{sala} está abierta!";
 var MensajeSalaAbierta = "⚽ Ya se puede entrar a jugar. ¡Te esperamos en la cancha!";
 var BotonSalaAbierta = "👉 **[ENTRAR A LA SALA]({link})**";
-var PieSalaAbierta = "ÑandutíBall 🇵🇾 · {discord}";
+var PieSalaAbierta = "ÑandutíHax 🇵🇾 · {discord}";
 
 // ── El cartelito del Discord en el chat de la sala ──
 var AvisoDiscordEnElChat = true;      // false para no invitar al Discord en el chat

@@ -564,3 +564,109 @@ input[type=number]:focus { outline: none; border-color: var(--acento); box-shado
 .monedas-historial li { display: flex; align-items: baseline; gap: 10px; border-top: 1px solid var(--borde); padding-top: 8px; }
 .monedas-historial li b { color: var(--verde); }
 .monedas-historial li small { margin-left: auto; color: var(--tenue); }
+
+/* El logo de ÑandutíHax arriba de la presentación */
+.tapa .logo-tapa { width: 104px; height: 104px; display: block; margin: 0 0 20px; }
+@media (min-width: 720px) { .tapa .logo-tapa { width: 152px; height: 152px; } }
+
+/* 👕 Equipos: camisetas, clásicos y el editor */
+.tabla-envoltorio { overflow-x: auto; }
+.camiseta { display: inline-block; width: 30px; height: 30px; border-radius: 7px; border: 1px solid var(--borde-fuerte); vertical-align: middle; }
+.camiseta.grande { width: 56px; height: 56px; border-radius: 10px; }
+.clasico-form { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+.clasico-form select { min-width: 190px; }
+.clasico-form input[type="number"] { width: 110px; }
+.clasico-vista { display: flex; gap: 12px; align-items: center; }
+.tabla input.demanda { width: 96px; text-align: right; }
+
+.fondo-modal { position: fixed; inset: 0; background: rgba(8, 12, 20, .55); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 50; }
+.fondo-modal[hidden] { display: none !important; }
+.modal { background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); width: min(680px, 100%); max-height: 90vh; overflow: auto; box-shadow: 0 24px 60px rgba(0, 0, 0, .3); }
+.modal-cabeza, .modal-pie { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; }
+.modal-cabeza { border-bottom: 1px solid var(--borde); }
+.modal-pie { border-top: 1px solid var(--borde); }
+.modal-cabeza h2 { margin: 0; font-size: 17px; }
+.modal-cuerpo { padding: 20px; }
+
+.editor-camiseta { display: grid; grid-template-columns: 160px 1fr; gap: 20px; align-items: start; }
+@media (max-width: 620px) { .editor-camiseta { grid-template-columns: 1fr; } }
+.camiseta-grande { width: 160px; height: 160px; border-radius: 16px; border: 1px solid var(--borde-fuerte); display: flex; align-items: center; justify-content: center; font-size: 46px; font-weight: 700; }
+.editor-campos { display: grid; gap: 12px; }
+.editor-campos label { display: grid; gap: 6px; font-size: 13px; font-weight: 600; color: var(--suave); }
+.editor-campos label.linea { display: flex; align-items: center; gap: 10px; }
+.colores-fila { display: flex; gap: 12px; flex-wrap: wrap; }
+.colores-fila label { gap: 6px; }
+.colores-fila input[type="color"] { width: 58px; height: 34px; padding: 2px; border: 1px solid var(--borde); border-radius: 8px; background: var(--superficie-2); cursor: pointer; }
+
+/* 🛍️ La vidriera de camisetas: se mueve sola, en bucle infinito.
+   La pista lleva la lista DOS veces y se mueve de 0 a -50%: cuando termina la primera copia,
+   la segunda quedó justo en el mismo lugar, así no se ve el corte. Se frena con el mouse encima. */
+.vidriera {
+  position: relative;
+  overflow: hidden;
+  padding: 4px 0 8px;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent);
+}
+.vidriera-pista { display: flex; width: max-content; animation: vidriera 60s linear infinite; }
+.vidriera:hover .vidriera-pista, .vidriera:focus-within .vidriera-pista { animation-play-state: paused; }
+@keyframes vidriera { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) {
+  .vidriera-pista { animation: none; width: 100%; overflow-x: auto; }
+  .vidriera { -webkit-mask-image: none; mask-image: none; }
+}
+
+.vidriera-item {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  width: 132px; flex: none; margin-right: 14px; padding: 14px 10px;
+  background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio);
+  cursor: pointer; transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+.vidriera-item:hover { transform: translateY(-4px); box-shadow: var(--sombra); border-color: var(--borde-fuerte); }
+.vidriera-item .camiseta.grande { width: 64px; height: 64px; }
+.vidriera-nombre { font-size: 12px; font-weight: 600; color: var(--texto); text-align: center; line-height: 1.3; }
+.vidriera-precio { font-size: 12px; font-weight: 700; color: var(--ambar); }
+
+.modal.angosto { width: min(520px, 100%); }
+.detalle-camiseta { display: grid; grid-template-columns: 140px 1fr; gap: 18px; align-items: start; }
+@media (max-width: 560px) { .detalle-camiseta { grid-template-columns: 1fr; } }
+.detalle-camiseta .camiseta-grande { width: 140px; height: 140px; }
+.detalle-camiseta .precio { font-size: 22px; font-weight: 700; color: var(--texto); margin-bottom: 8px; }
+
+/* 👕 Mis camisetas (el inventario de Mi cuenta) */
+.inventario { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 14px; margin-top: 14px; }
+.inventario-item { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px 10px; border: 1px solid var(--borde); border-radius: var(--radio-chico); text-align: center; }
+.inventario-item.puesta { border-color: var(--acento); background: var(--acento-suave); }
+.inventario-item .camiseta.grande { width: 60px; height: 60px; }
+
+/* 🎒 Mi inventario: casillero tipo cofre (como el de un juego), con casillas vacías y llenas */
+.bolsa { font-size: 18px; font-weight: 700; padding: 8px 16px; border: 1px solid var(--borde); border-radius: var(--radio-chico); background: var(--superficie); white-space: nowrap; }
+.cofre { background: var(--superficie-2); border: 1px solid var(--borde); border-radius: var(--radio); padding: 18px; margin-bottom: 20px; }
+.cofre-titulo { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--tenue); margin-bottom: 10px; }
+.casillero { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+@media (max-width: 720px) { .casillero { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 460px) { .casillero { grid-template-columns: repeat(3, 1fr); } }
+.casillero.puesta { grid-template-columns: repeat(6, 1fr); max-width: 140px; }
+
+.casilla {
+  aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  padding: 8px 4px; background: var(--superficie); border: 2px solid var(--borde-fuerte); border-radius: 10px;
+  cursor: pointer; transition: transform .12s ease, border-color .12s ease, box-shadow .12s ease;
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .08);
+}
+.casilla:hover { transform: translateY(-2px); border-color: var(--acento); box-shadow: 0 6px 16px rgba(0, 0, 0, .12); }
+.casilla.elegida { border-color: var(--acento); background: var(--acento-suave); }
+.casilla.puesta { border-color: var(--verde); }
+.casilla.vacia {
+  background: color-mix(in srgb, var(--borde) 35%, transparent);
+  border-style: dashed; border-color: var(--borde); cursor: default; box-shadow: none;
+}
+.casilla.vacia:hover { transform: none; border-color: var(--borde); box-shadow: none; }
+.casilla-camiseta { width: 46px; height: 46px; border-radius: 8px; border: 1px solid var(--borde-fuerte); }
+.casilla-nombre { font-size: 10px; font-weight: 600; line-height: 1.2; text-align: center; color: var(--suave); overflow: hidden; }
+
+.detalle-item { display: grid; grid-template-columns: 150px 1fr; gap: 20px; align-items: start; }
+@media (max-width: 560px) { .detalle-item { grid-template-columns: 1fr; } }
+.detalle-item .camiseta-grande { width: 150px; height: 150px; }
+.detalle-datos h2 { margin: 0 0 6px; font-size: 20px; }
+.detalle-datos .acciones { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }

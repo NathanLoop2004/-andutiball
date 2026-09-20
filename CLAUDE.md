@@ -4,7 +4,7 @@ Contexto para trabajar en este proyecto. La documentación para personas está e
 
 ## Qué es
 
-`script.js` es un script de sala para el **Host Headless de HaxBall** (base: "Real Soccer Revolution By GLH 3.1.0", ya parcheado como ÑandutíBall).
+`script.js` es un script de sala para el **Host Headless de HaxBall** (base: "Real Soccer Revolution By GLH 3.1.0", ya parcheado como ÑandutíHax).
 
 - Se ejecuta **en el navegador**: se pega en la consola de https://www.haxball.com/headless.
 - Usa la API global `HBInit(roomConfig)` → objeto `room` (eventos `room.onPlayerJoin`, `room.onPlayerChat`, `room.onGameTick`…; métodos `room.sendAnnouncement`, `room.setCustomStadium`, `room.setPlayerTeam`…).
@@ -512,7 +512,7 @@ public/frm/actualizaciones/index.html ← solo admins
 public/frm/recuperar/index.html       recuperar la cuenta con un link por correo
 public/frm/cuenta/index.html          Mi cuenta: datos y cambiar la contraseña con código
 public/css/nanduti.css                estilo común (el panel trae el suyo aparte)
-public/img/logo.svg                   el logo
+public/img/logo.png                   el logo
 public/js/sesion.js                   la sesión: token, barra de arriba, candado
 ```
 
@@ -545,7 +545,7 @@ el `Authorization` en cada pedido.
 
 **Diseño (17/09/2026)**: `public/css/nanduti.css` es un sistema de tokens en `:root` con modo claro y
 oscuro (`prefers-color-scheme`), fuente Inter (Google Fonts) y un solo acento azul. Sin emojis en la
-interfaz: el logo es `public/img/logo.svg`. Lo usan solo las pantallas públicas (portada, login,
+interfaz: el logo es `public/img/logo.png`. Lo usan solo las pantallas públicas (portada, login,
 registro, recuperar, cuenta); las del panel siguen con su `<style>` propio. Ojo: `[hidden]` va con
 `!important` porque `.caja`/`.tarjeta` tienen `display`.
 
@@ -678,7 +678,7 @@ endpoints contra HTTP de verdad. Usa `ROLES_FILE` y `ELO_FILE` apuntando a una c
 
 Desde el 15/09/2026 la base es **"Real Soccer Revolution By GLH 3.1.0"**: viene completo y válido, con `onGameTick` (motor de Real Soccer), `onTeamGoal`, `onPlayerChat`, `onPositionsReset`, `onTeamVictory` y `onGamePause/Unpause`. Reemplazó al archivo truncado anterior, al que le faltaban el árbitro y los comandos.
 
-Sobre esa base, `npm run parchar` aplica lo de ÑandutíBall. Como el script ya trae su chat y su árbitro, el parcheador **salta** los bloques `💬 COMANDOS DEL CHAT` y `🧑‍⚖️ ARBITRAJE` (quedan en `parches/bloques/` por si vuelve a hacer falta).
+Sobre esa base, `npm run parchar` aplica lo de ÑandutíHax. Como el script ya trae su chat y su árbitro, el parcheador **salta** los bloques `💬 COMANDOS DEL CHAT` y `🧑‍⚖️ ARBITRAJE` (quedan en `parches/bloques/` por si vuelve a hacer falta).
 
 **Webhook oculto → desactivado** en cada parcheo: `var webhookID=null` con el link comentado arriba (buscar `WEBHOOK OCULTO DEL AUTOR`) y el `fetch(webhookID,…)` fuera del `onPlayerJoin` ofuscado. **No reactivar**: enviaba nombre, IP (`player.conn`) y auth de cada jugador a un Discord ajeno.
 
@@ -686,7 +686,7 @@ Handlers ofuscados de esta versión: `0x1cb` onRoomLink · `0x1bc` onStadiumChan
 
 ## Parches (`npm run parchar`)
 
-`parches/aplicar.js` reaplica **todo lo de ÑandutíBall** sobre cualquier `script.js`: corta la última línea si viene truncado, desactiva el webhook oculto, cambia la marca GLH → ÑandutíBall, pone las camisetas paraguayas (`parches/camisetas.js`), ajusta los umbrales del modo automático y agrega los bloques de `parches/bloques/` (compat, rangos, arbitraje, comandos, bienvenida).
+`parches/aplicar.js` reaplica **todo lo de ÑandutíHax** sobre cualquier `script.js`: corta la última línea si viene truncado, desactiva el webhook oculto, cambia la marca GLH → ÑandutíHax, pone las camisetas paraguayas (`parches/camisetas.js`), ajusta los umbrales del modo automático y agrega los bloques de `parches/bloques/` (compat, rangos, arbitraje, comandos, bienvenida).
 
 Es idempotente y **condicional**: si el script nuevo ya trae `room.onPlayerChat` o `room.onTeamGoal`, no agrega esos bloques. `--ver` hace una pasada en seco. Guarda `script.anterior.js`.
 
@@ -705,11 +705,11 @@ Probar sin abrir sala: `node pruebas/render.js mapas/nanduti-futsal-x3.hbs vista
 
 ## Selección por turnos
 
-Bloque `🎽 SELECCIÓN POR TURNOS` (`parches/bloques/turnos.txt`). Los dos primeros espectadores pasan solos como capitanes y después se elige alternando: el capitán del equipo de turno escribe `!7` (o `!elegir 7`) en el chat. **El número es la posición entre los espectadores, sin el bot** (`!1` = el primer espectador de la lista), no el id de HaxBall: `espectadoresEnOrden()` / `numeroDe()`. Si esa posición es alguien AFK o sin clave, avisa y no lo elige. En las pruebas se calcula con `numero(j)`; ojo que con pocos jugadores la posición coincide con el id, por eso `pruebas/turnos.js` lo revisa cuando ya no coinciden. Si no elige en `SegundosParaElegir`, elige el bot.
+Bloque `🎽 SELECCIÓN POR TURNOS` (`parches/bloques/turnos.txt`). Los dos primeros espectadores pasan solos como capitanes y después se elige alternando: el capitán del equipo de turno escribe **el número solo** (`7`) en el chat; también valen `!7` y `!elegir 7`. El número pelado se toma como elección **solo si a esa persona le toca elegir** (`puedeElegir`), así que para el resto de la sala un número sigue siendo un número. **El número es la posición entre los espectadores, sin el bot** (`!1` = el primer espectador de la lista), no el id de HaxBall: `espectadoresEnOrden()` / `numeroDe()`. Si esa posición es alguien AFK o sin clave, avisa y no lo elige. En las pruebas se calcula con `numero(j)`; ojo que con pocos jugadores la posición coincide con el id, por eso `pruebas/turnos.js` lo revisa cuando ya no coinciden. Si no elige en `SegundosParaElegir`, elige el bot.
 
 Ya **no** se prende desde `hosts/*.json`: lo prende y lo apaga `aplicarModoDeEquipos()` (bloque 🔀 MODOS DE EQUIPOS) según el modo de la sala, y por eso los enganches del bloque se registran siempre (antes el IIFE cortaba con `if (!SeleccionPorTurnos) return`, y el modo no se podía cambiar en caliente). Exige `modoJueganTodos`, `modoJueganAlgunos` y `automatizadoActivado` en `false`: si el script acomoda jugadores por su cuenta, se pisan entre sí; de eso también se encarga ese bloque.
 
-**El reloj del capitán**: `SegundosParaElegir` (15) con cuenta regresiva en el chat los últimos
+**El reloj del capitán**: `SegundosParaElegir` (35) con cuenta regresiva en el chat los últimos
 `SegundosDeCuenta` (3). `prepararCuentaRegresiva()` arma un setTimeout por segundo y
 `frenarReloj()` los limpia todos (si eligió, no se cuenta al pedo). Al vencer, `seAcaboElTiempo()`
 echa al capitán (`EcharAlQueNoElige`, o lo manda a espectadores y al final de la fila) y
@@ -837,7 +837,7 @@ porque prende y apaga sus interruptores. `ModoDeEquipos` vale:
 
 | Modo | Comando | Qué deja prendido |
 |---|---|---|
-| `ganasigue` | `!ganasigue` | `ganasigueEnabled`, sin turnos, y `modoJueganAlgunos` si la sala no acomoda sola |
+| `ganasigue` | `!ganasigue` | Rotación **nuestra** (`rotarGanaSigue`): el que gana se queda y pasa a **Red**, el que pierde sale al final de la fila y entran los que esperaban. Apaga `ganasigueEnabled`, `automatizadoActivado` y `modoJueganAlgunos` |
 | `elegir` | `!elegir` | `SeleccionPorTurnos` siempre; apaga gana-sigue, juegan-todos/algunos y automatizado |
 | `combinado` | `!combinado` | Igual que `elegir` **solo si** `hayJugadoresDeMas()`; si no, acomoda y arranca solo |
 | `config` | — | Valor de fábrica: no toca nada, manda `hosts/*.json` |
@@ -846,6 +846,19 @@ porque prende y apaga sus interruptores. `ModoDeEquipos` vale:
 interceptan el chat **antes** que el script: `!ganasigue` ya existía como interruptor del autor
 (línea ~18498) y ahora lo pisa el comando de modo, que devuelve `false` para que no se ejecute
 el toggle viejo.
+
+**El gana-sigue del autor (`ganasigueEnabled`) queda APAGADO a propósito** (19/09/2026): dejaba al
+ganador en su lado, rellenaba el equipo perdedor con los que esperaban y reiniciaba el partido solo
+(`if(ganasigueEnabled)` en la línea ~18898). Además `movePlayersIfNeeded` (que corre con
+`modoJueganAlgunos`) equilibraba los equipos moviendo gente en pleno juego, así que el ganador nunca
+se quedaba. Ahora los lugares libres los llena `llenarGanaSigue()`. La rotación usa **una foto de
+los equipos tomada en `onTeamVictory` antes de llamar al handler del autor**, porque para cuando
+corre (3,5 s después) ya hay gente movida.
+
+**Con un partido en curso ahora sí se prende la elección** (`aplicarModoDeEquipos`): prender el
+draft no mueve a nadie, y hace que el arranque automático **pause el partido** cuando queda lugar.
+Antes había que esperar a que terminara y parecía un gana-sigue: la gente seguía jugando, no elegía
+y se la echaba.
 
 `hayJugadoresDeMas()` = jugadores despiertos > `maxPlayersPerTeam * 2` (más de 6 en la x3, más
 de 8 en la x4). `aplicarModoDeEquipos()` corre cada 2 s, al entrar y al salir gente, y **no hace

@@ -1,6 +1,6 @@
 
 
-// ▇▇▇▇▇▇▇▇▇ 🩹 PIEZAS QUE FALTABAN — repuestas por ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// ▇▇▇▇▇▇▇▇▇ 🩹 PIEZAS QUE FALTABAN — repuestas por ÑandutíHax ▇▇▇▇▇▇▇▇▇
 // Hacen falta solo si el script viene cortado y perdió estas variables y funciones.
 // Cada una se define ÚNICAMENTE si no existe ya: con el script completo, este bloque no hace nada.
 

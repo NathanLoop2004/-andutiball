@@ -1,6 +1,6 @@
 
 
-// ▇▇▇▇▇▇▇▇▇ ⚙️ CONFIGURACIÓN DESDE LA BASE — ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// ▇▇▇▇▇▇▇▇▇ ⚙️ CONFIGURACIÓN DESDE LA BASE — ÑandutíHax ▇▇▇▇▇▇▇▇▇
 // Los parámetros de juego y los comandos apagados se manejan desde el panel (Configuración),
 // y los guarda la base (tablas parametros_sala y comandos_apagados).
 //

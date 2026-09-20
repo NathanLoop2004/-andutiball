@@ -46,7 +46,7 @@ const cuando = () => new Date().toLocaleString("es-PY", { day: "2-digit", month:
 function armarMensaje({ url, estado = "arriba", nota }) {
   const arriba = estado === "arriba";
   return {
-    username: "ÑandutíBall 🇵🇾",
+    username: "ÑandutíHax 🇵🇾",
     // @here avisa a los conectados (allowed_mentions es lo que hace que Discord notifique).
     // Ojo: Discord solo notifica al publicar; al editar el mensaje no vuelve a sonar.
     content: "@here",

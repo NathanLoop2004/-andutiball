@@ -1,4 +1,4 @@
-// Genera los 4 mapas de ÑandutíBall (Futsal x3, x4, x5, x7) copiando los del script.js
+// Genera los 4 mapas de ÑandutíHax (Futsal x3, x4, x5, x7) copiando los del script.js
 // original y cambiándoles el nombre y la pelota (amarilla lisa).
 //
 // Los mapas del script.js son los del autor original: tienen paredes bien armadas,
@@ -17,10 +17,10 @@ const SCRIPT_PATH = path.join(RAIZ, "script.js");
 const script = fs.readFileSync(SCRIPT_PATH, "utf8");
 
 const MAPAS = [
-  { clave: "x3", funcion: "getFutx3Map", nombreNuevo: "🕸️ ÑandutíBall Futsal x3 🇵🇾" },
-  { clave: "x4", funcion: "getFutx4Map", nombreNuevo: "🕸️ ÑandutíBall Futsal x4 🇵🇾" },
-  { clave: "x5", funcion: "getFutx5Map", nombreNuevo: "🕸️ ÑandutíBall Futsal x5 🇵🇾" },
-  { clave: "x7", funcion: "getFutx7Map", nombreNuevo: "🕸️ ÑandutíBall Futsal x7 🇵🇾" },
+  { clave: "x3", funcion: "getFutx3Map", nombreNuevo: "🕸️ ÑandutíHax Futsal x3 🇵🇾" },
+  { clave: "x4", funcion: "getFutx4Map", nombreNuevo: "🕸️ ÑandutíHax Futsal x4 🇵🇾" },
+  { clave: "x5", funcion: "getFutx5Map", nombreNuevo: "🕸️ ÑandutíHax Futsal x5 🇵🇾" },
+  { clave: "x7", funcion: "getFutx7Map", nombreNuevo: "🕸️ ÑandutíHax Futsal x7 🇵🇾" },
 ];
 
 // Los mapas del script tienen ${PelotaFutsal} y ${JSON.stringify(obtenerDiscos()).slice(1, -1)}
@@ -120,7 +120,7 @@ for (const modo of MAPAS) {
   });
 }
 
-console.log("\n══ Mapas ÑandutíBall (copiados del script) ══\n");
+console.log("\n══ Mapas ÑandutíHax (copiados del script) ══\n");
 for (const r of resultados) console.log("  🕸️  " + r.info);
 console.log("");
 

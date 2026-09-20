@@ -44,7 +44,13 @@ console.log("\n🔀 Entran 2 más (ahora sobra gente) y termina el partido:");
 entra(90, "Sobra1");
 entra(91, "Sobra2");
 avanzar(4000);
-revisar("En pleno partido no mueve a nadie", contexto.SeleccionPorTurnos === false && sala.jugando(), estado() + ", " + cancha());
+// Ahora la elección se PRENDE en pleno partido (no mueve a nadie): así el partido se pausa
+// cuando haya lugar, en vez de seguir jugando como si fuera un gana-sigue.
+revisar("Se prende la elección sin sacar a nadie de la cancha",
+  contexto.SeleccionPorTurnos === true && equipos().red.length + equipos().blue.length === cupo * 2,
+  estado() + ", " + cancha());
+revisar("Y avisa que ahora se eligen los equipos",
+  sala.anuncios.some(function (a) { return a.indexOf("ahora los equipos se eligen") >= 0; }));
 
 sala.disparar("onTeamVictory", { red: 3, blue: 1 });
 avanzar(6000);
@@ -62,7 +68,8 @@ revisar("El partido NO arranca mientras se elige", !sala.enJuego(), estado() + "
 sala.room.startGame();
 avanzar(3000);
 revisar("Si estaba jugando, se pausa hasta que terminen", sala.pausado(), estado());
-revisar("Con un aviso claro", sala.anuncios.some((a) => a.includes("terminen de elegir")), "sí");
+revisar("Con un aviso claro, que dice cómo elegir",
+  sala.anuncios.some((a) => a.includes("PARTIDO EN PAUSA")) && sala.anuncios.some((a) => a.includes("escribiendo el número")), "sí");
 
 // Los capitanes van eligiendo (a mano y a tiempo). El turno lo decide el script,
 // así que probamos con los dos capitanes en cada ronda.
@@ -103,8 +110,30 @@ chat(jugador, "!ganasigue");
 revisar("A un jugador común no le cambia el modo", contexto.ModoDeEquipos === "combinado", contexto.ModoDeEquipos);
 chat(admin, "!ganasigue");
 revisar("El admin sí lo cambia", contexto.ModoDeEquipos === "ganasigue", contexto.ModoDeEquipos);
-revisar("Se prendió el gana sigue del script", leer("ganasigueEnabled") === true, "ganasigueEnabled=" + leer("ganasigueEnabled"));
+// El gana-sigue del autor queda APAGADO a propósito: dejaba al ganador en su lado y reiniciaba
+// el partido por su cuenta. La rotación (ganador → Red) la hace nuestro bloque.
+revisar("Se apaga el gana sigue del script, que rotaba mal", leer("ganasigueEnabled") === false, "ganasigueEnabled=" + leer("ganasigueEnabled"));
 revisar("Y se apagó la elección por turnos", contexto.SeleccionPorTurnos === false, "SeleccionPorTurnos=" + contexto.SeleccionPorTurnos);
+
+// El ganador se queda y pasa a Red; el que pierde sale y entran los que esperaban
+console.log("\n🏆 Termina un partido en gana sigue:");
+sala.room.stopGame();
+avanzar(9000);
+const antesDelGanaSigue = equipos();
+const azules = antesDelGanaSigue.blue.map((j) => j.name);
+const rojos = antesDelGanaSigue.red.map((j) => j.name);
+revisar("Hay dos equipos armados", azules.length > 0 && rojos.length > 0, cancha());
+sala.disparar("onTeamVictory", { red: 0, blue: 3 });   // gana el Blue
+avanzar(6000);
+const despues = equipos();
+revisar("El que ganó (Blue) se queda y ahora juega de Red",
+  azules.every((n) => despues.red.some((j) => j.name === n)), cancha());
+revisar("Ninguno de los que perdió se queda en el equipo ganador",
+  rojos.every((n) => !despues.red.some((j) => j.name === n)), cancha());
+revisar("Entran los que estaban esperando",
+  despues.blue.some((j) => !rojos.includes(j.name) && !azules.includes(j.name)), cancha());
+revisar("Y lo avisa en el chat",
+  sala.anuncios.some((a) => a.includes("Gana y sigue") && a.includes("se queda")), "sí");
 
 // ── 4) Comando !elegir ──
 console.log("\n🎽 Un admin escribe !elegir:");
@@ -112,7 +141,7 @@ chat(admin, "!elegir");
 avanzar(3000);
 revisar("Modo elegir", contexto.ModoDeEquipos === "elegir", contexto.ModoDeEquipos);
 revisar("Eligen los capitanes siempre", contexto.SeleccionPorTurnos === true, "SeleccionPorTurnos=" + contexto.SeleccionPorTurnos);
-revisar("Se apagó el gana sigue", leer("ganasigueEnabled") === false, "ganasigueEnabled=" + leer("ganasigueEnabled"));
+revisar("Sigue apagado el gana sigue del script", leer("ganasigueEnabled") === false, "ganasigueEnabled=" + leer("ganasigueEnabled"));
 
 // ── 5) Comando !combinado, y que sin sobrantes vuelva a arrancar solo ──
 console.log("\n🔀 Un admin escribe !combinado y se va la gente de sobra:");

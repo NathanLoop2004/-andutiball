@@ -49,7 +49,7 @@ function revisar(titulo, condicion, detalle) {
   const base0 = {};
   for (const p of Parametros.CATALOGO) if (p.aplica === "vivo") base0[p.nombre] = Parametros.valorPorDefecto("3v3", p.nombre);
   contexto.__configSala({ parametros: base0, comandosApagados: [] });
-  revisar("La primera vez no cambia nada", limites.length === 0 && leer("SegundosParaElegir") === 15, "SegundosParaElegir=" + leer("SegundosParaElegir"));
+  revisar("La primera vez no cambia nada", limites.length === 0 && leer("SegundosParaElegir") === 35, "SegundosParaElegir=" + leer("SegundosParaElegir"));
 
   // Cambios en vivo, incluida una variable let del script
   contexto.__configSala({ parametros: { ...base0, SegundosParaElegir: 30, modoJueganTodos: true, TiempoDeJuego: 7 }, comandosApagados: [] });

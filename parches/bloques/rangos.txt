@@ -1,4 +1,4 @@
-// ▇▇▇▇▇▇▇▇▇ 🎖️ RANGOS — ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// ▇▇▇▇▇▇▇▇▇ 🎖️ RANGOS — ÑandutíHax ▇▇▇▇▇▇▇▇▇
 // Los rangos salen de la TABLA `rangos` de la base. El launcher la relee cada pocos
 // segundos y deja la lista acá; con eso se le da (o se le saca) el admin a cada uno.
 //

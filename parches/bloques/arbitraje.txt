@@ -1,6 +1,6 @@
 
 
-// ▇▇▇▇▇▇▇▇▇ 🧑‍⚖️ ARBITRAJE — repuesto por ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// ▇▇▇▇▇▇▇▇▇ 🧑‍⚖️ ARBITRAJE — repuesto por ÑandutíHax ▇▇▇▇▇▇▇▇▇
 // El corte del archivo se llevó al árbitro: no quedó onTeamGoal (anuncio de goles), ni el
 // acomodo automático de jugadores, ni el arranque de los partidos. Esto lo repone.
 

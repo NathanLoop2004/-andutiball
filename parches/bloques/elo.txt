@@ -1,6 +1,6 @@
 
 
-// ▇▇▇▇▇▇▇▇▇ 📊 ELO Y DIVISIONES — ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// ▇▇▇▇▇▇▇▇▇ 📊 ELO Y DIVISIONES — ÑandutíHax ▇▇▇▇▇▇▇▇▇
 // Cada jugador tiene un puntaje que sube si gana y baja si pierde, y ese puntaje lo ubica en
 // una división (Novato, Amateur, Regular, Avanzado, Crack, Pro, Leyenda).
 //
@@ -200,12 +200,12 @@ function jugadoresEnCancha() {
 		}
 
 		if (bajo === "!top") {
-			mostrarTop(player, ELO, "TOP 10 de esta sala — ÑandutíBall");
+			mostrarTop(player, ELO, "TOP 10 de esta sala — ÑandutíHax");
 			return false;
 		}
 
 		if (bajo === "!top general" || bajo === "!topgeneral") {
-			mostrarTop(player, ELO_GENERAL, "TOP 10 general (las 4 salas) — ÑandutíBall");
+			mostrarTop(player, ELO_GENERAL, "TOP 10 general (las 4 salas) — ÑandutíHax");
 			return false;
 		}
 

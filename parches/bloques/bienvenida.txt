@@ -14,9 +14,9 @@ const MensajeDeBienvenida = [
 
   `❋･ﾟ✧ 🕸️ ✧ﾟ･❋ ✺ ❋･ﾟ✧ 🕸️ ✧ﾟ･❋ ✺ ❋･ﾟ✧ 🕸️ ✧ﾟ･❋`,
 
-  `✺ 🎉 ¡Bienvenido/a a ÑandutíBall! 🇵🇾 🎉 ✺`,
+  `✺ 🎉 ¡Bienvenido/a a ÑandutíHax! 🇵🇾 🎉 ✺`,
 
-  `❂ Estás ingresando a un host de HaxBall de ÑandutíBall ⚙️ ❂`,
+  `❂ Estás ingresando a un host de HaxBall de ÑandutíHax ⚙️ ❂`,
 
   `🕸️ El host paraguayo de HaxBall, hecho por Jinder`,
 

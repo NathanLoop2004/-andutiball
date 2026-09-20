@@ -40,7 +40,7 @@ const json = (cuerpo, token) => ({
 
   console.log("🕸️  Las pantallas:\n");
   const portada = await pedir(web.url + "/");
-  revisar("La portada dice ÑandutíBall", portada.status === 200 && /ÑandutíBall/.test(portada.datos), "HTTP " + portada.status);
+  revisar("La portada dice ÑandutíHax", portada.status === 200 && /ÑandutíHax/.test(portada.datos), "HTTP " + portada.status);
   revisar("Y ofrece iniciar sesión o registrarte", /\/frm\/login\//.test(portada.datos) && /\/frm\/registro\//.test(portada.datos));
 
   for (const ruta of ["/frm/login", "/frm/registro", "/frm/recuperar", "/frm/cuenta", "/frm/panel", "/frm/rangos", "/frm/actualizaciones"]) {

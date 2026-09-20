@@ -86,7 +86,7 @@ const json = (cuerpo) => ({ method: "POST", headers: { "Content-Type": "applicat
 
   const embed = pedidos[0].cuerpo.embeds[0];
   revisar("Va como tarjeta con el texto de la novedad", embed.description === "Ahora el partido arranca solo", embed.description);
-  revisar("Sin título propio usa uno lindo por defecto", embed.title === "📣 Novedades de ÑandutíBall", embed.title);
+  revisar("Sin título propio usa uno lindo por defecto", embed.title === "📣 Novedades de ÑandutíHax", embed.title);
   revisar("No se le cuela nada técnico", !/commit|prisma|\.js|id=|null/i.test(JSON.stringify(pedidos[0].cuerpo)), "limpio");
 
   // Limpieza: borramos lo que dejó la prueba

@@ -94,6 +94,7 @@ const Sesion = {
       inicio: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/></svg>',
       salir: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>',
       config: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>',
+      inventario: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M3 12h18"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
       flecha: '<svg class="flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
     };
 
@@ -111,6 +112,7 @@ const Sesion = {
           </div>
           <a role="menuitem" href="/">${icono.inicio} Inicio</a>
           <a role="menuitem" href="/frm/cuenta/">${icono.cuenta} Mi cuenta</a>
+          <a role="menuitem" href="/frm/inventario/">${icono.inventario} Mi inventario</a>
           <a role="menuitem" href="/frm/cuenta/#seguridad">${icono.clave} Cambiar contraseña</a>
           ${(u.admin || u.modera) ? `<a role="menuitem" href="/frm/panel/">${icono.panel} Panel de administración</a>` : ""}
           ${(!u.admin && !u.modera && u.configura) ? `<a role="menuitem" href="/frm/config/">${icono.panel} Configuración de salas</a>` : ""}
@@ -183,6 +185,7 @@ const Sesion = {
     const secciones = [
       { id: "salas", href: "/frm/panel/", nombre: "Salas", ver: u.admin || u.modera, icono: i('<rect x="3" y="4" width="18" height="14" rx="2"/><path d="M12 4v14M3 11h18"/>') },
       { id: "config", href: "/frm/config/", nombre: "Configuración", ver: u.configura, icono: i('<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>') },
+      { id: "equipos", href: "/frm/equipos/", nombre: "Equipos", ver: u.configura, icono: i('<path d="M8 4 5 6 3 9l2.5 2V20h13v-9L21 9l-2-3-3-2a4 4 0 0 1-8 0z"/>') },
       { id: "carrusel", href: "/frm/carrusel/", nombre: "Carrusel", ver: u.configura, icono: i('<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="m21 15-5-5L5 19"/>') },
       { id: "rangos", href: "/frm/rangos/", nombre: "Rangos", ver: u.rangos, icono: i('<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/>') },
       { id: "ajustes", href: "/frm/ajustes/", nombre: "Ajustes", ver: u.owner, icono: i('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/>') },

@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ÑandutíBall</title>
+<title>ÑandutíHax</title>
 <meta name="description" content="El host paraguayo de HaxBall: salas de futsal y Real Soccer, ranking ELO y tu cuenta.">
-<link rel="icon" href="/img/logo.svg" type="image/svg+xml">
+<link rel="icon" href="/img/logo-chico.png" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
@@ -15,7 +15,7 @@
 <body>
 
 <header class="barra">
-  <a class="marca" href="/"><img src="/img/logo.svg" alt=""><span>ÑandutíBall</span></a>
+  <a class="marca" href="/"><img src="/img/logo-chico.png" alt=""><span>ÑandutíHax</span></a>
   <div class="derecha" id="derecha"></div>
 </header>
 
@@ -33,6 +33,7 @@
   <!-- Sin sesión: la presentación -->
   <section id="sinSesion" hidden>
     <div class="tapa">
+      <img class="logo-tapa" src="/img/logo.png" alt="ÑandutíHax" width="512" height="512">
       <span class="etiqueta-tapa">Host paraguayo de HaxBall</span>
       <h1>Jugá, subí en el ranking y cuidá tu nombre.</h1>
       <p>Cuatro salas abiertas todo el día: Futsal 3v3, 4v4, automático y Real Soccer. Cada sala tiene su propio ranking ELO, y además hay uno general.</p>
@@ -61,7 +62,7 @@
       <div class="rasgo">
         <div class="icono"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg></div>
         <h3>Comunidad</h3>
-        <p>Novedades y torneos en el <a href="https://discord.gg/TGRug4BGG" target="_blank" rel="noopener">Discord de ÑandutíBall</a>.</p>
+        <p>Novedades y torneos en el <a href="https://discord.gg/TGRug4BGG" target="_blank" rel="noopener">Discord de ÑandutíHax</a>.</p>
       </div>
     </div>
   </section>
@@ -79,7 +80,7 @@
     <div class="aviso-discord" id="avisoDiscordInicio" hidden>
       <div>
         <b>Vinculá tu Discord</b>
-        <span class="tenue">Te sumamos al servidor de ÑandutíBall para que te enteres de las novedades y los torneos.</span>
+        <span class="tenue">Te sumamos al servidor de ÑandutíHax para que te enteres de las novedades y los torneos.</span>
       </div>
       <button class="boton discord" type="button" id="vincularDiscordInicio">Vincular con Discord</button>
     </div>
@@ -94,6 +95,33 @@
       <div class="vacio-elo">Cargando…</div>
     </div>
     <div class="elo-salas" id="eloSalas"></div>
+  </section>
+
+  <!-- Tienda de camisetas: se mueve sola, como una vidriera -->
+  <section id="seccionTienda" hidden>
+    <div class="seccion-titulo">
+      <h2>Camisetas</h2>
+      <span class="tenue">Se compran con las monedas que ganás jugando</span>
+    </div>
+    <div class="vidriera" id="vidriera">
+      <div class="vidriera-pista" id="pistaTienda"></div>
+    </div>
+  </section>
+
+  <!-- Rachas: las mejores de la historia y las que están vivas -->
+  <section id="seccionRachas" hidden>
+    <div class="seccion-titulo">
+      <h2>Mejores rachas</h2>
+      <span class="tenue" id="rachasVivas"></span>
+    </div>
+    <div class="tarjeta">
+      <div class="tabla-envoltorio">
+        <table class="tabla">
+          <thead><tr><th>#</th><th>Jugador</th><th class="der">Mejor racha</th><th class="der">Ahora</th><th class="der">Ganados</th><th>Cuándo</th></tr></thead>
+          <tbody id="cuerpoRachas"></tbody>
+        </table>
+      </div>
+    </div>
   </section>
 
   <!-- Ranking: lo ve cualquiera -->
@@ -129,7 +157,27 @@
   </section>
 </main>
 
-<footer class="pie">ÑandutíBall · Hecho en Paraguay por Jinder</footer>
+<footer class="pie">ÑandutíHax · Hecho en Paraguay por Jinder</footer>
+
+<div class="fondo-modal" id="fondoCamiseta" hidden>
+  <div class="modal angosto" role="dialog" aria-modal="true" aria-labelledby="tituloCamiseta">
+    <div class="modal-cabeza"><h2 id="tituloCamiseta">Camiseta</h2><button class="boton chico" type="button" id="cerrarCamiseta">Cerrar</button></div>
+    <div class="modal-cuerpo">
+      <div class="detalle-camiseta">
+        <div class="camiseta-grande" id="camisetaGrande"><span id="camisetaNumero">10</span></div>
+        <div>
+          <div class="precio" id="camisetaPrecio"></div>
+          <p id="camisetaDetalle" class="tenue"></p>
+          <div class="aviso" id="avisoCamiseta"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-pie">
+      <span class="tenue" id="camisetaSaldo"></span>
+      <button class="boton principal" type="button" id="comprarCamiseta">Comprar</button>
+    </div>
+  </div>
+</div>
 
 <script src="/js/sesion.js"></script>
 <script>
@@ -418,7 +466,119 @@ if (new URLSearchParams(location.search).get("sinpermiso")) {
   $("avisoTapa").textContent = "Esa sección es solo para administradores.";
 }
 
+// ══════════ Tienda de camisetas (la vidriera que se mueve sola) ══════════
+// Se duplica la lista y se mueve de 0 a -50%: cuando termina la primera copia, la segunda
+// está justo en el mismo lugar, así el movimiento no se corta nunca.
+const Tienda = {
+  camisetas: [],
+  elegida: null,
+
+  fondo(c) {
+    const col = c.colores.map((x) => "#" + x);
+    return `linear-gradient(${(c.angulo || 0) + 90}deg, ${col[0]} 0 33.34%, ${col[1]} 33.34% 66.67%, ${col[2]} 66.67% 100%)`;
+  },
+
+  async cargar() {
+    let camisetas = [];
+    try {
+      const r = await fetch("/api/tienda", { cache: "no-store" });
+      camisetas = (await r.json()).camisetas || [];
+    } catch (error) { return; }
+    if (!camisetas.length) return;
+
+    Tienda.camisetas = camisetas;
+    // Se repite la lista hasta tener suficientes para que no se vea el corte
+    const items = [];
+    while (items.length < 14) items.push(...camisetas);
+
+    const pintar = (c, i, copia) => `
+      <button class="vidriera-item" type="button" data-camiseta="${esc(c.clave)}" ${copia ? 'tabindex="-1" aria-hidden="true"' : ""}>
+        <span class="camiseta grande" style="background:${Tienda.fondo(c)}"></span>
+        <span class="vidriera-nombre">${esc(c.nombre)}</span>
+        <span class="vidriera-precio">🪙 ${monedasTexto(c.precio)}</span>
+      </button>`;
+
+    $("pistaTienda").innerHTML = items.map((c, i) => pintar(c, i, false)).join("") + items.map((c, i) => pintar(c, i, true)).join("");
+    $("pistaTienda").style.animationDuration = (items.length * 2.5) + "s";
+    $("seccionTienda").hidden = false;
+  },
+
+  abrir(clave) {
+    const c = Tienda.camisetas.find((x) => x.clave === clave);
+    if (!c) return;
+    Tienda.elegida = c;
+    $("tituloCamiseta").textContent = c.nombre;
+    $("camisetaGrande").style.background = Tienda.fondo(c);
+    $("camisetaNumero").style.color = "#" + c.colorTexto;
+    $("camisetaPrecio").textContent = "🪙 " + monedasTexto(c.precio) + " monedas";
+    $("camisetaDetalle").textContent = c.detalle || c.descripcion || "Camiseta de " + c.nombre + ".";
+    $("avisoCamiseta").className = "aviso";
+    $("avisoCamiseta").textContent = "";
+    const u = Sesion.usuario();
+    $("comprarCamiseta").hidden = !u;
+    $("camisetaSaldo").textContent = u ? "" : "Iniciá sesión para comprarla";
+    if (u) {
+      Sesion.pedir("/api/cuenta")
+        .then(({ cuenta }) => { $("camisetaSaldo").textContent = "Tenés " + monedasTexto(cuenta.monedas) + " monedas"; })
+        .catch(() => {});
+    }
+    $("fondoCamiseta").hidden = false;
+  },
+};
+
+$("pistaTienda").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-camiseta]");
+  if (b) Tienda.abrir(b.dataset.camiseta);
+});
+$("cerrarCamiseta").onclick = () => { $("fondoCamiseta").hidden = true; };
+$("fondoCamiseta").addEventListener("click", (e) => { if (e.target === $("fondoCamiseta")) $("fondoCamiseta").hidden = true; });
+
+$("comprarCamiseta").onclick = async () => {
+  if (!Tienda.elegida) return;
+  $("comprarCamiseta").disabled = true;
+  try {
+    const r = await Sesion.pedir("/api/tienda/comprar", { method: "POST", body: JSON.stringify({ clave: Tienda.elegida.clave }) });
+    $("avisoCamiseta").className = "aviso ok";
+    $("avisoCamiseta").textContent = "¡Es tuya! Te quedan " + monedasTexto(r.saldo) + " monedas. Poné !camisetas en la sala para usarla.";
+    $("camisetaSaldo").textContent = "Tenés " + monedasTexto(r.saldo) + " monedas";
+    if (Sesion.usuario()) cargarMiElo();
+  } catch (error) {
+    $("avisoCamiseta").className = "aviso mal";
+    $("avisoCamiseta").textContent = error.message;
+  }
+  $("comprarCamiseta").disabled = false;
+};
+
+// ══════════ Rachas ══════════
+async function cargarRachas() {
+  let datos;
+  try {
+    const r = await fetch("/api/rachas?limite=10", { cache: "no-store" });
+    datos = await r.json();
+  } catch (error) { return; }
+  if (!datos || !datos.mejores || !datos.mejores.length) return;
+
+  const medalla = (p) => (p === 1 ? "🥇" : p === 2 ? "🥈" : p === 3 ? "🥉" : p);
+  $("cuerpoRachas").innerHTML = datos.mejores.map((r) => `
+    <tr>
+      <td class="tenue">${medalla(r.puesto)}</td>
+      <td><b>${esc(r.nick)}</b></td>
+      <td class="der"><b>🔥 ${r.mejor}</b></td>
+      <td class="der">${r.actual > 0 ? `<span class="etiqueta ok">${r.actual} seguidas</span>` : '<span class="tenue">—</span>'}</td>
+      <td class="der tenue">${r.ganados} de ${r.partidos}</td>
+      <td class="tenue">${r.cuando ? new Date(r.cuando).toLocaleDateString("es-PY") : "—"}</td>
+    </tr>`).join("");
+
+  const vivas = (datos.enCurso || []).filter((r) => r.actual >= 2);
+  $("rachasVivas").textContent = vivas.length
+    ? "Ahora mismo: " + vivas.map((r) => `${r.nick} (${r.actual})`).join(" · ")
+    : "Ganá dos seguidas para empezar una racha";
+  $("seccionRachas").hidden = false;
+}
+
 Carrusel.cargar();
+Tienda.cargar();
+cargarRachas();
 cargarRanking();
 pintar();
 

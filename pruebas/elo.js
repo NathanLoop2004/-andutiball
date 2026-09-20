@@ -28,11 +28,28 @@ console.log("\n══ Partido parejo (todos empiezan en 1000) ══");
   revisar(ana.delta > 0, "el que gana sube");
   revisar(carlos.delta < 0, "el que pierde baja");
   revisar(Math.abs(ana.delta + carlos.delta) <= 1, "lo que gana uno lo pierde el otro (suma cero)");
-  revisar(tabla["auth:auth-Ana"].ganados === 1 && tabla["auth:auth-Carlos"].perdidos === 1, "se anota ganado/perdido");
-  revisar(tabla["auth:auth-Ana"].goles === 2, "se suman los goles del partido");
+  revisar(tabla["cuenta:ana"].ganados === 1 && tabla["cuenta:carlos"].perdidos === 1, "se anota ganado/perdido");
+  revisar(tabla["cuenta:ana"].goles === 2, "se suman los goles del partido");
 }
 
 console.log("\n══ Ganarle a uno mejor da más puntos ══");
+// La cuenta es INDIVIDUAL: dos compañeros con puntajes distintos no se mueven lo mismo
+{
+  const tabla = {};
+  for (const [nombre, puntos] of [["Alto", 1600], ["Bajo", 900], ["R1", 1200], ["R2", 1200]]) {
+    const ficha = elo.fichaDe(tabla, jug(nombre));
+    ficha.elo = puntos;
+    ficha.partidos = 50;   // fuera del K de novato, para comparar limpio
+  }
+  const cambios = elo.aplicarPartido(tabla, { red: [jug("Alto"), jug("Bajo")], blue: [jug("R1"), jug("R2")], ganador: 1 });
+  const alto = cambios.find((c) => c.nombre === "Alto").delta;
+  const bajo = cambios.find((c) => c.nombre === "Bajo").delta;
+  console.log(`  Ganan los dos juntos → Alto (1600): +${alto}   ·   Bajo (900): +${bajo}`);
+  revisar(alto > 0 && bajo > 0, "los dos que ganan suman");
+  revisar(bajo > alto * 3, "al de puntaje bajo le suma mucho más que al de puntaje alto");
+  revisar(alto <= 6, "ganarle a uno peor casi no suma");
+}
+
 {
   const tabla = {};
   elo.fichaDe(tabla, jug("Novato")).elo = 900;

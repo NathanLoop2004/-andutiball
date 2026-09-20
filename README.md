@@ -1,4 +1,4 @@
-# 🕸️ ÑandutíBall — Host de HaxBall
+# 🕸️ ÑandutíHax — Host de HaxBall
 
 ```
  ▄▀▄▀                                  ▄▀
@@ -208,7 +208,7 @@ verdad. Conviene correrlo cada vez que se toca `script.js`.
 
 ### 🩹 Si reemplazás `script.js` por otro
 
-Todo lo de ÑandutíBall (marca, camisetas paraguayas, rangos, arbitraje, webhook desactivado)
+Todo lo de ÑandutíHax (marca, camisetas paraguayas, rangos, arbitraje, webhook desactivado)
 está guardado como parches. Después de poner un `script.js` nuevo:
 
 ```powershell
@@ -278,7 +278,7 @@ puede ver cuál está puesto con `!modo`.
 
 | Comando | Modo | Qué hace |
 |---|---|---|
-| `!ganasigue` | 🏆 Gana sigue | El bot arma los equipos y el que gana se queda; el que pierde sale y entran los que esperan. |
+| `!ganasigue` | 🏆 Gana sigue | El que **gana se queda y pasa a Red**; el que pierde sale y va al final de la fila, y entran los que estaban esperando, de Blue. |
 | `!elegir` | 🎽 Elegir | Siempre eligen los capitanes por turnos, y el partido **no arranca** hasta que terminen. |
 | `!combinado` | 🔀 Combinado | Si no sobra nadie, el bot arma y arranca solo. Si hay más gente de la que entra en la cancha, eligen los capitanes y el partido espera. |
 
@@ -292,12 +292,17 @@ más de 6 en la x3, más de 8 en la x4. Los AFK no cuentan.
 
 1. Los dos primeros espectadores pasan solos a Red y Blue: son los **capitanes**.
 2. El bot avisa de quién es el turno y lista a los espectadores con su número.
-3. El capitán escribe **`!2`** (o `!elegir 2`): el número es el **lugar en la lista de espectadores**
-   (`!1` el primero, `!2` el segundo…), sin contar al bot. El cartel del turno muestra cada número con
-   su nombre. Va con `!`: un número suelto en el chat es hablar, no elegir.
+3. El capitán escribe **el número solo**: `2`. El número es el **lugar en la lista de espectadores**
+   (`1` el primero, `2` el segundo…), sin contar al bot. El cartel del turno muestra cada número con
+   su nombre. También valen `!2` y `!elegir 2`. **Solo cuenta como elección si es tu turno**: para el
+   resto de la sala, un número sigue siendo hablar.
 4. Se alterna: Red elige uno, después Blue, hasta llenar los dos equipos.
 
-**El que no elige, deja el lugar.** El capitán tiene **15 segundos**; sobre el final el bot
+**El partido se pausa mientras se elige.** Cuando hay gente esperando y queda lugar en la cancha,
+el bot pausa el partido y avisa: así nadie sigue jugando sin darse cuenta de que tiene que elegir.
+Cuando los equipos quedan completos, se sigue jugando enseguida.
+
+**El que no elige, deja el lugar.** El capitán tiene **35 segundos**; sobre el final el bot
 cuenta en el chat:
 
 ```
@@ -474,7 +479,7 @@ app-centralshop), con `public/css/` y `public/js/` compartidos.
 
 Con la sesión iniciada, en **Mi cuenta** (y en un aviso en la portada) está el botón **Vincular con
 Discord**. Discord pide permiso para ver tu usuario y sumarte al servidor; al aceptar, la cuenta queda
-vinculada y **entrás solo al servidor de ÑandutíBall**. No es para iniciar sesión y nunca se ve tu
+vinculada y **entrás solo al servidor de ÑandutíHax**. No es para iniciar sesión y nunca se ve tu
 contraseña de Discord. En la tabla de **Usuarios** del panel se ve el Discord de cada cuenta.
 
 Para activarlo hay que crear una aplicación con bot en el portal de Discord y completar
@@ -626,7 +631,7 @@ npm run prueba-base     # comprueba que todo enchufe
 npm run base:bajar      # la baja (los datos quedan en ./postgres)
 ```
 
-La base se llama **nandutiball**, escucha en el **5432** y los datos quedan en la carpeta
+La base se llama **nandutihax**, escucha en el **5432** y los datos quedan en la carpeta
 `./postgres` (ignorada por Git).
 
 > El PostgreSQL 16 que tenías instalado en Windows (servicio `postgresql-x64-16`) ocupaba ese
@@ -639,7 +644,7 @@ Como en el Visualizador de facturas: una variable decide el entorno y **solo se 
 
 ```
 DB_ENV=desarrollo        # produccion | testing | desarrollo
-DB_DESARROLLO_URL=postgresql://postgres:postgres@localhost:5432/nandutiball?schema=public
+DB_DESARROLLO_URL=postgresql://postgres:postgres@localhost:5432/nandutihax?schema=public
 DB_TESTING_URL=
 DB_PRODUCCION_URL=
 ```
@@ -665,7 +670,7 @@ Es la primera versión y la vamos a ir cambiando: se toca `prisma/schema.prisma`
 ## 🗺️ Mapas propios de futsal
 
 Las salas de futsal usan mapas nuestros: la misma cancha y la misma física del original, con el
-nombre de ÑandutíBall y la **pelota amarilla lisa** (sin las pintitas negras).
+nombre de ÑandutíHax y la **pelota amarilla lisa** (sin las pintitas negras).
 
 ```powershell
 npm run generar-mapas    # escribe mapas/*.hbs
@@ -875,8 +880,8 @@ Antes no era así y molestaba:
 - El script ponía y sacaba del AFK a cualquiera que escribiera **estoy**, **listo**, **volvi**,
   **mtm** o **meteme** en medio de una frase (“estoy re picante hoy” te sacaba de la cancha).
   Ahora el AFK se maneja **solo con `!afk`**.
-- Con el draft prendido, escribir un número elegia a ese jugador. Ahora se elige con **`!7`**
-  o `!elegir 7`, así que se puede escribir “3 - 1 vamos” tranquilo.
+- Con el draft prendido, escribir un número elegía a ese jugador, le tocara o no. Ahora el número
+  **solo elige si es tu turno de elegir**: el resto puede escribir “3 - 1 vamos” tranquilo.
 
 **Los comandos no se ven en el chat.** Si escribís `!clave loquesea`, el bot lo entiende pero
 nadie lo ve: tu contraseña no queda a la vista de la sala.

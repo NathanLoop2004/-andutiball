@@ -1,6 +1,6 @@
 
 
-// ▇▇▇▇▇▇▇▇▇ 💬 COMANDOS DEL CHAT — repuestos por ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// ▇▇▇▇▇▇▇▇▇ 💬 COMANDOS DEL CHAT — repuestos por ÑandutíHax ▇▇▇▇▇▇▇▇▇
 // El script original venía cortado y sin room.onPlayerChat, así que NINGÚN comando funcionaba.
 // Este bloque vuelve a conectar los comandos con las funciones que ya existen más arriba.
 // Los comandos que dependen de funciones que faltaban en el archivo (estadísticas, votaciones,
@@ -199,7 +199,7 @@ room.onPlayerChat = function (player, message) {
 		case "!especiales": EspecialesFun(player); break;
 		case "!tutorial": TutorialFun(player); break;
 		case "!discord":
-			avisar(player, DiscordLink ? "🔗 Discord: " + DiscordLink : "🕸️ ÑandutíBall — el host paraguayo de HaxBall, hecho por Jinder");
+			avisar(player, DiscordLink ? "🔗 Discord: " + DiscordLink : "🕸️ ÑandutíHax — el host paraguayo de HaxBall, hecho por Jinder");
 			break;
 		case "!nv": case "!adormir": case "!acomer": leaveFun(player, comando); break;
 

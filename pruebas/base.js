@@ -47,7 +47,7 @@ const enOtroProceso = (codigo, env) => {
 
   const cargadas = enOtroProceso(
     "require('./services/ConexionBase').base(); const m = Object.keys(require.cache).filter(k => k.includes('ConexionPostgres')).map(k => k.split(/[\\\\/]/).pop()); console.log(m.join(','))",
-    { DB_ENV: "desarrollo", DB_DESARROLLO_URL: "postgresql://postgres:postgres@localhost:5432/nandutiball" }
+    { DB_ENV: "desarrollo", DB_DESARROLLO_URL: "postgresql://postgres:postgres@localhost:5432/nandutihax" }
   );
   revisar("Solo se abre la conexión del entorno activo", cargadas.ok && cargadas.salida === "ConexionPostgresDesarrollo.js", cargadas.salida.split("\n").pop());
 

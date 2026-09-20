@@ -1,6 +1,6 @@
 
 
-// ▇▇▇▇▇▇▇▇▇ ▶️ ARRANQUE AUTOMÁTICO — ÑandutíBall ▇▇▇▇▇▇▇▇▇
+// ▇▇▇▇▇▇▇▇▇ ▶️ ARRANQUE AUTOMÁTICO — ÑandutíHax ▇▇▇▇▇▇▇▇▇
 // Con 2 personas despiertas en la sala ya se juega, sin esperar a que un admin apriete nada.
 //
 //   · Partido parado (alguien le dio a Stop): a los SegundosTrasParar vuelve a arrancar.
@@ -75,7 +75,8 @@ function revisarArranque() {
 			if (!partidoPausado()) {
 				pausadoPorElDraft = true;
 				room.pauseGame(true);
-				room.sendAnnouncement("⏸️ Esperando a que terminen de elegir los equipos…", null, 0xFFD100, "bold", 2);
+				room.sendAnnouncement("⏸️ PARTIDO EN PAUSA: se están eligiendo los equipos.", null, 0xFFD100, "bold", 2);
+				room.sendAnnouncement("   El capitán elige escribiendo el número del jugador en el chat (por ejemplo: 3).", null, 0xFFD100, "small", 0);
 			}
 			return;
 		}

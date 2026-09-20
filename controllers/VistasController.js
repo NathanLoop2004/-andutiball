@@ -13,6 +13,8 @@ class VistasController {
   static carrusel = pantalla("frm", "carrusel");     // imágenes del carrusel de la portada
   static config = pantalla("frm", "config");         // parámetros de las salas y comandos
   static ajustes = pantalla("frm", "ajustes");       // ajustes de la web (solo OWNER)
+  static equipos = pantalla("frm", "equipos");       // camisetas de los clubes y clásicos
+  static inventario = pantalla("frm", "inventario"); // las camisetas que compró cada uno
   static cuenta = pantalla("frm", "cuenta");         // Mi cuenta (la pantalla pide sesión)   // pedir el mail y cambiar la clave con el link
 
   // Las de siempre, ahora bajo /frm (se dejan los atajos viejos)

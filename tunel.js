@@ -43,10 +43,36 @@ let urlPublica = null;
 let cortando = false;
 
 const cloudflared = buscarCloudflared();
+
+// Hay dos formas de abrir el túnel:
+//
+//   1. CON DOMINIO PROPIO (lo que usamos ahora): un túnel con nombre, hecho en Cloudflare.
+//      El link NUNCA cambia. Se configura con una de estas dos en .env:
+//        TUNEL_TOKEN=eyJhIjoi...        (Zero Trust → Networks → Tunnels → el token que te da)
+//        TUNEL_NOMBRE=nandutihax        (si lo creaste por consola con "cloudflared tunnel create")
+//      Y WEB_URL con la dirección final (https://nandutihax.com), que es la que se muestra.
+//
+//   2. SIN NADA (como antes): un "quick tunnel", que da una dirección al azar de
+//      trycloudflare.com y cambia en cada arranque.
+const TUNEL_TOKEN = (process.env.TUNEL_TOKEN || process.env.CLOUDFLARE_TUNNEL_TOKEN || "").trim();
+const TUNEL_NOMBRE = (process.env.TUNEL_NOMBRE || "").trim();
+const WEB_URL = (process.env.WEB_URL || "").trim().replace(/\/$/, "");
+const conDominio = Boolean(TUNEL_TOKEN || TUNEL_NOMBRE);
+
+const argumentos = TUNEL_TOKEN
+  ? ["tunnel", "--no-autoupdate", "run", "--token", TUNEL_TOKEN]
+  : TUNEL_NOMBRE
+    ? ["tunnel", "--no-autoupdate", "run", "--url", `http://localhost:${PUERTO}`, TUNEL_NOMBRE]
+    : ["tunnel", "--url", `http://localhost:${PUERTO}`, "--no-autoupdate"];
+
 log(`Abriendo el túnel a http://localhost:${PUERTO} …`);
 log(`${GRIS}cloudflared: ${cloudflared}${RESET}`);
+if (conDominio) {
+  log(`Túnel con dominio propio${WEB_URL ? ": " + WEB_URL : ""}`);
+  if (!WEB_URL) log(`${GRIS}⚠️ Poné WEB_URL en .env (por ejemplo https://nandutihax.com) para que los links salgan bien${RESET}`);
+}
 
-const proceso = spawn(cloudflared, ["tunnel", "--url", `http://localhost:${PUERTO}`, "--no-autoupdate"], {
+const proceso = spawn(cloudflared, argumentos, {
   stdio: ["ignore", "pipe", "pipe"],
 });
 
@@ -59,10 +85,19 @@ proceso.on("error", (error) => {
 
 // cloudflared escribe casi todo por stderr; el link sale en una de esas líneas
 const mirar = (texto) => {
-  const encontrado = String(texto).match(/https:\/\/[a-z0-9-]+\.trycloudflare\.com/i);
-  if (encontrado && encontrado[0] !== urlPublica) {
-    urlPublica = encontrado[0];
-    avisar({ url: urlPublica, estado: "arriba" });
+  // Con dominio propio la dirección la sabemos de antemano (WEB_URL): se avisa cuando el túnel
+  // dice que ya está conectado. Con el túnel al azar, el link sale en una de estas líneas.
+  if (conDominio) {
+    if (!urlPublica && WEB_URL && /Registered tunnel connection|Connection .* registered/i.test(texto)) {
+      urlPublica = WEB_URL;
+      avisar({ url: urlPublica, estado: "arriba" });
+    }
+  } else {
+    const encontrado = String(texto).match(/https:\/\/[a-z0-9-]+\.trycloudflare\.com/i);
+    if (encontrado && encontrado[0] !== urlPublica) {
+      urlPublica = encontrado[0];
+      avisar({ url: urlPublica, estado: "arriba" });
+    }
   }
   // Los errores de verdad sí se muestran; el resto es ruido
   if (/ERR|error=/i.test(texto) && !/no-autoupdate/i.test(texto)) {

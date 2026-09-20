@@ -38,8 +38,8 @@ const jugador = (nombre) => ({ nombre, auth: "auth-" + nombre, verificado: true 
   revisar("Solo cobran los del equipo ganador", premios.length === 3 && !de("Dani") && !de("Eze"), premios.map((p) => p.nombre).join(", "));
   revisar("Ganar el partido paga 1 moneda a todos los que ganaron",
     premios.every((p) => p.lineas.some((l) => l.motivo === "ganar" && l.monto === 100)));
-  revisar("5 goles pagan como mucho 3 (el hat-trick es el tope): 3 + 1 de ganar = 4",
-    Monedas.enMonedas(de("Ana").total) === 4, Monedas.enMonedas(de("Ana").total));
+  revisar("Cada gol paga 0,30 y como mucho 3 goles: 0,90 + 1 de ganar = 1,90",
+    Monedas.enMonedas(de("Ana").total) === 1.9, Monedas.enMonedas(de("Ana").total));
   revisar("2 asistencias pagan 2: 2 + 1 = 3", Monedas.enMonedas(de("Beto").total) === 3, Monedas.enMonedas(de("Beto").total));
   revisar("4 atajadas pagan 1,20: 1,20 + 1 = 2,20", Monedas.enMonedas(de("Caro").total) === 2.2, Monedas.enMonedas(de("Caro").total));
   revisar("El que hizo goles pero perdió no cobra nada", !de("Dani"));
@@ -51,7 +51,7 @@ const jugador = (nombre) => ({ nombre, auth: "auth-" + nombre, verificado: true 
   revisar("El que no tiene cuenta en la web no cobra", !sinCuenta.find((p) => p.nombre === "Ana") && sinCuenta.length === 2);
 
   const muchasAtajadas = Monedas.calcular({ red: [jugador("Tapa")], blue: [jugador("X")], ganador: 1, goles: {}, asistencias: {}, atajadas: { Tapa: 20 } });
-  revisar("Las atajadas también tienen tope (3 monedas): 3 + 1 = 4", Monedas.enMonedas(muchasAtajadas[0].total) === 4, Monedas.enMonedas(muchasAtajadas[0].total));
+  revisar("Las atajadas tienen tope de 3 monedas: 3 + 1 = 4", Monedas.enMonedas(muchasAtajadas[0].total) === 4, Monedas.enMonedas(muchasAtajadas[0].total));
 
   // ── 2) En la sala ──
   console.log("\n🏟️  En la sala:\n");
@@ -98,13 +98,13 @@ const jugador = (nombre) => ({ nombre, auth: "auth-" + nombre, verificado: true 
     return enviarOriginal.call(room, texto, destino, color, estilo, sonido);
   };
   contexto.__monedasAviso([
-    { nombre: "Ana", total: 400, saldo: 1250, lineas: [{ motivo: "ganar", cantidad: 1, monto: 100 }, { motivo: "gol", cantidad: 5, monto: 300 }] },
+    { nombre: "Ana", total: 190, saldo: 1250, lineas: [{ motivo: "ganar", cantidad: 1, monto: 100 }, { motivo: "gol", cantidad: 5, monto: 90 }] },
   ]);
   room.sendAnnouncement = enviarOriginal;
 
   const suyos = avisos.filter((a) => a.destino === ana.id);
   revisar("El aviso de lo que ganó le llega solo a esa persona", suyos.length === 2 && suyos.every((a) => a.destino === ana.id), suyos.map((a) => a.texto).join(" | "));
-  revisar("Dice cuánto ganó y por qué", /Ganaste 4 monedas/.test(suyos[0].texto) && /ganar el partido/.test(suyos[0].texto), suyos[0].texto);
+  revisar("Dice cuánto ganó y por qué", /Ganaste 1,9 monedas/.test(suyos[0].texto) && /ganar el partido/.test(suyos[0].texto), suyos[0].texto);
   revisar("Y le dice el saldo que le quedó", /12,5 monedas/.test(suyos[1].texto), suyos[1].texto);
   revisar("A los demás no les llega el detalle de Ana", !avisos.some((a) => a.destino !== ana.id && /Ganaste/.test(a.texto)));
   revisar("Pero sí sale un aviso general para todos", avisos.some((a) => (a.destino === null || a.destino === undefined) && /monedas/i.test(a.texto)));
@@ -136,23 +136,24 @@ const jugador = (nombre) => ({ nombre, auth: "auth-" + nombre, verificado: true 
       atajadas: { [nicks[0]]: 1 },
     };
     const guardados = await Monedas.porPartido(delPartido, { sala: "3v3", partidoId: null });
-    revisar("Se guarda el premio del que ganó", guardados.length === 1 && Monedas.enMonedas(guardados[0].total) === 3.3, guardados[0] && Monedas.enMonedas(guardados[0].total));
-    revisar("Y devuelve el saldo nuevo", Monedas.enMonedas(guardados[0].saldo) === 3.3, Monedas.enMonedas(guardados[0].saldo));
+    // 1 de ganar + 2 goles (0,60) + 1 atajada (0,30) = 1,90
+    revisar("Se guarda el premio del que ganó", guardados.length === 1 && Monedas.enMonedas(guardados[0].total) === 1.9, guardados[0] && Monedas.enMonedas(guardados[0].total));
+    revisar("Y devuelve el saldo nuevo", Monedas.enMonedas(guardados[0].saldo) === 1.9, Monedas.enMonedas(guardados[0].saldo));
 
     await Monedas.porPartido(delPartido, { sala: "3v3" });
-    revisar("El saldo se va sumando", Monedas.enMonedas(await Monedas.saldo(nicks[0])) === 6.6, Monedas.enMonedas(await Monedas.saldo(nicks[0])));
+    revisar("El saldo se va sumando", Monedas.enMonedas(await Monedas.saldo(nicks[0])) === 3.8, Monedas.enMonedas(await Monedas.saldo(nicks[0])));
     revisar("El que perdió sigue en cero", (await Monedas.saldo(nicks[1])) === 0);
 
     const historial = await Monedas.historial(nicks[0]);
     revisar("Queda el historial, con el motivo y la sala", historial.length === 2 && historial[0].sala === "3v3" && /2 goles/.test(historial[0].detalle), historial[0] && historial[0].detalle);
 
-    await Monedas.acreditar({ nick: nicks[0], monto: -Monedas.aCentesimas(1.6), motivo: "compra", detalle: "Prueba" });
+    await Monedas.acreditar({ nick: nicks[0], monto: -Monedas.aCentesimas(0.8), motivo: "compra", detalle: "Prueba" });
     const ficha = await Monedas.fichaDe(nicks[0]);
-    revisar("Se puede gastar y queda registrado", ficha.monedas === 5 && ficha.gastadas === 1.6 && ficha.historial[0].monto === -1.6, JSON.stringify({ monedas: ficha.monedas, gastadas: ficha.gastadas }));
+    revisar("Se puede gastar y queda registrado", ficha.monedas === 3 && ficha.gastadas === 0.8 && ficha.historial[0].monto === -0.8, JSON.stringify({ monedas: ficha.monedas, gastadas: ficha.gastadas }));
 
     let sinSaldo = false;
     try { await Monedas.acreditar({ nick: nicks[0], monto: -Monedas.aCentesimas(999), motivo: "compra" }); } catch { sinSaldo = true; }
-    revisar("No se puede quedar en negativo", sinSaldo && (await Monedas.saldo(nicks[0])) === 500);
+    revisar("No se puede quedar en negativo", sinSaldo && (await Monedas.saldo(nicks[0])) === 300);
   } finally {
     await base().movimientoMonedas.deleteMany({ where: { nick: { in: nicks } } });
     await base().monedas.deleteMany({ where: { nick: { in: nicks } } });

@@ -82,7 +82,7 @@ function lanzar(nombre, color, archivo, variables) {
 // El túnel viene prendido; se apaga con TUNEL_WEB=no en .env
 const conTunel = !/^(no|false|0)$/i.test(String(process.env.TUNEL_WEB ?? "si").trim());
 
-console.log(`\n🕸️  ÑandutíBall — levantando ${SALAS.length === 1 ? SALAS[0].nombre : "las " + SALAS.length + " salas"}\n`);
+console.log(`\n🕸️  ÑandutíHax — levantando ${SALAS.length === 1 ? SALAS[0].nombre : "las " + SALAS.length + " salas"}\n`);
 
 // HaxBall devuelve 429 si se crean varias salas al mismo tiempo desde una misma IP.
 const RETARDO_ENTRE_SALAS = Number(process.env.RETARDO_ENTRE_SALAS_MS || 8000);

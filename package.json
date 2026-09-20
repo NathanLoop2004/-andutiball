@@ -1,8 +1,8 @@
 {
-  "name": "nandutiball-host",
+  "name": "nandutihax-host",
   "version": "1.0.0",
   "private": true,
-  "description": "Host de HaxBall ÑandutíBall ejecutado con Puppeteer",
+  "description": "Host de HaxBall ÑandutíHax ejecutado con Puppeteer",
   "main": "launcher.js",
   "scripts": {
     "start": "node --env-file-if-exists=.env todas.js",
@@ -46,7 +46,11 @@
     "prueba-carrusel": "node --env-file-if-exists=.env pruebas/carrusel.js",
     "prueba-elo-salas": "node --env-file-if-exists=.env pruebas/elo-salas.js",
     "prueba-discord-vincular": "node --env-file-if-exists=.env pruebas/discord-vincular.js",
-    "prueba-monedas": "node --env-file-if-exists=.env pruebas/monedas.js"
+    "prueba-monedas": "node --env-file-if-exists=.env pruebas/monedas.js",
+    "elo:juntar": "node --env-file-if-exists=.env juntar-elo.js",
+    "prueba-equipos": "node --env-file-if-exists=.env pruebas/equipos.js",
+    "prueba-tienda": "node --env-file-if-exists=.env pruebas/tienda.js",
+    "prueba-rachas": "node --env-file-if-exists=.env pruebas/rachas.js"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",
@@ -55,7 +59,8 @@
     "jsonwebtoken": "^9.0.3",
     "nodemailer": "^10.0.10",
     "pg": "^8.23.0",
-    "puppeteer": "^23.0.0"
+    "puppeteer": "^23.0.0",
+    "resend": "^6.28.1"
   },
   "devDependencies": {
     "prisma": "^7.10.0"

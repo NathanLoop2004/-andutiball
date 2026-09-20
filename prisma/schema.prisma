@@ -27,6 +27,7 @@ datasource db {
 model Usuario {
   id              Int       @id @default(autoincrement())
   nick            String    @unique
+  camiseta        String?   // la camiseta que tiene puesta, de las que compró
   auth            String?   @unique
   clave           String?   // hash scrypt. null = todavía no se registró
   claveCambiada   DateTime?
@@ -314,4 +315,72 @@ model MovimientoMonedas {
 
   @@index([nick, creado])
   @@map("movimientos_monedas")
+}
+
+// Las camisetas de los clubes (ver models/EquiposModel.js). Se editan desde el panel y la sala
+// las aplica en vivo: el formato de HaxBall es ángulo + color del número + 3 franjas.
+model Equipo {
+  clave       String   @id
+  nombre      String
+  descripcion String?
+  division    String?
+  angulo      Int      @default(0)
+  colorTexto  String   @default("FFFFFF")
+  color1      String
+  color2      String
+  color3      String
+  activo      Boolean  @default(true)
+  orden       Int      @default(0)
+  // Tienda: precio en centésimas de moneda (null = no se vende)
+  precio      Int?
+  enTienda    Boolean  @default(false)
+  detalle     String?
+  cambiadoPor String?
+  cambiado    DateTime @default(now())
+
+  @@map("equipos")
+}
+
+// Cada camiseta que compró una cuenta
+model CamisetaComprada {
+  id       Int      @id @default(autoincrement())
+  nick     String
+  equipo   String
+  precio   Int
+  comprada DateTime @default(now())
+
+  @@unique([nick, equipo])
+  @@index([nick])
+  @@map("camisetas_compradas")
+}
+
+// Los cruces del cambio automático: "demanda" es cuánto se repite ese clásico
+model Clasico {
+  id          Int      @id @default(autoincrement())
+  red         String
+  blue        String
+  demanda     Int      @default(300)
+  activo      Boolean  @default(true)
+  cambiadoPor String?
+  cambiado    DateTime @default(now())
+
+  @@unique([red, blue])
+  @@index([demanda])
+  @@map("clasicos")
+}
+
+// Rachas: cuántas seguidas viene ganando cada cuenta y cuál fue su mejor (models/RachasModel.js)
+model Racha {
+  nick            String    @id
+  actual          Int       @default(0)
+  mejor           Int       @default(0)
+  partidos        Int       @default(0)
+  ganados         Int       @default(0)
+  ultimoResultado String?
+  mejorCuando     DateTime?
+  actualizada     DateTime  @default(now())
+
+  @@index([mejor])
+  @@index([actual])
+  @@map("rachas")
 }

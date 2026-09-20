@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Mi cuenta · ÑandutíBall</title>
-<link rel="icon" href="/img/logo.svg" type="image/svg+xml">
+<title>Mi cuenta · ÑandutíHax</title>
+<link rel="icon" href="/img/logo-chico.png" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
@@ -19,7 +19,7 @@
 <body>
 
 <header class="barra">
-  <a class="marca" href="/"><img src="/img/logo.svg" alt=""><span>ÑandutíBall</span></a>
+  <a class="marca" href="/"><img src="/img/logo-chico.png" alt=""><span>ÑandutíHax</span></a>
   <div class="derecha" id="derecha"></div>
 </header>
 
@@ -40,6 +40,7 @@
         <nav>
           <a href="#perfil" class="activo">Perfil</a>
           <a href="#monedas">Monedas</a>
+          <a href="#camisetas">Mis camisetas</a>
           <a href="#discord">Discord</a>
           <a href="#seguridad">Contraseña</a>
           <a href="/">Mi ELO y ranking</a>
@@ -74,13 +75,23 @@
         </div>
       </section>
 
+      <!-- Inventario: las camisetas que compró con sus monedas -->
+      <section class="tarjeta" id="camisetas">
+        <div class="tarjeta-cabeza"><h2>Mis camisetas</h2><span class="etiqueta" id="cuantasCamisetas">…</span></div>
+        <div class="tarjeta-cuerpo">
+          <p class="tenue">Las que compraste con tus monedas. La que elijas la usás en la sala: también podés
+            cambiarla ahí con <b>!camisetas</b>.</p>
+          <div id="inventario"></div>
+        </div>
+      </section>
+
       <!-- Discord: vincular la cuenta (no es iniciar sesión) y entrar al servidor -->
       <section class="tarjeta" id="discord">
         <div class="tarjeta-cabeza"><h2>Discord</h2><span class="etiqueta" id="estadoDiscord">…</span></div>
         <div class="tarjeta-cuerpo">
           <div class="aviso" id="avisoDiscord" role="status"></div>
           <div id="discordSin" hidden>
-            <p class="tenue" style="margin-top:0">Vinculá tu cuenta de Discord con la de ÑandutíBall. Al vincularla te sumamos al servidor de ÑandutíBall, donde se avisan las novedades y los torneos. No es para iniciar sesión: solo asocia tu Discord a esta cuenta.</p>
+            <p class="tenue" style="margin-top:0">Vinculá tu cuenta de Discord con la de ÑandutíHax. Al vincularla te sumamos al servidor de ÑandutíHax, donde se avisan las novedades y los torneos. No es para iniciar sesión: solo asocia tu Discord a esta cuenta.</p>
             <div class="fila-botones" style="margin-top:0"><button class="boton discord" type="button" id="vincularDiscord">
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3l-.6 1.3a18.4 18.4 0 0 0-5.6 0L8.6 3a19.7 19.7 0 0 0-4.9 1.5C.5 9.3-.3 14 .1 18.6a19.9 19.9 0 0 0 6 3l1.3-2a12.9 12.9 0 0 1-2-1l.5-.4a14.2 14.2 0 0 0 12.2 0l.5.4a12.8 12.8 0 0 1-2 1l1.3 2a19.8 19.8 0 0 0 6-3c.5-5.3-.8-9.9-3.6-14.2ZM8 15.8c-1.2 0-2.2-1.1-2.2-2.4S6.8 11 8 11s2.2 1.1 2.2 2.4-1 2.4-2.2 2.4Zm8 0c-1.2 0-2.2-1.1-2.2-2.4S14.8 11 16 11s2.2 1.1 2.2 2.4-1 2.4-2.2 2.4Z"/></svg>
               Vincular con Discord</button></div>
@@ -162,7 +173,7 @@
   </div>
 </main>
 
-<footer class="pie">ÑandutíBall · Hecho en Paraguay por Jinder</footer>
+<footer class="pie">ÑandutíHax · Hecho en Paraguay por Jinder</footer>
 
 <script>
 const $ = (id) => document.getElementById(id);
@@ -173,12 +184,12 @@ let relojReenvio = null;
 
 // ── Discord ──
 const RESULTADOS_DISCORD = {
-  vinculado: ["¡Listo! Tu Discord quedó vinculado y ya estás en el servidor de ÑandutíBall.", "ok"],
-  "ya-estaba": ["¡Listo! Tu Discord quedó vinculado. Ya estabas en el servidor de ÑandutíBall.", "ok"],
+  vinculado: ["¡Listo! Tu Discord quedó vinculado y ya estás en el servidor de ÑandutíHax.", "ok"],
+  "ya-estaba": ["¡Listo! Tu Discord quedó vinculado. Ya estabas en el servidor de ÑandutíHax.", "ok"],
   "sin-servidor": ["Tu Discord quedó vinculado, pero no pudimos sumarte al servidor. Avisale a un administrador.", "info"],
   cancelado: ["Cancelaste el vínculo en Discord. Podés intentarlo de nuevo cuando quieras.", "info"],
   vencido: ["Se venció el tiempo para vincular. Tocá el botón de nuevo.", "mal"],
-  "otra-cuenta": ["Ese Discord ya está vinculado a otra cuenta de ÑandutíBall.", "mal"],
+  "otra-cuenta": ["Ese Discord ya está vinculado a otra cuenta de ÑandutíHax.", "mal"],
   error: ["No se pudo vincular con Discord. Probá de nuevo en un rato.", "mal"],
 };
 
@@ -241,6 +252,40 @@ function pintarMonedas() {
     : `<p class="tenue">Todavía no tenés movimientos.</p>`;
 }
 
+// ── Inventario de camisetas ──
+const fondoCamiseta = (c) => `linear-gradient(${(c.angulo || 0) + 90}deg, #${c.colores[0]} 0 33.34%, #${c.colores[1]} 33.34% 66.67%, #${c.colores[2]} 66.67% 100%)`;
+
+async function cargarCamisetas() {
+  try {
+    const r = await Sesion.pedir("/api/tienda/mias");
+    $("cuantasCamisetas").textContent = r.camisetas.length ? r.camisetas.length + (r.camisetas.length === 1 ? " camiseta" : " camisetas") : "ninguna";
+    $("inventario").innerHTML = r.camisetas.length
+      ? `<div class="inventario">${r.camisetas.map((c) => `
+          <div class="inventario-item${r.puesta === c.clave ? " puesta" : ""}">
+            <span class="camiseta grande" style="background:${fondoCamiseta(c)}"></span>
+            <b>${Sesion.escapar(c.nombre)}</b>
+            <span class="tenue" style="font-size:12px">Pagaste ${monedasTexto(c.pagada)} 🪙</span>
+            <button class="boton chico ${r.puesta === c.clave ? "" : "principal"}" data-usar="${Sesion.escapar(c.clave)}">
+              ${r.puesta === c.clave ? "Sacármela" : "Usar"}
+            </button>
+          </div>`).join("")}</div>`
+      : `<p class="tenue">Todavía no compraste ninguna. Están en la portada: se compran con las monedas que ganás jugando.</p>`;
+  } catch (error) {
+    $("inventario").innerHTML = `<p class="tenue">${Sesion.escapar(error.message)}</p>`;
+  }
+}
+
+$("inventario").addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-usar]");
+  if (!b) return;
+  const sacar = b.textContent.trim() === "Sacármela";
+  try {
+    await Sesion.pedir("/api/tienda/elegir", { method: "POST", body: JSON.stringify({ clave: sacar ? null : b.dataset.usar }) });
+    avisar("avisoGeneral", sacar ? "Te la sacaste: vuelve la camiseta automática." : "Listo: la vas a usar en la próxima cancha.", "ok");
+    cargarCamisetas();
+  } catch (error) { avisar("avisoGeneral", error.message, "mal"); }
+});
+
 function pintarCuenta() {
   const u = Sesion.usuario() || {};
   $("avatar").textContent = Sesion.inicial(cuenta.nick);
@@ -253,6 +298,7 @@ function pintarCuenta() {
   $("datoClave").textContent = fecha(cuenta.claveCambiada);
 
   pintarMonedas();
+  cargarCamisetas();
 
   $("seccionEmail").hidden = Boolean(cuenta.email);
   pintarDiscord();

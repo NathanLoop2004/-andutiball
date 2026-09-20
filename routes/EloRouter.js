@@ -8,4 +8,6 @@ const router = express.Router();
 router.get("/elo", EloController.tabla);
 router.get("/ranking", EloController.ranking);   // para la web pública: sin el auth de nadie
 
+router.get("/rachas", EloController.rachas);   // las mejores rachas (público)
+
 module.exports = router;

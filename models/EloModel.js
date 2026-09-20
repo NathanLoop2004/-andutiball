@@ -11,7 +11,7 @@ const EloSalasModel = require("./EloSalasModel");
 // Las pestañas del ranking: el general y las salas que tienen tabla de ELO
 function ambitos() {
   const nombres = Object.fromEntries(Parametros.salas().map((s) => [s.clave, s.nombre]));
-  // "🕸️ ÑandutíBall | Futsal 3v3 🇵🇾" → "Futsal 3v3"
+  // "🕸️ ÑandutíHax | Futsal 3v3 🇵🇾" → "Futsal 3v3"
   const corto = (n) => String(n || "").replace(/^.*\|\s*/, "").replace(/\s*🇵🇾\s*$/u, "").replace(/\s*⚽\s*$/u, "").trim();
   return [{ clave: "general", nombre: "General" }].concat(EloSalasModel.SALAS.map((s) => ({ clave: s, nombre: corto(nombres[s]) || s })));
 }
