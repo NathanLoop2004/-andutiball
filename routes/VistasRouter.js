@@ -15,6 +15,8 @@ router.get("/frm/inventario", VistasController.inventario);   // lo que compró 
 router.get("/frm/config", VistasController.config);
 router.get("/frm/carrusel", VistasController.carrusel);
 router.get("/frm/equipos", VistasController.equipos);   // camisetas y clásicos   // OWNER, CO-OWNER, HOSTER, AYUDANTE   // OWNER, CO-OWNER, HOSTER, AYUDANTE
+router.get("/frm/camiseta", VistasController.camiseta);       // una camiseta de la tienda
+router.get("/frm/animacion", VistasController.animacion);     // una animación de la tienda
 router.get("/frm/animaciones", VistasController.animaciones);   // animaciones de gol  ← OWNER y CO-OWNER
 router.get("/frm/panel", VistasController.panel);
 router.get("/frm/rangos", VistasController.rangos);

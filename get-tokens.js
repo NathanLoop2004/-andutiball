@@ -3,7 +3,7 @@
 // automatizados). Resuelves el captcha, copias el token (Ctrl+C) y el script lo detecta en el
 // portapapeles, lo guarda y abre la página otra vez para la siguiente sala.
 //
-// Uso:  npm run tokens            → pide TOKEN_3V3, TOKEN_4V4 y TOKEN_TODOS
+// Uso:  npm run tokens            → pide TOKEN_3V3, TOKEN_TODOS, TOKEN_4V4 y TOKEN_REALSOCCER
 //       npm run tokens -- --up    → además corre "docker compose up -d --build" al terminar
 
 const fs = require("fs");
@@ -15,7 +15,9 @@ const TOKEN_URL = "https://www.haxball.com/headlesstoken";
 // Por defecto pide los 3 tokens; con "--una" solo el de la sala de HOST_CONFIG (para npm start)
 const salaElegida = (process.env.HOST_CONFIG || "hosts/todos.json").replace(/^.*[\\/]/, "").replace(/\.json$/i, "");
 const claveDeLaSala = `TOKEN_${salaElegida.toUpperCase().replace(/[^A-Z0-9]/g, "_")}`;
-const TOKEN_KEYS = process.argv.includes("--una") ? [claveDeLaSala] : ["TOKEN_3V3", "TOKEN_4V4", "TOKEN_TODOS", "TOKEN_REALSOCCER"];
+// El mismo orden con el que se abren las salas (ver todas.js): primero las dos que más se
+// llenan, así si te cansás a la mitad ya tenés las importantes.
+const TOKEN_KEYS = process.argv.includes("--una") ? [claveDeLaSala] : ["TOKEN_3V3", "TOKEN_TODOS", "TOKEN_4V4", "TOKEN_REALSOCCER"];
 const TOKEN_PATTERN = /thr1\.[A-Za-z0-9_\-.]+/;
 const ENV_PATH = path.join(__dirname, ".env");
 const WAIT_TIMEOUT_MS = 5 * 60 * 1000;

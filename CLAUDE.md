@@ -36,6 +36,10 @@ Contexto para trabajar en este proyecto. La documentación para personas está e
 - **Multihost:** un solo `script.js` y cuatro salas en compose (`host-3v3`, `host-4v4`, `host-todos`, `host-rs`). Cada una tiene `HOST_CONFIG=hosts/<sala>.json`, y el launcher reemplaza en el script la declaración (`var/let/const Nombre ...;`) de cada variable del JSON. Solo sirve para variables de config de una línea.
 - Cada sala necesita su propio token: `TOKEN_3V3`, `TOKEN_4V4`, `TOKEN_TODOS`, `TOKEN_REALSOCCER` en `.env`. Para `npm start` (una sola sala) se usan `HAXBALL_TOKEN` + `HOST_CONFIG`.
 - `npm run tokens` (`get-tokens.js`): abre headlesstoken en el navegador normal del usuario (Cloudflare Turnstile rechaza a Puppeteer con el error 600010); el usuario resuelve el captcha y copia el token, y el script lo lee del portapapeles y guarda los 3 tokens en `.env` (`-- --up` además hace `docker compose up`). No automatizar ni saltar el captcha.
+- **El orden en que abren las salas** (`TODAS` en `todas.js`, y los tokens en `get-tokens.js`):
+  3v3 → automática → 4v4 → Real Soccer. Primero las dos que más se llenan, porque los tokens
+  vencen a los pocos minutos: si uno se vence a mitad de camino, las que quedan afuera son las
+  menos jugadas. Cada sala conserva **su** puerto (3001-3004), que no depende del orden.
 - **`npm start` = `todas.js`**: es EL arrancador. Levanta Ñandutí Web + el panel + las 4 salas + el túnel de Cloudflare (un proceso hijo por sala, puertos 3001-3004, panel en 8080, prefija la salida con el nombre de cada sala, Ctrl+C corta todo). Con argumento (`npm start 4v4`) levanta solo esa. `npm run todas` es alias. Es la forma práctica acá, porque el usuario no tiene Docker.
 - `npm run sala 4v4` llama directo a `launcher.js` (una sala, sin el panel unificado). `launcher.js` también acepta el nombre de sala como argumento y avisa si el puerto está ocupado.
 - **Cuidado con los nombres**: la sala de futsal automático tiene clave `todos` (hosts/todos.json, TOKEN_TODOS), pero `npm start todos` levanta **las 4** (el usuario lo escribía esperando eso y le salía una sola). Esa sala sola se abre con `npm start futsal` (o `auto`), por el `alias` en `todas.js`. `npm run sala todos` (launcher.js directo) sigue siendo esa sala sola.
@@ -1213,6 +1217,21 @@ emoji", que sí cortan. Cada cuadro se recorta a 2 caracteres: HaxBall no muestr
 | Armarlas y ponerles precio | **OWNER y CO-OWNER** | `middlewares/puedeVerRangos` en `AnimacionesRouter` |
 | Verlas en la tienda | cualquiera | `GET /api/animaciones` |
 | Comprar, vender, elegir | con sesión | `verificarToken()` |
+
+**Cada cosa de la tienda tiene su propia URL**, no un modal (20/09/2026): `/frm/camiseta/?c=<clave>`
+y `/frm/animacion/?c=<clave>` (`VistasController.camiseta` / `.animacion`). Así el link se puede
+compartir, anda el botón de atrás y Google puede entrar — por eso además están en el `Allow` del
+`robots.txt`. Las dos leen la vitrina pública (`/api/tienda`, `/api/animaciones`) y buscan la
+clave; si no está, muestran un cartel en vez de romperse. La portada tiene **dos vidrieras** que se
+mueven solas (camisetas y animaciones), y cada ítem es un `<a>` a esas páginas.
+
+**La cancha de la vista previa es UN SOLO archivo**: `public/js/cancha-animacion.js`
+(`CanchaAnimacion.crear(lienzo, opciones)`), que usan el editor del panel y la página pública. Así
+lo que ve el que la arma es exactamente lo que ve el que la compra. Las opciones son funciones
+(`puntos()`, `msPorCuadro()`, `congelado()`) porque el editor cambia mientras corre; `conSegundos:
+false` saca los tiempos del cartel, que en la página pública no interesan. Ojo con `seguir()`:
+tiene que volver a pedir cuadro **siempre**, porque al soltar el cabezal el bucle está cortado
+aunque `corriendo` nunca se haya apagado (ya se rompió una vez por eso).
 
 **En el inventario** (`public/frm/inventario/`) las animaciones tienen **su propio apartado**,
 aparte del de camisetas: se prenden y se apagan con "Activar"/"Desactivar" (`POST

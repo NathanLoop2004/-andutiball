@@ -125,6 +125,17 @@
     </div>
   </section>
 
+  <!-- Animaciones de gol: la misma vidriera que las camisetas -->
+  <section id="seccionAnimaciones" hidden>
+    <div class="seccion-titulo">
+      <h2>Animaciones de gol</h2>
+      <span class="tenue">Para festejar distinto cuando la metés</span>
+    </div>
+    <div class="vidriera" id="vidrieraAnim">
+      <div class="vidriera-pista" id="pistaAnimaciones"></div>
+    </div>
+  </section>
+
   <!-- Rachas: las mejores de la historia y las que están vivas -->
   <section id="seccionRachas" hidden>
     <div class="seccion-titulo">
@@ -178,25 +189,6 @@
 
 <footer class="pie">ÑandutíHax · Hecho en Paraguay por Jinder</footer>
 
-<div class="fondo-modal" id="fondoCamiseta" hidden>
-  <div class="modal angosto" role="dialog" aria-modal="true" aria-labelledby="tituloCamiseta">
-    <div class="modal-cabeza"><h2 id="tituloCamiseta">Camiseta</h2><button class="boton chico" type="button" id="cerrarCamiseta">Cerrar</button></div>
-    <div class="modal-cuerpo">
-      <div class="detalle-camiseta">
-        <div class="camiseta-grande" id="camisetaGrande"><span id="camisetaNumero">10</span></div>
-        <div>
-          <div class="precio" id="camisetaPrecio"></div>
-          <p id="camisetaDetalle" class="tenue"></p>
-          <div class="aviso" id="avisoCamiseta"></div>
-        </div>
-      </div>
-    </div>
-    <div class="modal-pie">
-      <span class="tenue" id="camisetaSaldo"></span>
-      <button class="boton principal" type="button" id="comprarCamiseta">Comprar</button>
-    </div>
-  </div>
-</div>
 
 <script src="/js/sesion.js"></script>
 <script src="/js/anuncios.js"></script>
@@ -486,88 +478,60 @@ if (new URLSearchParams(location.search).get("sinpermiso")) {
   $("avisoTapa").textContent = "Esa sección es solo para administradores.";
 }
 
-// ══════════ Tienda de camisetas (la vidriera que se mueve sola) ══════════
+// ══════════ Las vidrieras (se mueven solas) ══════════
 // Se duplica la lista y se mueve de 0 a -50%: cuando termina la primera copia, la segunda
 // está justo en el mismo lugar, así el movimiento no se corta nunca.
-const Tienda = {
-  camisetas: [],
-  elegida: null,
+//
+// Cada cosa lleva a SU PROPIA PÁGINA (/frm/camiseta/?c=… y /frm/animacion/?c=…) en vez de
+// abrir un modal: así el link se puede compartir, se puede volver con el botón de atrás y
+// Google puede entrar.
+function llenarVidriera(pista, seccion, items, pintar) {
+  if (!items.length) return;
+  const repetidos = [];
+  while (repetidos.length < 14) repetidos.push(...items);
+  const uno = (x, copia) => pintar(x, copia);
+  pista.innerHTML = repetidos.map((x) => uno(x, false)).join("") + repetidos.map((x) => uno(x, true)).join("");
+  pista.style.animationDuration = (repetidos.length * 2.5) + "s";
+  seccion.hidden = false;
+}
 
-  fondo(c) {
-    const col = c.colores.map((x) => "#" + x);
-    return `linear-gradient(${(c.angulo || 0) + 90}deg, ${col[0]} 0 33.34%, ${col[1]} 33.34% 66.67%, ${col[2]} 66.67% 100%)`;
-  },
-
-  async cargar() {
-    let camisetas = [];
-    try {
-      const r = await fetch("/api/tienda", { cache: "no-store" });
-      camisetas = (await r.json()).camisetas || [];
-    } catch (error) { return; }
-    if (!camisetas.length) return;
-
-    Tienda.camisetas = camisetas;
-    // Se repite la lista hasta tener suficientes para que no se vea el corte
-    const items = [];
-    while (items.length < 14) items.push(...camisetas);
-
-    const pintar = (c, i, copia) => `
-      <button class="vidriera-item" type="button" data-camiseta="${esc(c.clave)}" ${copia ? 'tabindex="-1" aria-hidden="true"' : ""}>
-        <span class="camiseta grande" style="background:${Tienda.fondo(c)}"></span>
-        <span class="vidriera-nombre">${esc(c.nombre)}</span>
-        <span class="vidriera-precio">🪙 ${monedasTexto(c.precio)}</span>
-      </button>`;
-
-    $("pistaTienda").innerHTML = items.map((c, i) => pintar(c, i, false)).join("") + items.map((c, i) => pintar(c, i, true)).join("");
-    $("pistaTienda").style.animationDuration = (items.length * 2.5) + "s";
-    $("seccionTienda").hidden = false;
-  },
-
-  abrir(clave) {
-    const c = Tienda.camisetas.find((x) => x.clave === clave);
-    if (!c) return;
-    Tienda.elegida = c;
-    $("tituloCamiseta").textContent = c.nombre;
-    $("camisetaGrande").style.background = Tienda.fondo(c);
-    $("camisetaNumero").style.color = "#" + c.colorTexto;
-    $("camisetaPrecio").textContent = "🪙 " + monedasTexto(c.precio) + " monedas";
-    $("camisetaDetalle").textContent = c.detalle || c.descripcion || "Camiseta de " + c.nombre + ".";
-    $("avisoCamiseta").className = "aviso";
-    $("avisoCamiseta").textContent = "";
-    const u = Sesion.usuario();
-    $("comprarCamiseta").hidden = !u;
-    $("camisetaSaldo").textContent = u ? "" : "Iniciá sesión para comprarla";
-    if (u) {
-      Sesion.pedir("/api/cuenta")
-        .then(({ cuenta }) => { $("camisetaSaldo").textContent = "Tenés " + monedasTexto(cuenta.monedas) + " monedas"; })
-        .catch(() => {});
-    }
-    $("fondoCamiseta").hidden = false;
-  },
+const fondoCamiseta = (c) => {
+  const col = c.colores.map((x) => "#" + x);
+  return `linear-gradient(${(c.angulo || 0) + 90}deg, ${col[0]} 0 33.34%, ${col[1]} 33.34% 66.67%, ${col[2]} 66.67% 100%)`;
 };
 
-$("pistaTienda").addEventListener("click", (e) => {
-  const b = e.target.closest("[data-camiseta]");
-  if (b) Tienda.abrir(b.dataset.camiseta);
-});
-$("cerrarCamiseta").onclick = () => { $("fondoCamiseta").hidden = true; };
-$("fondoCamiseta").addEventListener("click", (e) => { if (e.target === $("fondoCamiseta")) $("fondoCamiseta").hidden = true; });
-
-$("comprarCamiseta").onclick = async () => {
-  if (!Tienda.elegida) return;
-  $("comprarCamiseta").disabled = true;
+async function cargarCamisetas() {
+  let camisetas = [];
   try {
-    const r = await Sesion.pedir("/api/tienda/comprar", { method: "POST", body: JSON.stringify({ clave: Tienda.elegida.clave }) });
-    $("avisoCamiseta").className = "aviso ok";
-    $("avisoCamiseta").textContent = "¡Es tuya! Te quedan " + monedasTexto(r.saldo) + " monedas. Poné !camisetas en la sala para usarla.";
-    $("camisetaSaldo").textContent = "Tenés " + monedasTexto(r.saldo) + " monedas";
-    if (Sesion.usuario()) cargarMiElo();
-  } catch (error) {
-    $("avisoCamiseta").className = "aviso mal";
-    $("avisoCamiseta").textContent = error.message;
-  }
-  $("comprarCamiseta").disabled = false;
-};
+    const r = await fetch("/api/tienda", { cache: "no-store" });
+    camisetas = (await r.json()).camisetas || [];
+  } catch (error) { return; }
+
+  llenarVidriera($("pistaTienda"), $("seccionTienda"), camisetas, (c, copia) => `
+    <a class="vidriera-item" href="/frm/camiseta/?c=${encodeURIComponent(c.clave)}" ${copia ? 'tabindex="-1" aria-hidden="true"' : ""}>
+      <span class="camiseta grande" style="background:${fondoCamiseta(c)}"></span>
+      <span class="vidriera-nombre">${esc(c.nombre)}</span>
+      <span class="vidriera-precio">🪙 ${monedasTexto(c.precio)}</span>
+    </a>`);
+}
+
+// La cara de una animación: su primer punto con algo, o una estrella si es solo de tamaño
+const caraAnimacion = (a) => ((a.cuadros || []).find(Boolean) || "✨");
+
+async function cargarAnimaciones() {
+  let animaciones = [];
+  try {
+    const r = await fetch("/api/animaciones", { cache: "no-store" });
+    animaciones = (await r.json()).animaciones || [];
+  } catch (error) { return; }
+
+  llenarVidriera($("pistaAnimaciones"), $("seccionAnimaciones"), animaciones, (a, copia) => `
+    <a class="vidriera-item" href="/frm/animacion/?c=${encodeURIComponent(a.clave)}" ${copia ? 'tabindex="-1" aria-hidden="true"' : ""}>
+      <span class="animacion-cara">${esc(caraAnimacion(a))}</span>
+      <span class="vidriera-nombre">${esc(a.nombre)}</span>
+      <span class="vidriera-precio">🪙 ${monedasTexto(a.precio)}</span>
+    </a>`);
+}
 
 // ══════════ Rachas ══════════
 async function cargarRachas() {
@@ -597,7 +561,8 @@ async function cargarRachas() {
 }
 
 Carrusel.cargar();
-Tienda.cargar();
+cargarCamisetas();
+cargarAnimaciones();
 cargarRachas();
 cargarRanking();
 pintar();

@@ -621,6 +621,8 @@ input[type=number]:focus { outline: none; border-color: var(--acento); box-shado
   width: 132px; flex: none; margin-right: 14px; padding: 14px 10px;
   background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio);
   cursor: pointer; transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+  /* Ahora son enlaces a la página de cada cosa, no botones: se les saca el estilo de link */
+  color: inherit; text-decoration: none; text-align: center;
 }
 .vidriera-item:hover { transform: translateY(-4px); box-shadow: var(--sombra); border-color: var(--borde-fuerte); }
 .vidriera-item .camiseta.grande { width: 64px; height: 64px; }
@@ -825,3 +827,13 @@ input[type=number]:focus { outline: none; border-color: var(--acento); box-shado
 /* Los dos mandos que manejan la línea de tiempo, arriba de ella */
 .mandos-tiempo { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media (max-width: 620px) { .mandos-tiempo { grid-template-columns: 1fr; gap: 10px; } }
+/* La cara de una animación en la vidriera de la portada */
+.animacion-cara {
+  width: 72px; height: 72px; display: grid; place-items: center;
+  font-size: 34px; line-height: 1;
+  background: var(--superficie-2); border: 1px solid var(--borde); border-radius: 50%;
+}
+/* Los puntos de una animación, en su página */
+.tira-puntos { display: flex; flex-wrap: wrap; gap: 4px; margin: 10px 0; }
+/* La ficha de una animación: la cancha arriba y los datos abajo */
+.ficha-animacion { display: grid; gap: 18px; }

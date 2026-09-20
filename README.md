@@ -99,7 +99,8 @@ docker compose down          # cierra todo
 ```
 
 `npm run tokens` abre la página de tokens en tu navegador. Resolvés el captcha, copiás el token
-con Ctrl+C y el script lo guarda solo. Repite 4 veces, una por sala.
+con Ctrl+C y el script lo guarda solo. Repite 4 veces, una por sala, **en el orden en que abren**:
+3v3, automática, 4v4 y Real Soccer — primero las dos que más se llenan.
 
 Para no tener que seleccionar el texto, instalá el marcador de [bookmarklet.js](bookmarklet.js):
 después del captcha, un clic copia el token. El captcha siempre lo resolvés vos.

@@ -9,6 +9,8 @@ User-agent: *
 Allow: /$
 Allow: /frm/login
 Allow: /frm/registro
+Allow: /frm/camiseta
+Allow: /frm/animacion
 Disallow: /api/
 Disallow: /frm/panel
 Disallow: /frm/cuenta

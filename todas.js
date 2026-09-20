@@ -24,10 +24,14 @@ const Preparar = require("./lib/preparar");
 
 const PANEL_PORT = Number(process.env.PANEL_PORT || 8080);
 
+// EL ORDEN IMPORTA: se abren en este orden, y los tokens de HaxBall vencen a los pocos minutos.
+// Primero las dos que más se llenan (3v3 y la automática), así son las que seguro levantan;
+// si un token se vence a mitad de camino, las que quedan afuera son las menos jugadas.
+// Cada sala conserva SU puerto, que no depende del orden.
 const TODAS = [
   { clave: "3v3", nombre: "Futsal 3v3", config: "hosts/3v3.json", token: "TOKEN_3V3", puerto: 3001, color: "\x1b[36m" },
-  { clave: "4v4", nombre: "Futsal 4v4", config: "hosts/4v4.json", token: "TOKEN_4V4", puerto: 3002, color: "\x1b[35m" },
   { clave: "todos", alias: ["futsal", "auto"], nombre: "Futsal automático", config: "hosts/todos.json", token: "TOKEN_TODOS", puerto: 3003, color: "\x1b[33m" },
+  { clave: "4v4", nombre: "Futsal 4v4", config: "hosts/4v4.json", token: "TOKEN_4V4", puerto: 3002, color: "\x1b[35m" },
   { clave: "realsoccer", nombre: "Real Soccer", config: "hosts/realsoccer.json", token: "TOKEN_REALSOCCER", puerto: 3004, color: "\x1b[32m" },
 ];
 

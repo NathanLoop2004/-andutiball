@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Camiseta · ÑandutíHax</title>
+<meta name="description" content="Las camisetas de ÑandutíHax se compran con las monedas que ganás jugando.">
+<link rel="icon" href="/img/logo-chico.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/css/nanduti.css">
+<script src="/js/tema.js"></script>
+</head>
+<body>
+
+<header class="barra">
+  <a class="marca" href="/"><img src="/img/logo-chico.png" alt=""><span>ÑandutíHax</span></a>
+  <div class="derecha" id="derecha"></div>
+</header>
+
+<main class="contenido">
+  <p class="tenue"><a href="/">← Volver a la portada</a></p>
+
+  <div class="tarjeta" id="ficha" hidden>
+    <div class="tarjeta-cuerpo detalle-item">
+      <div class="camiseta-grande" id="camisetaGrande"><span id="camisetaNumero">10</span></div>
+      <div class="detalle-datos">
+        <h1 id="nombre">—</h1>
+        <p class="tenue" id="detalle"></p>
+        <div class="precio" id="precio"></div>
+        <div class="aviso" id="aviso"></div>
+        <div class="acciones">
+          <button class="boton principal" type="button" id="comprar" hidden>Comprar</button>
+          <a class="boton" id="entrar" href="/frm/login/" hidden>Iniciá sesión para comprarla</a>
+          <a class="boton" href="/frm/inventario/" id="verInventario" hidden>Ver mi inventario</a>
+        </div>
+        <p class="tenue" id="saldo"></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="tarjeta" id="noEsta" hidden>
+    <div class="tarjeta-cuerpo">
+      <h1>No encontramos esa camiseta</h1>
+      <p class="tenue">Puede que ya no esté a la venta. Mirá las que hay en la portada.</p>
+      <p><a class="boton principal" href="/">Ir a la portada</a></p>
+    </div>
+  </div>
+
+  <p class="tenue" id="cargando">Cargando…</p>
+</main>
+
+<script src="/js/sesion.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = Sesion.escapar;
+const monedasTexto = (n) => Number(n || 0).toFixed(2).replace(/\.00$/, "").replace(/(\.\d)0$/, "$1").replace(".", ",");
+
+Sesion.pintarBarra("derecha");
+
+const clave = new URLSearchParams(location.search).get("c");
+let camiseta = null;
+
+const fondo = (c) => {
+  const col = c.colores.map((x) => "#" + x);
+  return `linear-gradient(${(c.angulo || 0) + 90}deg, ${col[0]} 0 33.34%, ${col[1]} 33.34% 66.67%, ${col[2]} 66.67% 100%)`;
+};
+
+function avisar(texto, clase) {
+  $("aviso").className = "aviso" + (texto ? " " + clase : "");
+  $("aviso").textContent = texto;
+}
+
+async function cargar() {
+  let camisetas = [];
+  try {
+    const r = await fetch("/api/tienda", { cache: "no-store" });
+    camisetas = (await r.json()).camisetas || [];
+  } catch (e) { /* sin conexión: se muestra el cartel de no encontrada */ }
+
+  camiseta = camisetas.find((c) => c.clave === clave) || null;
+  $("cargando").hidden = true;
+  if (!camiseta) { $("noEsta").hidden = false; return; }
+
+  document.title = camiseta.nombre + " · ÑandutíHax";
+  $("nombre").textContent = camiseta.nombre;
+  $("camisetaGrande").style.background = fondo(camiseta);
+  $("camisetaNumero").style.color = "#" + camiseta.colorTexto;
+  $("detalle").textContent = camiseta.detalle || camiseta.descripcion || "Camiseta de " + camiseta.nombre + ".";
+  $("precio").textContent = "🪙 " + monedasTexto(camiseta.precio) + " monedas";
+  $("ficha").hidden = false;
+
+  const u = Sesion.usuario();
+  $("comprar").hidden = !u;
+  $("entrar").hidden = Boolean(u);
+  if (!u) return;
+
+  $("entrar").href = "/frm/login/?volver=" + encodeURIComponent(location.pathname + location.search);
+  try {
+    const { cuenta } = await Sesion.pedir("/api/cuenta");
+    $("saldo").textContent = "Tenés " + monedasTexto(cuenta.monedas) + " monedas";
+  } catch (e) { /* si no se puede leer el saldo, igual se puede intentar comprar */ }
+
+  // Si ya la tiene, en vez de comprarla se le ofrece el inventario
+  try {
+    const mias = await Sesion.pedir("/api/tienda/mias");
+    if ((mias.camisetas || []).some((c) => c.clave === clave)) {
+      $("comprar").hidden = true;
+      $("verInventario").hidden = false;
+      avisar("Esta camiseta ya es tuya.", "info");
+    }
+  } catch (e) { /* sin inventario, se deja el botón de comprar */ }
+}
+
+$("comprar").onclick = async () => {
+  $("comprar").disabled = true;
+  try {
+    const r = await Sesion.pedir("/api/tienda/comprar", { method: "POST", body: JSON.stringify({ clave }) });
+    avisar("¡Listo! Es tuya. Te quedan " + monedasTexto(r.saldo) + " monedas.", "ok");
+    $("comprar").hidden = true;
+    $("verInventario").hidden = false;
+    $("saldo").textContent = "Tenés " + monedasTexto(r.saldo) + " monedas";
+  } catch (error) {
+    avisar(error.message, "mal");
+    $("comprar").disabled = false;
+  }
+};
+
+cargar();
+</script>
+</body>
+</html>

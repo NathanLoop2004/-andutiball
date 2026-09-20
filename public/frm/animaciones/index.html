@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="/css/nanduti.css">
 <script src="/js/tema.js"></script>
 <script src="/js/sesion.js"></script>
+<script src="/js/cancha-animacion.js"></script>
 <script>if (!Sesion.usuario()) location.replace("/frm/login/?volver=" + encodeURIComponent("/frm/animaciones/"));</script>
 </head>
 <body>
@@ -438,18 +439,16 @@ function actualizarTextos() {
 for (const id of ["edFps", "edDuracion"]) $(id).addEventListener("input", () => { pintarLinea(); });
 
 // ══════════ La cancha ══════════
-// Dibujada con los colores del mapa de verdad (mapas/nanduti-futsal-x3.hbs):
-// fondo 2a3a40, líneas b3b6b6 y F8F8F8, áreas ff6363 y 0099ff, pelota FFD700.
-// El emoji va ADENTRO del jugador, que es donde HaxBall muestra el avatar.
+// La dibuja js/cancha-animacion.js, el MISMO archivo que usa la página pública de cada
+// animación (/frm/animacion/). Así lo que ve el que la arma es igual a lo que ve el que
+// la compra: si se cambia la jugada, cambia en los dos lados.
+
 // Cuando se arrastra el cabezal, acá queda el punto que se está mirando (-1 = no se arrastra).
 // Mientras tanto la cancha se congela en ese punto, para poder revisarlos uno por uno.
 let puntoEnLaMano = -1;
 
 // Mueve el cabezal de la línea de tiempo al punto que se está viendo ahora en la cancha
-let puntoEnPantalla = -1;
 function marcarPunto(i) {
-  if (i === puntoEnPantalla) return;
-  puntoEnPantalla = i;
   const cabezal = $("cabezal");
   if (!cabezal) return;
   const clip = i >= 0 ? $("pista").querySelector('.punto[data-i="' + i + '"]') : null;
@@ -457,214 +456,14 @@ function marcarPunto(i) {
   if (clip) cabezal.style.left = (clip.offsetLeft + clip.offsetWidth / 2) + "px";
 }
 
-const lienzo = $("lienzo");
-const ctx = lienzo.getContext("2d");
-const A = lienzo.width, AL = lienzo.height;
-let corriendo = true;
-let t0 = performance.now();
-
-// Cuánto dura cada parte de la jugada, en ms
-const AVANCE = 1100, PASE = 650, REMATE = 500, ESPERA = 700;
-const entre = (a, b, p) => a + (b - a) * Math.max(0, Math.min(1, p));
-
-// El mapa mide 620 x 300. Se dibuja a escala dejando margen a los costados, porque los arcos
-// sobresalen del borde de la cancha (como en HaxBall) y si no quedaban cortados.
-const ESC = A / 700;
-const cx = (x) => A / 2 + x * ESC;
-const cy = (y) => AL / 2 + y * ESC;
-
-function dibujarCancha() {
-  ctx.fillStyle = "#2a3a40";
-  ctx.fillRect(0, 0, A, AL);
-
-  ctx.lineWidth = 3 * ESC;
-  ctx.strokeStyle = "#b3b6b6";
-
-  // El borde de la cancha
-  ctx.strokeRect(cx(-310), cy(-150), 620 * ESC, 300 * ESC);
-  // La línea del medio y el círculo
-  ctx.beginPath(); ctx.moveTo(cx(0), cy(-150)); ctx.lineTo(cx(0), cy(150)); ctx.stroke();
-  ctx.beginPath(); ctx.arc(cx(0), cy(0), 70 * ESC, 0, Math.PI * 2); ctx.stroke();
-
-  // Las áreas curvas de cada arco, como en el futsal de HaxBall
-  const area = (lado, color) => {
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 4 * ESC;
-    ctx.beginPath();
-    ctx.moveTo(cx(lado * 310), cy(-130));
-    ctx.bezierCurveTo(cx(lado * 180), cy(-130), cx(lado * 180), cy(130), cx(lado * 310), cy(130));
-    ctx.stroke();
-  };
-  area(-1, "#ff6363");
-  area(1, "#0099ff");
-
-  // Los arcos: dos palos con su punto amarillo
-  ctx.strokeStyle = "#F8F8F8";
-  ctx.lineWidth = 4 * ESC;
-  for (const lado of [-1, 1]) {
-    ctx.beginPath();
-    ctx.moveTo(cx(lado * 310), cy(-42));
-    ctx.lineTo(cx(lado * 336), cy(-42));
-    ctx.moveTo(cx(lado * 310), cy(42));
-    ctx.lineTo(cx(lado * 336), cy(42));
-    ctx.moveTo(cx(lado * 336), cy(-42));
-    ctx.lineTo(cx(lado * 336), cy(42));
-    ctx.stroke();
-    for (const y of [-42, 42]) {
-      ctx.beginPath();
-      ctx.arc(cx(lado * 310), cy(y), 5 * ESC, 0, Math.PI * 2);
-      ctx.fillStyle = "#FFFF00";
-      ctx.fill();
-    }
-  }
-}
-
-// Un jugador, como lo dibuja HaxBall: disco de color, borde oscuro y el avatar ADENTRO
-function jugadorHax(x, y, radio, color, avatar) {
-  ctx.beginPath();
-  ctx.arc(x, y, radio, 0, Math.PI * 2);
-  ctx.fillStyle = color;
-  ctx.fill();
-  ctx.lineWidth = Math.max(2, radio * 0.13);
-  ctx.strokeStyle = "#000";
-  ctx.stroke();
-  if (avatar) {
-    ctx.font = "600 " + Math.round(radio * 1.15) + "px 'Segoe UI Emoji', 'Apple Color Emoji', Inter, sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillStyle = "#fff";
-    ctx.fillText(avatar, x, y + radio * 0.04);
-  }
-}
-
-function cuadro() {
-  const paso = msDeFps($("edFps").value);
-  const dura = duracionMs();
-  const total = AVANCE + PASE + REMATE + dura + ESPERA;
-
-  // Con el cabezal agarrado, la cancha se congela en ese punto del festejo
-  const congelado = puntoEnLaMano >= 0;
-  const t = congelado
-    ? AVANCE + PASE + REMATE + Math.min(dura - 1, puntoEnLaMano * paso)
-    : (performance.now() - t0) % total;
-
-  dibujarCancha();
-
-  const R = 15 * ESC;
-  const RB = 5.76 * ESC;   // el radio de la pelota
-
-  // En HaxBall los jugadores y la pelota son DISCOS con colisión: nunca se superponen.
-  // Estas dos ayudas mantienen esa regla en la vista previa.
-  const versor = (a, b) => {
-    const dx = b.x - a.x, dy = b.y - a.y;
-    const d = Math.hypot(dx, dy) || 1;
-    return { x: dx / d, y: dy / d, d: d };
-  };
-  // El borde del disco `a` mirando hacia `b`: ahí es donde toca la pelota, no en el centro
-  const borde = (a, b, radio) => {
-    const u = versor(a, b);
-    return { x: a.x + u.x * radio, y: a.y + u.y * radio };
-  };
-  const suave = (p) => p * p * (3 - 2 * p);   // arranca y frena despacio, como alguien corriendo
-  const m = (a, b, p) => a + (b - a) * Math.max(0, Math.min(1, p));   // en coordenadas del mapa
-
-  // LA JUGADA. Todo se calcula para CADA momento, así nadie queda quieto: los dos suben
-  // mientras se pasan la pelota, el que remata sigue corriendo cuando patea, y después del
-  // gol se va festejando hacia el córner con el compañero atrás. El pase y el remate salen
-  // de dónde está cada uno EN ESE INSTANTE, no de posiciones fijas.
-  const jugada = AVANCE + PASE + REMATE;
-  const enFestejo = t - jugada;
-  const festejando = enFestejo > 0;
-  const recorrido = suave(Math.min(1, t / jugada));
-  const corrida = festejando ? suave(Math.min(1, enFestejo / 1600)) : 0;
-
-  // El que hace el gol: sube en diagonal y después se va festejando al córner
-  let jxm = m(-235, 150, recorrido);
-  let jym = m(70, -18, recorrido);
-  if (festejando) { jxm = m(150, 235, corrida); jym = m(-18, -112, corrida); }
-
-  // El compañero: sube por el otro carril y, si hay gol, va a abrazarlo
-  let cxm = m(-290, 40, recorrido);
-  let cym = m(-45, 92, recorrido);
-  if (festejando) { cxm = m(40, 195, corrida); cym = m(92, -90, corrida); }
-
-  const jugador = { x: cx(jxm), y: cy(jym) };
-  const companiero = { x: cx(cxm), y: cy(cym) };
-  const arquero = { x: cx(292), y: cy(m(-16, 8, (Math.sin(t / 650) + 1) / 2)) };
-  const arco = { x: cx(316), y: cy(-26) };
-
-  let pelota, escala = 1, fase, avatar = null;
-
-
-  if (t < AVANCE) {
-    fase = "Suben por la cancha";
-    // La lleva pegada al pie, pero afuera de su disco y del lado al que va corriendo
-    pelota = borde(companiero, { x: cx(316), y: cy(-26) }, R + RB + 1);
-  } else if (t < AVANCE + PASE) {
-    fase = "Se la pasan en movimiento";
-    // De borde a borde: sale del pie del que pasa y llega al pie del que recibe, sin pisarlos
-    const p = suave((t - AVANCE) / PASE);
-    const sale = borde(companiero, jugador, R + RB);
-    const llega = borde(jugador, companiero, R + RB);
-    pelota = { x: entre(sale.x, llega.x, p), y: entre(sale.y, llega.y, p) };
-  } else if (t < jugada) {
-    fase = "Remata corriendo";
-    const p = (t - AVANCE - PASE) / REMATE;
-    const sale = borde(jugador, arco, R * escala + RB);
-    pelota = { x: entre(sale.x, arco.x, p * p), y: entre(sale.y, arco.y, p * p) };
-  } else {
-    pelota = arco;
-    if (enFestejo < dura) {
-      // El reloj del festejo va en tiempo real: lo que dice acá es exactamente lo que va a
-      // durar en la sala. Si ponés 10 s, el bucle festeja 10 s.
-      fase = congelado
-        ? "Punto " + (puntoEnLaMano + 1) + " de " + puntos.length
-        : "¡Gol! Festejando " + unDecimal(enFestejo / 1000) + " / " + unDecimal(dura / 1000) + " s";
-      if (puntos.length) {
-        const i = congelado ? puntoEnLaMano % puntos.length : Math.floor(enFestejo / paso) % puntos.length;
-        avatar = puntos[i].emoji || null;
-        escala = Number(puntos[i].tamano) || 1;
-        marcarPunto(i);
-      }
-    } else {
-      fase = "Se acabó el festejo: el bot recién acá acomoda a la gente";
-    }
-  }
-  // Dos jugadores tampoco pueden estar uno encima del otro: si se juntan (pasa al festejar),
-  // se separan hasta quedar tocándose, como haría el motor del juego.
-  {
-    const u = versor(jugador, companiero);
-    const minimo = R * escala + R;
-    if (u.d < minimo) {
-      const empuje = (minimo - u.d) / 2;
-      companiero.x += u.x * empuje;
-      companiero.y += u.y * empuje;
-      jugador.x -= u.x * empuje;
-      jugador.y -= u.y * empuje;
-    }
-  }
-
-  jugadorHax(arquero.x, arquero.y, R, "#5689E5", null);
-  jugadorHax(companiero.x, companiero.y, R, "#E56E56", null);
-  jugadorHax(jugador.x, jugador.y, R * escala, "#E56E56", avatar);
-
-  // La pelota, amarilla como en nuestros mapas
-  ctx.beginPath();
-  ctx.arc(pelota.x, pelota.y, 5.76 * ESC, 0, Math.PI * 2);
-  ctx.fillStyle = "#FFD700";
-  ctx.fill();
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = "#000";
-  ctx.stroke();
-
-  if (!(enFestejo > 0 && enFestejo < dura)) marcarPunto(-1);
-
-  $("faseTexto").textContent = fase;
-  const avance = enFestejo > 0 && enFestejo < dura ? (enFestejo / dura) * 100 : (enFestejo >= dura ? 100 : 0);
-  $("barraFestejo").style.width = avance + "%";
-  if (corriendo && !congelado) requestAnimationFrame(cuadro);
-}
-
+const cancha = CanchaAnimacion.crear($("lienzo"), {
+  puntos: () => puntos,
+  msPorCuadro: () => msDeFps($("edFps").value),
+  congelado: () => puntoEnLaMano,
+  alMostrarPunto: marcarPunto,
+  alCambiarFase: (t) => { $("faseTexto").textContent = t; },
+  alAvanzar: (p) => { $("barraFestejo").style.width = p + "%"; },
+});
 
 // ── Deslizar el cabezal para ver los puntos uno por uno ──
 // Se arrastra sobre la regla de los segundos (los clips tienen su propio arrastre, que es
@@ -691,15 +490,14 @@ function deslizarA(clienteX) {
   for (const clip of $("pista").querySelectorAll(".punto")) {
     clip.classList.toggle("activo", Number(clip.dataset.i) === i);
   }
-  puntoEnPantalla = -1;   // para que marcarPunto vuelva a mover el cabezal
-  cuadro();               // un solo dibujo, congelado en ese punto
+  cancha.dibujarUno();   // un solo dibujo, congelado en ese punto
 }
 
 function soltarElCabezal() {
   if (puntoEnLaMano < 0) return;
   puntoEnLaMano = -1;
   document.body.style.userSelect = "";
-  if (corriendo) { t0 = performance.now(); requestAnimationFrame(cuadro); }
+  cancha.seguir();
 }
 
 $("tiempo").addEventListener("pointerdown", (ev) => {
@@ -712,10 +510,10 @@ $("tiempo").addEventListener("pointerdown", (ev) => {
 document.addEventListener("pointermove", (ev) => { if (puntoEnLaMano >= 0) deslizarA(ev.clientX); });
 document.addEventListener("pointerup", soltarElCabezal);
 document.addEventListener("pointercancel", soltarElCabezal);
+
 $("pausar").onclick = () => {
-  corriendo = !corriendo;
-  $("pausar").textContent = corriendo ? "Pausar" : "Seguir";
-  if (corriendo) { t0 = performance.now(); requestAnimationFrame(cuadro); }
+  if (cancha.estaCorriendo()) { cancha.pausar(); $("pausar").textContent = "Seguir"; }
+  else { cancha.seguir(); $("pausar").textContent = "Pausar"; }
 };
 $("agrandar").onclick = () => {
   const grande = $("cancha").classList.toggle("grande");
@@ -747,11 +545,11 @@ function abrir(clave) {
   $("borrar").hidden = !a;
   pintarLinea();
   $("fondoModal").hidden = false;
-  t0 = performance.now();
-  if (corriendo) requestAnimationFrame(cuadro);
+  cancha.arrancar();
+  $("pausar").textContent = "Pausar";
 }
 
-const cerrar = () => { $("fondoModal").hidden = true; };
+const cerrar = () => { $("fondoModal").hidden = true; cancha.pausar(); };
 $("nueva").onclick = () => abrir(null);
 $("cerrarModal").onclick = cerrar;
 document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && !$("fondoModal").hidden) cerrar(); });
