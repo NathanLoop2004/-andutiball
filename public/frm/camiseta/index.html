@@ -38,6 +38,7 @@
         <p class="tenue" id="saldo"></p>
       </div>
     </div>
+    <div class="tarjeta-cuerpo" id="mercado"></div>
   </div>
 
   <div class="tarjeta" id="noEsta" hidden>
@@ -52,6 +53,7 @@
 </main>
 
 <script src="/js/sesion.js"></script>
+<script src="/js/mercado.js"></script>
 <script>
 const $ = (id) => document.getElementById(id);
 const esc = Sesion.escapar;
@@ -90,6 +92,7 @@ async function cargar() {
   $("detalle").textContent = camiseta.detalle || camiseta.descripcion || "Camiseta de " + camiseta.nombre + ".";
   $("precio").textContent = "🪙 " + monedasTexto(camiseta.precio) + " monedas";
   $("ficha").hidden = false;
+  Mercado.pintar($("mercado"), "camiseta", clave);
 
   const u = Sesion.usuario();
   $("comprar").hidden = !u;

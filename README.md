@@ -743,6 +743,16 @@ del otro) y **hacerte grande y chico**.
   baja solo, porque entran hasta 50 puntos.
 - **No hace falta elegir "tipo"** de animación: sale solo de lo que cargues en los puntos.
 
+## 🏷️ Cuánto costó y a cuántos les gusta
+
+En la página de cada camiseta y de cada animación se ve:
+
+- **Cuántas personas la compraron** y **cuántas la tienen en favoritos** (solo el número: nunca se
+  dice quiénes son).
+- **Cómo se fue moviendo el precio**, con una barrita por cada cambio, más lo más barato y lo más
+  caro que estuvo. La última barra, en verde, es el precio de ahora.
+- Un botón para **agregarla a tus favoritos** (hace falta tener sesión).
+
 ## 👕 La camiseta que compraste
 
 Si compraste camisetas en la tienda, las ves con **`!camisetas`** y te ponés una con

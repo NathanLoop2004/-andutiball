@@ -434,3 +434,34 @@ model AnimacionComprada {
   @@index([nick])
   @@map("animaciones_compradas")
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// El mercado: cómo se fue moviendo el precio de cada cosa, y qué le gusta a la gente.
+// Sirve para las dos tiendas (camisetas y animaciones), por eso llevan "tipo".
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Una fila por cada vez que cambió el precio. Nunca se borra: es el historial.
+model PrecioHistorial {
+  id     Int      @id @default(autoincrement())
+  tipo   String   // "camiseta" | "animacion"
+  clave  String
+  precio Int      // en centésimas, como el saldo
+  quien  String?  // quién lo cambió
+  cuando DateTime @default(now())
+
+  @@index([tipo, clave, cuando])
+  @@map("precios_historial")
+}
+
+// A quién le gusta qué. Se muestra solo el NÚMERO, nunca quiénes son.
+model Favorito {
+  id     Int      @id @default(autoincrement())
+  nick   String
+  tipo   String   // "camiseta" | "animacion"
+  clave  String
+  cuando DateTime @default(now())
+
+  @@unique([nick, tipo, clave])
+  @@index([tipo, clave])
+  @@map("favoritos")
+}

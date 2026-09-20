@@ -868,3 +868,26 @@ input[type=number]:focus { outline: none; border-color: var(--acento); box-shado
   /* La que ya está puesta ofrece sacarla, y se distingue por el color */
   .casilla.puesta .casilla-accion { background: color-mix(in srgb, var(--rojo) 88%, transparent); }
 }
+
+/* ── El mercado: cuántos la compraron, favoritos y el historial de precios ─── */
+.mercado { border-top: 1px solid var(--borde); padding-top: 16px; display: grid; gap: 16px; }
+.mercado-numeros { display: flex; align-items: center; gap: 26px; flex-wrap: wrap; }
+.mercado-dato { display: flex; align-items: baseline; gap: 7px; }
+.mercado-dato b { font-size: 22px; font-weight: 700; }
+.mercado-dato span { font-size: 13px; color: var(--suave); }
+.boton.corazon { margin-left: auto; }
+.boton.corazon.marcado { border-color: var(--ambar); color: var(--ambar); }
+
+.historial-titulo { font-size: 13px; font-weight: 600; color: var(--suave); margin-bottom: 8px; }
+/* Una barrita por cambio de precio, de la más vieja a la más nueva */
+.historial {
+  display: flex; align-items: flex-end; gap: 6px; overflow-x: auto;
+  padding: 8px 10px; background: var(--superficie-2);
+  border: 1px solid var(--borde); border-radius: var(--radio); min-height: 78px;
+}
+.historial-punto { flex: none; display: grid; justify-items: center; gap: 4px; min-width: 34px; }
+.historial-punto i { display: block; width: 18px; background: var(--acento); border-radius: 3px 3px 0 0; }
+/* El último es el precio de ahora */
+.historial-punto:last-child i { background: var(--verde); }
+.historial-punto small { font-size: 10px; color: var(--tenue); font-variant-numeric: tabular-nums; }
+.chico { font-size: 12px; }

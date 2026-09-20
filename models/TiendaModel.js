@@ -14,6 +14,7 @@
 const { base } = require("../services/ConexionBase");
 const MonedasModel = require("./MonedasModel");
 const EquiposModel = require("./EquiposModel");
+const MercadoModel = require("./MercadoModel");
 
 // Cuánto se devuelve al vender: el 70% de lo que VALE HOY, no de lo que pagó en su momento.
 // Si el precio subió o bajó desde que la compró, cobra por el de ahora — es lo que espera
@@ -70,6 +71,8 @@ class TiendaModel {
     if (datos.enTienda && !datos.precio && !equipo.precio) throw new Error("Ponele un precio antes de mostrarla en la tienda");
 
     const guardado = await base().equipo.update({ where: { clave: cual }, data: datos });
+    // Queda anotado en el historial (solo si cambió de verdad)
+    await MercadoModel.anotarPrecio("camiseta", cual, guardado.precio, quien).catch(() => {});
     return { ...paraMostrar(guardado), enTienda: guardado.enTienda };
   }
 

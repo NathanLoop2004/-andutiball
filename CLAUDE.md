@@ -22,7 +22,7 @@ Contexto para trabajar en este proyecto. La documentación para personas está e
 - `services/`: la conexión a la base por entorno y los webhooks (actualizaciones, link de la web).
 - `prisma/` + `docker-compose.base.yml`: las tablas y la base, que va **aparte** de las salas.
 - `tunel.js`, `actualizacion.js`, `sembrar.js`: los comandos sueltos (túnel de Cloudflare, novedades, sembrar la base).
-- `pruebas/`: 27 pruebas que corren sin gastar tokens (ver “Probar sin gastar tokens”).
+- `pruebas/`: 28 pruebas que corren sin gastar tokens (ver “Probar sin gastar tokens”).
 
 ## Despliegue (launcher.js)
 
@@ -1241,6 +1241,37 @@ el de ahora — es lo que espera cualquiera. Si ya no tiene precio (lo sacaron d
 a lo que había pagado, que es lo único que se sabe. El `vale` del inventario usa la misma cuenta,
 así lo que dice la pantalla es lo que se va a cobrar.
 
+## El mercado: historial de precios, comprados y favoritos
+
+Lo que las dos tiendas tienen en común (`models/MercadoModel.js`, migración
+`20260920200000_mercado`). Las dos tablas llevan `tipo` (`"camiseta"` | `"animacion"`), así no
+hay que duplicar nada:
+
+| Tabla | Qué guarda |
+|---|---|
+| `precios_historial` | Una fila por cada vez que **cambió** el precio, con quién y cuándo |
+| `favoritos` | A quién le gusta qué (`@@unique([nick, tipo, clave])`) |
+
+- **Solo se anota si el precio cambió de verdad** (`anotarPrecio` compara con el último): si no,
+  se llenaba de filas repetidas cada vez que alguien tocaba el nombre o la descripción.
+- El historial **no se borra nunca**, ni cuando el artículo sale de la tienda: es el registro de
+  cómo se movió el precio. Los favoritos sí se borran con el artículo (`olvidarFavoritos`).
+- La migración **siembra** el historial con los precios que ya existían, para que no arranque vacío.
+- **De los favoritos sale SOLO el número**, nunca quiénes son: publicar a quién le gusta qué sería
+  regalar datos de la gente sin motivo. `prueba-mercado` lo comprueba explícitamente.
+
+API (`routes/MercadoRouter.js`): `GET /api/mercado/:tipo/:clave` es **pública** y devuelve
+`{compraron, favoritos, esFavorito, historial, masBarato, masCaro, cambiosDePrecio}`;
+`POST /api/favoritos {tipo, clave}` **alterna** (el mismo pedido pone y saca) y pide sesión.
+
+La ficha usa `verificarToken({ opcional: true })`, que es nuevo: **no corta a nadie**, pero si hay
+sesión deja el usuario en `req.usuario`. Sirve para las páginas públicas que muestran algo más
+cuando estás adentro — acá, si esa camiseta la tenés en favoritos.
+
+Lo dibuja `public/js/mercado.js` (compartido por las dos páginas de detalle): los dos números, el
+botón de favorito (solo con sesión) y el historial como una barrita por cambio, con la última en
+verde porque es el precio de ahora.
+
 **Cada cosa de la tienda tiene su propia URL**, no un modal (20/09/2026): `/frm/camiseta/?c=<clave>`
 y `/frm/animacion/?c=<clave>` (`VistasController.camiseta` / `.animacion`). Así el link se puede
 compartir, anda el botón de atrás y Google puede entrar — por eso además están en el `Allow` del
@@ -1380,7 +1411,7 @@ que compara el auth con el nick registrado y quedó igual.
 
 ## Probar sin gastar tokens
 
-Son 27 y **todas tienen que quedar en verde antes de commitear**:
+Son 28 y **todas tienen que quedar en verde antes de commitear**:
 
 | Comando | Qué mira |
 |---|---|
@@ -1408,6 +1439,7 @@ Son 27 y **todas tienen que quedar en verde antes de commitear**:
 | `prueba-discord-vincular` | Vincular Discord: autorizar, entrar al servidor, sin guardar tokens |
 | `prueba-monedas` | Las monedas: paga solo el que gana, los topes, las atajadas y el historial |
 | `prueba-animaciones` | Las animaciones de gol: festeja solo el goleador, el bot espera, y el catálogo es de OWNER y CO-OWNER |
+| `prueba-mercado` | Historial de precios, cuántos compraron y favoritos (y que no se diga quiénes) |
 
 Las que hablan con la base **no fallan si está apagada**: avisan y saltean esa parte.
 
@@ -1479,7 +1511,7 @@ Cosas que costaron encontrar y conviene no volver a pisar:
 
 1. Tocar los **bloques** en `parches/bloques/` (nunca el final de `script.js` a mano) y correr
    `npm run parchar`.
-2. `node --check script.js` y las **27 pruebas en verde**. No commitear con una en rojo: ya pasó
+2. `node --check script.js` y las **28 pruebas en verde**. No commitear con una en rojo: ya pasó
    una vez de pushear con `prueba-discord` fallando.
 3. Actualizar `README.md` (para la gente) y este archivo (para el que siga programando).
 4. Commit y push.

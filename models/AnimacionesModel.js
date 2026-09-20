@@ -28,6 +28,7 @@
 // =============================================================================
 const { base } = require("../services/ConexionBase");
 const MonedasModel = require("./MonedasModel");
+const MercadoModel = require("./MercadoModel");
 
 // El 70% de lo que VALE HOY, no de lo que pagó en su momento: si el precio cambió desde que
 // la compró, cobra por el de ahora. Sin precio (se sacó de la tienda) se cae a lo que pagó.
@@ -161,6 +162,7 @@ class AnimacionesModel {
     const salida = existe
       ? await base().animacion.update({ where: { clave: cual }, data: guardar })
       : await base().animacion.create({ data: { clave: cual, ...guardar } });
+    await MercadoModel.anotarPrecio("animacion", cual, salida.precio, quien).catch(() => {});
     return paraMostrar(salida);
   }
 
@@ -171,6 +173,7 @@ class AnimacionesModel {
     if (!existe) throw new Error("Esa animación no existe");
     await base().animacionComprada.deleteMany({ where: { animacion: cual } });
     await base().usuario.updateMany({ where: { animacion: cual }, data: { animacion: null } });
+    await MercadoModel.olvidarFavoritos("animacion", cual).catch(() => {});
     await base().animacion.delete({ where: { clave: cual } });
     return { borrada: cual };
   }
