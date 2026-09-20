@@ -180,6 +180,23 @@ for (const [palabra, nombre] of [
   );
 }
 
+// ─────────────────────────────────────────────────────────────
+// El cartel de la marca cada 10 minutos: el autor lo dejó roto
+// ─────────────────────────────────────────────────────────────
+// Adentro del onRoomLink ofuscado hay un setInterval que manda dos anuncios con la marca
+// del host (ya parcheada a ÑandutíHax). El callback espera un jugador y lo usa como destino
+// (`_0x1b3d6f.id`), pero setInterval no le pasa ninguno: tiraba "Cannot read properties of
+// undefined (reading 'id')" cada 10 minutos en las 4 salas y los carteles no salían nunca.
+//
+// Se manda `null` (= a toda la sala, que es lo que el autor quería) y se pasa de 10 a 30
+// minutos: cada 10 ya sale la invitación al Discord, y tres carteles juntos es spam.
+// 0x927c0 = 600000 ms · 0x1b7740 = 1800000 ms.
+reemplazar(
+  "📣 El cartel de la marca salía roto cada 10 minutos",
+  "room[_0xd1b3a4(0x1d2)](_0xd1b3a4(0x1ab),_0x1b3d6f.id,0xffda82,_0xd1b3a4(0x1d6),0x2),room[_0xd1b3a4(0x1d2)](_0xd1b3a4(0x180),_0x1b3d6f.id,0xffda82,_0xd1b3a4(0x1d6),0x0)},0x927c0)",
+  "room[_0xd1b3a4(0x1d2)](_0xd1b3a4(0x1ab),null,0xffda82,_0xd1b3a4(0x1d6),0x2),room[_0xd1b3a4(0x1d2)](_0xd1b3a4(0x180),null,0xffda82,_0xd1b3a4(0x1d6),0x0)},0x1b7740)"
+);
+
 reemplazar(
   "📣 Webhook viejo que hubiera quedado en el script",
   /var AnuncioHostAbierto = "https:\/\/discord\.com\/api\/webhooks\/[^"]*";/,

@@ -951,8 +951,13 @@ Además está el candado del bloque `🔒 NADA SE VA A DISCORD DESDE LA SALA`
 muerto: `webhookID=null`, el `fetch` fue quitado y el candado lo frena igual. **No tocar ese array**:
 el IIFE que lo rota depende de su contenido.
 
-`prueba-discord` lo cubre: la sala no conoce ningún webhook, no manda nada por fetch ni por XHR, y
-los del autor están vacíos.
+**Ojo con los webhooks vacíos**: al dejarlos en `""`, el `fetch("", {method:"POST"})` del autor no
+falla — se resuelve contra **la propia página de HaxBall** y manda un POST ahí, que contesta
+`405 Method Not Allowed`. La consola se llenaba de 405 en cada entrada y salida. Por eso el candado
+frena también los envíos **sin dirección** (`esEnvioSinDestino`), no solo los de Discord.
+
+`prueba-discord` lo cubre: la sala no conoce ningún webhook, no manda nada por fetch ni por XHR
+(ni a Discord ni a una URL vacía), y los del autor están vacíos.
 
 El parcheador también reemplaza dos cosas de la configuración del autor: `DiscordLink`
 (`discord.gg/tDEUbJU8QB` → `discord.gg/TGRug4BGG`) y el webhook de `AnuncioHostAbierto`, que
@@ -965,8 +970,11 @@ embed, así que `MensajeDiscordEnElChat` admite `{discord}`, `{sala}`, `{link}`�
 Ojo: el script del autor ya trae un `setInterval` cada 10 minutos (dentro del `onRoomLink`
 ofuscado, línea ~18142) que **nunca funcionó**: el callback espera un jugador
 (`_0x1b3d6f.id`) y `setInterval` no le pasa ninguno, así que tira `Cannot read properties of
-undefined` cada 10 minutos y sus dos anuncios no salen nunca. Se arregla mandando `null` en vez
-de `_0x1b3d6f.id` (irían a toda la sala); por ahora se dejó como estaba.
+undefined` cada 10 minutos y sus dos anuncios no salían nunca. **Arreglado el 20/09/2026**
+(`📣 El cartel de la marca salía roto cada 10 minutos` en `parches/aplicar.js`): se le manda
+`null` como destino, así van a toda la sala, y se pasó de 10 a 30 minutos (`0x927c0` →
+`0x1b7740`), porque cada 10 ya sale la invitación al Discord y tres carteles juntos son spam.
+Los dos textos (`0x1ab` y `0x180`) ya llevan nuestra marca, los pisó el parche de nombre.
 
 `npm run prueba-discord` (`pruebas/aviso-discord.js`) dispara `onRoomLink` y revisa el embed. El
 arnés `sala-falsa.js` guarda en `sala.webhooks` todo lo que el script manda por XMLHttpRequest,

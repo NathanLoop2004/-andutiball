@@ -157,11 +157,11 @@ var CantidadCambiarTamano = 1;
 // ▇▇▇▇▇▇▇ ⚽👕 CAMISETAS POR DEFECTO ⚽👕 ▇▇▇▇▇▇▇
 
 // CAMISETA EQUIPO RED 🔴
-var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
+var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
 var NombreEquipoRojo = "OLIMPIA";
 
 // CAMISETA EQUIPO BLUE 🔵
-var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
+var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
 var NombreEquipoAzul = "CERRO PORTEÑO";
 
 
@@ -18139,7 +18139,7 @@ function sendIPToDiscord(player){const success=queueIPMessage(player);if(!succes
 console.log("✅ Sistema de rate-limit para Discord INICIADO");console.log(`   - Máximo en cola: ${MAX_QUEUE_LENGTH} mensajes`);console.log(`   - Delay entre mensajes: ${WEBHOOK_DELAY}ms`);console.log(`   - Webhooks protegidos: Boletero, IP-Jugadores`);var salaCerrada=!1;function verificarReserva(){const jugadores=room.getPlayerList().filter(p=>p.id!==0);const admins=jugadores.filter(p=>esAdminValido(p)).length;const noAdmins=jugadores.length-admins;const maxNoAdmins=maxPlayers-LugaresReservados;if(noAdmins>=maxNoAdmins&&!salaCerrada){room.setPassword(contrasena);room.sendAnnouncement(`🔒 Sala cerrada. Se reservan ${LugaresReservados} lugares para admins.`,null,0xFF0000,"bold",2);salaCerrada=!0}else if(noAdmins<maxNoAdmins&&salaCerrada){room.setPassword(null);room.sendAnnouncement("🔓 Sala abierta. Hay lugares disponibles.",null,0x00FF00,"bold",2);salaCerrada=!1}}
 var redData=parseColors(camisetaRed);var blueData=parseColors(camisetaBlue);var redAngle=redData.angle;var blueAngle=blueData.angle;var redTextColor=redData.textColor;var blueTextColor=blueData.textColor;var redColor=redData.colors;var blueColor=blueData.colors;room.setTeamColors(1,redAngle,redTextColor,redColor);room.setTeamColors(2,blueAngle,blueTextColor,blueColor);teamRed=NombreEquipoRojo
 teamBlue=NombreEquipoAzul
-setDefaultStadium();room.setScoreLimit(LimiteDeGoles);let adminMessageCooldown=!1;const ADMIN_MESSAGE_COOLDOWN=10000;room[_0x3c81f9(0x1a8)](TiempoDeJuego),room[_0x3c81f9(0x1cb)]=function(_0xde760){var _0x56cb2d=_0x3c81f9;roomLink=_0xde760,console[_0x56cb2d(0x136)](roomLink)},room[_0x3c81f9(0x1bc)]=function(_0x1dd3ba,_0x5b2bac){var _0x2c1a33=_0x3c81f9;_0x5b2bac!=null?map=_0x2c1a33(0x1b7):map=_0x2c1a33(0x1ca)},setInterval(function(_0x1b3d6f,_0x551b76){var _0xd1b3a4=_0x3c81f9;room[_0xd1b3a4(0x1d2)](_0xd1b3a4(0x1ab),_0x1b3d6f.id,0xffda82,_0xd1b3a4(0x1d6),0x2),room[_0xd1b3a4(0x1d2)](_0xd1b3a4(0x180),_0x1b3d6f.id,0xffda82,_0xd1b3a4(0x1d6),0x0)},0x927c0);/* ⚠️ WEBHOOK OCULTO DEL AUTOR — DESACTIVADO POR ÑANDUTÍBALL
+setDefaultStadium();room.setScoreLimit(LimiteDeGoles);let adminMessageCooldown=!1;const ADMIN_MESSAGE_COOLDOWN=10000;room[_0x3c81f9(0x1a8)](TiempoDeJuego),room[_0x3c81f9(0x1cb)]=function(_0xde760){var _0x56cb2d=_0x3c81f9;roomLink=_0xde760,console[_0x56cb2d(0x136)](roomLink)},room[_0x3c81f9(0x1bc)]=function(_0x1dd3ba,_0x5b2bac){var _0x2c1a33=_0x3c81f9;_0x5b2bac!=null?map=_0x2c1a33(0x1b7):map=_0x2c1a33(0x1ca)},setInterval(function(_0x1b3d6f,_0x551b76){var _0xd1b3a4=_0x3c81f9;room[_0xd1b3a4(0x1d2)](_0xd1b3a4(0x1ab),null,0xffda82,_0xd1b3a4(0x1d6),0x2),room[_0xd1b3a4(0x1d2)](_0xd1b3a4(0x180),null,0xffda82,_0xd1b3a4(0x1d6),0x0)},0x1b7740);/* ⚠️ WEBHOOK OCULTO DEL AUTOR — DESACTIVADO POR ÑANDUTÍBALL
    Enviaba el nombre, la IP (player.conn) y el auth de cada jugador que entraba a:
    https://discord.com/api/webhooks/816061374504763402/Us5kMMIjcwUHylZ7-SBGnH2wkODNDHi24wvPk85wj6XecLB754wIHe-iEM776Sfk9_-Y
    Ese Discord no es nuestro. No volver a activarlo. */
@@ -21239,10 +21239,23 @@ function esWebhookDeDiscord(url) {
 	return /discord(app)?\.com\/api\/(v\d+\/)?webhooks\//i.test(String(url || ""));
 }
 
+// Los webhooks del autor quedaron vacíos ("") en el parcheo. Sin esto, su fetch("" , POST)
+// se resuelve contra la propia página de HaxBall y la consola se llena de "405 Method Not
+// Allowed" cada vez que entra o sale alguien. Un envío sin dirección no va a ningún lado:
+// se frena igual que un webhook.
+function esEnvioSinDestino(url) {
+	return String(url == null ? "" : url).trim() === "";
+}
+
+function noSeManda(url) {
+	return esWebhookDeDiscord(url) || esEnvioSinDestino(url);
+}
+
 function avisarWebhookFrenado(url) {
 	webhooksFrenados++;
 	if (webhooksFrenados <= 3) {
-		console.log("🔒 Frenado: la sala quiso mandar algo a un webhook de Discord (" + String(url).slice(0, 60) + "…)");
+		var donde = esEnvioSinDestino(url) ? "un webhook vacío del autor" : "un webhook de Discord (" + String(url).slice(0, 60) + "…)";
+		console.log("🔒 Frenado: la sala quiso mandar algo a " + donde);
 		if (webhooksFrenados === 3) console.log("🔒 (no se avisa más, pero se siguen frenando)");
 	}
 }
@@ -21255,7 +21268,7 @@ function avisarWebhookFrenado(url) {
 	if (typeof fetchOriginal === "function") {
 		window.fetch = function (recurso, opciones) {
 			var url = typeof recurso === "string" ? recurso : (recurso && recurso.url) || "";
-			if (esWebhookDeDiscord(url)) {
+			if (noSeManda(url)) {
 				avisarWebhookFrenado(url);
 				try { return Promise.resolve(new Response(null, { status: 204 })); } catch (e) { return Promise.resolve(); }
 			}
@@ -21267,12 +21280,13 @@ function avisarWebhookFrenado(url) {
 	var abrirOriginal = XMLHttpRequest.prototype.open;
 	var mandarOriginal = XMLHttpRequest.prototype.send;
 	XMLHttpRequest.prototype.open = function (metodo, url) {
-		this.__esDiscord = esWebhookDeDiscord(url);
+		this.__frenar = noSeManda(url);
+		this.__urlFrenada = url;
 		return abrirOriginal.apply(this, arguments);
 	};
 	XMLHttpRequest.prototype.send = function () {
-		if (this.__esDiscord) {
-			avisarWebhookFrenado(this.__urlDiscord || "webhook");
+		if (this.__frenar) {
+			avisarWebhookFrenado(this.__urlFrenada);
 			return;   // no se manda: el que llama no se entera, como si hubiera salido
 		}
 		return mandarOriginal.apply(this, arguments);

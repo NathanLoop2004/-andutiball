@@ -70,6 +70,17 @@ console.log("\n🔒 El candado de los webhooks:");
   xhr.send("{}");
   revisar("Lo que la sala manda a un webhook de Discord no sale", webhooks.length === antes, webhooks.length - antes + " salieron");
 
+  // Los del autor quedaron en "" y su fetch("", POST) pegaba contra la propia página de
+  // HaxBall: la consola se llenaba de "405 Method Not Allowed" en cada entrada y salida.
+  {
+    const antesVacio = webhooks.length;
+    contexto.fetch("", { method: "POST", body: "{}" });
+    const xhrVacio = new contexto.XMLHttpRequest();
+    xhrVacio.open("POST", "");
+    xhrVacio.send("{}");
+    revisar("Un envío sin dirección tampoco sale (los webhooks vacíos del autor)", webhooks.length === antesVacio, webhooks.length - antesVacio + " salieron");
+  }
+
   const delAutor = ["WebhookParaLlamarAdmins", "webhookMensajesJugadores", "webhookIPJugadores", "WebhookGrabaciones", "AnuncioKicksBans", "webhookPass"];
   const conValor = delAutor.filter((n) => /discord/i.test(String(sala.leer(n) || "")));
   revisar("Los webhooks del autor quedaron vacíos en el script", conValor.length === 0, conValor.join(", ") || "ninguno tiene URL");

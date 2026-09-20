@@ -22,10 +22,23 @@ function esWebhookDeDiscord(url) {
 	return /discord(app)?\.com\/api\/(v\d+\/)?webhooks\//i.test(String(url || ""));
 }
 
+// Los webhooks del autor quedaron vacíos ("") en el parcheo. Sin esto, su fetch("" , POST)
+// se resuelve contra la propia página de HaxBall y la consola se llena de "405 Method Not
+// Allowed" cada vez que entra o sale alguien. Un envío sin dirección no va a ningún lado:
+// se frena igual que un webhook.
+function esEnvioSinDestino(url) {
+	return String(url == null ? "" : url).trim() === "";
+}
+
+function noSeManda(url) {
+	return esWebhookDeDiscord(url) || esEnvioSinDestino(url);
+}
+
 function avisarWebhookFrenado(url) {
 	webhooksFrenados++;
 	if (webhooksFrenados <= 3) {
-		console.log("🔒 Frenado: la sala quiso mandar algo a un webhook de Discord (" + String(url).slice(0, 60) + "…)");
+		var donde = esEnvioSinDestino(url) ? "un webhook vacío del autor" : "un webhook de Discord (" + String(url).slice(0, 60) + "…)";
+		console.log("🔒 Frenado: la sala quiso mandar algo a " + donde);
 		if (webhooksFrenados === 3) console.log("🔒 (no se avisa más, pero se siguen frenando)");
 	}
 }
@@ -38,7 +51,7 @@ function avisarWebhookFrenado(url) {
 	if (typeof fetchOriginal === "function") {
 		window.fetch = function (recurso, opciones) {
 			var url = typeof recurso === "string" ? recurso : (recurso && recurso.url) || "";
-			if (esWebhookDeDiscord(url)) {
+			if (noSeManda(url)) {
 				avisarWebhookFrenado(url);
 				try { return Promise.resolve(new Response(null, { status: 204 })); } catch (e) { return Promise.resolve(); }
 			}
@@ -50,12 +63,13 @@ function avisarWebhookFrenado(url) {
 	var abrirOriginal = XMLHttpRequest.prototype.open;
 	var mandarOriginal = XMLHttpRequest.prototype.send;
 	XMLHttpRequest.prototype.open = function (metodo, url) {
-		this.__esDiscord = esWebhookDeDiscord(url);
+		this.__frenar = noSeManda(url);
+		this.__urlFrenada = url;
 		return abrirOriginal.apply(this, arguments);
 	};
 	XMLHttpRequest.prototype.send = function () {
-		if (this.__esDiscord) {
-			avisarWebhookFrenado(this.__urlDiscord || "webhook");
+		if (this.__frenar) {
+			avisarWebhookFrenado(this.__urlFrenada);
 			return;   // no se manda: el que llama no se entera, como si hubiera salido
 		}
 		return mandarOriginal.apply(this, arguments);
