@@ -22,7 +22,7 @@ Contexto para trabajar en este proyecto. La documentación para personas está e
 - `services/`: la conexión a la base por entorno y los webhooks (actualizaciones, link de la web).
 - `prisma/` + `docker-compose.base.yml`: las tablas y la base, que va **aparte** de las salas.
 - `tunel.js`, `actualizacion.js`, `sembrar.js`: los comandos sueltos (túnel de Cloudflare, novedades, sembrar la base).
-- `pruebas/`: 23 pruebas que corren sin gastar tokens (ver “Probar sin gastar tokens”).
+- `pruebas/`: 26 pruebas que corren sin gastar tokens (ver “Probar sin gastar tokens”).
 
 ## Despliegue (launcher.js)
 
@@ -891,9 +891,25 @@ La plantilla (`TituloSalaAbierta`, `MensajeSalaAbierta`, `BotonSalaAbierta`, `Pi
 admite `{sala} {link} {mapa} {cupo} {modo} {ubicacion} {discord}`, que resuelve
 `datosDeLaSala()`. `{modo}` sale de `nombreDelModo(ModoDeEquipos)` si el bloque de modos está.
 
-**El webhook es una credencial** y `script.js` se sube a Git. El bloque acepta pisarlo desde
-`.env`: `WEBHOOK_SALA_ABIERTA` → el lanzador lo inyecta como `window.__WEBHOOK_SALA` (junto a
-`__RANGOS`) y el bloque lo prefiere. Si se filtra, se borra el webhook en Discord y se pone otro.
+**Desde la sala NO sale nada a Discord** (20/09/2026, a pedido del usuario: "no quiero que las
+webhooks estén expuestas afuera en el juego"). La página corre en el navegador: cualquiera con la
+consola abierta vería la credencial, así que ya no se le inyecta (`window.__WEBHOOK_SALA` se
+eliminó). El bloque arma la tarjeta y la empuja a `window.__panelCola` como
+`{tipo:"sala-abierta", link, cuerpo}`; el launcher (`avisarSalaAbierta`) la manda con
+`WEBHOOK_SALA_ABIERTA` de `.env`. Ese webhook (llamado "Avisador") no está en ningún archivo del repo.
+
+**Los webhooks del autor quedaron vacíos** (`🔒 Webhook del autor: …` en `parches/aplicar.js`):
+llamar admins, mensajes del chat, boletero, estadísticas, fichajes, IPs, grabaciones (dos),
+kicks/bans y `webhookPass`. Le mandaban el chat y las IP de **nuestras** salas a un Discord ajeno.
+Además está el candado del bloque `🔒 NADA SE VA A DISCORD DESDE LA SALA`
+(`parches/bloques/sin-webhooks.txt`): envuelve `fetch` y `XMLHttpRequest` y frena cualquier envío a
+`discord.com/api/webhooks`, incluso de código que aparezca en una versión nueva del script. Lo
+único que queda es la URL del webhook oculto **dentro del array ofuscado** (`_0x24f1`), que es texto
+muerto: `webhookID=null`, el `fetch` fue quitado y el candado lo frena igual. **No tocar ese array**:
+el IIFE que lo rota depende de su contenido.
+
+`prueba-discord` lo cubre: la sala no conoce ningún webhook, no manda nada por fetch ni por XHR, y
+los del autor están vacíos.
 
 El parcheador también reemplaza dos cosas de la configuración del autor: `DiscordLink`
 (`discord.gg/tDEUbJU8QB` → `discord.gg/TGRug4BGG`) y el webhook de `AnuncioHostAbierto`, que
@@ -1012,7 +1028,7 @@ El cupo de las 4 salas es 30 (`CantidadDeJugadores` en `hosts/*.json`), el máxi
 
 ## Probar sin gastar tokens
 
-Son 23 y **todas tienen que quedar en verde antes de commitear**:
+Son 26 y **todas tienen que quedar en verde antes de commitear**:
 
 | Comando | Qué mira |
 |---|---|
@@ -1110,7 +1126,7 @@ Cosas que costaron encontrar y conviene no volver a pisar:
 
 1. Tocar los **bloques** en `parches/bloques/` (nunca el final de `script.js` a mano) y correr
    `npm run parchar`.
-2. `node --check script.js` y las **23 pruebas en verde**. No commitear con una en rojo: ya pasó
+2. `node --check script.js` y las **26 pruebas en verde**. No commitear con una en rojo: ya pasó
    una vez de pushear con `prueba-discord` fallando.
 3. Actualizar `README.md` (para la gente) y este archivo (para el que siga programando).
 4. Commit y push.

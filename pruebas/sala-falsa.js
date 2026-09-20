@@ -166,6 +166,9 @@ function abrirSala(hostConfig, opciones = {}) {
     script = script.replace(decl, (_, s, k) => `${s}${k} ${nombre} = ${JSON.stringify(valor)};`);
   }
   contexto.__RANGOS = JSON.parse(fs.readFileSync(path.join(RAIZ, "roles.json"), "utf8"));
+  // El webhook de la sala sale de .env y lo inyecta el lanzador: acá va uno de mentira, porque
+  // el arnés atrapa todo lo que se manda (sala.webhooks) y nunca sale a internet.
+  contexto.__WEBHOOK_SALA = "https://discord.com/api/webhooks/000000000000000000/de-mentira-para-las-pruebas";
   vm.runInContext(script, contexto, { timeout: 30000 });
 
   const entra = (id, nombre, opciones) => {

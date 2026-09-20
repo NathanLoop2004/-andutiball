@@ -157,11 +157,11 @@ var CantidadCambiarTamano = 1;
 // ▇▇▇▇▇▇▇ ⚽👕 CAMISETAS POR DEFECTO ⚽👕 ▇▇▇▇▇▇▇
 
 // CAMISETA EQUIPO RED 🔴
-var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
+var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
 var NombreEquipoRojo = "OLIMPIA";
 
 // CAMISETA EQUIPO BLUE 🔵
-var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
+var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
 var NombreEquipoAzul = "CERRO PORTEÑO";
 
 
@@ -239,7 +239,7 @@ const WebhookGrabacionesSalaCompleta = "https://discord.com/api/webhooks/1322348
 let grabando = false;
 
 // 🔥 Webhook para ANUNCIAR que has CREADO UNA SALA. Reemplaza con tu propia URL de webhook.
-var AnuncioHostAbierto = "https://discord.com/api/webhooks/1549587917314326648/C-MCs-1bd1h_H42bV1byqyDuTIAikoFza_X3ddzcnfqE2Q9Ig4TL4MVGSMWHGi5QIthB";
+var AnuncioHostAbierto = "";   // va en .env (WEBHOOK_SALA_ABIERTA), no en el repo
 var MensajeHostAbierto = 
 `# 🚀 ¡NUEVO HOST ABIERTO! 🎮
 ## ⚽ ¡No te lo pierdas! Únete al partido ahora y demuestra tus habilidades en la cancha.
@@ -255,7 +255,7 @@ const GrabacionesDiscord = "https://discord.gg/8x9e2uyeWX";
 
 
 // 📞 Webhook para recibir el mensaje que han llamado a los Administradores. Reemplaza con tu propia URL de webhook.
-var WebhookParaLlamarAdmins = "https://discord.com/api/webhooks/1201852308569464873/FPoPAp2x3kxHpS4XWLcMIASHBu-zl1C7IbMTQYpCxOmyM_ARRVpsFEU71W-x8PFwbNBv";
+var WebhookParaLlamarAdmins = "";
 
 
 // 👮‍ Rol de Admin en Discord que se quiere llamar
@@ -268,26 +268,26 @@ const AnuncioKicksBans = "https://discord.com/api/webhooks/1304191735512961134/M
 
 
 // 💬 Webhook para ver los MENSAJES DE LOS JUGADORES. Reemplaza con tu propia URL de webhook.
-var webhookMensajesJugadores  = "https://discord.com/api/webhooks/1390246048815120384/cerrYajxDO30FK_rs_VcZi2xAcGfU7amBf89kzTUFLlqg_wgY2vIWU9fE8tZQzJr-UN7";
+var webhookMensajesJugadores = "";
 
 
 
 
 // 🎟️ Webhook para enviar los INGRESOS y SALIDAS de los jugadores a Discord
-var webhookBoletero = "https://discord.com/api/webhooks/1215904770699690104/Cuk8W0gJLVhE9gSw54YseGe6KR5PnkeHcB7dvD_GGoGAO6f-JoAsQfMiOQnieiAfU84D";
+var webhookBoletero = "";
 
 
 // 💬 Webhook para enviar estadísticas a Discord
-var webhookEstadisticasJugadores = "https://discord.com/api/webhooks/1338347025741385820/FxJAPCh3H6hNZvcaQOabz58RApSIwrjqjfjeek0y1k6GkbzN-UKnpUCipahK6W3b_aNW";
+var webhookEstadisticasJugadores = "";
 
 
 
 // 🖊️ Webhook para firmar en partidos oficiales. Reemplaza con tu propia URL de webhook.
-var WebhookParaFirmar = "https://discord.com/api/webhooks/1425328111695691898/T9a3EVREqsf9eFGVitsGXSSVNZ6b9yv_20qjzQeoGEul1CX02XgglMo3qvudljNOP0ww";
+var WebhookParaFirmar = "";
 
 
 // 🔒 Webhook para enviar la IP de un jugador cuando se retire de la sala.
-var webhookIPJugadores  = "https://discord.com/api/webhooks/1329078558857101374/ZyjKtX_NsleSgWex_-sLZ2ukjv3Mo6cy0M-zLXTwLMu3v6svJo8CxJtrokjcPj7aejbp";
+var webhookIPJugadores = "";
 
 
 
@@ -20502,7 +20502,8 @@ window.__usuariosActualizar = function (nicks) {
 // Si se filtra, se borra el webhook en Discord (Editar canal → Integraciones) y se pone el nuevo acá.
 
 var AvisoSalaAbierta = true;          // false para no avisar nada
-var WebhookSalaAbierta = "https://discord.com/api/webhooks/1549587917314326648/C-MCs-1bd1h_H42bV1byqyDuTIAikoFza_X3ddzcnfqE2Q9Ig4TL4MVGSMWHGi5QIthB";
+// El webhook vive SOLO en Node (.env → WEBHOOK_SALA_ABIERTA). Acá ni aparece: la sala arma la
+// tarjeta y el lanzador la manda (ver "sala-abierta" en launcher.js).
 var DiscordDeLaSala = "https://discord.gg/TGRug4BGG";
 var TagSalaAbierta = "@here";         // "@here", "@everyone", un ID de rol, o "" para no avisar a nadie
 var NombreDelAvisador = "ÑandutíHax 🇵🇾";
@@ -20523,8 +20524,6 @@ var MensajeDiscordEnElChat = [
 	"🔗 {discord}",
 ];
 
-// Si el lanzador puso WEBHOOK_SALA_ABIERTA en .env, ese manda (la llave no queda en el repo)
-if (typeof window !== "undefined" && window.__WEBHOOK_SALA) WebhookSalaAbierta = window.__WEBHOOK_SALA;
 
 var ultimoLinkAvisado = null;
 
@@ -20565,7 +20564,7 @@ function mencionSalaAbierta() {
 }
 
 function avisarSalaAbierta(link) {
-	if (!AvisoSalaAbierta || !WebhookSalaAbierta || !link) return;
+	if (!AvisoSalaAbierta || !link) return;
 	if (link === ultimoLinkAvisado) return;      // el mismo link no se avisa dos veces
 	ultimoLinkAvisado = link;
 
@@ -20590,12 +20589,12 @@ function avisarSalaAbierta(link) {
 		}],
 	};
 
+	// La tarjeta se la damos a Node, que es el que tiene el webhook. Así la credencial NUNCA
+	// entra a la página de HaxBall: cualquiera con la consola abierta podría verla.
 	try {
-		var xhr = new XMLHttpRequest();
-		xhr.open("POST", WebhookSalaAbierta);
-		xhr.setRequestHeader("Content-type", "application/json");
-		xhr.send(JSON.stringify(cuerpo));
-		console.log("📣 Aviso de sala abierta enviado al Discord");
+		window.__panelCola = window.__panelCola || [];
+		window.__panelCola.push({ tipo: "sala-abierta", link: link, cuerpo: cuerpo });
+		console.log("📣 Aviso de sala abierta: se lo pasamos al lanzador");
 	} catch (e) {
 		console.log("📣 No se pudo avisar al Discord: " + e.message);
 	}
@@ -20713,8 +20712,33 @@ window.__equiposSala = function (datos) {
 // ── Las camisetas compradas (la tienda de la web) ──
 // window.__MIS_CAMISETAS: nick en minúscula → [{clave, nombre}] (lo que compró)
 // window.__CAMISETA_PUESTA: nick en minúscula → {clave, nombre, angulo, texto, colores}
-// Al arrancar el partido, si alguien del equipo tiene camiseta puesta, la usa todo el equipo.
+//
+// LA CAMISETA LA PONE EL CAPITÁN, y solo cuando los equipos se arman eligiendo (modos "elegir"
+// y "combinado"): es el que eligió a su equipo, así que es el que decide con qué juegan. Si el
+// capitán se va, la pone el que quede de capitán. En gana-sigue o cuando el bot acomoda solo,
+// no hay capitán y salen las camisetas del sorteo de siempre.
 var CamisetasCompradasActivas = true;
+
+// ¿Se están eligiendo los equipos? (lo prende el bloque 🔀 MODOS DE EQUIPOS)
+function hayCapitanes() {
+	return typeof SeleccionPorTurnos !== "undefined" && SeleccionPorTurnos === true;
+}
+
+// El capitán de un equipo: el primero de ese equipo en la lista (el que eligió)
+function capitanDelEquipo(equipo) {
+	if (typeof capitanDe === "function") {
+		try { return capitanDe(equipo); } catch (e) {}
+	}
+	var suyos = room.getPlayerList().filter(function (j) { return j.team === equipo && j.id !== 0; });
+	return suyos.length ? suyos[0] : null;
+}
+
+// ¿Esta persona manda la camiseta de su equipo?
+function esCapitan(jugador) {
+	if (!jugador || jugador.team === 0) return false;
+	var cap = capitanDelEquipo(jugador.team);
+	return Boolean(cap && cap.id === jugador.id);
+}
 
 function camisetasDe(jugador) {
 	var lista = (window.__MIS_CAMISETAS || {})[String(jugador.name).toLowerCase()];
@@ -20726,25 +20750,24 @@ function camisetaPuestaDe(jugador) {
 }
 
 function ponerCamisetaDelEquipo(equipo) {
-	if (!CamisetasCompradasActivas) return false;
-	var suyos = room.getPlayerList().filter(function (j) { return j.team === equipo && j.id !== 0; });
-	for (var i = 0; i < suyos.length; i++) {
-		var puesta = camisetaPuestaDe(suyos[i]);
-		if (!puesta) continue;
-		room.setTeamColors(
-			equipo,
-			puesta.angulo,
-			parseInt(puesta.texto, 16),
-			puesta.colores.map(function (c) { return parseInt(c, 16); })
-		);
-		if (equipo === 1) teamRed = puesta.nombre; else teamBlue = puesta.nombre;
-		room.sendAnnouncement(
-			(equipo === 1 ? "🔴" : "🔵") + " Juegan con la camiseta de " + puesta.nombre + " (la de " + suyos[i].name + ")",
-			null, 0xFFD100, "small", 0
-		);
-		return true;
-	}
-	return false;
+	if (!CamisetasCompradasActivas || !hayCapitanes()) return false;
+	var capitan = capitanDelEquipo(equipo);
+	if (!capitan) return false;
+	var puesta = camisetaPuestaDe(capitan);
+	if (!puesta) return false;
+
+	room.setTeamColors(
+		equipo,
+		puesta.angulo,
+		parseInt(puesta.texto, 16),
+		puesta.colores.map(function (c) { return parseInt(c, 16); })
+	);
+	if (equipo === 1) teamRed = puesta.nombre; else teamBlue = puesta.nombre;
+	room.sendAnnouncement(
+		(equipo === 1 ? "🔴" : "🔵") + " Juegan con la camiseta de " + puesta.nombre + ", que eligió el capitán " + capitan.name,
+		null, 0xFFD100, "small", 0
+	);
+	return true;
 }
 
 (function () {
@@ -20755,6 +20778,17 @@ function ponerCamisetaDelEquipo(equipo) {
 		setTimeout(function () {
 			try { ponerCamisetaDelEquipo(1); ponerCamisetaDelEquipo(2); } catch (e) {}
 		}, 300);
+	};
+
+	// Si se va el capitán, la camiseta la pone el que queda de capitán
+	var anteriorSalida = room.onPlayerLeave;
+	room.onPlayerLeave = function (jugador) {
+		if (typeof anteriorSalida === "function") anteriorSalida(jugador);
+		if (!hayCapitanes() || !jugador || jugador.team === 0) return;
+		var equipo = jugador.team;
+		setTimeout(function () {
+			try { ponerCamisetaDelEquipo(equipo); } catch (e) {}
+		}, 1200);
 	};
 
 	// !camisetas: qué clubes hay cargados (para ver que la base llegó)
@@ -20775,6 +20809,15 @@ function ponerCamisetaDelEquipo(equipo) {
 				room.sendAnnouncement("👕 Tus camisetas: " + mias.map(function (c) { return c.nombre; }).join(" · "), player.id, 0xFFD100, "bold", 2);
 				room.sendAnnouncement("   Te ponés una con  !camiseta " + mias[0].nombre.toLowerCase() + "   (o !camiseta ninguna para sacártela)", player.id, 0x93A1B0, "small", 0);
 				if (puesta) room.sendAnnouncement("   Ahora tenés puesta la de " + puesta.nombre + ".", player.id, 0x93A1B0, "small", 0);
+				return false;
+			}
+
+			if (hayCapitanes() && player.team !== 0 && !esCapitan(player)) {
+				var cap = capitanDelEquipo(player.team);
+				room.sendAnnouncement(
+					"👕 La camiseta del equipo la elige el capitán" + (cap ? " (" + cap.name + ")" : "") + ". La tuya la podés cambiar cuando te toque serlo.",
+					player.id, 0xFF6B6B, "bold", 2
+				);
 				return false;
 			}
 
@@ -21171,6 +21214,71 @@ window.__configSala = function (datos) {
 	};
 
 	console.log("⚙️ Configuración desde la base: activa (" + comandosApagados.length + " comandos apagados)");
+})();
+
+
+// ▇▇▇▇▇▇▇▇▇ 🔒 NADA SE VA A DISCORD DESDE LA SALA — ÑandutíHax ▇▇▇▇▇▇▇▇▇
+// Adentro del juego no hay NINGÚN webhook: la página corre en el navegador, así que cualquiera
+// que abra la consola vería la credencial. Todo lo que va al Discord lo manda Node (el lanzador),
+// que es el único que lee .env.
+//
+// Este bloque es el candado: se envuelven fetch y XMLHttpRequest, y si alguien intenta mandar
+// algo a un webhook de Discord desde acá, no sale. Sirve para:
+//
+//   · los 6 webhooks del autor original (chat, IPs, estadísticas, llamar admins, grabaciones,
+//     fichajes), que mandaban datos de NUESTRAS salas a un Discord ajeno;
+//   · cualquier otro que aparezca en una versión nueva del script sin que nos demos cuenta.
+//
+// Nuestro aviso de sala abierta no pasa por acá: la sala arma la tarjeta y se la deja al
+// lanzador en window.__panelCola (bloque 📣 AVISO DE SALA ABIERTA).
+
+var BloquearWebhooksDeLaSala = true;
+var webhooksFrenados = 0;
+
+function esWebhookDeDiscord(url) {
+	return /discord(app)?\.com\/api\/(v\d+\/)?webhooks\//i.test(String(url || ""));
+}
+
+function avisarWebhookFrenado(url) {
+	webhooksFrenados++;
+	if (webhooksFrenados <= 3) {
+		console.log("🔒 Frenado: la sala quiso mandar algo a un webhook de Discord (" + String(url).slice(0, 60) + "…)");
+		if (webhooksFrenados === 3) console.log("🔒 (no se avisa más, pero se siguen frenando)");
+	}
+}
+
+(function () {
+	if (!BloquearWebhooksDeLaSala || typeof window === "undefined") return;
+
+	// fetch(url, …) → se devuelve una respuesta vacía, como si hubiera salido
+	var fetchOriginal = window.fetch;
+	if (typeof fetchOriginal === "function") {
+		window.fetch = function (recurso, opciones) {
+			var url = typeof recurso === "string" ? recurso : (recurso && recurso.url) || "";
+			if (esWebhookDeDiscord(url)) {
+				avisarWebhookFrenado(url);
+				try { return Promise.resolve(new Response(null, { status: 204 })); } catch (e) { return Promise.resolve(); }
+			}
+			return fetchOriginal.apply(this, arguments);
+		};
+	}
+
+	// XMLHttpRequest: se marca en open() y en send() no se manda nada
+	var abrirOriginal = XMLHttpRequest.prototype.open;
+	var mandarOriginal = XMLHttpRequest.prototype.send;
+	XMLHttpRequest.prototype.open = function (metodo, url) {
+		this.__esDiscord = esWebhookDeDiscord(url);
+		return abrirOriginal.apply(this, arguments);
+	};
+	XMLHttpRequest.prototype.send = function () {
+		if (this.__esDiscord) {
+			avisarWebhookFrenado(this.__urlDiscord || "webhook");
+			return;   // no se manda: el que llama no se entera, como si hubiera salido
+		}
+		return mandarOriginal.apply(this, arguments);
+	};
+
+	console.log("🔒 Candado puesto: desde la sala no sale nada a ningún Discord");
 })();
 
 

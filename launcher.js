@@ -220,6 +220,10 @@ api.on("error", (error) => {
         break;
       // Un admin lo cambió con un comando adentro de la sala (!powershot, !ganasigue…): a la base,
       // así la web muestra lo que pasa de verdad.
+      // La sala abrió: la tarjeta la arma la sala y la manda Node, que es quien tiene el webhook
+      case "sala-abierta":
+        avisarSalaAbierta(evento.cuerpo, evento.link);
+        break;
       // Alguien se puso una camiseta con !camiseta en la sala
       case "camiseta":
         TiendaModel.elegir(evento.nick, evento.clave)
@@ -399,6 +403,27 @@ api.on("error", (error) => {
     }
   };
 
+  // El aviso de sala abierta al Discord. El webhook sale de .env y se queda en Node.
+  const avisarSalaAbierta = async (cuerpo, link) => {
+    const webhook = (process.env.WEBHOOK_SALA_ABIERTA || "").trim();
+    if (!webhook) {
+      console.log("📣 Sala abierta: sin WEBHOOK_SALA_ABIERTA en .env no se avisa al Discord");
+      return;
+    }
+    try {
+      const respuesta = await fetch(webhook, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(cuerpo),
+      });
+      if (!respuesta.ok) throw new Error(`Discord contestó ${respuesta.status}`);
+      console.log(`📣 Aviso de sala abierta enviado al Discord (${link})`);
+      agregarMensaje("discord", `📣 Sala abierta avisada en el Discord`);
+    } catch (error) {
+      console.warn(`⚠️ No se pudo avisar la sala abierta: ${String(error.message).split("\n")[0]}`);
+    }
+  };
+
   // Monedas: solo cobra el equipo que GANA, y solo el que tiene cuenta con su clave puesta.
   // Lo que ganó cada uno se le avisa EN PRIVADO en la sala (window.__monedasAviso).
   const repartirMonedas = async (evento, partidoId) => {
@@ -502,11 +527,12 @@ api.on("error", (error) => {
   // Los rangos y su clave viajan a la página antes de correr el script.
   // WEBHOOK_SALA_ABIERTA es opcional: si está en .env, pisa al que trae script.js
   // (así la llave del webhook no queda escrita en un archivo que se sube a Git).
-  await frame.evaluate((rangos, elo, webhookSala) => {
+  // El webhook NO viaja a la página: la sala arma la tarjeta y la manda Node (evento "sala-abierta").
+  // Si se lo pasáramos, cualquiera con la consola abierta en el juego podría leerlo.
+  await frame.evaluate((rangos, elo) => {
     window.__RANGOS = rangos;
     window.__ELO = elo;
-    if (webhookSala) window.__WEBHOOK_SALA = webhookSala;
-  }, leerRangos(), eloParaLaPagina(), process.env.WEBHOOK_SALA_ABIERTA || "");
+  }, leerRangos(), eloParaLaPagina());
 
   // Envuelve HBInit: agrega el token y engancha el puente del panel sin tocar el script
   await frame.evaluate((token, fuenteEspia) => {

@@ -157,10 +157,38 @@ reemplazar(
   '"discord.gg/tDEUbJU8QB"',
   '"discord.gg/TGRug4BGG"'
 );
+// Los webhooks del autor: mandaban el chat, las IP, las estadísticas, los pedidos de admin,
+// las grabaciones y los fichajes de NUESTRAS salas a un Discord ajeno. Se vacían (y el bloque
+// 🔒 NADA SE VA A DISCORD frena cualquier envío que se nos escape).
+// Ojo: `reemplazar` usa split/join, así que el regex NO puede tener grupos que capturen.
+for (const [palabra, nombre] of [
+  ["var", "WebhookParaLlamarAdmins"],
+  ["var", "webhookMensajesJugadores"],
+  ["var", "webhookBoletero"],
+  ["var", "webhookEstadisticasJugadores"],
+  ["var", "WebhookParaFirmar"],
+  ["var", "webhookIPJugadores"],
+  ["var", "webhookPass"],
+  ["const", "WebhookGrabacionesSalaCompleta"],
+  ["const", "WebhookGrabaciones"],
+  ["const", "AnuncioKicksBans"],
+]) {
+  reemplazar(
+    `🔒 Webhook del autor: ${nombre}`,
+    new RegExp(`${palabra} ${nombre} *= *["']https:\/\/discord(?:app)?\.com\/api\/[^"']*["']`),
+    `${palabra} ${nombre} = ""`
+  );
+}
+
+reemplazar(
+  "📣 Webhook viejo que hubiera quedado en el script",
+  /var AnuncioHostAbierto = "https:\/\/discord\.com\/api\/webhooks\/[^"]*";/,
+  'var AnuncioHostAbierto = "";   // va en .env (WEBHOOK_SALA_ABIERTA), no en el repo'
+);
 reemplazar(
   "📣 Webhook de sala abierta del autor",
   '"https://discord.com/api/webhooks/1201825912958767134/g1BEoP1RNO_zSrQmf0nhkQRP_z3BnR2bJXfKYkK7CCPLk-KZf86tn-bPq_mDZ2UHwRMf"',
-  '"https://discord.com/api/webhooks/1549587917314326648/C-MCs-1bd1h_H42bV1byqyDuTIAikoFza_X3ddzcnfqE2Q9Ig4TL4MVGSMWHGi5QIthB"'
+  '""'
 );
 reemplazar(
   "🏷️ Link de Discord ajeno",
@@ -310,6 +338,7 @@ const BLOQUES = [
   { archivo: "monedas.txt", marca: "🪙 MONEDAS", nombre: "🪙 Monedas", siFalta: () => true },
   { archivo: "avisos.txt", marca: "🔕 AVISOS SIN SPAM", nombre: "🔕 Avisos sin spam", siFalta: () => true },
   { archivo: "config.txt", marca: "⚙️ CONFIGURACIÓN DESDE LA BASE", nombre: "⚙️ Configuración desde la base", siFalta: () => true },
+  { archivo: "sin-webhooks.txt", marca: "🔒 NADA SE VA A DISCORD DESDE LA SALA", nombre: "🔒 Sin webhooks en la sala", siFalta: () => true },
   { archivo: "comandos-sin-eco.txt", marca: "🤫 COMANDOS SIN ECO", nombre: "🤫 Comandos sin eco", siFalta: () => true },
   { contenido: bloqueMapas, marca: "🗺️ MAPAS DE FUTSAL", nombre: null, siFalta: () => Boolean(bloqueMapas) },
 ];

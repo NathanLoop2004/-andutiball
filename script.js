@@ -157,11 +157,11 @@ var CantidadCambiarTamano = 1;
 // ▇▇▇▇▇▇▇ ⚽👕 CAMISETAS POR DEFECTO ⚽👕 ▇▇▇▇▇▇▇
 
 // CAMISETA EQUIPO RED 🔴
-var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
+var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
 var NombreEquipoRojo = "OLIMPIA";
 
 // CAMISETA EQUIPO BLUE 🔵
-var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
+var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
 var NombreEquipoAzul = "CERRO PORTEÑO";
 
 
@@ -235,11 +235,11 @@ var ListaDeJogadores = [
 // 🔹 Variable toggle para decidir si graba automáticamente al iniciar
 let GrabarTodo = false;
 // 🔹 Webhook para enviar grabaciones de toda la sala (inicio a cierre)
-const WebhookGrabacionesSalaCompleta = "https://discord.com/api/webhooks/1322348400531738835/oKP4BL4iz8XhKgjzufGqUYfV7owjVlsyOgrlCyhhnX0Dcu3rJTiBUeVZI_53-QIBAaeI";
+const WebhookGrabacionesSalaCompleta = "";
 let grabando = false;
 
 // 🔥 Webhook para ANUNCIAR que has CREADO UNA SALA. Reemplaza con tu propia URL de webhook.
-var AnuncioHostAbierto = "https://discord.com/api/webhooks/1549587917314326648/C-MCs-1bd1h_H42bV1byqyDuTIAikoFza_X3ddzcnfqE2Q9Ig4TL4MVGSMWHGi5QIthB";
+var AnuncioHostAbierto = "";   // va en .env (WEBHOOK_SALA_ABIERTA), no en el repo
 var MensajeHostAbierto = 
 `# 🚀 ¡NUEVO HOST ABIERTO! 🎮
 ## ⚽ ¡No te lo pierdas! Únete al partido ahora y demuestra tus habilidades en la cancha.
@@ -247,7 +247,7 @@ var MensajeHostAbierto =
 var TagHostAbierto = "@here"; //  Dejar "@here" o Colocar el "ID del Rol de Discord" al que quieres avisarle que creaste Host
 
 // 🎥 Webhook para GRABACIONES y RESÚMENES de las Partidas jugadas. Reemplaza con tu propia URL de webhook.
-const WebhookGrabaciones = "https://discord.com/api/webhooks/1322348400531738835/oKP4BL4iz8XhKgjzufGqUYfV7owjVlsyOgrlCyhhnX0Dcu3rJTiBUeVZI_53-QIBAaeI";
+const WebhookGrabaciones = "";
 
 
 // 📂 Link del servidor de Discord donde se subirán las GRABACIONES DE LAS PARTIDAS
@@ -255,7 +255,7 @@ const GrabacionesDiscord = "https://discord.gg/8x9e2uyeWX";
 
 
 // 📞 Webhook para recibir el mensaje que han llamado a los Administradores. Reemplaza con tu propia URL de webhook.
-var WebhookParaLlamarAdmins = "https://discord.com/api/webhooks/1201852308569464873/FPoPAp2x3kxHpS4XWLcMIASHBu-zl1C7IbMTQYpCxOmyM_ARRVpsFEU71W-x8PFwbNBv";
+var WebhookParaLlamarAdmins = "";
 
 
 // 👮‍ Rol de Admin en Discord que se quiere llamar
@@ -264,30 +264,30 @@ var tiempoEsperaAdminsEnMinutos = 2;  // CANTIDAD DE MINUTOS A ESPERAR PARA REAL
 
 
 // 🚫 Webhook para anunciar los KICKS y BANS de la sala. Reemplaza con tu propia URL de webhook.
-const AnuncioKicksBans = "https://discord.com/api/webhooks/1304191735512961134/MIrXKhZrca3z1X-QYZL4czQY1FuK9EhehfMESJHqz6b3TJnRcchD9Z0JrMbC0hpDQYkI";
+const AnuncioKicksBans = "";
 
 
 // 💬 Webhook para ver los MENSAJES DE LOS JUGADORES. Reemplaza con tu propia URL de webhook.
-var webhookMensajesJugadores  = "https://discord.com/api/webhooks/1390246048815120384/cerrYajxDO30FK_rs_VcZi2xAcGfU7amBf89kzTUFLlqg_wgY2vIWU9fE8tZQzJr-UN7";
+var webhookMensajesJugadores = "";
 
 
 
 
 // 🎟️ Webhook para enviar los INGRESOS y SALIDAS de los jugadores a Discord
-var webhookBoletero = "https://discord.com/api/webhooks/1215904770699690104/Cuk8W0gJLVhE9gSw54YseGe6KR5PnkeHcB7dvD_GGoGAO6f-JoAsQfMiOQnieiAfU84D";
+var webhookBoletero = "";
 
 
 // 💬 Webhook para enviar estadísticas a Discord
-var webhookEstadisticasJugadores = "https://discord.com/api/webhooks/1338347025741385820/FxJAPCh3H6hNZvcaQOabz58RApSIwrjqjfjeek0y1k6GkbzN-UKnpUCipahK6W3b_aNW";
+var webhookEstadisticasJugadores = "";
 
 
 
 // 🖊️ Webhook para firmar en partidos oficiales. Reemplaza con tu propia URL de webhook.
-var WebhookParaFirmar = "https://discord.com/api/webhooks/1425328111695691898/T9a3EVREqsf9eFGVitsGXSSVNZ6b9yv_20qjzQeoGEul1CX02XgglMo3qvudljNOP0ww";
+var WebhookParaFirmar = "";
 
 
 // 🔒 Webhook para enviar la IP de un jugador cuando se retire de la sala.
-var webhookIPJugadores  = "https://discord.com/api/webhooks/1329078558857101374/ZyjKtX_NsleSgWex_-sLZ2ukjv3Mo6cy0M-zLXTwLMu3v6svJo8CxJtrokjcPj7aejbp";
+var webhookIPJugadores = "";
 
 
 
@@ -18235,7 +18235,7 @@ if(game.rsGoalKick==!0){room.setDiscProperties(0,{xgravity:0,ygravity:room.getPl
 game.rsCorner=!1;game.rsGoalKick=!1;game.rsCorner2=!1;game.rsGoalKick2=!1;game.outStatus=""}
 if(game.outStatus=="redThrow"||game.outStatus=="blueThrow"){game.throwinKicked=!0}
 if(map!=="RSR"){}}
-var webhookPass='https://discord.com/api/webhooks/816063918781890580/hBOBmjKaR4sJHWNnK-MZIo68r7Np3bxtHf5N43VI-rVkyEYDW6axIXAHKkEDWe4190L3';var ModoChatPausado=[];const CensurarMensajes=['rs','con','real','soccer','creo',' con','  con','   con','    con',' rs','  rs','   rs','    rs','R.S','R.S C.O.N T.I.A','r.s c.o.n t.i.a','c.on','co.n','c.o.n','C.ON','CO.N','C.O.N','r.s c.o.n t.i.a','R_S','R_S C_O_N T_I_A','r_s c_o_n t_i_a','c_on','co_n','c_o_n','C_ON','CO_N','C_O_N','r_s c_o_n t_i_a','R-S C-O-N T-I-A','r-s c-o-n t-i-a','c-on','co-n','c-o-n','C-ON','CO-N','C-O-N','C.REO','CR.EO','CRE.O','c.reo','cr.eo','cre.o','C-REO','CR-EO','CRE-O','c-reo','cr-eo','cre-o','c_reo','cr_eo','cre_o','C_REO','CR_EO','CRE_O','r.s','on','C.on','mogólico','mógolico','mogolíco','mogolicó','mógólícó','MOGÓLICO','MÓGOLICO','MOGOLÍCO','MOGOLICÓ','MÓGÓLÍCÓ','m.ogolico','mo.golico','mog.olico','mogo.lico','mogol.ico','mogoli.co','mogolic.o','M.OGOLICO','MO.GOLICO','MOG.OLICO','MOGO.LICO','MOGOL.ICO','MOOGOLI.CO','MOGOLIC.O','m-ogolico','mo-golico','mog-olico','mogo-lico','mogol-ico','mogoli-co','mogolic-o','M-OGOLICO','MO-GOLICO','MOG-OLICO','MOGO-LICO','MOGOL-ICO','MOOGOLI-CO','MOGOLIC-O','m_ogolico','mo_golico','mog_olico','mogo_lico','mogol_ico','mogoli_co','mogolic_o','M_OGOLICO','MO_GOLICO','MOG_OLICO','MOGO_LICO','MOGOL_ICO','MOOGOLI_CO','MOGOLIC_O','dawn','daun','doun','DÓWN','dówn','dáun','daún','dáún','DAWN','cancerígeno','CANCERÍGENO'];function filter(message){message=message.toLowerCase();message=message.replace(/\s/g,'');message=message.replace(/\./g,' ')
+var webhookPass = "";var ModoChatPausado=[];const CensurarMensajes=['rs','con','real','soccer','creo',' con','  con','   con','    con',' rs','  rs','   rs','    rs','R.S','R.S C.O.N T.I.A','r.s c.o.n t.i.a','c.on','co.n','c.o.n','C.ON','CO.N','C.O.N','r.s c.o.n t.i.a','R_S','R_S C_O_N T_I_A','r_s c_o_n t_i_a','c_on','co_n','c_o_n','C_ON','CO_N','C_O_N','r_s c_o_n t_i_a','R-S C-O-N T-I-A','r-s c-o-n t-i-a','c-on','co-n','c-o-n','C-ON','CO-N','C-O-N','C.REO','CR.EO','CRE.O','c.reo','cr.eo','cre.o','C-REO','CR-EO','CRE-O','c-reo','cr-eo','cre-o','c_reo','cr_eo','cre_o','C_REO','CR_EO','CRE_O','r.s','on','C.on','mogólico','mógolico','mogolíco','mogolicó','mógólícó','MOGÓLICO','MÓGOLICO','MOGOLÍCO','MOGOLICÓ','MÓGÓLÍCÓ','m.ogolico','mo.golico','mog.olico','mogo.lico','mogol.ico','mogoli.co','mogolic.o','M.OGOLICO','MO.GOLICO','MOG.OLICO','MOGO.LICO','MOGOL.ICO','MOOGOLI.CO','MOGOLIC.O','m-ogolico','mo-golico','mog-olico','mogo-lico','mogol-ico','mogoli-co','mogolic-o','M-OGOLICO','MO-GOLICO','MOG-OLICO','MOGO-LICO','MOGOL-ICO','MOOGOLI-CO','MOGOLIC-O','m_ogolico','mo_golico','mog_olico','mogo_lico','mogol_ico','mogoli_co','mogolic_o','M_OGOLICO','MO_GOLICO','MOG_OLICO','MOGO_LICO','MOGOL_ICO','MOOGOLI_CO','MOGOLIC_O','dawn','daun','doun','DÓWN','dówn','dáun','daún','dáún','DAWN','cancerígeno','CANCERÍGENO'];function filter(message){message=message.toLowerCase();message=message.replace(/\s/g,'');message=message.replace(/\./g,' ')
 if(message.includes("ఌ")||message.includes("甈")||message.includes("㐷")||message.includes("怅")||message.includes("瘪")||message.includes("⑸")||message.includes("㬆")||message.includes("権")||message.includes("怜")||message.includes("∯")||message.includes("㤒")||message.includes("䉊")||message.includes("匊")||message.includes("ᙻ")||message.includes("ൽ")||message.includes("ᴧ")||message.includes("爂")||message.includes("爇")||message.includes("त")||message.includes("権")||message.includes("怜")||message.includes("∯")||message.includes("㤒")||message.includes("﷽")||message.includes("m0g0l1c")||message.includes("﷽")||message.includes("﷽")||message.includes("﷽")||message.includes("﷽")||message.includes("﷽")||message.includes("﷽")||message.includes("﷽")||message.includes("﷽")||message.includes("﷽")||message.includes("﷽")||message.includes("䐃")||message.includes("䉧")||message.includes("瀩")||message.includes("琐")||message.includes("䳌")||message.includes("氊")||message.includes("瘠")||message.includes("銡")||message.includes("歘")||message.includes("桋")||message.includes("鼜")||message.includes("窭")||message.includes("谡")||message.includes("輽")||message.includes("怼")||message.includes("霽")||message.includes("椣")||message.includes("䖎")||message.includes("蘗")||message.includes("徠")){return!0}else return!1}
 function CensuradorDeSpammeros(message){if(CensurarMensajes.includes(message)){return!0}else return!1}
 function pmFun(player,message){var pm=message.substr(4);var index=message.split(" ").slice(1);var playerID=index[0]
@@ -20502,7 +20502,8 @@ window.__usuariosActualizar = function (nicks) {
 // Si se filtra, se borra el webhook en Discord (Editar canal → Integraciones) y se pone el nuevo acá.
 
 var AvisoSalaAbierta = true;          // false para no avisar nada
-var WebhookSalaAbierta = "https://discord.com/api/webhooks/1549587917314326648/C-MCs-1bd1h_H42bV1byqyDuTIAikoFza_X3ddzcnfqE2Q9Ig4TL4MVGSMWHGi5QIthB";
+// El webhook vive SOLO en Node (.env → WEBHOOK_SALA_ABIERTA). Acá ni aparece: la sala arma la
+// tarjeta y el lanzador la manda (ver "sala-abierta" en launcher.js).
 var DiscordDeLaSala = "https://discord.gg/TGRug4BGG";
 var TagSalaAbierta = "@here";         // "@here", "@everyone", un ID de rol, o "" para no avisar a nadie
 var NombreDelAvisador = "ÑandutíHax 🇵🇾";
@@ -20523,8 +20524,6 @@ var MensajeDiscordEnElChat = [
 	"🔗 {discord}",
 ];
 
-// Si el lanzador puso WEBHOOK_SALA_ABIERTA en .env, ese manda (la llave no queda en el repo)
-if (typeof window !== "undefined" && window.__WEBHOOK_SALA) WebhookSalaAbierta = window.__WEBHOOK_SALA;
 
 var ultimoLinkAvisado = null;
 
@@ -20565,7 +20564,7 @@ function mencionSalaAbierta() {
 }
 
 function avisarSalaAbierta(link) {
-	if (!AvisoSalaAbierta || !WebhookSalaAbierta || !link) return;
+	if (!AvisoSalaAbierta || !link) return;
 	if (link === ultimoLinkAvisado) return;      // el mismo link no se avisa dos veces
 	ultimoLinkAvisado = link;
 
@@ -20590,12 +20589,12 @@ function avisarSalaAbierta(link) {
 		}],
 	};
 
+	// La tarjeta se la damos a Node, que es el que tiene el webhook. Así la credencial NUNCA
+	// entra a la página de HaxBall: cualquiera con la consola abierta podría verla.
 	try {
-		var xhr = new XMLHttpRequest();
-		xhr.open("POST", WebhookSalaAbierta);
-		xhr.setRequestHeader("Content-type", "application/json");
-		xhr.send(JSON.stringify(cuerpo));
-		console.log("📣 Aviso de sala abierta enviado al Discord");
+		window.__panelCola = window.__panelCola || [];
+		window.__panelCola.push({ tipo: "sala-abierta", link: link, cuerpo: cuerpo });
+		console.log("📣 Aviso de sala abierta: se lo pasamos al lanzador");
 	} catch (e) {
 		console.log("📣 No se pudo avisar al Discord: " + e.message);
 	}
@@ -21215,6 +21214,71 @@ window.__configSala = function (datos) {
 	};
 
 	console.log("⚙️ Configuración desde la base: activa (" + comandosApagados.length + " comandos apagados)");
+})();
+
+
+// ▇▇▇▇▇▇▇▇▇ 🔒 NADA SE VA A DISCORD DESDE LA SALA — ÑandutíHax ▇▇▇▇▇▇▇▇▇
+// Adentro del juego no hay NINGÚN webhook: la página corre en el navegador, así que cualquiera
+// que abra la consola vería la credencial. Todo lo que va al Discord lo manda Node (el lanzador),
+// que es el único que lee .env.
+//
+// Este bloque es el candado: se envuelven fetch y XMLHttpRequest, y si alguien intenta mandar
+// algo a un webhook de Discord desde acá, no sale. Sirve para:
+//
+//   · los 6 webhooks del autor original (chat, IPs, estadísticas, llamar admins, grabaciones,
+//     fichajes), que mandaban datos de NUESTRAS salas a un Discord ajeno;
+//   · cualquier otro que aparezca en una versión nueva del script sin que nos demos cuenta.
+//
+// Nuestro aviso de sala abierta no pasa por acá: la sala arma la tarjeta y se la deja al
+// lanzador en window.__panelCola (bloque 📣 AVISO DE SALA ABIERTA).
+
+var BloquearWebhooksDeLaSala = true;
+var webhooksFrenados = 0;
+
+function esWebhookDeDiscord(url) {
+	return /discord(app)?\.com\/api\/(v\d+\/)?webhooks\//i.test(String(url || ""));
+}
+
+function avisarWebhookFrenado(url) {
+	webhooksFrenados++;
+	if (webhooksFrenados <= 3) {
+		console.log("🔒 Frenado: la sala quiso mandar algo a un webhook de Discord (" + String(url).slice(0, 60) + "…)");
+		if (webhooksFrenados === 3) console.log("🔒 (no se avisa más, pero se siguen frenando)");
+	}
+}
+
+(function () {
+	if (!BloquearWebhooksDeLaSala || typeof window === "undefined") return;
+
+	// fetch(url, …) → se devuelve una respuesta vacía, como si hubiera salido
+	var fetchOriginal = window.fetch;
+	if (typeof fetchOriginal === "function") {
+		window.fetch = function (recurso, opciones) {
+			var url = typeof recurso === "string" ? recurso : (recurso && recurso.url) || "";
+			if (esWebhookDeDiscord(url)) {
+				avisarWebhookFrenado(url);
+				try { return Promise.resolve(new Response(null, { status: 204 })); } catch (e) { return Promise.resolve(); }
+			}
+			return fetchOriginal.apply(this, arguments);
+		};
+	}
+
+	// XMLHttpRequest: se marca en open() y en send() no se manda nada
+	var abrirOriginal = XMLHttpRequest.prototype.open;
+	var mandarOriginal = XMLHttpRequest.prototype.send;
+	XMLHttpRequest.prototype.open = function (metodo, url) {
+		this.__esDiscord = esWebhookDeDiscord(url);
+		return abrirOriginal.apply(this, arguments);
+	};
+	XMLHttpRequest.prototype.send = function () {
+		if (this.__esDiscord) {
+			avisarWebhookFrenado(this.__urlDiscord || "webhook");
+			return;   // no se manda: el que llama no se entera, como si hubiera salido
+		}
+		return mandarOriginal.apply(this, arguments);
+	};
+
+	console.log("🔒 Candado puesto: desde la sala no sale nada a ningún Discord");
 })();
 
 

@@ -16,10 +16,12 @@ function revisar(titulo, condicion, detalle) {
 }
 
 const LINK = "https://www.haxball.com/play?c=PRUEBA123";
-const avisos = () => webhooks.filter((w) => w.url === contexto.WebhookSalaAbierta);
+// La sala YA NO manda el aviso: arma la tarjeta y se la pasa al lanzador por la cola, que es
+// quien tiene el webhook (así la credencial nunca entra a la página de HaxBall).
+const avisos = () => (contexto.__panelCola || []).filter((e) => e.tipo === "sala-abierta");
 
 console.log("⚙️  " + hostConfig + "\n");
-revisar("El webhook está configurado", /^https:\/\/discord\.com\/api\/webhooks\//.test(contexto.WebhookSalaAbierta || ""), contexto.WebhookSalaAbierta);
+revisar("La sala no conoce ningún webhook (lo tiene Node)", typeof contexto.WebhookSalaAbierta === "undefined", String(contexto.WebhookSalaAbierta));
 revisar("El Discord de la sala es el nuestro", contexto.DiscordDeLaSala === "https://discord.gg/TGRug4BGG", contexto.DiscordDeLaSala);
 
 console.log("\n🔗 HaxBall entrega el link de la sala:");
@@ -29,7 +31,7 @@ avanzar(3000);
 revisar("Se mandó un aviso (y uno solo)", avisos().length === 1, avisos().length + " avisos");
 
 const enviado = avisos()[0];
-const cuerpo = enviado ? JSON.parse(enviado.cuerpo) : null;
+const cuerpo = enviado ? enviado.cuerpo : null;
 const embed = cuerpo && cuerpo.embeds && cuerpo.embeds[0];
 
 revisar("Va como tarjeta (embed)", Boolean(embed), embed ? "sí" : "no");
@@ -39,8 +41,9 @@ if (embed) {
   console.log("     " + embed.fields.map((f) => f.name + ": " + f.value).join("  ·  "));
   console.log("     " + embed.footer.text);
   revisar("El título lleva el nombre de la sala", embed.title.indexOf(sala.ajustes.NombreHost) >= 0, embed.title);
-  revisar("El link está en la tarjeta", embed.url === LINK && enviado.cuerpo.indexOf(LINK) >= 0);
-  revisar("Muestra el mapa y el cupo", enviado.cuerpo.indexOf(sala.ajustes.MapaPorDefecto) >= 0 && enviado.cuerpo.indexOf(String(sala.ajustes.CantidadDeJugadores)) >= 0);
+  const comoTexto = JSON.stringify(enviado.cuerpo);
+  revisar("El link está en la tarjeta", embed.url === LINK && comoTexto.indexOf(LINK) >= 0);
+  revisar("Muestra el mapa y el cupo", comoTexto.indexOf(sala.ajustes.MapaPorDefecto) >= 0 && comoTexto.indexOf(String(sala.ajustes.CantidadDeJugadores)) >= 0);
   revisar("Muestra el modo de equipos", embed.fields.some((f) => f.name.indexOf("Modo") >= 0 && f.value !== "—"), embed.fields.filter((f) => f.name.indexOf("Modo") >= 0).map((f) => f.value)[0]);
   revisar("El pie invita al Discord", embed.footer.text.indexOf("discord.gg/TGRug4BGG") >= 0, embed.footer.text);
   revisar("Avisa con @here", cuerpo.content === "@here", JSON.stringify(cuerpo.content));
@@ -52,8 +55,25 @@ avanzar(2000);
 revisar("El mismo link no se avisa de nuevo", avisos().length === 1, avisos().length + " avisos");
 
 // Ningún webhook del autor: el link de la sala no se le manda a nadie más
-const ajenos = webhooks.filter((w) => /discord\.com\/api\/webhooks/.test(w.url || "") && w.url !== contexto.WebhookSalaAbierta && String(w.cuerpo || "").indexOf(LINK) >= 0);
-revisar("El link no se manda a webhooks ajenos", ajenos.length === 0, ajenos.map((w) => w.url).join(", ") || "ninguno");
+const ajenos = webhooks.filter((w) => /discord\.com\/api\/webhooks/.test(w.url || "") && String(w.cuerpo || "").indexOf(LINK) >= 0);
+revisar("La sala no manda el link a ningún webhook", ajenos.length === 0, ajenos.map((w) => w.url).join(", ") || "ninguno");
+
+// ── El candado: desde la sala no sale nada a ningún Discord ──
+console.log("\n🔒 El candado de los webhooks:");
+{
+  const antes = webhooks.length;
+  const url = "https://discord.com/api/webhooks/123456789012345678/lo-que-sea";
+  // Como lo haría el script del autor: fetch y XMLHttpRequest directos
+  contexto.fetch(url, { method: "POST", body: "{}" });
+  const xhr = new contexto.XMLHttpRequest();
+  xhr.open("POST", url);
+  xhr.send("{}");
+  revisar("Lo que la sala manda a un webhook de Discord no sale", webhooks.length === antes, webhooks.length - antes + " salieron");
+
+  const delAutor = ["WebhookParaLlamarAdmins", "webhookMensajesJugadores", "webhookIPJugadores", "WebhookGrabaciones", "AnuncioKicksBans", "webhookPass"];
+  const conValor = delAutor.filter((n) => /discord/i.test(String(sala.leer(n) || "")));
+  revisar("Los webhooks del autor quedaron vacíos en el script", conValor.length === 0, conValor.join(", ") || "ninguno tiene URL");
+}
 
 // ── El cartelito del Discord en el chat de la sala ──
 console.log("\n💬 El aviso del Discord en el chat:");

@@ -399,6 +399,9 @@ Con la sala vacía no habla solo. Se configura con `MinutosEntreAvisos` (10),
 
 Los tiempos de los carteles de cada partido están en `ReglasDeAvisos` (bloque `🔕 AVISOS SIN SPAM`).
 
+> 🔒 **Desde la sala no sale nada a ningún Discord.** El aviso lo manda la computadora que
+> levanta el host, no el juego: así la llave del canal no queda a la vista de nadie.
+>
 > ⚠️ **El webhook es una llave.** Cualquiera que lo tenga puede escribir en ese canal, y
 > `script.js` se sube a GitHub. Si el repositorio es público, conviene poner el webhook en `.env`
 > (`WEBHOOK_SALA_ABIERTA=...`, ignorado por Git): el lanzador lo inyecta y pisa al del script.

@@ -1,0 +1,65 @@
+
+
+// ▇▇▇▇▇▇▇▇▇ 🔒 NADA SE VA A DISCORD DESDE LA SALA — ÑandutíHax ▇▇▇▇▇▇▇▇▇
+// Adentro del juego no hay NINGÚN webhook: la página corre en el navegador, así que cualquiera
+// que abra la consola vería la credencial. Todo lo que va al Discord lo manda Node (el lanzador),
+// que es el único que lee .env.
+//
+// Este bloque es el candado: se envuelven fetch y XMLHttpRequest, y si alguien intenta mandar
+// algo a un webhook de Discord desde acá, no sale. Sirve para:
+//
+//   · los 6 webhooks del autor original (chat, IPs, estadísticas, llamar admins, grabaciones,
+//     fichajes), que mandaban datos de NUESTRAS salas a un Discord ajeno;
+//   · cualquier otro que aparezca en una versión nueva del script sin que nos demos cuenta.
+//
+// Nuestro aviso de sala abierta no pasa por acá: la sala arma la tarjeta y se la deja al
+// lanzador en window.__panelCola (bloque 📣 AVISO DE SALA ABIERTA).
+
+var BloquearWebhooksDeLaSala = true;
+var webhooksFrenados = 0;
+
+function esWebhookDeDiscord(url) {
+	return /discord(app)?\.com\/api\/(v\d+\/)?webhooks\//i.test(String(url || ""));
+}
+
+function avisarWebhookFrenado(url) {
+	webhooksFrenados++;
+	if (webhooksFrenados <= 3) {
+		console.log("🔒 Frenado: la sala quiso mandar algo a un webhook de Discord (" + String(url).slice(0, 60) + "…)");
+		if (webhooksFrenados === 3) console.log("🔒 (no se avisa más, pero se siguen frenando)");
+	}
+}
+
+(function () {
+	if (!BloquearWebhooksDeLaSala || typeof window === "undefined") return;
+
+	// fetch(url, …) → se devuelve una respuesta vacía, como si hubiera salido
+	var fetchOriginal = window.fetch;
+	if (typeof fetchOriginal === "function") {
+		window.fetch = function (recurso, opciones) {
+			var url = typeof recurso === "string" ? recurso : (recurso && recurso.url) || "";
+			if (esWebhookDeDiscord(url)) {
+				avisarWebhookFrenado(url);
+				try { return Promise.resolve(new Response(null, { status: 204 })); } catch (e) { return Promise.resolve(); }
+			}
+			return fetchOriginal.apply(this, arguments);
+		};
+	}
+
+	// XMLHttpRequest: se marca en open() y en send() no se manda nada
+	var abrirOriginal = XMLHttpRequest.prototype.open;
+	var mandarOriginal = XMLHttpRequest.prototype.send;
+	XMLHttpRequest.prototype.open = function (metodo, url) {
+		this.__esDiscord = esWebhookDeDiscord(url);
+		return abrirOriginal.apply(this, arguments);
+	};
+	XMLHttpRequest.prototype.send = function () {
+		if (this.__esDiscord) {
+			avisarWebhookFrenado(this.__urlDiscord || "webhook");
+			return;   // no se manda: el que llama no se entera, como si hubiera salido
+		}
+		return mandarOriginal.apply(this, arguments);
+	};
+
+	console.log("🔒 Candado puesto: desde la sala no sale nada a ningún Discord");
+})();

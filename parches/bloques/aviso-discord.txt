@@ -12,7 +12,8 @@
 // Si se filtra, se borra el webhook en Discord (Editar canal → Integraciones) y se pone el nuevo acá.
 
 var AvisoSalaAbierta = true;          // false para no avisar nada
-var WebhookSalaAbierta = "https://discord.com/api/webhooks/1549587917314326648/C-MCs-1bd1h_H42bV1byqyDuTIAikoFza_X3ddzcnfqE2Q9Ig4TL4MVGSMWHGi5QIthB";
+// El webhook vive SOLO en Node (.env → WEBHOOK_SALA_ABIERTA). Acá ni aparece: la sala arma la
+// tarjeta y el lanzador la manda (ver "sala-abierta" en launcher.js).
 var DiscordDeLaSala = "https://discord.gg/TGRug4BGG";
 var TagSalaAbierta = "@here";         // "@here", "@everyone", un ID de rol, o "" para no avisar a nadie
 var NombreDelAvisador = "ÑandutíHax 🇵🇾";
@@ -33,8 +34,6 @@ var MensajeDiscordEnElChat = [
 	"🔗 {discord}",
 ];
 
-// Si el lanzador puso WEBHOOK_SALA_ABIERTA en .env, ese manda (la llave no queda en el repo)
-if (typeof window !== "undefined" && window.__WEBHOOK_SALA) WebhookSalaAbierta = window.__WEBHOOK_SALA;
 
 var ultimoLinkAvisado = null;
 
@@ -75,7 +74,7 @@ function mencionSalaAbierta() {
 }
 
 function avisarSalaAbierta(link) {
-	if (!AvisoSalaAbierta || !WebhookSalaAbierta || !link) return;
+	if (!AvisoSalaAbierta || !link) return;
 	if (link === ultimoLinkAvisado) return;      // el mismo link no se avisa dos veces
 	ultimoLinkAvisado = link;
 
@@ -100,12 +99,12 @@ function avisarSalaAbierta(link) {
 		}],
 	};
 
+	// La tarjeta se la damos a Node, que es el que tiene el webhook. Así la credencial NUNCA
+	// entra a la página de HaxBall: cualquiera con la consola abierta podría verla.
 	try {
-		var xhr = new XMLHttpRequest();
-		xhr.open("POST", WebhookSalaAbierta);
-		xhr.setRequestHeader("Content-type", "application/json");
-		xhr.send(JSON.stringify(cuerpo));
-		console.log("📣 Aviso de sala abierta enviado al Discord");
+		window.__panelCola = window.__panelCola || [];
+		window.__panelCola.push({ tipo: "sala-abierta", link: link, cuerpo: cuerpo });
+		console.log("📣 Aviso de sala abierta: se lo pasamos al lanzador");
 	} catch (e) {
 		console.log("📣 No se pudo avisar al Discord: " + e.message);
 	}
