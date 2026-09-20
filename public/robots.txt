@@ -1,0 +1,28 @@
+# ÑandutíHax — qué puede mirar un buscador
+#
+# Se dejan abiertas las pantallas públicas (portada, entrar, crear cuenta) y se cierra
+# todo lo que es de adentro: el panel, las pantallas de cada usuario y la API.
+# Cerrarlas acá es para que no se llenen los resultados de Google con páginas que
+# igual piden sesión; la seguridad de verdad está en el token, no en este archivo.
+
+User-agent: *
+Allow: /$
+Allow: /frm/login
+Allow: /frm/registro
+Disallow: /api/
+Disallow: /frm/panel
+Disallow: /frm/cuenta
+Disallow: /frm/inventario
+Disallow: /frm/config
+Disallow: /frm/carrusel
+Disallow: /frm/equipos
+Disallow: /frm/rangos
+Disallow: /frm/actualizaciones
+Disallow: /frm/usuarios
+Disallow: /frm/ajustes
+Disallow: /frm/recuperar
+Disallow: /panel
+Disallow: /rangos
+Disallow: /actualizaciones
+
+Sitemap: https://nandutihax.com/sitemap.xml

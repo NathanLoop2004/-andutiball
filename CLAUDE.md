@@ -603,6 +603,49 @@ contraseña pide un **código de 6 números por correo** (`CuentaModel`):
 repetido), entrar, Mi cuenta (código, intentos, vencimiento, agregar correo), el ranking público, el rango de OWNER (agrega y saca el nick de `roles.json`, dejándolo como
 estaba), la renovación del token y todo el circuito de recuperar la cuenta.
 
+## Que Google la encuentre (y que el link se vea lindo)
+
+Desde el 20/09/2026 la web vive en **https://nandutihax.com** (antes eran links de
+`trycloudflare` que cambiaban en cada arranque, así que indexarla no tenía sentido: Google
+habría guardado direcciones muertas). Con dominio fijo ya se puede.
+
+| Archivo | Para qué |
+|---|---|
+| `public/robots.txt` | Deja pasar la portada, entrar y crear cuenta; cierra `/api/` y todas las pantallas del panel |
+| `public/sitemap.xml` | Las 3 páginas públicas, declarado al final de `robots.txt` |
+| `public/img/portada.png` | 1200×630, la imagen que sale al pegar el link en Discord/WhatsApp |
+
+**Reglas al agregar una pantalla nueva en `public/frm/`:**
+
+1. **¿Pide sesión? Entonces `noindex`.** Va `<meta name="robots" content="noindex, nofollow">`
+   justo después del `<meta charset>`, **y** su `Disallow:` en `robots.txt`. Las dos cosas: el
+   `noindex` saca la página de los resultados, el `Disallow` evita que la recorra al pedo. Ya lo
+   tienen panel, cuenta, inventario, config, carrusel, equipos, rangos, actualizaciones, usuarios,
+   ajustes y recuperar.
+2. **¿Es pública? Entonces las cuatro cosas**, copiando el bloque de `public/frm/login/index.html`:
+   `<title>` propio (`Qué es · ÑandutíHax`), `<meta name="description">` de una frase, `canonical`
+   con la URL absoluta, y las etiquetas `og:` + `twitter:card`. Además hay que sumarla al
+   `sitemap.xml`.
+3. **Las URLs absolutas van con el dominio escrito** (`https://nandutihax.com/...`), no con
+   `WEB_URL`: son archivos estáticos, no pasan por Node. Si algún día cambia el dominio hay que
+   buscar y reemplazar en `public/` y en `sitemap.xml`.
+4. **No inventar palabras clave ni repetir el nombre**: la descripción se escribe para el que
+   la va a leer en el resultado de Google, igual que las novedades del Discord.
+
+**La imagen para compartir** se regenera con Puppeteer si cambia el logo o el lema: el script de
+un solo uso arma un HTML de 1200×630 (logo + título + lema + dominio, fondo `#0f172a` con el azul
+de la marca) y le saca una captura. Tiene que medir **1200×630**: con el logo cuadrado de 512
+Discord lo muestra como una miniatura chica al costado en vez de una tarjeta grande.
+
+**Ojo con `robots.txt`**: Cloudflare mete uno propio (unos comentarios largos de "content
+signals") **solo si el origen no sirve ninguno**. Desde que existe `public/robots.txt` manda el
+nuestro; si alguna vez vuelve a aparecer el de Cloudflare, es que el archivo dejó de servirse.
+
+**Lo que no depende del código**: darla de alta en Google Search Console (verificación por TXT en
+Cloudflare), mandar el sitemap y pedir la indexación. Eso es a mano y con la cuenta del usuario, y
+tarda de días a semanas. `public/` son estáticos: se leen del disco, así que **estos cambios no
+necesitan recargar el panel**.
+
 ## Panel y rangos (MVC)
 
 La capa HTTP está en **modelo–vista–controlador** con Express, copiando las convenciones de

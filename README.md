@@ -478,6 +478,22 @@ muestra en la consola.
 Las pantallas viven en `public/frm/<pantalla>/index.html` (el mismo encarpetado que usa
 app-centralshop), con `public/css/` y `public/js/` compartidos.
 
+### 🔎 Que la encuentren en Google
+
+La web está en **https://nandutihax.com**. Para que los buscadores la tomen bien:
+
+- `public/robots.txt` deja mirar la portada, entrar y crear cuenta, y cierra el panel y la API.
+- `public/sitemap.xml` lista las páginas públicas.
+- Cada página pública tiene título, descripción y las etiquetas para compartir, así que **cuando
+  pegás el link en el Discord o en WhatsApp sale la tarjeta con el logo** (`public/img/portada.png`,
+  1200×630) en vez del link pelado.
+
+Falta un paso que es a mano: dar de alta el sitio en **Google Search Console**
+(<https://search.google.com/search-console>), verificarlo con el registro TXT que te da Google
+(se carga en el DNS de Cloudflare), mandarle `https://nandutihax.com/sitemap.xml` y pedir la
+indexación de la portada. Desde que Google la ve por primera vez hasta que aparece buscando el
+nombre pasan de varios días a un par de semanas: es normal, no está roto.
+
 ## 🔗 Vincular Discord
 
 Con la sesión iniciada, en **Mi cuenta** (y en un aviso en la portada) está el botón **Vincular con
