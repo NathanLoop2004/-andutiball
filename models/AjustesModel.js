@@ -42,6 +42,13 @@ const CATALOGO = [
     ayuda: "Apagado, nadie puede registrarse. Los que ya tienen cuenta entran igual.",
     porDefecto: true,
   },
+  {
+    clave: "mostrarAnuncios",
+    grupo: "Anuncios",
+    etiqueta: "Mostrar anuncios en la web",
+    ayuda: "Muestra la publicidad en la portada. Necesita ADSENSE_CLIENTE en el .env; sin eso no sale nada aunque esté prendido.",
+    porDefecto: false,
+  },
 ];
 
 const POR_CLAVE = new Map(CATALOGO.map((a) => [a.clave, a]));

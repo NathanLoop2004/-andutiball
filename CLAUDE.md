@@ -302,6 +302,7 @@ nacieron porque Gmail bloqueó la cuenta y nadie podía registrarse:
 | `revisarQueExistaElCorreo` | true | Las reglas de Gmail y el MX del dominio (`lib/correos.js`) |
 | `pedirCorreo` | true | Que el correo sea obligatorio |
 | `permitirRegistro` | true | Crear cuentas nuevas (los que ya tienen entran igual) |
+| `mostrarAnuncios` | **false** | La publicidad de la portada (ver “Anuncios”) |
 
 Igual que los parámetros de las salas: en la tabla **solo queda lo que se cambió**. `valores()`
 cachea 10 s y, si la base está apagada, devuelve los de fábrica (la web no se cae). `RegistroModel`
@@ -603,6 +604,37 @@ contraseña pide un **código de 6 números por correo** (`CuentaModel`):
 repetido), entrar, Mi cuenta (código, intentos, vencimiento, agregar correo), el ranking público, el rango de OWNER (agrega y saca el nick de `roles.json`, dejándolo como
 estaba), la renovación del token y todo el circuito de recuperar la cuenta.
 
+## Anuncios (AdSense)
+
+Publicidad en la portada, **apagada de fábrica**. Hacen falta las dos cosas a la vez, si no no
+sale nada: el interruptor `mostrarAnuncios` (panel → Ajustes, solo OWNER) **y** `ADSENSE_CLIENTE`
+en el `.env`. Así se pueden apagar en el acto desde el panel, sin tocar código ni bajar la web.
+
+| Pieza | Dónde |
+|---|---|
+| El interruptor | `mostrarAnuncios` en el CATALOGO de `models/AjustesModel.js` |
+| Lo que ve el navegador | `GET /api/ajustes/publicos` → `anuncios: { activos, cliente, espacios }` |
+| El que los dibuja | `public/js/anuncios.js` |
+| El estilo | `.anuncio` en `public/css/nanduti.css` |
+| Los huecos | `<div class="anuncio" data-anuncio="portada-arriba|abajo" hidden>` en `public/index.html` |
+
+- **Con los anuncios apagados la página no habla con Google**: el `<script>` de AdSense se carga
+  desde JavaScript y **solo** después de que `/api/ajustes/publicos` conteste `activos: true`.
+  No es solo estética: sin eso, Google pondría cookies a todo el que entre aunque no haya avisos.
+- **Dos modos**, los dos andan: con solo `ADSENSE_CLIENTE` funcionan los *Auto ads* (Google decide
+  dónde); si además se cargan `ADSENSE_ESPACIO_PORTADA_ARRIBA` / `_ABAJO` (el número de cada
+  bloque creado en AdSense), los avisos salen **solo** en los huecos que pusimos nosotros, que es
+  lo preferible para no tapar el ranking ni la tienda.
+- **Responsivos**: el `<ins>` va con `data-ad-format="auto"` y `data-full-width-responsive="true"`,
+  así que el alto lo decide Google según el ancho. El CSS le reserva un mínimo (100 px en
+  escritorio, 260 px en teléfono) para que la página **no pegue un salto** cuando el aviso carga.
+- El hueco nace con `hidden` y se esconde solo si el `push()` falla (bloqueador de anuncios):
+  nunca queda un recuadro vacío con el cartelito "Publicidad".
+- **Nada de anuncios en el panel ni en las pantallas con sesión**: solo la portada. Además de que
+  quedarían mal, AdSense no quiere avisos en páginas sin contenido propio.
+- El identificador `ca-pub-…` **no es un secreto** (va escrito en el HTML que ve cualquiera);
+  está en el `.env` para poder cambiarlo sin tocar código, no para esconderlo.
+
 ## Que Google la encuentre (y que el link se vea lindo)
 
 Desde el 20/09/2026 la web vive en **https://nandutihax.com** (antes eran links de
@@ -640,6 +672,13 @@ Discord lo muestra como una miniatura chica al costado en vez de una tarjeta gra
 **Ojo con `robots.txt`**: Cloudflare mete uno propio (unos comentarios largos de "content
 signals") **solo si el origen no sirve ninguno**. Desde que existe `public/robots.txt` manda el
 nuestro; si alguna vez vuelve a aparecer el de Cloudflare, es que el archivo dejó de servirse.
+
+**El HTTPS** (20/09/2026): la zona tenía `always_use_https` en `off`, así que `http://nandutihax.com`
+contestaba 200 por HTTP pelado y Chrome mostraba "No es seguro" al que escribía el dominio sin
+`https://`. Quedó en `on` (301 al https), con `min_tls_version` en 1.2 y `automatic_https_rewrites`
+en `on`. **HSTS sigue apagado a propósito**: los navegadores se lo guardan por meses y no hay
+forma de volver atrás rápido si el túnel se cae. Ninguna página de `public/` carga nada por
+`http://`, así que no hay contenido mixto; **si se agrega algo de afuera, tiene que ser `https://`**.
 
 **Lo que no depende del código**: darla de alta en Google Search Console (verificación por TXT en
 Cloudflare), mandar el sitemap y pedir la indexación. Eso es a mano y con la cuenta del usuario, y
@@ -1072,6 +1111,15 @@ Dos parches, porque el script original echaba gente que solo miraba:
 - `LimiteMaximoDeJugadoresAFK = 99`: `checkAutoKickAFKs()` echaba a todos los AFK de golpe, y un espectador cuenta como AFK a los 5 minutos.
 
 El cupo de las 4 salas es 30 (`CantidadDeJugadores` en `hosts/*.json`), el máximo de HaxBall.
+
+Y desde el 20/09/2026 tampoco se echa por compartir la conexión: `MaximoJugadoresPorIp` pasó de
+**2 a 99** (`👥 Dejar entrar a varios desde la misma conexión` en `parches/aplicar.js`). Echaba al
+tercero de una misma IP con "🚫 Sólo se permiten hasta 2 jugadores con la misma IP", y acá es
+común que jueguen varios desde la misma casa o desde un ciber. El control **no se sacó**, se le
+corrió el límite: sigue en el catálogo del panel (`lib/parametros.js`, grupo Moderación, con el
+tope subido de 10 a 99), así que se le puede volver a poner un límite desde Configuración sin
+tocar código. Ojo: **no es lo mismo que el anti-DU** ("Nick registrado, pero tu auth no coincide"),
+que compara el auth con el nick registrado y quedó igual.
 
 ## Panel: no redibujar de más
 

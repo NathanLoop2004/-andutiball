@@ -478,6 +478,22 @@ muestra en la consola.
 Las pantallas viven en `public/frm/<pantalla>/index.html` (el mismo encarpetado que usa
 app-centralshop), con `public/css/` y `public/js/` compartidos.
 
+### 💰 Anuncios en la web
+
+La publicidad de la portada está **apagada de fábrica**. Para que salga hacen falta dos cosas:
+
+1. `ADSENSE_CLIENTE=ca-pub-…` en el `.env` (tu identificador de Google AdSense).
+2. Prender **"Mostrar anuncios en la web"** en el panel → **Ajustes** (solo el OWNER).
+
+Con eso ya andan los *Auto ads*: Google decide dónde ponerlos. Si preferís elegir vos el lugar,
+creá en AdSense un bloque por espacio y poné su número en `ADSENSE_ESPACIO_PORTADA_ARRIBA` y
+`ADSENSE_ESPACIO_PORTADA_ABAJO`: así los avisos salen solo arriba (debajo del carrusel) y abajo
+(después del ranking), y no tapan nada.
+
+Los avisos se adaptan solos al ancho de la pantalla, y con los anuncios apagados la página **no
+carga nada de Google** (ni siquiera cookies). Para sacarlos en cualquier momento alcanza con
+apagar el interruptor del panel: no hay que tocar código ni reiniciar nada.
+
 ### 🔎 Que la encuentren en Google
 
 La web está en **https://nandutihax.com**. Para que los buscadores la tomen bien:

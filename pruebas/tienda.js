@@ -58,15 +58,21 @@ function revisar(titulo, condicion, detalle) {
   chat(ana, "!camiseta ninguna");
   revisar("Se la puede sacar", (contexto.__panelCola || []).some((e) => e.tipo === "camiseta" && e.clave === null));
 
-  // La camiseta la pone el CAPITÁN, y solo cuando los equipos se arman eligiendo
-  contexto.__CAMISETA_PUESTA = { ana: { clave: "oli", nombre: "OLIMPIA", angulo: 90, texto: "000000", colores: ["FFFFFF", "000000", "FFFFFF"] } };
+  // La camiseta la pone el CAPITÁN, y solo cuando los equipos se arman eligiendo.
+  //
+  // Ojo con el color que se usa para reconocerla: antes acá iba el negro de verdad de Olimpia
+  // (000000) y la prueba fallaba sola cada tanto, porque Olimpia y Tacuary son kits del sorteo
+  // y el sorteo los puede sacar por su cuenta (Olimpia es el más pesado). Se usa un magenta
+  // que no tiene ningún kit: si aparece, es sí o sí la del capitán.
+  const MAGENTA = 0xff00ff;
+  contexto.__CAMISETA_PUESTA = { ana: { clave: "oli", nombre: "OLIMPIA", angulo: 90, texto: "000000", colores: ["FFFFFF", "FF00FF", "FFFFFF"] } };
   vmSet(sala, "SeleccionPorTurnos", false);   // como cuando el bot acomoda solo
   room.setPlayerTeam(ana.id, 1);
   sala.camisetas.length = 0;
   room.startGame();
   if (room.onGameStart) room.onGameStart(null);
   avanzar(800);
-  revisar("Sin elección de capitanes, sale la camiseta del sorteo", !sala.camisetas.some((c) => c.equipo === 1 && c.colores[1] === 0x000000), sala.camisetas.length + " camisetas");
+  revisar("Sin elección de capitanes, sale la camiseta del sorteo", !sala.camisetas.some((c) => c.equipo === 1 && c.colores[1] === MAGENTA), sala.camisetas.length + " camisetas");
 
   vmSet(sala, "SeleccionPorTurnos", true);   // como en los modos elegir y combinado
   sala.camisetas.length = 0;
@@ -76,7 +82,7 @@ function revisar(titulo, condicion, detalle) {
   if (room.onGameStart) room.onGameStart(null);
   avanzar(800);
   const delRojo = sala.camisetas.filter((c) => c.equipo === 1).pop();
-  revisar("Eligiendo, el equipo juega con la camiseta del capitán", Boolean(delRojo) && delRojo.colores[1] === 0x000000, JSON.stringify(delRojo));
+  revisar("Eligiendo, el equipo juega con la camiseta del capitán", Boolean(delRojo) && delRojo.colores[1] === MAGENTA, JSON.stringify(delRojo));
   revisar("Y se avisa de quién es", anuncios.some((a) => /camiseta de OLIMPIA/.test(a) && /Ana/.test(a)), anuncios.find((a) => /camiseta de/.test(a)));
 
   // El que no es capitán no le cambia la camiseta al equipo

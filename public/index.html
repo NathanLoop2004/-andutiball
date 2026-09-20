@@ -44,6 +44,9 @@
     <div class="carrusel-puntos" id="puntos"></div>
   </section>
 
+  <!-- Publicidad: nace oculta y solo aparece si el OWNER la prendió (Ajustes) -->
+  <div class="anuncio" data-anuncio="portada-arriba" hidden></div>
+
   <!-- Sin sesión: la presentación -->
   <section id="sinSesion" hidden>
     <div class="tapa">
@@ -169,6 +172,8 @@
       </nav>
     </div>
   </section>
+
+  <div class="anuncio" data-anuncio="portada-abajo" hidden></div>
 </main>
 
 <footer class="pie">ÑandutíHax · Hecho en Paraguay por Jinder</footer>
@@ -194,6 +199,7 @@
 </div>
 
 <script src="/js/sesion.js"></script>
+<script src="/js/anuncios.js"></script>
 <script>
 const $ = (id) => document.getElementById(id);
 const esc = Sesion.escapar;

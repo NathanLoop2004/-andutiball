@@ -25,7 +25,24 @@ class AjustesController {
   static publicos = async (_req, res) => {
     try {
       const v = await AjustesModel.valores();
-      res.json({ ok: true, pedirCodigoDeCorreo: v.pedirCodigoDeCorreo, pedirCorreo: v.pedirCorreo, permitirRegistro: v.permitirRegistro });
+      // Los anuncios: el interruptor sale de la tabla y el identificador del .env. El
+      // identificador de AdSense no es un secreto (va escrito en la página), pero vive en el
+      // .env para no tenerlo hardcodeado y poder cambiarlo sin tocar el código.
+      const cliente = String(process.env.ADSENSE_CLIENTE || "").trim();
+      res.json({
+        ok: true,
+        pedirCodigoDeCorreo: v.pedirCodigoDeCorreo,
+        pedirCorreo: v.pedirCorreo,
+        permitirRegistro: v.permitirRegistro,
+        anuncios: {
+          activos: Boolean(v.mostrarAnuncios && cliente),
+          cliente,
+          espacios: {
+            "portada-arriba": String(process.env.ADSENSE_ESPACIO_PORTADA_ARRIBA || "").trim(),
+            "portada-abajo": String(process.env.ADSENSE_ESPACIO_PORTADA_ABAJO || "").trim(),
+          },
+        },
+      });
     } catch (error) { responder(res, error); }
   };
 }

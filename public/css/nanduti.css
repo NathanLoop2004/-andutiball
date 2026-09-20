@@ -670,3 +670,29 @@ input[type=number]:focus { outline: none; border-color: var(--acento); box-shado
 .detalle-item .camiseta-grande { width: 150px; height: 150px; }
 .detalle-datos h2 { margin: 0 0 6px; font-size: 20px; }
 .detalle-datos .acciones { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+
+/* ── Anuncios ────────────────────────────────────────────────────────────────
+   El hueco nace oculto (el HTML lleva `hidden`) y lo muestra js/anuncios.js solo si el OWNER
+   los prendió. Se le reserva un alto mínimo para que la página no pegue un salto cuando el
+   aviso termina de cargar, y el aviso se adapta solo al ancho que tenga (AdSense responsivo).  */
+.anuncio {
+  margin: 22px auto;
+  width: 100%;
+  max-width: 970px;
+  min-height: 100px;
+  overflow: hidden;
+  text-align: center;
+}
+.anuncio[hidden] { display: none !important; }
+/* El cartelito "Publicidad": las reglas de AdSense piden que se distinga del contenido */
+.anuncio::before {
+  content: "Publicidad";
+  display: block;
+  margin-bottom: 6px;
+  font-size: 10px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--tenue);
+}
+.anuncio .adsbygoogle { display: block; width: 100%; }
+@media (max-width: 720px) { .anuncio { min-height: 260px; margin: 18px auto; } }

@@ -260,6 +260,12 @@ reemplazar("⚙️ Cambio de mapa siempre (aunque el partido esté avanzado)", "
 reemplazar("👀 Sin lugares reservados (la sala no se cierra sola)", "var LugaresReservados = 2;", "var LugaresReservados = 0;", "var LugaresReservados = 0;");
 reemplazar("👀 No echar a los espectadores por AFK", "const LimiteMaximoDeJugadoresAFK = 4;", "const LimiteMaximoDeJugadoresAFK = 99;", "const LimiteMaximoDeJugadoresAFK = 99;");
 
+// · MaximoJugadoresPorIp echaba al tercero que entrara desde la misma conexión, con
+//   "🚫 Sólo se permiten hasta 2 jugadores con la misma IP". En Paraguay es común que
+//   varios jueguen desde la misma casa o desde un ciber, así que echaba a gente legítima.
+//   Se deja en 99 (no se saca el control, se corre el límite) — pedido del usuario, 20/09/2026.
+reemplazar("👥 Dejar entrar a varios desde la misma conexión", "var MaximoJugadoresPorIp = 2;", "var MaximoJugadoresPorIp = 99;", "var MaximoJugadoresPorIp = 99;");
+
 // ─────────────────────────────────────────────────────────────
 // 3.5. Mapas propios de futsal (mapas/*.hbs, hechos con npm run generar-mapas)
 // Se agregan como funciones al final: en JS gana la última declaración con ese nombre,
