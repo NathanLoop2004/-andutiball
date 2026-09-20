@@ -718,9 +718,10 @@ del otro) y **hacerte grande y chico**.
 
 **Para crearlas** (solo el OWNER y el CO-OWNER): panel → **Animaciones**. El editor tiene:
 
-- **Una cancha igual a la del juego** que se repite sola: le pasan la pelota, el jugador remata,
-  entra el gol y ahí se ve tu animación tal como va a salir en la sala, con el emoji **adentro del
-  jugador** (que es donde HaxBall lo muestra). Se puede **pausar** y **agrandar** — agrandala para
+- **Una cancha igual a la del juego** con una jugada que se repite sola: los dos jugadores suben
+  por la cancha, se pasan la pelota, el otro remata al arco y entra el gol. Ahí se ve tu animación
+  tal como va a salir en la sala, con el emoji **adentro del jugador** (que es donde HaxBall lo
+  muestra). Se puede **pausar** y **agrandar** — agrandala para
   ver bien el emoji, porque a tamaño normal la cancha está a escala real y el jugador es chico.
 - **El festejo dura lo que vos pongas**: si ponés 10 segundos, el bucle festeja 10 segundos. Abajo
   te va marcando "Festejando 3,4 / 10,0 s" con una barra.
@@ -730,6 +731,8 @@ del otro) y **hacerte grande y chico**.
   punto muestra su tamaño en una barrita, para verlo de un vistazo. Arrastralos para cambiarlos de
   lugar, la ✕ los saca y el **+** agrega. También podés duplicar un punto o dejarlo sin emoji (que
   solo cambie el tamaño).
+- **Arrastrá la rayita roja** por la regla de los segundos para ir viendo los puntos uno por uno:
+  la cancha se queda quieta en el punto que estés mirando. Al soltar, la jugada sigue sola.
 - **La velocidad en puntos por segundo** (no en milisegundos), y te avisa cuántas veces se va a
   repetir la secuencia con la duración que pusiste.
 - **No hace falta elegir "tipo"** de animación: sale solo de lo que cargues en los puntos.

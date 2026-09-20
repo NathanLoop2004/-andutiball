@@ -788,3 +788,7 @@ input[type=number]:focus { outline: none; border-color: var(--acento); box-shado
 .punto-editor { margin-top: 10px; padding: 12px; border: 1px solid var(--borde); border-radius: var(--radio); background: var(--superficie); }
 .punto-editor h4 { margin: 0 0 10px; font-size: 13px; color: var(--suave); }
 .punto-editor .fila-botones { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+/* La regla se puede arrastrar para ir viendo los puntos uno por uno */
+.tiempo-regla { cursor: ew-resize; touch-action: none; }
+.tiempo-cabezal { cursor: ew-resize; touch-action: none; }
+.tiempo-cabezal::after { content: ""; position: absolute; inset: 0 -7px; }

@@ -400,6 +400,10 @@ for (const id of ["edFps", "edDuracion"]) $(id).addEventListener("input", () => 
 // Dibujada con los colores del mapa de verdad (mapas/nanduti-futsal-x3.hbs):
 // fondo 2a3a40, líneas b3b6b6 y F8F8F8, áreas ff6363 y 0099ff, pelota FFD700.
 // El emoji va ADENTRO del jugador, que es donde HaxBall muestra el avatar.
+// Cuando se arrastra el cabezal, acá queda el punto que se está mirando (-1 = no se arrastra).
+// Mientras tanto la cancha se congela en ese punto, para poder revisarlos uno por uno.
+let puntoEnLaMano = -1;
+
 // Mueve el cabezal de la línea de tiempo al punto que se está viendo ahora en la cancha
 let puntoEnPantalla = -1;
 function marcarPunto(i) {
@@ -418,7 +422,8 @@ const A = lienzo.width, AL = lienzo.height;
 let corriendo = true;
 let t0 = performance.now();
 
-const PASE = 900, REMATE = 700, ESPERA = 700;
+// Cuánto dura cada parte de la jugada, en ms
+const AVANCE = 1100, PASE = 650, REMATE = 500, ESPERA = 700;
 const entre = (a, b, p) => a + (b - a) * Math.max(0, Math.min(1, p));
 
 // El mapa mide 620 x 300. Se dibuja a escala dejando margen a los costados, porque los arcos
@@ -494,46 +499,73 @@ function jugadorHax(x, y, radio, color, avatar) {
 function cuadro() {
   const paso = msDeFps($("edFps").value);
   const dura = Number($("edDuracion").value) * 1000;
-  const tipo = tipoDeAhora();
-  const total = PASE + REMATE + dura + ESPERA;
-  const t = (performance.now() - t0) % total;
+  const total = AVANCE + PASE + REMATE + dura + ESPERA;
+
+  // Con el cabezal agarrado, la cancha se congela en ese punto del festejo
+  const congelado = puntoEnLaMano >= 0;
+  const t = congelado
+    ? AVANCE + PASE + REMATE + Math.min(dura - 1, puntoEnLaMano * paso)
+    : (performance.now() - t0) % total;
 
   dibujarCancha();
 
-  const R = 15 * ESC;                       // el radio del jugador en HaxBall
-  const companiero = { x: cx(-150), y: cy(80) };
-  const jugador = { x: cx(-40), y: cy(0) };
-  const arco = { x: cx(318), y: cy(-10) };
+  const R = 15 * ESC;
+  const suave = (p) => p * p * (3 - 2 * p);   // arranca y frena despacio, como alguien corriendo
 
+  // La jugada: los dos suben juntos hacia el arco de enfrente, se la pasan y el otro define.
+  // Las posiciones se calculan para CADA momento, así los jugadores se mueven de verdad.
+  let avanceP = 0;        // cuánto subieron (0 = atrás, 1 = arriba)
   let pelota, escala = 1, fase, avatar = null;
-  const enFestejo = t - PASE - REMATE;
+  const enFestejo = t - AVANCE - PASE - REMATE;
 
-  if (t < PASE) {
+  if (t < AVANCE) {
+    fase = "Suben por la cancha";
+    avanceP = suave(t / AVANCE);
+  } else if (t < AVANCE + PASE) {
     fase = "Le pasan la pelota";
-    const p = t / PASE;
-    pelota = { x: entre(companiero.x, jugador.x - R - 8, p), y: entre(companiero.y, jugador.y, p) };
-  } else if (t < PASE + REMATE) {
-    fase = "Remata";
-    const p = (t - PASE) / REMATE;
-    pelota = { x: entre(jugador.x + R + 8, arco.x, p), y: entre(jugador.y, arco.y, p) };
+    avanceP = 1;
+  } else if (t < AVANCE + PASE + REMATE) {
+    fase = "Remata al arco";
+    avanceP = 1;
+  } else {
+    fase = enFestejo < dura ? "" : "Se acabó el festejo: el bot recién acá acomoda a la gente";
+    avanceP = 1;
+  }
+
+  // El que va a hacer el gol y el que se la pasa, los dos subiendo
+  const jugador = { x: entre(cx(-230), cx(140), avanceP), y: entre(cy(60), cy(-20), avanceP) };
+  const companiero = { x: entre(cx(-280), cx(30), avanceP), y: entre(cy(-40), cy(85), avanceP) };
+  const arquero = { x: cx(292), y: cy(entre(-14, 6, (Math.sin(t / 700) + 1) / 2)) };
+  const arco = { x: cx(316), y: cy(-24) };
+
+  if (t < AVANCE) {
+    // La lleva el compañero, pegada al pie
+    pelota = { x: companiero.x + R + 6, y: companiero.y };
+  } else if (t < AVANCE + PASE) {
+    const p = suave((t - AVANCE) / PASE);
+    pelota = { x: entre(companiero.x + R + 6, jugador.x - R - 6, p), y: entre(companiero.y, jugador.y, p) };
+  } else if (t < AVANCE + PASE + REMATE) {
+    const p = (t - AVANCE - PASE) / REMATE;
+    pelota = { x: entre(jugador.x + R + 6, arco.x, p * p), y: entre(jugador.y, arco.y, p * p) };
   } else {
     pelota = arco;
     if (enFestejo < dura) {
       // El reloj del festejo va en tiempo real: lo que dice acá es exactamente lo que va a
       // durar en la sala. Si ponés 10 s, el bucle festeja 10 s.
-      fase = "¡Gol! Festejando " + unDecimal(enFestejo / 1000) + " / " + unDecimal(dura / 1000) + " s";
+      fase = congelado
+        ? "Punto " + (puntoEnLaMano + 1) + " de " + puntos.length
+        : "¡Gol! Festejando " + unDecimal(enFestejo / 1000) + " / " + unDecimal(dura / 1000) + " s";
       if (puntos.length) {
-        const i = Math.floor(enFestejo / paso) % puntos.length;
+        const i = congelado ? puntoEnLaMano % puntos.length : Math.floor(enFestejo / paso) % puntos.length;
         avatar = puntos[i].emoji || null;
         escala = Number(puntos[i].tamano) || 1;
         marcarPunto(i);
       }
-    } else {
-      fase = "Se acabó el festejo: el bot recién acá acomoda a la gente";
     }
   }
 
-  jugadorHax(companiero.x, companiero.y, R, "#5689E5", null);
+  jugadorHax(arquero.x, arquero.y, R, "#5689E5", null);
+  jugadorHax(companiero.x, companiero.y, R, "#E56E56", null);
   jugadorHax(jugador.x, jugador.y, R * escala, "#E56E56", avatar);
 
   // La pelota, amarilla como en nuestros mapas
@@ -550,9 +582,56 @@ function cuadro() {
   $("faseTexto").textContent = fase;
   const avance = enFestejo > 0 && enFestejo < dura ? (enFestejo / dura) * 100 : (enFestejo >= dura ? 100 : 0);
   $("barraFestejo").style.width = avance + "%";
-  if (corriendo) requestAnimationFrame(cuadro);
+  if (corriendo && !congelado) requestAnimationFrame(cuadro);
 }
 
+
+// ── Deslizar el cabezal para ver los puntos uno por uno ──
+// Se arrastra sobre la regla de los segundos (los clips tienen su propio arrastre, que es
+// para reordenarlos, así que no se pisan).
+function puntoBajoElDedo(clienteX) {
+  const clips = [...$("pista").querySelectorAll(".punto")];
+  if (!clips.length) return -1;
+  let mejor = 0;
+  let distancia = Infinity;
+  for (let i = 0; i < clips.length; i++) {
+    const caja = clips[i].getBoundingClientRect();
+    const d = Math.abs(clienteX - (caja.left + caja.width / 2));
+    if (d < distancia) { distancia = d; mejor = i; }
+  }
+  return mejor;
+}
+
+function deslizarA(clienteX) {
+  const i = puntoBajoElDedo(clienteX);
+  if (i < 0) return;
+  puntoEnLaMano = i;
+  puntoActivo = i;
+  pintarEditorDelPunto();
+  for (const clip of $("pista").querySelectorAll(".punto")) {
+    clip.classList.toggle("activo", Number(clip.dataset.i) === i);
+  }
+  puntoEnPantalla = -1;   // para que marcarPunto vuelva a mover el cabezal
+  cuadro();               // un solo dibujo, congelado en ese punto
+}
+
+function soltarElCabezal() {
+  if (puntoEnLaMano < 0) return;
+  puntoEnLaMano = -1;
+  document.body.style.userSelect = "";
+  if (corriendo) { t0 = performance.now(); requestAnimationFrame(cuadro); }
+}
+
+$("tiempo").addEventListener("pointerdown", (ev) => {
+  // Solo desde la regla o desde el cabezal: sobre un clip manda el arrastre de reordenar
+  if (!ev.target.closest("#regla") && !ev.target.closest("#cabezal")) return;
+  ev.preventDefault();
+  document.body.style.userSelect = "none";
+  deslizarA(ev.clientX);
+});
+document.addEventListener("pointermove", (ev) => { if (puntoEnLaMano >= 0) deslizarA(ev.clientX); });
+document.addEventListener("pointerup", soltarElCabezal);
+document.addEventListener("pointercancel", soltarElCabezal);
 $("pausar").onclick = () => {
   corriendo = !corriendo;
   $("pausar").textContent = corriendo ? "Pausar" : "Seguir";

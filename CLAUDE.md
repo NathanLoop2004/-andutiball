@@ -1223,7 +1223,10 @@ decide a qué API le pega y qué muestra.
 La pantalla del panel es `public/frm/animaciones/` (nav "Animaciones", visible con `u.rangos`).
 El candado del navegador es cosmético: el de verdad está en la API. El editor tiene dos partes:
 
-- **La cancha en bucle** (un `<canvas>`): repite pase → remate → gol → festejo → espera, y en el
+- **La cancha en bucle** (un `<canvas>`): una jugada de verdad, con los jugadores **moviéndose**
+  (`AVANCE` → `PASE` → `REMATE` → festejo → `ESPERA`): los dos rojos suben juntos desde su campo,
+  se la pasan, el otro define contra un arquero azul que se mueve. Las posiciones se calculan
+  para cada momento con una curva suave (`suave()`), no son fijas. Y en el
   festejo corre la animación **con la misma cuenta que hace la sala**, así se ve tal cual va a
   quedar. Está dibujada con los colores del mapa de verdad (`mapas/nanduti-futsal-x3.hbs`): fondo
   `2a3a40`, líneas `b3b6b6`, áreas curvas `ff6363` y `0099ff`, palos `FFFF00`, pelota `FFD700`.
@@ -1239,6 +1242,10 @@ El candado del navegador es cosmético: el de verdad está en la API. El editor 
   un vistazo dónde se hace grande) y su segundo. Se toca para editarlo, se arrastra para moverlo y
   la ✕ lo saca. Al elegir uno se abre abajo su editor: emoji (con teclado), **tamaño de ESE punto**,
   y los botones Sacarle el emoji / Duplicar / Borrar.
+- **El cabezal se puede arrastrar** para ir viendo los puntos uno por uno: se agarra desde la
+  regla o desde el cabezal (`puntoEnLaMano`), y mientras tanto la cancha queda **congelada** en
+  ese punto en vez de seguir el bucle. Sobre un clip NO agarra, porque ahí manda el arrastre de
+  reordenar. Al soltar, el bucle vuelve a correr solo.
 
 **No se pide la clave**: es un dato interno y se genera sola del nombre (`claveDelNombre()`:
 saca acentos, pasa a minúsculas, cambia lo que no sea letra o número por guiones y agrega `-2`,
