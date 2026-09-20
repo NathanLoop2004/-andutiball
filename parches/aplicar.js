@@ -267,6 +267,34 @@ reemplazar("👀 No echar a los espectadores por AFK", "const LimiteMaximoDeJuga
 reemplazar("👥 Dejar entrar a varios desde la misma conexión", "var MaximoJugadoresPorIp = 2;", "var MaximoJugadoresPorIp = 99;", "var MaximoJugadoresPorIp = 99;");
 
 // ─────────────────────────────────────────────────────────────
+// ⚽ Física de la pelota de FUTSAL (no toca Real Soccer)
+// ─────────────────────────────────────────────────────────────
+// La pelota se frenaba sola enseguida. No alcanza con cambiarla en los mapas: cada vez que se
+// prende o se apaga el powershot, el script la vuelve a configurar con room.setDiscProperties(0)
+// y la deja como estaba. Así que los mismos números van en los dos lados.
+//
+//   damping 0.99 → 0.993   conserva más velocidad (tarda ~1,7 s en bajar a la mitad, no ~1,1 s)
+//   bCoef   0.4  → 0.5     rebota como una pelota normal de HaxBall, no muere contra la pared
+//
+// invMass queda igual (1.5 normal, PotenciaPowerShot cargada): es el peso, no la energía.
+// Real Soccer usa otras líneas (invMass 1.05, PelotaRS) y NO se tocan — pedido del usuario.
+// Lo mismo está en `mapas/generar.js` (FISICA_PELOTA): si cambia uno, cambian los dos.
+for (const [etiqueta, viejo, nuevo] of [
+  [
+    "⚽ Física de la pelota de futsal (normal)",
+    'setDiscProperties(0,{"bCoef":0.4,"invMass":1.5,"damping":0.99,',
+    'setDiscProperties(0,{"bCoef":0.5,"invMass":1.5,"damping":0.993,',
+  ],
+  [
+    "⚽ Física de la pelota de futsal (powershot)",
+    'setDiscProperties(0,{"bCoef":0.4,"invMass":PotenciaPowerShot,"damping":0.99,',
+    'setDiscProperties(0,{"bCoef":0.5,"invMass":PotenciaPowerShot,"damping":0.993,',
+  ],
+]) {
+  reemplazar(etiqueta, viejo, nuevo, nuevo);
+}
+
+// ─────────────────────────────────────────────────────────────
 // 3.5. Mapas propios de futsal (mapas/*.hbs, hechos con npm run generar-mapas)
 // Se agregan como funciones al final: en JS gana la última declaración con ese nombre,
 // así que reemplazan a las del autor sin tocar su código.

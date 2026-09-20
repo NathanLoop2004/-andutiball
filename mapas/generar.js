@@ -42,11 +42,33 @@ const DISCOS_OVEJA = [
 // Los discos decorativos ya no se generan (ver PELOTA_COLOR), pero si el mapa de origen
 // trajera alguno, lo sacamos igual junto con los joints que lo sujetaban. Al borrar discos
 // hay que correr los índices de los joints que apuntan a discos posteriores.
+// ── Física de la pelota (SOLO FUTSAL) ───────────────────────────────────────────────────────
+// La pelota del autor perdía mucha energía: se frenaba sola enseguida y quedaba muerta contra
+// las paredes. Estos dos números son los que mandan:
+//
+//   damping  cuánto de la velocidad conserva en cada tick (60 por segundo). Es el que hace que
+//            la pelota "siga". Con 0.99 tarda ~1,1 s en bajar a la mitad; con 0.993, ~1,7 s.
+//            Cuanto más cerca de 1, más lejos llega. Arriba de 0.995 se vuelve un jabón.
+//   bCoef    cuánto rebota al chocar (paredes y jugadores). 0.4 era el del autor y se comía el
+//            rebote; 0.5 es el valor normal de HaxBall.
+//
+// invMass NO se toca (1.5): es el peso, y cambiarlo altera cuánto la mueve cada patada y cuánto
+// la empujan los jugadores al correrla — es otro problema distinto al de la energía.
+//
+// OJO: el script PISA esto en vivo con room.setDiscProperties(0, …) cada vez que se prende o se
+// apaga el powershot. Los mismos números están en `parches/aplicar.js` (⚽ Física de la pelota).
+// Si se cambian acá, hay que cambiarlos allá, o la pelota vuelve a la vieja al primer powershot.
+//
+// Real Soccer no entra acá: usa sus propios mapas y su propia pelota (invMass 1.05, PelotaRS).
+const FISICA_PELOTA = { damping: 0.993, bCoef: 0.5 };
+
 function pintarPelota(mapa) {
   const bola = mapa.discs && mapa.discs[0];
   if (!bola) return;
   bola.color = "FFD700";
   bola.radius = +(bola.radius * 0.9).toFixed(3);
+  bola.damping = FISICA_PELOTA.damping;
+  bola.bCoef = FISICA_PELOTA.bCoef;
 
   // Un disco es "pintita" si no choca con nada (cMask vacío) y es negro
   const sobra = (d, i) => i > 0 && Array.isArray(d.cMask) && d.cMask.length === 0 && d.color === "0";

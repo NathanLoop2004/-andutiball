@@ -775,6 +775,33 @@ Es idempotente y **condicional**: si el script nuevo ya trae `room.onPlayerChat`
 **Al tocar los bloques, editarlos en `parches/bloques/` y correr `npm run parchar`** — no editar el final de `script.js` a mano, porque el parcheador lo reescribe.
 
 
+## Física de la pelota (solo futsal)
+
+La pelota del autor se frenaba sola enseguida. Desde el 20/09/2026:
+
+| | Autor | Ahora | Qué es |
+|---|---|---|---|
+| `damping` | 0.99 | **0.993** | Cuánta velocidad conserva por tick (60/s). Con 0.99 baja a la mitad en ~1,1 s; con 0.993, en ~1,7 s |
+| `bCoef` | 0.4 | **0.5** | Cuánto rebota contra paredes y jugadores (0.5 es el normal de HaxBall) |
+| `invMass` | 1.5 | 1.5 (igual) | El **peso**. No se tocó: cambia cuánto la mueve cada patada y cuánto la empujan al correr, que es otro problema |
+
+**Va en DOS lugares y tienen que coincidir**, esta es la trampa:
+
+1. `mapas/generar.js` → `FISICA_PELOTA`, que `pintarPelota()` le pone al disco 0 de los 4 mapas.
+2. `parches/aplicar.js` → `⚽ Física de la pelota de futsal`, dos reemplazos (normal y powershot).
+
+El segundo es imprescindible: el script **pisa** la pelota en vivo con
+`room.setDiscProperties(0, {...})` cada vez que se prende o se apaga el powershot. Si solo se
+cambia el mapa, la pelota vuelve a la vieja en el primer powershot. Si se cambia un lado solo,
+el juego queda inconsistente según si hubo powershot o no.
+
+**Real Soccer no se toca** (pedido del usuario): usa sus propios mapas y sus propias líneas
+(`invMass:1.05`, `PelotaRS`). Al buscar en el script, las de futsal se reconocen por
+`invMass:1.5` / `PotenciaPowerShot` y `PelotaFutsal`.
+
+Orden para cambiarlo: tocar los dos lugares → `npm run generar-mapas` → `npm run parchar` →
+`npm run prueba-mapas`. **Se nota recién al reiniciar las salas.**
+
 ## Mapas propios de futsal
 
 `npm run generar-mapas` (`mapas/generar.js`) copia los mapas de futsal del autor desde `script.js`, les cambia el nombre y les deja la **pelota amarilla lisa** (saca las pintitas negras de la pelota "oveja"). Escribe `mapas/nanduti-futsal-x{3,4,5,7}.hbs`.

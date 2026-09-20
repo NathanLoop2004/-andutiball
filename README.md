@@ -702,6 +702,26 @@ de ese entorno usa `DATABASE_URL`. La conexión se abre recién cuando alguien l
 Es la primera versión y la vamos a ir cambiando: se toca `prisma/schema.prisma` y se corre
 `npm run base:migrar`.
 
+## ⚽ La pelota de futsal
+
+La pelota se frenaba demasiado rápido y quedaba muerta contra las paredes. Ahora conserva más
+velocidad y rebota como corresponde. **Real Soccer quedó igual**, esto es solo para las salas de
+futsal (3v3, 4v4 y la automática).
+
+Si querés afinarlo, son dos números y hay que cambiarlos **en los dos lugares**:
+
+- `mapas/generar.js` → `FISICA_PELOTA` (la pelota del mapa)
+- `parches/aplicar.js` → `⚽ Física de la pelota de futsal` (porque el script la vuelve a
+  configurar cada vez que se usa el powershot)
+
+| Número | Ahora | Qué hace |
+|---|---|---|
+| `damping` | 0.993 | Cuánto sigue rodando. Más cerca de 1 = llega más lejos. Arriba de 0.995 se vuelve un jabón |
+| `bCoef` | 0.5 | Cuánto rebota al chocar. Más alto = más viva contra las paredes |
+
+Después: `npm run generar-mapas`, `npm run parchar`, `npm run prueba-mapas`. **El cambio se
+siente recién cuando reiniciás las salas.**
+
 ## 🗺️ Mapas propios de futsal
 
 Las salas de futsal usan mapas nuestros: la misma cancha y la misma física del original, con el
