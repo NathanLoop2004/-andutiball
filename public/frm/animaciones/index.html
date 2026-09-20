@@ -36,7 +36,7 @@
     <p class="tenue" id="cargando">Cargando…</p>
     <table class="tabla" id="tabla" hidden>
       <thead>
-        <tr><th>Nombre</th><th>Tipo</th><th>Se ve así</th><th>Dura</th><th>Precio</th><th>Tienda</th><th></th></tr>
+        <tr><th>Nombre</th><th>Tipo</th><th>Los puntos</th><th>Dura</th><th>Precio</th><th>Tienda</th><th></th></tr>
       </thead>
       <tbody id="cuerpo"></tbody>
     </table>
@@ -50,12 +50,30 @@
       <h2 id="tituloModal">Animación</h2>
       <button class="boton chico" type="button" id="cerrarModal">Cerrar</button>
     </div>
+
     <div class="modal-cuerpo">
       <div class="editor-animacion">
-        <div class="previa-animacion">
-          <div class="jugador-mini" id="muneco"><span id="avatarMini"></span></div>
-          <button class="boton chico" type="button" id="probar">Probar</button>
-          <p class="tenue">En la sala el emoji sale arriba del jugador.</p>
+
+        <!-- La cancha: pase, gol y festejo, en bucle -->
+        <div class="cancha-previa" id="cancha">
+          <canvas id="lienzo" width="840" height="420"></canvas>
+          <div class="cancha-botones">
+            <button class="boton chico" type="button" id="pausar">Pausar</button>
+            <button class="boton chico" type="button" id="agrandar">Agrandar</button>
+            <span class="tenue" id="faseTexto">—</span>
+          </div>
+        </div>
+
+        <!-- Los puntos, uno por uno, como en un editor de video -->
+        <div>
+          <div class="cofre-titulo">Los puntos de la animación</div>
+          <div class="linea-tiempo" id="lineaTiempo"></div>
+          <div class="teclado-emoji" id="teclado"></div>
+          <p class="tenue">
+            Cada punto es un emoji o una letra, y se muestran uno atrás del otro.
+            Tocá un punto para cambiarlo, arrastralo para moverlo de lugar, o la ✕ para sacarlo.
+            Hasta <span id="maxCuadros">10</span>.
+          </p>
         </div>
 
         <div class="editor-campos">
@@ -71,24 +89,40 @@
             </select>
           </label>
 
-          <div id="zonaCuadros">
-            <label>Los cuadros (hasta <span id="maxCuadros">10</span>)
-              <input type="text" id="edCuadros" placeholder="⚽ 🔥 G O L" autocomplete="off">
-            </label>
-            <div class="atajos-emoji" id="atajos"></div>
-            <p class="tenue">Separados por espacios. Van pasando uno atrás del otro.</p>
+          <div class="control-rango">
+            <span>Velocidad</span>
+            <div class="fila">
+              <input type="range" id="edFps" min="1" max="16" step="1" value="5">
+              <span class="valor" id="valorFps">5 por segundo</span>
+            </div>
+            <small class="tenue" id="textoFps">Cada punto se ve 0,20 s.</small>
           </div>
 
-          <label>Velocidad: cada cuadro dura <input type="number" id="edMsPorCuadro" min="60" max="2000" step="20" value="200"> ms</label>
-          <label>Dura en total <input type="number" id="edDuracion" min="300" max="10000" step="100" value="3000"> ms
-            <span class="tenue">Igual se corta cuando se saca del medio, así nadie sigue festejando en juego.</span>
-          </label>
+          <div class="control-rango">
+            <span>Cuánto dura el festejo</span>
+            <div class="fila">
+              <input type="range" id="edDuracion" min="0.5" max="10" step="0.1" value="3">
+              <span class="valor" id="valorDuracion">3,0 s</span>
+            </div>
+            <small class="tenue" id="textoVueltas">—</small>
+          </div>
 
           <div id="zonaTamano" hidden>
-            <label>Tamaño desde <input type="number" id="edDesde" min="0.3" max="3" step="0.1" value="1"></label>
-            <label>Tamaño hasta <input type="number" id="edHasta" min="0.3" max="3" step="0.1" value="1.6">
-              <span class="tenue">1 = el de siempre · 2 = el doble.</span>
-            </label>
+            <div class="control-rango">
+              <span>Tamaño: de</span>
+              <div class="fila">
+                <input type="range" id="edDesde" min="0.3" max="3" step="0.1" value="1">
+                <span class="valor" id="valorDesde">1,0×</span>
+              </div>
+            </div>
+            <div class="control-rango">
+              <span>Tamaño: hasta</span>
+              <div class="fila">
+                <input type="range" id="edHasta" min="0.3" max="3" step="0.1" value="1.6">
+                <span class="valor" id="valorHasta">1,6×</span>
+              </div>
+            </div>
+            <small class="tenue">1× es el tamaño de siempre.</small>
           </div>
 
           <label>Precio en monedas <input type="number" id="edPrecio" min="0" step="0.1" placeholder="sin precio"></label>
@@ -97,6 +131,7 @@
         </div>
       </div>
     </div>
+
     <div class="modal-pie">
       <button class="boton peligro" type="button" id="borrar" hidden>Borrar</button>
       <button class="boton principal" type="button" id="guardar">Guardar</button>
@@ -110,6 +145,7 @@ Sesion.pintarNavAdmin("animaciones");
 
 const $ = (id) => document.getElementById(id);
 const esc = Sesion.escapar;
+const unDecimal = (n) => Number(n).toFixed(1).replace(".", ",");
 
 function avisar(texto, clase) {
   $("aviso").className = "aviso" + (texto ? " " + clase : "");
@@ -118,9 +154,8 @@ function avisar(texto, clase) {
   if (texto && clase !== "mal") avisar._t = setTimeout(() => avisar(""), 4000);
 }
 
-// Esta pantalla es SOLO del OWNER y el CO-OWNER (los mismos que ven Rangos). El candado de
-// verdad está en la API (middlewares/puedeVerRangos); esto es para no mostrar una pantalla
-// que igual no va a poder guardar nada.
+// Esta pantalla es SOLO del OWNER y el CO-OWNER. El candado de verdad está en la API
+// (middlewares/puedeVerRangos); esto es para no mostrar algo que no va a poder guardar.
 if (!(Sesion.usuario() || {}).rangos) {
   $("pantalla").innerHTML = '<div class="tarjeta"><h2>No tenés permiso</h2><p>Las animaciones de gol las arman el OWNER y el CO-OWNER.</p></div>';
   throw new Error("sin permiso");
@@ -129,8 +164,15 @@ if (!(Sesion.usuario() || {}).rangos) {
 let animaciones = [];
 let maxCuadros = 10;
 let editando = null;
+let puntos = [];        // los cuadros, en orden
+let puntoActivo = -1;
 
 const NOMBRE_TIPO = { secuencia: "Emojis / letras", tamano: "Grande y chico", ambas: "Las dos" };
+
+// La velocidad se muestra en PUNTOS POR SEGUNDO, que se entiende; adentro se guarda en
+// milisegundos por punto, que es lo que usa la sala.
+const msDeFps = (fps) => Math.round(1000 / Number(fps));
+const fpsDeMs = (ms) => Math.min(16, Math.max(1, Math.round(1000 / Number(ms || 200))));
 
 async function cargar() {
   try {
@@ -153,33 +195,231 @@ function pintar() {
       <td>${esc(NOMBRE_TIPO[a.tipo] || a.tipo)}</td>
       <td>${(a.cuadros || []).map((c) => `<span class="cuadro">${esc(c)}</span>`).join("")}
           ${a.tipo !== "secuencia" ? `<span class="tenue">${a.tamanoDesde}× → ${a.tamanoHasta}×</span>` : ""}</td>
-      <td>${(a.duracionMs / 1000).toFixed(1)} s</td>
+      <td>${unDecimal(a.duracionMs / 1000)} s</td>
       <td>${a.sinPrecio ? '<span class="tenue">sin precio</span>' : a.precio + " 🪙"}</td>
       <td>${a.enTienda ? "Sí" : "No"}${a.activa ? "" : ' <span class="tenue">(apagada)</span>'}</td>
       <td><button class="boton chico" data-editar="${esc(a.clave)}">Editar</button></td>
     </tr>`).join("");
 }
 
-// ── Editor ──
-const EMOJIS = ["⚽", "🔥", "🎉", "💥", "👑", "🐐", "🚀", "⭐", "💣", "🏆", "😎", "🇵🇾", "🕸️", "💪", "⚡", "🥶"];
-$("atajos").innerHTML = EMOJIS.map((e) => `<button type="button" class="boton chico" data-emoji="${e}">${e}</button>`).join("");
-$("atajos").onclick = (ev) => {
-  const b = ev.target.closest("[data-emoji]");
-  if (!b) return;
-  const actuales = cuadrosDelCampo();
-  if (actuales.length >= maxCuadros) return avisar("Ya tenés " + maxCuadros + " cuadros, que es el máximo", "mal");
-  $("edCuadros").value = actuales.concat(b.dataset.emoji).join(" ");
+// ══════════ La línea de tiempo ══════════
+const EMOJIS = ["⚽", "🔥", "🎉", "💥", "👑", "🐐", "🚀", "⭐", "💣", "🏆", "😎", "🇵🇾", "🕸️", "💪", "⚡", "🥶", "🤫", "🙌"];
+$("teclado").innerHTML = EMOJIS.map((e) => `<button type="button" class="boton chico" data-emoji="${e}">${e}</button>`).join("");
+
+function pintarLinea() {
+  const paso = msDeFps($("edFps").value) / 1000;
+  const html = puntos.map((c, i) => `
+    <div class="punto${i === puntoActivo ? " activo" : ""}" draggable="true" data-i="${i}" title="Tocá para cambiarlo, arrastrá para moverlo">
+      <span>${esc(c)}</span>
+      <small>${unDecimal(i * paso)} s</small>
+      <button class="sacar" type="button" data-sacar="${i}" title="Sacar este punto">✕</button>
+    </div>`).join("");
+  const agregar = puntos.length < maxCuadros
+    ? '<button class="punto-agregar" type="button" id="agregarPunto" title="Agregar un punto">+</button>'
+    : "";
+  $("lineaTiempo").innerHTML = (html || '<span class="vacio">Sin puntos todavía: agregá el primero con el + o tocando un emoji de abajo.</span>') + agregar;
+  actualizarTextos();
+}
+
+$("lineaTiempo").onclick = (ev) => {
+  const sacar = ev.target.closest("[data-sacar]");
+  if (sacar) {
+    puntos.splice(Number(sacar.dataset.sacar), 1);
+    puntoActivo = -1;
+    return pintarLinea();
+  }
+  if (ev.target.closest("#agregarPunto")) {
+    if (puntos.length >= maxCuadros) return avisar("Ya tenés " + maxCuadros + " puntos, que es el máximo", "mal");
+    puntos.push("⚽");
+    puntoActivo = puntos.length - 1;
+    return pintarLinea();
+  }
+  const punto = ev.target.closest(".punto");
+  if (punto) {
+    puntoActivo = Number(punto.dataset.i);
+    pintarLinea();
+    const nuevo = prompt("¿Qué va en este punto? Un emoji o una letra:", puntos[puntoActivo]);
+    if (nuevo !== null) {
+      const limpio = [...nuevo.trim()].slice(0, 2).join("");
+      if (limpio) puntos[puntoActivo] = limpio;
+    }
+    pintarLinea();
+  }
 };
 
-const cuadrosDelCampo = () => $("edCuadros").value.trim().split(/\s+/).filter(Boolean).slice(0, maxCuadros);
+// Arrastrar para reordenar, como en un editor de video
+let arrastrando = -1;
+$("lineaTiempo").addEventListener("dragstart", (ev) => {
+  const p = ev.target.closest(".punto");
+  if (!p) return;
+  arrastrando = Number(p.dataset.i);
+  p.classList.add("arrastrando");
+});
+$("lineaTiempo").addEventListener("dragover", (ev) => ev.preventDefault());
+$("lineaTiempo").addEventListener("drop", (ev) => {
+  ev.preventDefault();
+  const p = ev.target.closest(".punto");
+  if (!p || arrastrando < 0) return;
+  const hasta = Number(p.dataset.i);
+  const [movido] = puntos.splice(arrastrando, 1);
+  puntos.splice(hasta, 0, movido);
+  puntoActivo = hasta;
+  arrastrando = -1;
+  pintarLinea();
+});
+$("lineaTiempo").addEventListener("dragend", () => {
+  arrastrando = -1;
+  pintarLinea();
+});
+
+// Tocar un emoji del teclado: cambia el punto elegido, o agrega uno al final
+$("teclado").onclick = (ev) => {
+  const b = ev.target.closest("[data-emoji]");
+  if (!b) return;
+  if (puntoActivo >= 0 && puntoActivo < puntos.length) {
+    puntos[puntoActivo] = b.dataset.emoji;
+  } else {
+    if (puntos.length >= maxCuadros) return avisar("Ya tenés " + maxCuadros + " puntos, que es el máximo", "mal");
+    puntos.push(b.dataset.emoji);
+    puntoActivo = puntos.length - 1;
+  }
+  pintarLinea();
+};
+
+// ══════════ Los números, en castellano ══════════
+function actualizarTextos() {
+  const fps = Number($("edFps").value);
+  const paso = msDeFps(fps);
+  $("valorFps").textContent = fps + (fps === 1 ? " por segundo" : " por segundo");
+  $("textoFps").textContent = "Cada punto se ve " + (paso / 1000).toFixed(2).replace(".", ",") + " s.";
+
+  const dura = Number($("edDuracion").value);
+  $("valorDuracion").textContent = unDecimal(dura) + " s";
+  if (puntos.length && $("edTipo").value !== "tamano") {
+    const vueltas = (dura * 1000) / (paso * puntos.length);
+    $("textoVueltas").textContent = "Con " + puntos.length + " puntos, la secuencia se repite " +
+      (vueltas >= 1 ? unDecimal(vueltas) + " veces" : "menos de una vez (no se llega a ver entera)") + ".";
+  } else {
+    $("textoVueltas").textContent = "El festejo se corta igual cuando se saca del medio.";
+  }
+
+  $("valorDesde").textContent = unDecimal($("edDesde").value) + "×";
+  $("valorHasta").textContent = unDecimal($("edHasta").value) + "×";
+}
+
+for (const id of ["edFps", "edDuracion", "edDesde", "edHasta"]) $(id).addEventListener("input", actualizarTextos);
 
 function mostrarSegunTipo() {
-  const tipo = $("edTipo").value;
-  $("zonaTamano").hidden = tipo === "secuencia";
-  $("zonaCuadros").hidden = tipo === "tamano";
+  $("zonaTamano").hidden = $("edTipo").value === "secuencia";
+  actualizarTextos();
 }
 $("edTipo").onchange = mostrarSegunTipo;
 
+// ══════════ La cancha en bucle ══════════
+// Un mini partido que se repite: le pasan la pelota, el jugador remata, entra el gol y ahí
+// se ve el festejo con la animación tal como va a salir en la sala.
+const lienzo = $("lienzo");
+const ctx = lienzo.getContext("2d");
+const A = lienzo.width, AL = lienzo.height;
+let corriendo = true;
+let t0 = performance.now();
+
+const PASE = 900, REMATE = 700, ESPERA = 700;   // ms de cada parte, antes del festejo
+
+const entre = (a, b, p) => a + (b - a) * Math.max(0, Math.min(1, p));
+
+function dibujarCancha() {
+  ctx.fillStyle = "#1b7a3e";
+  ctx.fillRect(0, 0, A, AL);
+  ctx.strokeStyle = "rgba(255,255,255,.75)";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(24, 24, A - 48, AL - 48);
+  ctx.beginPath(); ctx.moveTo(A / 2, 24); ctx.lineTo(A / 2, AL - 24); ctx.stroke();
+  ctx.beginPath(); ctx.arc(A / 2, AL / 2, 52, 0, Math.PI * 2); ctx.stroke();
+  // El arco, a la derecha
+  ctx.strokeStyle = "#fff"; ctx.lineWidth = 5;
+  ctx.strokeRect(A - 24, AL / 2 - 62, 16, 124);
+  ctx.strokeStyle = "rgba(255,255,255,.75)"; ctx.lineWidth = 3;
+  ctx.strokeRect(A - 110, AL / 2 - 96, 86, 192);
+}
+
+function disco(x, y, r, color) {
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = "rgba(255,255,255,.9)";
+  ctx.stroke();
+}
+
+function cuadro() {
+  const paso = msDeFps($("edFps").value);
+  const dura = Number($("edDuracion").value) * 1000;
+  const tipo = $("edTipo").value;
+  const total = PASE + REMATE + dura + ESPERA;
+  const t = (performance.now() - t0) % total;
+
+  dibujarCancha();
+
+  const yMedio = AL / 2;
+  const companiero = { x: 150, y: yMedio + 90 };
+  const jugador = { x: A / 2 - 40, y: yMedio };
+  const arco = { x: A - 30, y: yMedio };
+  const R = 26;
+
+  let pelota, escala = 1, festejando = false, fase;
+
+  if (t < PASE) {
+    fase = "Le pasan la pelota";
+    const p = t / PASE;
+    pelota = { x: entre(companiero.x, jugador.x - R - 10, p), y: entre(companiero.y, jugador.y, p) };
+  } else if (t < PASE + REMATE) {
+    fase = "Remata";
+    const p = (t - PASE) / REMATE;
+    pelota = { x: entre(jugador.x + R + 10, arco.x, p), y: entre(jugador.y, yMedio - 18, p) };
+  } else {
+    fase = "¡Gol! " + (tipo === "tamano" ? "Se hace grande y chico" : "Pasan los puntos");
+    festejando = true;
+    pelota = { x: arco.x, y: yMedio - 18 };
+    const enFestejo = t - PASE - REMATE;
+    if (enFestejo < dura && (tipo === "tamano" || tipo === "ambas")) {
+      const i = Math.floor(enFestejo / paso);
+      const vaiven = (Math.sin((i / 2) * Math.PI) + 1) / 2;
+      escala = Number($("edDesde").value) + (Number($("edHasta").value) - Number($("edDesde").value)) * vaiven;
+    }
+    if (enFestejo >= dura) fase = "Se acabó el festejo: el bot recién acá acomoda a la gente";
+  }
+
+  disco(companiero.x, companiero.y, R, "#2f6fd0");
+  disco(jugador.x, jugador.y, R * escala, "#d33a3a");
+  disco(pelota.x, pelota.y, 11, "#ffd700");
+
+  // El emoji del festejo, arriba del jugador (como el avatar en HaxBall)
+  const enFestejo = t - PASE - REMATE;
+  if (festejando && enFestejo < dura && puntos.length && (tipo === "secuencia" || tipo === "ambas")) {
+    const i = Math.floor(enFestejo / paso) % puntos.length;
+    ctx.font = "42px 'Segoe UI Emoji', 'Apple Color Emoji', sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "bottom";
+    ctx.fillText(puntos[i], jugador.x, jugador.y - R * escala - 8);
+  }
+
+  $("faseTexto").textContent = fase;
+  if (corriendo) requestAnimationFrame(cuadro);
+}
+
+$("pausar").onclick = () => {
+  corriendo = !corriendo;
+  $("pausar").textContent = corriendo ? "Pausar" : "Seguir";
+  if (corriendo) { t0 = performance.now(); requestAnimationFrame(cuadro); }
+};
+$("agrandar").onclick = () => {
+  const grande = $("cancha").classList.toggle("grande");
+  $("agrandar").textContent = grande ? "Achicar" : "Agrandar";
+};
+
+// ══════════ Abrir, guardar, borrar ══════════
 function abrir(clave) {
   editando = clave || null;
   const a = clave ? animaciones.find((x) => x.clave === clave) : null;
@@ -189,9 +429,10 @@ function abrir(clave) {
   $("edNombre").value = a ? a.nombre : "";
   $("edDescripcion").value = a && a.descripcion ? a.descripcion : "";
   $("edTipo").value = a ? a.tipo : "secuencia";
-  $("edCuadros").value = a ? (a.cuadros || []).join(" ") : "";
-  $("edMsPorCuadro").value = a ? a.msPorCuadro : 200;
-  $("edDuracion").value = a ? a.duracionMs : 3000;
+  puntos = a ? (a.cuadros || []).slice() : ["⚽", "🔥", "🎉"];
+  puntoActivo = -1;
+  $("edFps").value = a ? fpsDeMs(a.msPorCuadro) : 5;
+  $("edDuracion").value = a ? a.duracionMs / 1000 : 3;
   $("edDesde").value = a ? a.tamanoDesde : 1;
   $("edHasta").value = a ? a.tamanoHasta : 1.6;
   $("edPrecio").value = a && !a.sinPrecio ? a.precio : "";
@@ -199,10 +440,13 @@ function abrir(clave) {
   $("edActiva").checked = a ? a.activa : true;
   $("borrar").hidden = !a;
   mostrarSegunTipo();
+  pintarLinea();
   $("fondoModal").hidden = false;
+  t0 = performance.now();
+  if (corriendo) requestAnimationFrame(cuadro);
 }
 
-const cerrar = () => { $("fondoModal").hidden = true; frenarPrevia(); };
+const cerrar = () => { $("fondoModal").hidden = true; };
 $("nueva").onclick = () => abrir(null);
 $("cerrarModal").onclick = cerrar;
 document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && !$("fondoModal").hidden) cerrar(); });
@@ -219,9 +463,9 @@ $("guardar").onclick = async () => {
     nombre: $("edNombre").value.trim(),
     descripcion: $("edDescripcion").value.trim(),
     tipo: $("edTipo").value,
-    cuadros: cuadrosDelCampo(),
-    msPorCuadro: Number($("edMsPorCuadro").value),
-    duracionMs: Number($("edDuracion").value),
+    cuadros: puntos,
+    msPorCuadro: msDeFps($("edFps").value),
+    duracionMs: Math.round(Number($("edDuracion").value) * 1000),
     tamanoDesde: Number($("edDesde").value),
     tamanoHasta: Number($("edHasta").value),
     enTienda: $("edEnTienda").checked,
@@ -247,39 +491,6 @@ $("borrar").onclick = async () => {
     avisar("Animación borrada", "bien");
     cargar();
   } catch (e) { avisar(e.message, "mal"); }
-};
-
-// ── Vista previa ──
-let relojPrevia = null;
-function frenarPrevia() {
-  if (relojPrevia) clearInterval(relojPrevia);
-  relojPrevia = null;
-  $("avatarMini").textContent = "";
-  $("muneco").style.transform = "scale(1)";
-}
-$("probar").onclick = () => {
-  frenarPrevia();
-  const tipo = $("edTipo").value;
-  const cuadros = cuadrosDelCampo();
-  const paso = Math.max(60, Number($("edMsPorCuadro").value) || 200);
-  const dura = Math.max(paso, Number($("edDuracion").value) || 3000);
-  const desde = Number($("edDesde").value) || 1;
-  const hasta = Number($("edHasta").value) || 1;
-  const haceCuadros = tipo !== "tamano" && cuadros.length > 0;
-  const haceTamano = tipo !== "secuencia";
-  if (!haceCuadros && !haceTamano) return avisar("Cargá al menos un emoji o una letra", "mal");
-
-  let i = 0;
-  const pasos = Math.ceil(dura / paso);
-  relojPrevia = setInterval(() => {
-    if (haceCuadros) $("avatarMini").textContent = cuadros[i % cuadros.length];
-    if (haceTamano) {
-      const vaiven = (Math.sin((i / 2) * Math.PI) + 1) / 2;
-      $("muneco").style.transform = "scale(" + (desde + (hasta - desde) * vaiven) + ")";
-    }
-    i++;
-    if (i >= pasos) frenarPrevia();
-  }, paso);
 };
 
 cargar();

@@ -1208,9 +1208,22 @@ aparte del de camisetas: se prenden y se apagan con "Activar"/"Desactivar" (`POS
 la misma cuenta que la sala. El panel de detalle es uno solo para las dos cosas: `tipoElegido`
 decide a qué API le pega y qué muestra.
 
-La pantalla del panel es `public/frm/animaciones/` (nav "Animaciones", visible con `u.rangos`). Tiene una
-**vista previa** que corre la animación en el navegador con la misma cuenta que la sala, así se ve
-antes de guardarla. El candado del navegador es cosmético: el de verdad está en la API.
+La pantalla del panel es `public/frm/animaciones/` (nav "Animaciones", visible con `u.rangos`).
+El candado del navegador es cosmético: el de verdad está en la API. El editor tiene dos partes:
+
+- **La cancha en bucle** (un `<canvas>`): repite pase → remate → gol → festejo → espera, y en el
+  festejo corre la animación **con la misma cuenta que hace la sala**, así se ve tal cual va a
+  quedar. Abajo dice en qué fase está, y el botón Agrandar la lleva a 840 px (clase `.grande`).
+  El bucle vive en `cuadro()` con `requestAnimationFrame`; `t0` se reinicia al abrir el editor.
+- **La línea de tiempo**: cada cuadro es un "punto" que se toca para cambiarlo, se arrastra para
+  moverlo de lugar y se saca con la ✕, más el + para agregar. Debajo, un teclado de emojis que
+  cambia el punto elegido (o agrega uno si no hay ninguno elegido). Cada punto muestra **en qué
+  segundo aparece**.
+
+**La velocidad se muestra en puntos por segundo**, no en milisegundos: `msDeFps()` / `fpsDeMs()`
+convierten al guardar y al abrir. El modelo sigue guardando `msPorCuadro`. Abajo del control se
+dice cuánto dura cada punto y **cuántas veces se repite la secuencia** con la duración elegida:
+sirve para darse cuenta de que una secuencia larga con poco tiempo no se llega a ver entera.
 
 En la sala: `!animaciones` (las que compró), `!animacion <nombre>` y `!animacion ninguna`. El
 launcher deja `window.__ANIMACIONES` y `window.__MIS_ANIMACIONES` cada 20 s (`refrescarAnimaciones`)

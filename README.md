@@ -716,9 +716,15 @@ del otro) y **hacerte grande y chico**.
 - En la sala: `!animaciones` para ver las tuyas, `!animacion <nombre>` para ponértela y
   `!animacion ninguna` para sacártela.
 
-**Para crearlas** (solo el OWNER y el CO-OWNER): panel → **Animaciones**. Ahí armás una desde
-cero: el nombre, el tipo, los emojis o letras, la velocidad, cuánto dura, el tamaño y el precio.
-Tenés un botón **Probar** para verla antes de guardarla.
+**Para crearlas** (solo el OWNER y el CO-OWNER): panel → **Animaciones**. El editor tiene:
+
+- **Una cancha que se repite sola**: le pasan la pelota, el jugador remata, entra el gol y ahí se
+  ve tu animación tal como va a salir en la sala. Se puede **pausar** y **agrandar**.
+- **Una línea de tiempo** con los puntos de la animación, uno al lado del otro. Tocá un punto para
+  cambiarlo, arrastralo para moverlo de lugar, la ✕ para sacarlo y el **+** para agregar. Abajo hay
+  un teclado de emojis para ir armándola rápido. Cada punto te dice en qué segundo aparece.
+- **La velocidad en puntos por segundo** (no en milisegundos), y te avisa cuántas veces se va a
+  repetir la secuencia con la duración que pusiste.
 
 ## 👕 La camiseta que compraste
 
