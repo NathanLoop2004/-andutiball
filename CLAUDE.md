@@ -1229,7 +1229,9 @@ El candado del navegador es cosmético: el de verdad está en la API. El editor 
   **se va festejando al córner** con el compañero atrás. La clave: el pase y el remate se
   calculan entre las posiciones que tienen los jugadores **en ese instante** (`jugador`,
   `companiero`), no entre puntos fijos — por eso se ve natural. Todo con `suave()` para que
-  arranque y frene como alguien corriendo. Y en el
+  arranque y frene como alguien corriendo. **Los discos no se pisan**, como en el juego: la
+  pelota sale y llega al **borde** de cada jugador (`borde()`, no al centro) y si dos jugadores
+  se juntan al festejar, se empujan hasta quedar tocándose. Y en el
   festejo corre la animación **con la misma cuenta que hace la sala**, así se ve tal cual va a
   quedar. Está dibujada con los colores del mapa de verdad (`mapas/nanduti-futsal-x3.hbs`): fondo
   `2a3a40`, líneas `b3b6b6`, áreas curvas `ff6363` y `0099ff`, palos `FFFF00`, pelota `FFD700`.

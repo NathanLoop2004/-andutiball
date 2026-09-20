@@ -520,6 +520,20 @@ function cuadro() {
   dibujarCancha();
 
   const R = 15 * ESC;
+  const RB = 5.76 * ESC;   // el radio de la pelota
+
+  // En HaxBall los jugadores y la pelota son DISCOS con colisión: nunca se superponen.
+  // Estas dos ayudas mantienen esa regla en la vista previa.
+  const versor = (a, b) => {
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const d = Math.hypot(dx, dy) || 1;
+    return { x: dx / d, y: dy / d, d: d };
+  };
+  // El borde del disco `a` mirando hacia `b`: ahí es donde toca la pelota, no en el centro
+  const borde = (a, b, radio) => {
+    const u = versor(a, b);
+    return { x: a.x + u.x * radio, y: a.y + u.y * radio };
+  };
   const suave = (p) => p * p * (3 - 2 * p);   // arranca y frena despacio, como alguien corriendo
   const m = (a, b, p) => a + (b - a) * Math.max(0, Math.min(1, p));   // en coordenadas del mapa
 
@@ -550,18 +564,23 @@ function cuadro() {
 
   let pelota, escala = 1, fase, avatar = null;
 
+
   if (t < AVANCE) {
     fase = "Suben por la cancha";
-    pelota = { x: companiero.x + R + 6, y: companiero.y };   // la lleva pegada al pie
+    // La lleva pegada al pie, pero afuera de su disco y del lado al que va corriendo
+    pelota = borde(companiero, { x: cx(316), y: cy(-26) }, R + RB + 1);
   } else if (t < AVANCE + PASE) {
     fase = "Se la pasan en movimiento";
-    // Entre los dos, que en este momento se están moviendo los dos
+    // De borde a borde: sale del pie del que pasa y llega al pie del que recibe, sin pisarlos
     const p = suave((t - AVANCE) / PASE);
-    pelota = { x: entre(companiero.x, jugador.x, p), y: entre(companiero.y, jugador.y, p) };
+    const sale = borde(companiero, jugador, R + RB);
+    const llega = borde(jugador, companiero, R + RB);
+    pelota = { x: entre(sale.x, llega.x, p), y: entre(sale.y, llega.y, p) };
   } else if (t < jugada) {
     fase = "Remata corriendo";
     const p = (t - AVANCE - PASE) / REMATE;
-    pelota = { x: entre(jugador.x, arco.x, p * p), y: entre(jugador.y, arco.y, p * p) };
+    const sale = borde(jugador, arco, R * escala + RB);
+    pelota = { x: entre(sale.x, arco.x, p * p), y: entre(sale.y, arco.y, p * p) };
   } else {
     pelota = arco;
     if (enFestejo < dura) {
@@ -580,6 +599,20 @@ function cuadro() {
       fase = "Se acabó el festejo: el bot recién acá acomoda a la gente";
     }
   }
+  // Dos jugadores tampoco pueden estar uno encima del otro: si se juntan (pasa al festejar),
+  // se separan hasta quedar tocándose, como haría el motor del juego.
+  {
+    const u = versor(jugador, companiero);
+    const minimo = R * escala + R;
+    if (u.d < minimo) {
+      const empuje = (minimo - u.d) / 2;
+      companiero.x += u.x * empuje;
+      companiero.y += u.y * empuje;
+      jugador.x -= u.x * empuje;
+      jugador.y -= u.y * empuje;
+    }
+  }
+
   jugadorHax(arquero.x, arquero.y, R, "#5689E5", null);
   jugadorHax(companiero.x, companiero.y, R, "#E56E56", null);
   jugadorHax(jugador.x, jugador.y, R * escala, "#E56E56", avatar);
