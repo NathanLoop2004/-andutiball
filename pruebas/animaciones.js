@@ -136,18 +136,31 @@ function revisar(titulo, condicion, detalle) {
     const creada = await AnimacionesModel.guardar(clave, {
       nombre: "De prueba",
       tipo: "ambas",
-      cuadros: ["⚽", "🔥", "", "⭐", "💥", "🎉", "🚀", "🏆", "😎", "💪", "🐐", "⚡"],   // 12: se recortan a 10
-      tamanos: [9, 0.01, 2, 1, 1, 1, 1, 1, 1, 1],   // 9 baja a 3 y 0.01 sube a 0.3
+      cuadros: ["⚽", "🔥", "", "⭐", "💥", "🎉", "🚀", "🏆", "😎", "💪", "🐐", "⚡"],   // 12 puntos
+      tamanos: [9, 0.01, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1],   // 9 baja a 3 y 0.01 sube a 0.3
       msPorCuadro: 5,        // por debajo del mínimo: sube a 60
-      duracionMs: 999999,    // por arriba del máximo: baja a 10000
+      duracionMs: 999999,    // se ignora: la duración sale de la secuencia
     }, "prueba");
-    revisar("No deja más de 10 cuadros", creada.cuadros.length === 10, creada.cuadros.length + " cuadros");
-    revisar("La velocidad y la duración quedan dentro de lo posible", creada.msPorCuadro === 60 && creada.duracionMs === 10000, creada.msPorCuadro + " ms · " + creada.duracionMs + " ms");
+    revisar("Los 12 cuadros entran (el tope son 50)", creada.cuadros.length === 12, creada.cuadros.length + " cuadros");
+    revisar("La velocidad queda dentro de lo posible", creada.msPorCuadro === 60, creada.msPorCuadro + " ms");
+    // El festejo dura LA SECUENCIA: 10 puntos a 60 ms = 600 ms. No se repite ni se corta.
+    revisar("La duración sale de la secuencia, no de un número aparte",
+      creada.duracionMs === 720, creada.duracionMs + " ms para " + creada.cuadros.length + " puntos de " + creada.msPorCuadro + " ms");
     revisar("Los tamaños de cada punto se recortan a lo posible",
-      creada.tamanos.length === 10 && creada.tamanos[0] === 3 && creada.tamanos[1] === 0.3,
+      creada.tamanos.length === 12 && creada.tamanos[0] === 3 && creada.tamanos[1] === 0.3,
       creada.tamanos.slice(0, 3).join(" "));
     revisar("Un punto sin emoji se conserva (es solo de tamaño)", creada.cuadros[2] === "", JSON.stringify(creada.cuadros.slice(0, 4)));
     revisar("El tipo sale solo de lo que se cargó", creada.tipo === "ambas", creada.tipo);
+
+    const conMasPuntos = await AnimacionesModel.guardar(clave, {
+      nombre: "De prueba", cuadros: ["⚽", "🔥", "👑", "⭐"], tamanos: [1, 1, 1, 1], msPorCuadro: 400,
+    }, "prueba");
+    revisar("Agregar puntos alarga el festejo", conMasPuntos.duracionMs === 1600, conMasPuntos.duracionMs + " ms");
+
+    const demasiados = await AnimacionesModel.guardar(clave, {
+      nombre: "De prueba", cuadros: new Array(80).fill("⚽"), msPorCuadro: 100,
+    }, "prueba");
+    revisar("Más de 50 puntos se recortan", demasiados.cuadros.length === 50, demasiados.cuadros.length + " puntos");
 
     let enTiendaSinPrecio = null;
     try { await AnimacionesModel.guardar(clave, { nombre: "De prueba", cuadros: [""], tamanos: [2], enTienda: true }, "prueba"); } catch (e) { enTiendaSinPrecio = e.message; }
@@ -226,8 +239,9 @@ function revisar(titulo, condicion, detalle) {
     const comoOwner = await pedir("/api/animaciones/panel", { headers: { Authorization: "Bearer " + tokenOwner } });
     revisar("El OWNER sí", comoOwner.status === 200 && Array.isArray(comoOwner.datos.animaciones), "HTTP " + comoOwner.status);
 
-    const guardaOwner = await pedir("/api/animaciones/" + clave, json({ __metodo: "PUT", nombre: "De prueba", cuadros: ["🔥"], tamanos: [1.5], duracionMs: 2000 }, tokenOwner));
-    revisar("Y puede guardarla", guardaOwner.status === 200 && guardaOwner.datos.animacion.duracionMs === 2000, guardaOwner.datos.error);
+    const guardaOwner = await pedir("/api/animaciones/" + clave, json({ __metodo: "PUT", nombre: "De prueba", cuadros: ["🔥", "⚽"], tamanos: [1.5, 1], msPorCuadro: 500 }, tokenOwner));
+    revisar("Y puede guardarla, con la duración salida de la secuencia",
+      guardaOwner.status === 200 && guardaOwner.datos.animacion.duracionMs === 1000, guardaOwner.datos.error || guardaOwner.datos.animacion.duracionMs);
 
     servidor.close();
   } finally {

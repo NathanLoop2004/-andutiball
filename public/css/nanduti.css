@@ -811,3 +811,14 @@ input[type=number]:focus { outline: none; border-color: var(--acento); box-shado
   .punto .cara { font-size: 15px; }
   .punto small { display: none; }
 }
+/* Con muchos puntos (el tiempo × la velocidad puede dar 50) los clips se achican solos */
+.tiempo-pista.densa { gap: 2px; }
+.tiempo-pista.densa .punto { grid-template-rows: 22px 1fr; padding: 4px 1px 3px; border-width: 1px; }
+.tiempo-pista.densa .punto .cara { font-size: 15px; }
+.tiempo-pista.densa .punto .cara.sin { font-size: 0; }
+.tiempo-pista.densa .punto small { display: none; }
+.tiempo-pista.densa .punto .sacar { display: none; }
+.tiempo-pista.muy-densa { gap: 1px; }
+.tiempo-pista.muy-densa .punto { grid-template-rows: 16px 1fr; padding: 2px 0; border-radius: 4px; }
+.tiempo-pista.muy-densa .punto .cara { font-size: 10px; }
+.tiempo-pista.muy-densa .punto .medida { height: 18px; }

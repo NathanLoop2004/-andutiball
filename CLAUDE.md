@@ -1264,6 +1264,25 @@ saca acentos, pasa a minúsculas, cambia lo que no sea letra o número por guion
 `tamano`, las dos cosas → `ambas`), y los controles de tamaño están **siempre** a la vista. Antes
 estaban escondidos detrás del selector de tipo y parecía que no se podía cambiar el tamaño.
 
+**EL TIEMPO MANDA, y la secuencia NUNCA se repite.** La duración del festejo la elige el que la
+arma, y los puntos se acomodan solos para llenarla: `cuántos puntos = duración × velocidad`
+(`acomodarPuntos()`). Subir la velocidad **no acorta el festejo**: siguen siendo los mismos
+segundos con más puntos adentro. El modelo guarda `duracionMs = cuadros.length * msPorCuadro`,
+o sea exactamente lo que dura la secuencia, y el bloque hace `pasos = dura / paso` = una sola
+pasada.
+
+Antes eran dos números sueltos y la secuencia se repetía para llenar el tiempo: con 3 s de
+festejo y 0,6 s de puntos se veía 5 veces, que no tenía sentido.
+
+Como los puntos tienen tope (`MAX_CUADROS = 50`, antes 10 — con 10 no se llegaba ni a 3 s), lo
+que se limita es **la velocidad**, no el festejo: `limitarVelocidad()` baja el máximo del control
+a `50 / duración` (con 10 s, hasta 5 por segundo). Se prefiere recortar la velocidad antes que
+los segundos que pidió el usuario.
+
+Los puntos **no se agregan ni se borran a mano**: la cantidad la manda el tiempo. La ✕ y el botón
+"Vaciar punto" lo dejan vacío (sin emoji y en 1×), y un punto vacío es tiempo en el que no se le
+ve nada.
+
 **La velocidad se muestra en puntos por segundo**, no en milisegundos: `msDeFps()` / `fpsDeMs()`
 convierten al guardar y al abrir. El modelo sigue guardando `msPorCuadro`. Abajo del control se
 dice cuánto dura cada punto y **cuántas veces se repite la secuencia** con la duración elegida:

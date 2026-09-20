@@ -734,8 +734,11 @@ del otro) y **hacerte grande y chico**.
   solo cambie el tamaño).
 - **Arrastrá la rayita roja** por la regla de los segundos para ir viendo los puntos uno por uno:
   la cancha se queda quieta en el punto que estés mirando. Al soltar, la jugada sigue sola.
-- **La velocidad en puntos por segundo** (no en milisegundos), y te avisa cuántas veces se va a
-  repetir la secuencia con la duración que pusiste.
+- **Vos elegís cuánto dura el festejo** y los puntos se acomodan solos para llenarlo. Si subís la
+  velocidad el festejo dura lo mismo: entran más puntos. La secuencia **nunca se repite**, así
+  que lo que armás es exactamente lo que se ve.
+- **La velocidad va en puntos por segundo** (no en milisegundos). Con festejos largos el máximo
+  baja solo, porque entran hasta 50 puntos.
 - **No hace falta elegir "tipo"** de animación: sale solo de lo que cargues en los puntos.
 
 ## 👕 La camiseta que compraste

@@ -18,8 +18,11 @@
 //   "tamano"    se hace grande y chico
 //   "ambas"     las dos cosas a la vez
 //
-// CUÁNTO DURA: `duracionMs`, pero la sala igual la corta cuando se saca del medio. O sea
-// que dura lo que dura el festejo y nunca se mete adentro del juego.
+// CUÁNTO DURA: `cuadros.length * msPorCuadro`, o sea exactamente lo que dura la secuencia.
+// La secuencia NUNCA se repite. Del lado del panel se elige el tiempo del festejo y los puntos
+// se acomodan solos para llenarlo: si se sube la velocidad, el festejo sigue durando lo mismo
+// y entran más puntos. La sala igual la corta cuando se saca del medio, así nunca se mete
+// adentro del juego.
 //
 // El precio va en CENTÉSIMAS (1 moneda = 100), igual que el saldo.
 // =============================================================================
@@ -29,7 +32,11 @@ const MonedasModel = require("./MonedasModel");
 const DEVUELVE_AL_VENDER = 0.7;   // el 30% más barata, igual que las camisetas
 
 const TIPOS = ["secuencia", "tamano", "ambas"];
-const MAX_CUADROS = 10;
+// Cuántos puntos entran. El tope tiene que dar para llenar los 10 s con la velocidad más alta
+// que se usa en la práctica: la duración la manda el que la arma y los puntos la llenan, así
+// que subir la velocidad NO acorta el festejo, solo hace que entren más puntos en el mismo
+// tiempo. Con 10 puntos no alcanzaba ni para 3 s a velocidad media.
+const MAX_CUADROS = 50;
 const LIMITES = {
   msPorCuadro: { min: 60, max: 2000 },
   duracionMs: { min: 300, max: 10000 },
@@ -114,16 +121,21 @@ class AnimacionesModel {
     const hayTamanos = tamanos.some((t) => t !== 1);
     const tipo = hayEmojis && hayTamanos ? "ambas" : hayEmojis ? "secuencia" : "tamano";
 
+    const msPorCuadro = Math.round(entre(Number(datos.msPorCuadro) || 200, LIMITES.msPorCuadro));
+
     const guardar = {
       nombre,
       descripcion: String(datos.descripcion || "").trim().slice(0, 200) || null,
       tipo,
       cuadros,
       tamanos,
-      msPorCuadro: Math.round(entre(Number(datos.msPorCuadro) || 200, LIMITES.msPorCuadro)),
+      msPorCuadro: msPorCuadro,
       tamanoDesde: entre(Number(datos.tamanoDesde) || 1, LIMITES.tamano),
       tamanoHasta: entre(Number(datos.tamanoHasta) || 1, LIMITES.tamano),
-      duracionMs: Math.round(entre(Number(datos.duracionMs) || 3000, LIMITES.duracionMs)),
+      // EL FESTEJO DURA LO QUE DURA LA SECUENCIA: no se repite ni se corta a la mitad.
+      // Para que dure más se agregan puntos o se baja la velocidad, que es lo que se entiende.
+      // Igual se respeta el tope (10 s), y la sala la corta al sacar del medio.
+      duracionMs: Math.round(entre(cuadros.length * msPorCuadro, LIMITES.duracionMs)),
       activa: datos.activa === undefined ? true : Boolean(datos.activa),
       orden: Math.round(Number(datos.orden) || 0),
       cambiadoPor: quien || null,

@@ -74,7 +74,6 @@
               <div class="tiempo-cabezal" id="cabezal"></div>
             </div>
             <div class="tiempo-pie">
-              <button class="boton chico" type="button" id="agregarPunto">+ Agregar punto</button>
               <span class="tenue" id="largoSecuencia">—</span>
             </div>
           </div>
@@ -94,8 +93,8 @@
             </div>
             <div class="fila-botones">
               <button class="boton chico" type="button" id="puntoVacio">Sacarle el emoji</button>
-              <button class="boton chico" type="button" id="puntoDuplicar">Duplicar</button>
-              <button class="boton chico peligro" type="button" id="puntoBorrar">Borrar punto</button>
+              <button class="boton chico" type="button" id="puntoDuplicar">Copiar al siguiente</button>
+              <button class="boton chico peligro" type="button" id="puntoBorrar">Vaciar punto</button>
             </div>
           </div>
 
@@ -111,23 +110,26 @@
           <label>Descripción <input type="text" id="edDescripcion" maxlength="200" placeholder="Para los que meten goles en serio" autocomplete="off"></label>
 
           <div class="control-rango">
+            <span>Cuánto dura el festejo</span>
+            <div class="fila">
+              <input type="range" id="edDuracion" min="0.5" max="10" step="0.1" value="3">
+              <span class="valor" id="valorDuracion">3,0 s</span>
+            </div>
+            <small class="tenue">Es el tiempo que va a estar festejando. Los puntos se acomodan solos para llenarlo.</small>
+          </div>
+
+          <div class="control-rango">
             <span>Velocidad</span>
             <div class="fila">
               <input type="range" id="edFps" min="1" max="16" step="1" value="5">
               <span class="valor" id="valorFps">5 por segundo</span>
             </div>
             <small class="tenue" id="textoFps">Cada punto se ve 0,20 s.</small>
+            <small class="tenue" id="avisoVelocidad"></small>
           </div>
 
-          <div class="control-rango">
-            <span>Cuánto dura el festejo</span>
-            <div class="fila">
-              <input type="range" id="edDuracion" min="0.5" max="10" step="0.1" value="3">
-              <span class="valor" id="valorDuracion">3,0 s</span>
-            </div>
-            <small class="tenue" id="textoVueltas">—</small>
-          </div>
 
+          <p class="aviso info" id="duracionTotal">—</p>
           <p class="aviso info" id="queHace">—</p>
 
           <label>Precio en monedas <input type="number" id="edPrecio" min="0" step="0.1" placeholder="sin precio"></label>
@@ -177,6 +179,37 @@ const NOMBRE_TIPO = { secuencia: "Emojis / letras", tamano: "Grande y chico", am
 // La velocidad se muestra en PUNTOS POR SEGUNDO, que se entiende; adentro se guarda en
 // milisegundos por punto, que es lo que usa la sala.
 const msDeFps = (fps) => Math.round(1000 / Number(fps));
+
+// EL TIEMPO MANDA. La secuencia llena exactamente el festejo y no se repite nunca:
+//   cuántos puntos = cuánto dura × velocidad
+// Por eso, subir la velocidad NO acorta el festejo: siguen siendo los mismos segundos, con
+// más puntos adentro. Si la cuenta se pasa del tope, se recorta y se avisa.
+const TOPE_PUNTOS = 50;
+const duracionMs = () => puntos.length * msDeFps($("edFps").value);
+
+// El tiempo elegido SIEMPRE se respeta. Como los puntos tienen un tope, lo que se limita es la
+// velocidad: con 10 s no se puede ir a 16 por segundo (serían 160 puntos), así que el máximo
+// del control baja solo. Preferimos recortar la velocidad y no el festejo, que es lo que el
+// que la arma pidió.
+function limitarVelocidad() {
+  const dura = Math.max(0.5, Number($("edDuracion").value));
+  const tope = Math.max(1, Math.min(16, Math.floor(TOPE_PUNTOS / dura)));
+  $("edFps").max = tope;
+  if (Number($("edFps").value) > tope) $("edFps").value = tope;
+  $("avisoVelocidad").textContent = tope < 16
+    ? "Con " + unDecimal(dura) + " s, la velocidad llega hasta " + tope + " por segundo."
+    : "";
+}
+
+// Acomoda la cantidad de puntos a lo que pide el tiempo y la velocidad, sin perder lo cargado
+function acomodarPuntos() {
+  const fps = Number($("edFps").value);
+  const quiero = Math.max(1, Math.min(TOPE_PUNTOS, Math.round(Number($("edDuracion").value) * fps)));
+  while (puntos.length < quiero) puntos.push({ emoji: "", tamano: 1 });
+  if (puntos.length > quiero) puntos.length = quiero;
+  if (puntoActivo >= puntos.length) puntoActivo = puntos.length - 1;
+  return quiero;
+}
 const fpsDeMs = (ms) => Math.min(16, Math.max(1, Math.round(1000 / Number(ms || 200))));
 
 // El "tipo" no se elige a mano: sale de lo que tengan los puntos.
@@ -246,8 +279,8 @@ function pintarRegla() {
   const n = puntos.length;
   if (!n) { $("regla").innerHTML = ""; $("largoSecuencia").textContent = ""; return; }
 
-  // Con muchos puntos las marcas se pisan, así que se saltean
-  const cada = n <= 6 ? 1 : n <= 12 ? 2 : 3;
+  // Siempre unas 6 marcas, tenga 3 puntos o 50: si no, se pisan entre ellas
+  const cada = Math.max(1, Math.ceil(n / 6));
   let html = "";
   for (let i = 0; i <= n; i++) {
     if (i % cada !== 0 && i !== n) continue;
@@ -258,6 +291,8 @@ function pintarRegla() {
 }
 
 function pintarLinea() {
+  limitarVelocidad();   // el tiempo manda: si hace falta, baja el tope de la velocidad
+  acomodarPuntos();     // el tiempo y la velocidad deciden cuántos puntos hay
   const paso = msDeFps($("edFps").value) / 1000;
   const html = puntos.map((p, i) => `
     <div class="punto${i === puntoActivo ? " activo" : ""}" draggable="true" data-i="${i}"
@@ -268,8 +303,9 @@ function pintarLinea() {
       <button class="sacar" type="button" data-sacar="${i}" title="Sacar este punto">✕</button>
     </div>`).join("");
   const cabezal = '<div class="tiempo-cabezal" id="cabezal"></div>';
-  $("pista").innerHTML = cabezal + (html || '<span class="vacio">Sin puntos: agregá el primero con el botón de abajo.</span>');
-  $("agregarPunto").disabled = puntos.length >= maxCuadros;
+  $("pista").innerHTML = cabezal + html;
+  $("pista").classList.toggle("densa", puntos.length > 14);
+  $("pista").classList.toggle("muy-densa", puntos.length > 28);
   pintarRegla();
   pintarEditorDelPunto();
   actualizarTextos();
@@ -287,18 +323,12 @@ function pintarEditorDelPunto() {
 
 const nuevoPunto = (emoji) => ({ emoji: emoji === undefined ? "⚽" : emoji, tamano: 1 });
 
-$("agregarPunto").onclick = () => {
-  if (puntos.length >= maxCuadros) return avisar("Ya tenés " + maxCuadros + " puntos, que es el máximo", "mal");
-  puntos.push(nuevoPunto());
-  puntoActivo = puntos.length - 1;
-  pintarLinea();
-};
-
 $("pista").onclick = (ev) => {
   const sacar = ev.target.closest("[data-sacar]");
   if (sacar) {
-    puntos.splice(Number(sacar.dataset.sacar), 1);
-    puntoActivo = Math.min(puntoActivo, puntos.length - 1);
+    // No se borra el punto (la cantidad la manda el tiempo): se deja vacío
+    const i = Number(sacar.dataset.sacar);
+    puntos[i] = { emoji: "", tamano: 1 };
     return pintarLinea();
   }
   const punto = ev.target.closest(".punto");
@@ -335,12 +365,11 @@ $("teclado").onclick = (ev) => {
   const b = ev.target.closest("[data-emoji]");
   if (!b) return;
   if (puntoActivo < 0 || !puntos[puntoActivo]) {
-    if (puntos.length >= maxCuadros) return avisar("Ya tenés " + maxCuadros + " puntos, que es el máximo", "mal");
-    puntos.push(nuevoPunto(b.dataset.emoji));
-    puntoActivo = puntos.length - 1;
-  } else {
-    puntos[puntoActivo].emoji = b.dataset.emoji;
+    // Sin ninguno elegido, se llena el primero que esté vacío
+    const libre = puntos.findIndex((p) => !p.emoji);
+    puntoActivo = libre >= 0 ? libre : 0;
   }
+  puntos[puntoActivo].emoji = b.dataset.emoji;
   pintarLinea();
 };
 
@@ -364,18 +393,17 @@ $("puntoVacio").onclick = () => {
   pintarLinea();
 };
 
+// Copia este punto al que sigue (no inserta: la cantidad la manda el tiempo)
 $("puntoDuplicar").onclick = () => {
-  if (!puntos[puntoActivo]) return;
-  if (puntos.length >= maxCuadros) return avisar("Ya tenés " + maxCuadros + " puntos, que es el máximo", "mal");
-  puntos.splice(puntoActivo + 1, 0, Object.assign({}, puntos[puntoActivo]));
+  if (!puntos[puntoActivo] || puntoActivo + 1 >= puntos.length) return;
+  puntos[puntoActivo + 1] = Object.assign({}, puntos[puntoActivo]);
   puntoActivo++;
   pintarLinea();
 };
 
 $("puntoBorrar").onclick = () => {
   if (!puntos[puntoActivo]) return;
-  puntos.splice(puntoActivo, 1);
-  puntoActivo = Math.min(puntoActivo, puntos.length - 1);
+  puntos[puntoActivo] = { emoji: "", tamano: 1 };   // se vacía; la cantidad la manda el tiempo
   pintarLinea();
 };
 
@@ -386,16 +414,15 @@ function actualizarTextos() {
   $("valorFps").textContent = fps + " por segundo";
   $("textoFps").textContent = "Cada punto se ve " + (paso / 1000).toFixed(2).replace(".", ",") + " s.";
 
-  const dura = Number($("edDuracion").value);
-  $("valorDuracion").textContent = unDecimal(dura) + " s";
-  if (puntos.length) {
-    const vueltas = (dura * 1000) / (paso * puntos.length);
-    $("textoVueltas").textContent = "Tus " + puntos.length + " puntos duran " +
-      unDecimal((paso * puntos.length) / 1000) + " s, así que se repiten " +
-      (vueltas >= 1 ? unDecimal(vueltas) + " veces" : "menos de una vez (no se llega a ver entera)") + ".";
-  } else {
-    $("textoVueltas").textContent = "El festejo se corta igual cuando se saca del medio.";
-  }
+  const dura = duracionMs();
+  const pedido = Number($("edDuracion").value);
+  $("valorDuracion").textContent = unDecimal(pedido) + " s";
+  const llenos = puntos.filter((p) => p.emoji || Number(p.tamano) !== 1).length;
+  const recortado = Math.round(pedido * fps) > TOPE_PUNTOS;
+  $("duracionTotal").textContent =
+    "El festejo dura " + unDecimal(dura / 1000) + " s y son " + puntos.length + " puntos" +
+    (recortado ? " (no entran más de " + TOPE_PUNTOS + ", así que se acortó)" : "") +
+    ". Tenés " + llenos + " con algo cargado" + (llenos < puntos.length ? " y " + (puntos.length - llenos) + " todavía vacíos." : ".");
 
   const tipo = tipoDeAhora();
   $("queHace").textContent =
@@ -508,7 +535,7 @@ function jugadorHax(x, y, radio, color, avatar) {
 
 function cuadro() {
   const paso = msDeFps($("edFps").value);
-  const dura = Number($("edDuracion").value) * 1000;
+  const dura = duracionMs();
   const total = AVANCE + PASE + REMATE + dura + ESPERA;
 
   // Con el cabezal agarrado, la cancha se congela en ese punto del festejo
@@ -705,10 +732,11 @@ function abrir(clave) {
     puntos = emojis.map((e, i) => ({ emoji: e || "", tamano: Number(medidas[i]) || 1 }));
   } else {
     puntos = [{ emoji: "⚽", tamano: 1 }, { emoji: "🔥", tamano: 1.5 }, { emoji: "🎉", tamano: 1 }];
+    // El resto los agrega acomodarPuntos() según el tiempo elegido
   }
   puntoActivo = puntos.length ? 0 : -1;
   $("edFps").value = a ? fpsDeMs(a.msPorCuadro) : 5;
-  $("edDuracion").value = a ? a.duracionMs / 1000 : 3;
+  $("edDuracion").value = a ? Math.min(10, Math.max(0.5, a.duracionMs / 1000)) : 3;
   $("edPrecio").value = a && !a.sinPrecio ? a.precio : "";
   $("edEnTienda").checked = a ? a.enTienda : false;
   $("edActiva").checked = a ? a.activa : true;
@@ -732,9 +760,8 @@ $("cuerpo").onclick = (ev) => {
 $("guardar").onclick = async () => {
   const nombre = $("edNombre").value.trim();
   if (!nombre) return avisar("Ponele un nombre", "mal");
-  if (!puntos.length) return avisar("Agregá al menos un punto", "mal");
   if (!puntos.some((p) => p.emoji || Number(p.tamano) !== 1)) {
-    return avisar("Tus puntos no hacen nada: ponele un emoji a alguno, o cambiale el tamaño", "mal");
+    return avisar("Tus puntos están vacíos: ponele un emoji a alguno, o cambiale el tamaño", "mal");
   }
   const tipo = tipoDeAhora();
 
@@ -746,7 +773,6 @@ $("guardar").onclick = async () => {
     cuadros: puntos.map((p) => p.emoji),
     tamanos: puntos.map((p) => p.tamano),
     msPorCuadro: msDeFps($("edFps").value),
-    duracionMs: Math.round(Number($("edDuracion").value) * 1000),
     enTienda: $("edEnTienda").checked,
     activa: $("edActiva").checked,
   };
