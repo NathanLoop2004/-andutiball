@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Animaciones · ÑandutíHax</title>
+<link rel="icon" href="/img/logo-chico.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/css/nanduti.css">
+<script src="/js/tema.js"></script>
+<script src="/js/sesion.js"></script>
+<script>if (!Sesion.usuario()) location.replace("/frm/login/?volver=" + encodeURIComponent("/frm/animaciones/"));</script>
+</head>
+<body>
+
+<header class="barra ancha">
+  <a class="marca" href="/"><img src="/img/logo-chico.png" alt=""><span>ÑandutíHax</span></a>
+  <div class="derecha" id="derecha"></div>
+</header>
+
+<main class="contenido ancho" id="pantalla">
+  <div class="cabecera">
+    <div>
+      <h1>Animaciones de gol</h1>
+      <p>Lo que le pasa al que hace el gol mientras se festeja. Las salas las toman en unos segundos, sin reiniciar.</p>
+    </div>
+    <button class="boton principal" type="button" id="nueva">Nueva animación</button>
+  </div>
+
+  <div class="aviso" id="aviso"></div>
+
+  <div class="tarjeta">
+    <p class="tenue" id="cargando">Cargando…</p>
+    <table class="tabla" id="tabla" hidden>
+      <thead>
+        <tr><th>Nombre</th><th>Tipo</th><th>Se ve así</th><th>Dura</th><th>Precio</th><th>Tienda</th><th></th></tr>
+      </thead>
+      <tbody id="cuerpo"></tbody>
+    </table>
+    <p class="tenue" id="vacio" hidden>Todavía no hay ninguna. Creá la primera con “Nueva animación”.</p>
+  </div>
+</main>
+
+<div class="fondo-modal" id="fondoModal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloModal">
+    <div class="modal-cabeza">
+      <h2 id="tituloModal">Animación</h2>
+      <button class="boton chico" type="button" id="cerrarModal">Cerrar</button>
+    </div>
+    <div class="modal-cuerpo">
+      <div class="editor-animacion">
+        <div class="previa-animacion">
+          <div class="jugador-mini" id="muneco"><span id="avatarMini"></span></div>
+          <button class="boton chico" type="button" id="probar">Probar</button>
+          <p class="tenue">En la sala el emoji sale arriba del jugador.</p>
+        </div>
+
+        <div class="editor-campos">
+          <label>Clave <input type="text" id="edClave" maxlength="30" placeholder="tricampeon" autocomplete="off"></label>
+          <label>Nombre <input type="text" id="edNombre" maxlength="40" placeholder="Tricampeón" autocomplete="off"></label>
+          <label>Descripción <input type="text" id="edDescripcion" maxlength="200" placeholder="Para los que meten goles en serio" autocomplete="off"></label>
+
+          <label>Tipo
+            <select id="edTipo">
+              <option value="secuencia">Le pasan emojis o letras</option>
+              <option value="tamano">Se hace grande y chico</option>
+              <option value="ambas">Las dos cosas</option>
+            </select>
+          </label>
+
+          <div id="zonaCuadros">
+            <label>Los cuadros (hasta <span id="maxCuadros">10</span>)
+              <input type="text" id="edCuadros" placeholder="⚽ 🔥 G O L" autocomplete="off">
+            </label>
+            <div class="atajos-emoji" id="atajos"></div>
+            <p class="tenue">Separados por espacios. Van pasando uno atrás del otro.</p>
+          </div>
+
+          <label>Velocidad: cada cuadro dura <input type="number" id="edMsPorCuadro" min="60" max="2000" step="20" value="200"> ms</label>
+          <label>Dura en total <input type="number" id="edDuracion" min="300" max="10000" step="100" value="3000"> ms
+            <span class="tenue">Igual se corta cuando se saca del medio, así nadie sigue festejando en juego.</span>
+          </label>
+
+          <div id="zonaTamano" hidden>
+            <label>Tamaño desde <input type="number" id="edDesde" min="0.3" max="3" step="0.1" value="1"></label>
+            <label>Tamaño hasta <input type="number" id="edHasta" min="0.3" max="3" step="0.1" value="1.6">
+              <span class="tenue">1 = el de siempre · 2 = el doble.</span>
+            </label>
+          </div>
+
+          <label>Precio en monedas <input type="number" id="edPrecio" min="0" step="0.1" placeholder="sin precio"></label>
+          <label class="linea"><input type="checkbox" id="edEnTienda"> Mostrarla en la tienda</label>
+          <label class="linea"><input type="checkbox" id="edActiva" checked> Activa</label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-pie">
+      <button class="boton peligro" type="button" id="borrar" hidden>Borrar</button>
+      <button class="boton principal" type="button" id="guardar">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+Sesion.pintarBarra("derecha");
+Sesion.pintarNavAdmin("animaciones");
+
+const $ = (id) => document.getElementById(id);
+const esc = Sesion.escapar;
+
+function avisar(texto, clase) {
+  $("aviso").className = "aviso" + (texto ? " " + clase : "");
+  $("aviso").textContent = texto;
+  clearTimeout(avisar._t);
+  if (texto && clase !== "mal") avisar._t = setTimeout(() => avisar(""), 4000);
+}
+
+// Esta pantalla es SOLO del OWNER y el CO-OWNER (los mismos que ven Rangos). El candado de
+// verdad está en la API (middlewares/puedeVerRangos); esto es para no mostrar una pantalla
+// que igual no va a poder guardar nada.
+if (!(Sesion.usuario() || {}).rangos) {
+  $("pantalla").innerHTML = '<div class="tarjeta"><h2>No tenés permiso</h2><p>Las animaciones de gol las arman el OWNER y el CO-OWNER.</p></div>';
+  throw new Error("sin permiso");
+}
+
+let animaciones = [];
+let maxCuadros = 10;
+let editando = null;
+
+const NOMBRE_TIPO = { secuencia: "Emojis / letras", tamano: "Grande y chico", ambas: "Las dos" };
+
+async function cargar() {
+  try {
+    const r = await Sesion.pedir("/api/animaciones/panel");
+    animaciones = r.animaciones || [];
+    if (r.maxCuadros) { maxCuadros = r.maxCuadros; $("maxCuadros").textContent = maxCuadros; }
+    pintar();
+  } catch (e) {
+    $("cargando").textContent = "No se pudo cargar: " + e.message;
+  }
+}
+
+function pintar() {
+  $("cargando").hidden = true;
+  $("tabla").hidden = animaciones.length === 0;
+  $("vacio").hidden = animaciones.length > 0;
+  $("cuerpo").innerHTML = animaciones.map((a) => `
+    <tr>
+      <td><strong>${esc(a.nombre)}</strong><br><span class="tenue">${esc(a.clave)}</span></td>
+      <td>${esc(NOMBRE_TIPO[a.tipo] || a.tipo)}</td>
+      <td>${(a.cuadros || []).map((c) => `<span class="cuadro">${esc(c)}</span>`).join("")}
+          ${a.tipo !== "secuencia" ? `<span class="tenue">${a.tamanoDesde}× → ${a.tamanoHasta}×</span>` : ""}</td>
+      <td>${(a.duracionMs / 1000).toFixed(1)} s</td>
+      <td>${a.sinPrecio ? '<span class="tenue">sin precio</span>' : a.precio + " 🪙"}</td>
+      <td>${a.enTienda ? "Sí" : "No"}${a.activa ? "" : ' <span class="tenue">(apagada)</span>'}</td>
+      <td><button class="boton chico" data-editar="${esc(a.clave)}">Editar</button></td>
+    </tr>`).join("");
+}
+
+// ── Editor ──
+const EMOJIS = ["⚽", "🔥", "🎉", "💥", "👑", "🐐", "🚀", "⭐", "💣", "🏆", "😎", "🇵🇾", "🕸️", "💪", "⚡", "🥶"];
+$("atajos").innerHTML = EMOJIS.map((e) => `<button type="button" class="boton chico" data-emoji="${e}">${e}</button>`).join("");
+$("atajos").onclick = (ev) => {
+  const b = ev.target.closest("[data-emoji]");
+  if (!b) return;
+  const actuales = cuadrosDelCampo();
+  if (actuales.length >= maxCuadros) return avisar("Ya tenés " + maxCuadros + " cuadros, que es el máximo", "mal");
+  $("edCuadros").value = actuales.concat(b.dataset.emoji).join(" ");
+};
+
+const cuadrosDelCampo = () => $("edCuadros").value.trim().split(/\s+/).filter(Boolean).slice(0, maxCuadros);
+
+function mostrarSegunTipo() {
+  const tipo = $("edTipo").value;
+  $("zonaTamano").hidden = tipo === "secuencia";
+  $("zonaCuadros").hidden = tipo === "tamano";
+}
+$("edTipo").onchange = mostrarSegunTipo;
+
+function abrir(clave) {
+  editando = clave || null;
+  const a = clave ? animaciones.find((x) => x.clave === clave) : null;
+  $("tituloModal").textContent = a ? "Editar " + a.nombre : "Nueva animación";
+  $("edClave").value = a ? a.clave : "";
+  $("edClave").disabled = Boolean(a);
+  $("edNombre").value = a ? a.nombre : "";
+  $("edDescripcion").value = a && a.descripcion ? a.descripcion : "";
+  $("edTipo").value = a ? a.tipo : "secuencia";
+  $("edCuadros").value = a ? (a.cuadros || []).join(" ") : "";
+  $("edMsPorCuadro").value = a ? a.msPorCuadro : 200;
+  $("edDuracion").value = a ? a.duracionMs : 3000;
+  $("edDesde").value = a ? a.tamanoDesde : 1;
+  $("edHasta").value = a ? a.tamanoHasta : 1.6;
+  $("edPrecio").value = a && !a.sinPrecio ? a.precio : "";
+  $("edEnTienda").checked = a ? a.enTienda : false;
+  $("edActiva").checked = a ? a.activa : true;
+  $("borrar").hidden = !a;
+  mostrarSegunTipo();
+  $("fondoModal").hidden = false;
+}
+
+const cerrar = () => { $("fondoModal").hidden = true; frenarPrevia(); };
+$("nueva").onclick = () => abrir(null);
+$("cerrarModal").onclick = cerrar;
+document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && !$("fondoModal").hidden) cerrar(); });
+
+$("cuerpo").onclick = (ev) => {
+  const b = ev.target.closest("[data-editar]");
+  if (b) abrir(b.dataset.editar);
+};
+
+$("guardar").onclick = async () => {
+  const clave = $("edClave").value.trim().toLowerCase();
+  if (!clave) return avisar("Ponele una clave", "mal");
+  const cuerpo = {
+    nombre: $("edNombre").value.trim(),
+    descripcion: $("edDescripcion").value.trim(),
+    tipo: $("edTipo").value,
+    cuadros: cuadrosDelCampo(),
+    msPorCuadro: Number($("edMsPorCuadro").value),
+    duracionMs: Number($("edDuracion").value),
+    tamanoDesde: Number($("edDesde").value),
+    tamanoHasta: Number($("edHasta").value),
+    enTienda: $("edEnTienda").checked,
+    activa: $("edActiva").checked,
+  };
+  const precio = $("edPrecio").value.trim();
+  if (precio !== "") cuerpo.precio = Number(precio);
+
+  try {
+    await Sesion.pedir("/api/animaciones/" + encodeURIComponent(clave), { method: "PUT", body: JSON.stringify(cuerpo) });
+    cerrar();
+    avisar(editando ? "Animación guardada" : "Animación creada", "bien");
+    cargar();
+  } catch (e) { avisar(e.message, "mal"); }
+};
+
+$("borrar").onclick = async () => {
+  if (!editando) return;
+  if (!confirm('¿Borrar "' + editando + '"? También se la saca a los que la compraron.')) return;
+  try {
+    await Sesion.pedir("/api/animaciones/" + encodeURIComponent(editando), { method: "DELETE" });
+    cerrar();
+    avisar("Animación borrada", "bien");
+    cargar();
+  } catch (e) { avisar(e.message, "mal"); }
+};
+
+// ── Vista previa ──
+let relojPrevia = null;
+function frenarPrevia() {
+  if (relojPrevia) clearInterval(relojPrevia);
+  relojPrevia = null;
+  $("avatarMini").textContent = "";
+  $("muneco").style.transform = "scale(1)";
+}
+$("probar").onclick = () => {
+  frenarPrevia();
+  const tipo = $("edTipo").value;
+  const cuadros = cuadrosDelCampo();
+  const paso = Math.max(60, Number($("edMsPorCuadro").value) || 200);
+  const dura = Math.max(paso, Number($("edDuracion").value) || 3000);
+  const desde = Number($("edDesde").value) || 1;
+  const hasta = Number($("edHasta").value) || 1;
+  const haceCuadros = tipo !== "tamano" && cuadros.length > 0;
+  const haceTamano = tipo !== "secuencia";
+  if (!haceCuadros && !haceTamano) return avisar("Cargá al menos un emoji o una letra", "mal");
+
+  let i = 0;
+  const pasos = Math.ceil(dura / paso);
+  relojPrevia = setInterval(() => {
+    if (haceCuadros) $("avatarMini").textContent = cuadros[i % cuadros.length];
+    if (haceTamano) {
+      const vaiven = (Math.sin((i / 2) * Math.PI) + 1) / 2;
+      $("muneco").style.transform = "scale(" + (desde + (hasta - desde) * vaiven) + ")";
+    }
+    i++;
+    if (i >= pasos) frenarPrevia();
+  }, paso);
+};
+
+cargar();
+</script>
+</body>
+</html>

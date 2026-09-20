@@ -212,7 +212,14 @@ function ponerCamisetaDelEquipo(equipo) {
 				return false;
 			}
 
-			if (hayCapitanes() && player.team !== 0 && !esCapitan(player)) {
+			// De espectador no se cambia la camiseta: la camiseta es la del equipo, así que
+			// primero hay que estar adentro de la cancha.
+			if (player.team === 0) {
+				room.sendAnnouncement("👕 Primero tenés que estar jugando para cambiar la camiseta.", player.id, 0xFF6B6B, "bold", 2);
+				return false;
+			}
+
+			if (hayCapitanes() && !esCapitan(player)) {
 				var cap = capitanDelEquipo(player.team);
 				room.sendAnnouncement(
 					"👕 La camiseta del equipo la elige el capitán" + (cap ? " (" + cap.name + ")" : "") + ". La tuya la podés cambiar cuando te toque serlo.",

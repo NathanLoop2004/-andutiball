@@ -19,6 +19,7 @@ const EloSalasModel = require("./models/EloSalasModel");
 const MonedasModel = require("./models/MonedasModel");
 const EquiposModel = require("./models/EquiposModel");
 const TiendaModel = require("./models/TiendaModel");
+const AnimacionesModel = require("./models/AnimacionesModel");
 const RachasModel = require("./models/RachasModel");
 const Parametros = require("./lib/parametros");
 const WebhookWeb = require("./services/WebhookWeb");
@@ -229,6 +230,12 @@ api.on("error", (error) => {
         TiendaModel.elegir(evento.nick, evento.clave)
           .then(() => refrescarCamisetas())
           .catch((error) => console.warn(`⚠️ No se pudo guardar la camiseta de ${evento.nick}: ${String(error.message).split("\n")[0]}`));
+        break;
+      // Alguien se puso una animación de gol con !animacion en la sala
+      case "animacion":
+        AnimacionesModel.elegir(evento.nick, evento.clave)
+          .then(() => refrescarAnimaciones())
+          .catch((error) => console.warn(`⚠️ No se pudo guardar la animación de ${evento.nick}: ${String(error.message).split("\n")[0]}`));
         break;
       case "config-sala":
         if (salaElegida) {
@@ -640,6 +647,17 @@ api.on("error", (error) => {
     }
   };
 
+  // Las animaciones de gol compradas: cuál tiene puesta cada uno y qué compró
+  const refrescarAnimaciones = async () => {
+    try {
+      const nombres = await frame.evaluate(() => (window.__sala ? window.__sala.getPlayerList().map((j) => j.name) : []));
+      const [puestas, compradas] = await Promise.all([AnimacionesModel.paraLaSala(), AnimacionesModel.deVariasCuentas(nombres)]);
+      await frame.evaluate((p, c) => { window.__ANIMACIONES = p; window.__MIS_ANIMACIONES = c; }, puestas, compradas);
+    } catch (error) {
+      // Sin base no pasa nada: se festeja como siempre
+    }
+  };
+
   const refrescarConfig = async () => {
     if (!claveSala) return;
     try {
@@ -661,6 +679,8 @@ api.on("error", (error) => {
   setInterval(refrescarEquipos, 30000);   // las camisetas no cambian tan seguido
   await refrescarCamisetas();
   setInterval(refrescarCamisetas, 20000);
+  await refrescarAnimaciones();
+  setInterval(refrescarAnimaciones, 20000);
 
   // El link de la web puede aparecer después (el túnel tarda unos segundos en abrir)
   await refrescarLinkWeb();

@@ -21,6 +21,9 @@ function abrirSala(hostConfig, opciones = {}) {
   const camisetas = [];  // cada room.setTeamColors: { equipo, angulo, texto, colores }
   const eventosPanel = [];  // lo que el espía del launcher le manda al panel
   const expulsados = [];    // cada room.kickPlayer: { id, nombre, motivo, ban }
+  const avatares = [];      // cada room.setPlayerAvatar: { id, avatar }
+  const radios = [];        // cada room.setPlayerDiscProperties con radius: { id, radius }
+  const RADIO_NORMAL = 15;  // el que devuelve getPlayerDiscProperties acá
 
   // ── Reloj virtual ──
   let reloj = 1700000000000;
@@ -63,10 +66,13 @@ function abrirSala(hostConfig, opciones = {}) {
     },
     clearBan: () => {}, clearBans: () => {}, setPassword: () => {},
     setRequireRecaptcha: () => {}, setTeamsLock: () => {}, setScoreLimit: () => {}, setTimeLimit: () => {},
-    setCustomStadium: () => {}, setDefaultStadium: () => {}, setPlayerAvatar: () => {},
+    setCustomStadium: () => {}, setDefaultStadium: () => {},
+    setPlayerAvatar: (id, avatar) => { avatares.push({ id, avatar: avatar === undefined ? null : avatar }); },
     // Guardamos los cambios de camiseta para poder revisarlos en las pruebas
     setTeamColors: (equipo, angulo, texto, colores) => { camisetas.push({ equipo, angulo, texto, colores }); },
-    setDiscProperties: () => {}, setPlayerDiscProperties: () => {}, setKickRateLimit: () => {},
+    setDiscProperties: () => {},
+    setPlayerDiscProperties: (id, props) => { if (props && typeof props.radius === "number") radios.push({ id, radius: props.radius }); },
+    setKickRateLimit: () => {},
     // Mueve a los jugadores dados al final de la lista (así los elige el script en otro orden)
     reorderPlayers: (ids, alPrincipio) => {
       const movidos = ids.map((id) => jugadores.get(id)).filter(Boolean);
@@ -202,7 +208,7 @@ function abrirSala(hostConfig, opciones = {}) {
   });
 
   return {
-    room, jugadores, contexto, ajustes, errores, anuncios, webhooks, camisetas, eventosPanel, expulsados,
+    room, jugadores, contexto, ajustes, errores, anuncios, webhooks, camisetas, eventosPanel, expulsados, avatares, radios, radioNormal: RADIO_NORMAL,
     // Las variables let/const del script no son propiedades del contexto: hay que evaluarlas
     leer: (expresion) => vm.runInContext(expresion, contexto),
     avanzar, entra, entran, sale, equipos, disparar,

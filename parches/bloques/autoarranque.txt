@@ -53,6 +53,9 @@ function partidoPausado() {
 function revisarArranque() {
 	if (!AutoArranque) return;
 
+	// Mientras se festeja un gol no se toca nada: si no, se corta la animación a la mitad
+	if (typeof festejandoGol === "function" && festejandoGol()) return;
+
 	// Si el script está en pleno cambio de mapa, no nos metemos
 	if (typeof gameRestarting !== "undefined" && gameRestarting) return;
 

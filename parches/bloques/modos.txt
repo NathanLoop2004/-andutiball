@@ -48,6 +48,9 @@ function hayJugadoresDeMas() {
 function aplicarModoDeEquipos(forzar) {
 	if (ModoDeEquipos === "config") return;
 
+	// Mientras se festeja un gol no se acomoda a nadie (ver 🎉 ANIMACIONES DE GOL)
+	if (typeof festejandoGol === "function" && festejandoGol()) return;
+
 	// Con un partido en curso no movemos a nadie, PERO sí dejamos prender la elección: eso no
 	// mueve jugadores y hace que el arranque automático pause el partido para que elijan
 	// (antes había que esperar a que terminara y parecía un gana-sigue).

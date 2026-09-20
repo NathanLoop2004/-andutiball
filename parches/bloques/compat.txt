@@ -160,6 +160,8 @@ if (!window.__arbitroAutonomo) {
 
 	window.__acomodarSala = function () {
 		if (typeof room === "undefined") return;
+		// Mientras se festeja un gol no se mete a nadie: la animación tiene que terminar de pasar
+		if (typeof festejandoGol === "function" && festejandoGol()) return;
 		var jugadores = room.getPlayerList().filter(function (p) { return p.id !== 0; });
 		if (!jugadores.length) return;
 

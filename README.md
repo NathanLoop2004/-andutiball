@@ -702,6 +702,24 @@ de ese entorno usa `DATABASE_URL`. La conexión se abre recién cuando alguien l
 Es la primera versión y la vamos a ir cambiando: se toca `prisma/schema.prisma` y se corre
 `npm run base:migrar`.
 
+## 🎉 Animaciones de gol
+
+Cuando hacés un gol podés festejar con una animación que compraste con monedas. Hay dos cosas
+que puede hacer, y se pueden combinar: **pasarte emojis o letras** por encima (hasta 10, uno atrás
+del otro) y **hacerte grande y chico**.
+
+- **Solo festeja el que hizo el gol.** El que dio la asistencia no, aunque tenga una comprada.
+- **Dura lo que dura el festejo**: se corta sola cuando se saca del medio, así que nadie sigue
+  agrandado jugando. Y el bot **espera** a que termine antes de acomodar a la gente en la cancha.
+- Se prenden y se apagan desde **Mi inventario**, que tiene un apartado propio para animaciones,
+  aparte del de camisetas. Ahí también las podés probar y venderlas al 70%.
+- En la sala: `!animaciones` para ver las tuyas, `!animacion <nombre>` para ponértela y
+  `!animacion ninguna` para sacártela.
+
+**Para crearlas** (solo el OWNER y el CO-OWNER): panel → **Animaciones**. Ahí armás una desde
+cero: el nombre, el tipo, los emojis o letras, la velocidad, cuánto dura, el tamaño y el precio.
+Tenés un botón **Probar** para verla antes de guardarla.
+
 ## 👕 La camiseta que compraste
 
 Si compraste camisetas en la tienda, las ves con **`!camisetas`** y te ponés una con

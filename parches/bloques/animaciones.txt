@@ -1,0 +1,199 @@
+
+
+// ▇▇▇▇▇▇▇▇▇ 🎉 ANIMACIONES DE GOL — ÑandutíHax ▇▇▇▇▇▇▇▇▇
+// El que hizo el gol festeja con la animación que compró en la web.
+//
+// Cómo se engancha: el script del autor ya festeja llamando a `avatarCelebration(id, emoji)`
+// (le hace parpadear el emoji un segundo). Esa es una *function declaration*, así que la
+// volvemos a declarar acá al final y gana la última (el mismo truco que los mapas y
+// sendLinkToDiscord). No hay que tocar nada de la zona minificada.
+//
+// Los tipos de animación:
+//   "secuencia" → le van pasando los cuadros (emojis o letras) por el avatar
+//   "tamano"    → se hace grande y chico
+//   "ambas"     → las dos cosas a la vez
+//
+// CUÁNTO DURA: hasta `duracionMs`, PERO se corta sola cuando se saca del medio
+// (onPositionsReset) o cuando termina o arranca el partido. O sea que dura lo que dura el
+// festejo y nunca se mete adentro del juego: nadie juega agrandado.
+//
+// El que no compró ninguna festeja como siempre (el parpadeo del autor).
+// La lista la deja el lanzador en window.__ANIMACIONES (nick en minúscula → la animación).
+
+var AnimacionesDeGolActivas = true;
+var MaxCuadrosDeAnimacion = 10;
+
+var animacionesEnCurso = {};   // id del jugador → { reloj, radioOriginal }
+
+// Hasta cuándo se está festejando. Mientras tanto, el bot NO acomoda a nadie: si no, mete a
+// todos en la cancha apenas entra el gol y la animación se corta a la mitad / se ve rota.
+// Lo miran revisarArranque(), aplicarModoDeEquipos() y window.__acomodarSala().
+var festejoHasta = 0;
+
+function festejandoGol() {
+	return Date.now() < festejoHasta;
+}
+
+function animacionDe(jugador) {
+	if (!jugador) return null;
+	return (window.__ANIMACIONES || {})[String(jugador.name).toLowerCase()] || null;
+}
+
+function radioDe(idJugador) {
+	try {
+		var d = room.getPlayerDiscProperties(idJugador);
+		return d && typeof d.radius === "number" ? d.radius : null;
+	} catch (e) { return null; }
+}
+
+// Deja al jugador como estaba: sin avatar puesto y con su tamaño de siempre
+function frenarAnimacion(idJugador) {
+	var enCurso = animacionesEnCurso[idJugador];
+	if (!enCurso) return;
+	clearInterval(enCurso.reloj);
+	delete animacionesEnCurso[idJugador];
+	try { room.setPlayerAvatar(idJugador, null); } catch (e) {}
+	if (enCurso.radioOriginal !== null && enCurso.radioOriginal !== undefined) {
+		try { room.setPlayerDiscProperties(idJugador, { radius: enCurso.radioOriginal }); } catch (e) {}
+	}
+}
+
+function frenarTodasLasAnimaciones() {
+	for (var id in animacionesEnCurso) frenarAnimacion(Number(id));
+	festejoHasta = 0;   // se terminó el festejo: el bot puede volver a acomodar
+}
+
+function reproducirAnimacion(idJugador, animacion) {
+	frenarAnimacion(idJugador);
+
+	var cuadros = Array.isArray(animacion.cuadros) ? animacion.cuadros.slice(0, MaxCuadrosDeAnimacion) : [];
+	var haceTamano = animacion.tipo === "tamano" || animacion.tipo === "ambas";
+	var haceCuadros = (animacion.tipo === "secuencia" || animacion.tipo === "ambas") && cuadros.length > 0;
+	if (!haceTamano && !haceCuadros) return false;
+
+	var paso = Math.max(60, Number(animacion.msPorCuadro) || 200);
+	var dura = Math.max(paso, Number(animacion.duracionMs) || 3000);
+	var radioOriginal = haceTamano ? radioDe(idJugador) : null;
+	var desde = Number(animacion.tamanoDesde) || 1;
+	var hasta = Number(animacion.tamanoHasta) || 1;
+
+	var i = 0;
+	var pasos = Math.ceil(dura / paso);
+
+	var reloj = setInterval(function () {
+		try {
+			if (haceCuadros) room.setPlayerAvatar(idJugador, cuadros[i % cuadros.length]);
+			if (haceTamano && radioOriginal) {
+				// Va y vuelve entre los dos tamaños, suave (media onda de seno por paso)
+				var vaivén = (Math.sin((i / 2) * Math.PI) + 1) / 2;   // 0 → 1 → 0
+				var factor = desde + (hasta - desde) * vaivén;
+				room.setPlayerDiscProperties(idJugador, { radius: radioOriginal * factor });
+			}
+		} catch (e) {}
+		i++;
+		if (i >= pasos) frenarAnimacion(idJugador);
+	}, paso);
+
+	animacionesEnCurso[idJugador] = { reloj: reloj, radioOriginal: radioOriginal };
+	// El bot no acomoda a nadie hasta que termine de pasar la animación
+	festejoHasta = Math.max(festejoHasta, Date.now() + dura);
+	return true;
+}
+
+// ── Redeclarada: gana sobre la del autor ──
+// El autor la llama con el emoji del gol; si el jugador no tiene animación comprada,
+// hacemos exactamente lo de antes (parpadear ese emoji un segundo).
+function avatarCelebration(idJugador, emoji) {
+	var jugador = null;
+	try { jugador = room.getPlayerList().filter(function (j) { return j.id === idJugador; })[0] || null; } catch (e) {}
+
+	// La animación es SOLO del que metió el gol. El script también llama a esta función para
+	// el que dio la asistencia (con un 👟): ese festeja como siempre, aunque tenga una comprada.
+	var hizoElGol = true;
+	try { hizoElGol = typeof game === "undefined" || !game || game.lastKickerId === undefined || game.lastKickerId === idJugador; } catch (e) {}
+
+	if (AnimacionesDeGolActivas && hizoElGol) {
+		var suya = animacionDe(jugador);
+		if (suya && reproducirAnimacion(idJugador, suya)) return;
+	}
+
+	// Sin animación propia: el parpadeo de siempre
+	try {
+		room.setPlayerAvatar(idJugador, emoji);
+		setTimeout(function () { try { room.setPlayerAvatar(idJugador, null); } catch (e) {} }, 250);
+		setTimeout(function () { try { room.setPlayerAvatar(idJugador, emoji); } catch (e) {} }, 500);
+		setTimeout(function () { try { room.setPlayerAvatar(idJugador, null); } catch (e) {} }, 1000);
+	} catch (e) {}
+}
+
+(function () {
+	// El festejo termina cuando se saca del medio: ahí se corta todo, así nadie juega agrandado
+	var anteriorReset = room.onPositionsReset;
+	room.onPositionsReset = function () {
+		frenarTodasLasAnimaciones();
+		if (typeof anteriorReset === "function") anteriorReset();
+	};
+
+	var anteriorStop = room.onGameStop;
+	room.onGameStop = function (byPlayer) {
+		frenarTodasLasAnimaciones();
+		if (typeof anteriorStop === "function") anteriorStop(byPlayer);
+	};
+
+	var anteriorInicio = room.onGameStart;
+	room.onGameStart = function (byPlayer) {
+		frenarTodasLasAnimaciones();
+		if (typeof anteriorInicio === "function") anteriorInicio(byPlayer);
+	};
+
+	// Si se va en pleno festejo, que no quede el reloj corriendo para un id que ya no existe
+	var anteriorSalida = room.onPlayerLeave;
+	room.onPlayerLeave = function (jugador) {
+		if (jugador) frenarAnimacion(jugador.id);
+		if (typeof anteriorSalida === "function") anteriorSalida(jugador);
+	};
+
+	// !animaciones → las que compró · !animacion <nombre> → se la pone · !animacion ninguna
+	var anteriorChat = room.onPlayerChat;
+	room.onPlayerChat = function (player, message) {
+		var bajo = String(message).trim().toLowerCase();
+		if (bajo !== "!animaciones" && bajo !== "!animacion" && bajo.indexOf("!animacion ") !== 0) {
+			return typeof anteriorChat === "function" ? anteriorChat(player, message) : true;
+		}
+
+		var mias = (window.__MIS_ANIMACIONES || {})[String(player.name).toLowerCase()] || [];
+		var puesta = animacionDe(player);
+
+		if (bajo === "!animaciones" || bajo === "!animacion") {
+			if (!mias.length) {
+				room.sendAnnouncement("🎉 Todavía no tenés animaciones de gol. Se compran con monedas en la web de ÑandutíHax.", player.id, 0xFFD100, "bold", 2);
+				if (window.__WEB_URL) room.sendAnnouncement("   " + window.__WEB_URL, player.id, 0x00C853, "small", 0);
+				return false;
+			}
+			room.sendAnnouncement("🎉 Tus animaciones: " + mias.map(function (a) { return a.nombre; }).join(" · "), player.id, 0xFFD100, "bold", 2);
+			room.sendAnnouncement("   Te ponés una con  !animacion " + mias[0].nombre.toLowerCase() + "   (o !animacion ninguna)", player.id, 0x93A1B0, "small", 0);
+			if (puesta) room.sendAnnouncement("   Ahora tenés puesta la de " + puesta.nombre + ".", player.id, 0x93A1B0, "small", 0);
+			return false;
+		}
+
+		var pedida = String(message).trim().slice(11).trim().toLowerCase();
+		if (pedida === "ninguna" || pedida === "sacar" || pedida === "-") {
+			avisarAlPanel({ tipo: "animacion", nick: player.name, clave: null });
+			room.sendAnnouncement("🎉 Te sacaste la animación: volvés al festejo de siempre.", player.id, 0xFFD100, "bold", 0);
+			return false;
+		}
+		var elegida = null;
+		for (var k = 0; k < mias.length; k++) {
+			if (mias[k].clave === pedida || mias[k].nombre.toLowerCase() === pedida) { elegida = mias[k]; break; }
+		}
+		if (!elegida) {
+			room.sendAnnouncement("🎉 Esa animación no es tuya. Las tuyas: " + (mias.length ? mias.map(function (a) { return a.nombre; }).join(" · ") : "ninguna todavía"), player.id, 0xFF6B6B, "bold", 2);
+			return false;
+		}
+		avisarAlPanel({ tipo: "animacion", nick: player.name, clave: elegida.clave });
+		room.sendAnnouncement("🎉 Te pusiste la animación " + elegida.nombre + ". La vas a usar en tu próximo gol.", player.id, 0xFFD100, "bold", 2);
+		return false;
+	};
+
+	console.log("🎉 Animaciones de gol listas");
+})();

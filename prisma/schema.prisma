@@ -28,6 +28,7 @@ model Usuario {
   id              Int       @id @default(autoincrement())
   nick            String    @unique
   camiseta        String?   // la camiseta que tiene puesta, de las que compró
+  animacion       String?   // la animación de gol que tiene puesta, de las que compró
   auth            String?   @unique
   clave           String?   // hash scrypt. null = todavía no se registró
   claveCambiada   DateTime?
@@ -383,4 +384,49 @@ model Racha {
   @@index([mejor])
   @@index([actual])
   @@map("rachas")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Animaciones de gol: lo que se le hace al que hizo el gol mientras se festeja.
+// Se arman desde el panel (solo OWNER y CO-OWNER) y se venden como las camisetas.
+// ─────────────────────────────────────────────────────────────────────────────
+model Animacion {
+  clave       String   @id
+  nombre      String
+  descripcion String?
+  // "secuencia" = le van pasando emojis o letras por el avatar
+  // "tamano"    = se hace grande y chico
+  // "ambas"     = las dos cosas a la vez
+  tipo        String   @default("secuencia")
+  // Hasta 10 cuadros: cada uno es un emoji o una letra
+  cuadros     String[] @default([])
+  msPorCuadro Int      @default(200)
+  // Multiplicadores del tamaño normal del jugador (1 = como siempre)
+  tamanoDesde Float    @default(1)
+  tamanoHasta Float    @default(1.6)
+  // Cuánto dura el festejo. Igual se corta sola cuando se saca del medio.
+  duracionMs  Int      @default(3000)
+  activa      Boolean  @default(true)
+  orden       Int      @default(0)
+  // Tienda: precio en centésimas de moneda (null = no se vende)
+  precio      Int?
+  enTienda    Boolean  @default(false)
+  detalle     String?
+  cambiadoPor String?
+  cambiado    DateTime @default(now())
+
+  @@map("animaciones")
+}
+
+// Cada animación que compró una cuenta
+model AnimacionComprada {
+  id        Int      @id @default(autoincrement())
+  nick      String
+  animacion String
+  precio    Int
+  comprada  DateTime @default(now())
+
+  @@unique([nick, animacion])
+  @@index([nick])
+  @@map("animaciones_compradas")
 }

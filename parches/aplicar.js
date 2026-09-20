@@ -387,6 +387,8 @@ const BLOQUES = [
   { archivo: "aviso-discord.txt", marca: "📣 AVISO DE SALA ABIERTA", nombre: "📣 Aviso de sala abierta", siFalta: () => true },
   { archivo: "equipos.txt", marca: "👕 CAMISETAS DESDE LA BASE", nombre: "👕 Camisetas desde la base", siFalta: () => true },
   { archivo: "monedas.txt", marca: "🪙 MONEDAS", nombre: "🪙 Monedas", siFalta: () => true },
+  // Va DESPUÉS de elo.txt, que es donde se declara avisarAlPanel()
+  { archivo: "animaciones.txt", marca: "🎉 ANIMACIONES DE GOL", nombre: "🎉 Animaciones de gol", siFalta: () => true },
   { archivo: "avisos.txt", marca: "🔕 AVISOS SIN SPAM", nombre: "🔕 Avisos sin spam", siFalta: () => true },
   { archivo: "config.txt", marca: "⚙️ CONFIGURACIÓN DESDE LA BASE", nombre: "⚙️ Configuración desde la base", siFalta: () => true },
   { archivo: "sin-webhooks.txt", marca: "🔒 NADA SE VA A DISCORD DESDE LA SALA", nombre: "🔒 Sin webhooks en la sala", siFalta: () => true },

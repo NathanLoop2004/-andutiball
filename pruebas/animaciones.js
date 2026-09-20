@@ -1,0 +1,245 @@
+// Prueba las animaciones de gol:
+//
+//   npm run prueba-animaciones
+//
+// 1. En la sala: el que tiene una animación puesta festeja con ella, se corta cuando se saca
+//    del medio (nadie sigue agrandado adentro del juego) y el que no tiene festeja como antes.
+// 2. Contra la base: crear, validar, ponerle precio, comprar, vender y elegir.
+// 3. La API: la vitrina es pública y el catálogo es SOLO de OWNER y CO-OWNER.
+//
+// Usa claves y nicks con la hora adentro, y borra todo lo que crea.
+
+const { abrirSala } = require("./sala-falsa");
+const { hayBase, base, cerrarBase } = require("../services/ConexionBase");
+
+const problemas = [];
+function revisar(titulo, condicion, detalle) {
+  console.log((condicion ? "  ✅ " : "  ❌ ") + titulo + (detalle !== undefined ? "  (" + detalle + ")" : ""));
+  if (!condicion) problemas.push(titulo);
+}
+
+(async () => {
+  // ── 1) En la sala ──
+  console.log("🎉 En la sala:\n");
+  const sala = abrirSala("hosts/3v3.json");
+  const { contexto, room, avanzar, entra, anuncios, chat } = sala;
+
+  const ana = entra(1, "Ana");
+  avanzar(800);
+  const beto = entra(2, "Beto");
+  avanzar(3000);
+
+  // Ana tiene una animación de las dos cosas; Beto no tiene ninguna
+  contexto.__ANIMACIONES = {
+    ana: { clave: "tri", nombre: "Tricampeón", tipo: "ambas", cuadros: ["⚽", "🔥", "👑"], msPorCuadro: 100, tamanoDesde: 1, tamanoHasta: 2, duracionMs: 1000 },
+  };
+  contexto.__MIS_ANIMACIONES = { ana: [{ clave: "tri", nombre: "Tricampeón" }] };
+
+  room.setPlayerTeam(ana.id, 1);
+  room.setPlayerTeam(beto.id, 2);
+  room.startGame();
+  avanzar(500);
+
+  // El gol de Ana: el script llama a avatarCelebration, que redeclaramos nosotros
+  contexto.avatarCelebration(ana.id, "⚽");
+  avanzar(350);
+
+  const suyos = sala.avatares.filter((a) => a.id === ana.id).map((a) => a.avatar);
+  revisar("El que tiene animación festeja con sus emojis", suyos.some((a) => a === "🔥" || a === "👑"), suyos.slice(0, 5).join(" "));
+
+  const radios = sala.radios.filter((r) => r.id === ana.id).map((r) => r.radius);
+  revisar("Y se hace más grande", radios.some((r) => r > sala.radioNormal), radios.slice(0, 4).map((r) => r.toFixed(1)).join(" "));
+
+  // Cuando se saca del medio, el festejo se termina: nadie juega agrandado
+  if (room.onPositionsReset) room.onPositionsReset();
+  avanzar(150);
+  const ultimoRadio = sala.radios.filter((r) => r.id === ana.id).pop();
+  const ultimoAvatar = sala.avatares.filter((a) => a.id === ana.id).pop();
+  revisar("Al sacar del medio vuelve a su tamaño", Boolean(ultimoRadio) && Math.abs(ultimoRadio.radius - sala.radioNormal) < 0.01, ultimoRadio && ultimoRadio.radius);
+  revisar("Y se le saca el emoji", Boolean(ultimoAvatar) && ultimoAvatar.avatar === null, JSON.stringify(ultimoAvatar && ultimoAvatar.avatar));
+
+  // Mientras se festeja, el bot NO acomoda a nadie: si no, mete a todos apenas entra el gol
+  // y la animación se corta a la mitad.
+  contexto.avatarCelebration(ana.id, "⚽");
+  revisar("Mientras se festeja, el bot no acomoda a nadie", contexto.festejandoGol() === true);
+  avanzar(1100);
+  revisar("Cuando termina la animación, el bot vuelve a acomodar", contexto.festejandoGol() === false);
+
+  // La animación es SOLO del que hizo el gol: el de la asistencia festeja como siempre.
+  // El script llama a avatarCelebration con el asistidor y un 👟.
+  contexto.game = contexto.game || {};
+  const antesGoleador = contexto.game.lastKickerId;
+  contexto.game.lastKickerId = beto.id;          // el gol lo hizo Beto
+  sala.avatares.length = 0;
+  contexto.avatarCelebration(ana.id, "👟");      // Ana asistió, y ella sí tiene animación
+  avanzar(350);
+  const deLaAsistencia = sala.avatares.filter((a) => a.id === ana.id).map((a) => a.avatar);
+  revisar("El de la asistencia no usa su animación, aunque tenga una",
+    !deLaAsistencia.some((a) => a === "🔥" || a === "👑"), deLaAsistencia.join(" "));
+  contexto.game.lastKickerId = antesGoleador;
+  if (room.onPositionsReset) room.onPositionsReset();
+  avanzar(150);
+
+  // El que no compró ninguna festeja como siempre (el parpadeo del autor)
+  sala.avatares.length = 0;
+  contexto.avatarCelebration(beto.id, "⚽");
+  avanzar(1200);
+  const deBeto = sala.avatares.filter((a) => a.id === beto.id).map((a) => a.avatar);
+  revisar("El que no tiene animación festeja como siempre", deBeto.length >= 2 && deBeto.includes("⚽") && deBeto.includes(null), deBeto.join(" "));
+
+  // !animaciones en el chat
+  avanzar(6000);
+  anuncios.length = 0;
+  chat(ana, "!animaciones");
+  revisar("!animaciones le muestra las suyas", anuncios.some((a) => /Tricampeón/.test(a)), anuncios[0]);
+
+  avanzar(6000);
+  anuncios.length = 0;
+  chat(beto, "!animaciones");
+  revisar("Al que no tiene le dice dónde se compran", anuncios.some((a) => /Todavía no tenés animaciones/.test(a)), anuncios[0]);
+
+  avanzar(6000);
+  contexto.__panelCola = [];
+  chat(ana, "!animacion tricampeón");
+  revisar("Elegir una avisa a la web para guardarla",
+    (contexto.__panelCola || []).some((e) => e.tipo === "animacion" && e.clave === "tri"),
+    JSON.stringify((contexto.__panelCola || [])[0]));
+
+  revisar("La sala no tiró errores", sala.errores.length === 0, sala.errores.slice(0, 2).join(" | "));
+
+  // ── 2) Contra la base ──
+  console.log("\n🗄️  Contra la base:\n");
+  if (!(await hayBase())) {
+    console.log("  ⏭️  La base no está levantada, salteamos. 👉 npm run base\n");
+    return terminar();
+  }
+
+  const AnimacionesModel = require("../models/AnimacionesModel");
+  const MonedasModel = require("../models/MonedasModel");
+  const clave = "anim" + String(Date.now()).slice(-6);
+  const nick = "Anim" + Date.now();
+
+  try {
+    let mala = null;
+    try { await AnimacionesModel.guardar("Con Mayúsculas Y Espacios", { nombre: "x" }, "prueba"); } catch (e) { mala = e.message; }
+    revisar("La clave tiene que ser simple", /minúsculas/.test(mala || ""), mala);
+
+    let sinCuadros = null;
+    try { await AnimacionesModel.guardar(clave, { nombre: "Sin cuadros", tipo: "secuencia", cuadros: [] }, "prueba"); } catch (e) { sinCuadros = e.message; }
+    revisar("Una de emojis necesita al menos uno", /emoji o una letra/.test(sinCuadros || ""), sinCuadros);
+
+    const creada = await AnimacionesModel.guardar(clave, {
+      nombre: "De prueba",
+      tipo: "ambas",
+      cuadros: ["⚽", "🔥", "👑", "⭐", "💥", "🎉", "🚀", "🏆", "😎", "💪", "🐐", "⚡"],   // 12: se recortan a 10
+      msPorCuadro: 5,        // por debajo del mínimo: sube a 60
+      duracionMs: 999999,    // por arriba del máximo: baja a 10000
+      tamanoHasta: 9,        // por arriba del máximo: baja a 3
+    }, "prueba");
+    revisar("No deja más de 10 cuadros", creada.cuadros.length === 10, creada.cuadros.length + " cuadros");
+    revisar("La velocidad y la duración quedan dentro de lo posible", creada.msPorCuadro === 60 && creada.duracionMs === 10000, creada.msPorCuadro + " ms · " + creada.duracionMs + " ms");
+    revisar("El tamaño también", creada.tamanoHasta === 3, creada.tamanoHasta);
+
+    let enTiendaSinPrecio = null;
+    try { await AnimacionesModel.guardar(clave, { nombre: "De prueba", tipo: "tamano", enTienda: true }, "prueba"); } catch (e) { enTiendaSinPrecio = e.message; }
+    revisar("No se puede poner en la tienda sin precio", /precio/.test(enTiendaSinPrecio || ""), enTiendaSinPrecio);
+
+    await AnimacionesModel.guardar(clave, { nombre: "De prueba", tipo: "ambas", cuadros: ["⚽"], precio: 2, enTienda: true }, "prueba");
+    const vitrina = await AnimacionesModel.vitrina();
+    revisar("Con precio sale en la tienda", vitrina.some((a) => a.clave === clave && a.precio === 2));
+
+    await base().usuario.create({ data: { nick, clave: "scrypt$prueba$prueba" } });
+
+    let sinPlata = null;
+    try { await AnimacionesModel.comprar(nick, clave); } catch (e) { sinPlata = e.message; }
+    revisar("Sin monedas no se compra", /te faltan 2/.test(sinPlata || ""), sinPlata);
+
+    await MonedasModel.acreditar({ nick, monto: MonedasModel.aCentesimas(5), motivo: "prueba" });
+    const compra = await AnimacionesModel.comprar(nick, clave);
+    revisar("Con monedas se compra y baja el saldo", compra.saldo === 3, "quedaron " + compra.saldo);
+
+    let repetida = null;
+    try { await AnimacionesModel.comprar(nick, clave); } catch (e) { repetida = e.message; }
+    revisar("No se compra dos veces", /Ya tenés/.test(repetida || ""), repetida);
+
+    await AnimacionesModel.elegir(nick, clave);
+    const inventario = await AnimacionesModel.deLaCuenta(nick);
+    revisar("Queda en el inventario y puesta", inventario.animaciones.length === 1 && inventario.puesta === clave);
+
+    const paraLaSala = await AnimacionesModel.paraLaSala();
+    revisar("La sala la recibe con todo lo que necesita",
+      paraLaSala[nick.toLowerCase()] && paraLaSala[nick.toLowerCase()].tipo === "ambas" && Array.isArray(paraLaSala[nick.toLowerCase()].cuadros),
+      JSON.stringify(paraLaSala[nick.toLowerCase()]));
+
+    const venta = await AnimacionesModel.vender(nick, clave);
+    revisar("Al venderla se devuelve el 70%", venta.devuelto === 1.4, "devolvió " + venta.devuelto);
+    const despues = await AnimacionesModel.deLaCuenta(nick);
+    revisar("Y se la saca de encima", despues.animaciones.length === 0 && despues.puesta === null);
+
+    // ── 3) La API ──
+    console.log("\n🔐 La API:\n");
+    const { crearApp } = require("../app");
+    const SesionModel = require("../models/SesionModel");
+    const servidor = await new Promise((listo) => {
+      const s = require("http").createServer(crearApp({ salas: [] }));
+      s.listen(0, () => listo(s));
+    });
+    const url = "http://127.0.0.1:" + servidor.address().port;
+    const pedir = async (ruta, opciones) => {
+      const r = await fetch(url + ruta, opciones);
+      let datos = null;
+      try { datos = await r.json(); } catch {}
+      return { status: r.status, datos };
+    };
+    const json = (cuerpo, token) => ({
+      method: cuerpo.__metodo || "POST",
+      headers: Object.assign({ "Content-Type": "application/json" }, token ? { Authorization: "Bearer " + token } : {}),
+      body: JSON.stringify(cuerpo),
+    });
+
+    const publica = await pedir("/api/animaciones");
+    revisar("La vitrina la ve cualquiera, sin sesión", publica.status === 200 && publica.datos.animaciones.some((a) => a.clave === clave));
+
+    const catalogoSinSesion = await pedir("/api/animaciones/panel");
+    revisar("El catálogo pide sesión", catalogoSinSesion.status === 401, "HTTP " + catalogoSinSesion.status);
+
+    const tokenJugador = SesionModel.firmar({ nick, admin: false });
+    const comoJugador = await pedir("/api/animaciones/panel", { headers: { Authorization: "Bearer " + tokenJugador } });
+    revisar("Un jugador no entra al catálogo", comoJugador.status === 403, "HTTP " + comoJugador.status);
+
+    const crearComoJugador = await pedir("/api/animaciones/" + clave, json({ __metodo: "PUT", nombre: "robada" }, tokenJugador));
+    revisar("Y tampoco puede crear ninguna", crearComoJugador.status === 403, "HTTP " + crearComoJugador.status);
+
+    const RangoModel = require("../models/RangoModel");
+    const owner = (await RangoModel.listar()).find((r) => r.admin);
+    const tokenOwner = SesionModel.firmar({ nick: (owner.nicks || [])[0] || "JINDER", rango: owner.nombre, admin: true });
+    const comoOwner = await pedir("/api/animaciones/panel", { headers: { Authorization: "Bearer " + tokenOwner } });
+    revisar("El OWNER sí", comoOwner.status === 200 && Array.isArray(comoOwner.datos.animaciones), "HTTP " + comoOwner.status);
+
+    const guardaOwner = await pedir("/api/animaciones/" + clave, json({ __metodo: "PUT", nombre: "De prueba", tipo: "secuencia", cuadros: ["🔥"], duracionMs: 2000 }, tokenOwner));
+    revisar("Y puede guardarla", guardaOwner.status === 200 && guardaOwner.datos.animacion.duracionMs === 2000, guardaOwner.datos.error);
+
+    servidor.close();
+  } finally {
+    await base().animacionComprada.deleteMany({ where: { nick } });
+    await base().movimientoMonedas.deleteMany({ where: { nick } });
+    await base().monedas.deleteMany({ where: { nick } });
+    await base().usuario.deleteMany({ where: { nick } });
+    await base().animacion.deleteMany({ where: { clave } });
+  }
+
+  return terminar();
+})().catch((error) => {
+  console.error("\n💥 " + error.stack);
+  process.exit(1);
+});
+
+async function terminar() {
+  await cerrarBase().catch(() => {});
+  console.log("");
+  if (problemas.length) {
+    console.log("❌ Falló: " + problemas.join(" | "));
+    process.exit(1);
+  }
+  console.log("✅ Animaciones de gol OK");
+}

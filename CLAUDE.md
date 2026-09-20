@@ -22,7 +22,7 @@ Contexto para trabajar en este proyecto. La documentación para personas está e
 - `services/`: la conexión a la base por entorno y los webhooks (actualizaciones, link de la web).
 - `prisma/` + `docker-compose.base.yml`: las tablas y la base, que va **aparte** de las salas.
 - `tunel.js`, `actualizacion.js`, `sembrar.js`: los comandos sueltos (túnel de Cloudflare, novedades, sembrar la base).
-- `pruebas/`: 26 pruebas que corren sin gastar tokens (ver “Probar sin gastar tokens”).
+- `pruebas/`: 27 pruebas que corren sin gastar tokens (ver “Probar sin gastar tokens”).
 
 ## Despliegue (launcher.js)
 
@@ -1155,6 +1155,71 @@ En la web: `CuentaModel.ficha` trae `monedas`, `ganadas`, `gastadas` e `historia
 muestra "Tus monedas" con los últimos 5 movimientos y **Mi cuenta** tiene la sección Monedas con
 la tabla completa. `npm run prueba-monedas` cubre el reparto, la sala y la base.
 
+## Animaciones de gol (🎉)
+
+Lo que le pasa al que hace el gol mientras se festeja. Se arman desde el panel y se venden con
+monedas, **igual que las camisetas**: el circuito es el mismo (`AnimacionesModel` es hermano de
+`TiendaModel`). Tablas `animaciones` y `animaciones_compradas` + `usuarios.animacion` (la puesta),
+migración `20260920120000_animaciones`.
+
+| Tipo | Qué hace |
+|---|---|
+| `secuencia` | Le van pasando los cuadros (emojis o letras) por el avatar |
+| `tamano` | Se hace grande y chico (`setPlayerDiscProperties`, radio × factor) |
+| `ambas` | Las dos cosas a la vez |
+
+**Cómo se engancha en la sala** (`parches/bloques/animaciones.txt`): se **redeclara**
+`avatarCelebration(id, emoji)`, que es la que el script del autor ya llama en cada gol (le hacía
+parpadear un emoji). Gana la última declaración, así que no hay que tocar nada minificado. Si el
+que hizo el gol no compró ninguna, se hace **exactamente lo de antes**.
+
+**Solo la hace el que metió el gol.** El script llama a `avatarCelebration` **dos veces**: con
+el goleador (`game.lastKickerId`) y con el de la asistencia (un 👟). El bloque compara contra
+`game.lastKickerId`: el asistidor festeja como siempre aunque tenga una comprada.
+
+**Cuánto dura**: hasta `duracionMs` (máximo 10 s), pero se corta sola en `onPositionsReset`,
+`onGameStart` y `onGameStop`. O sea que **dura lo que dura el festejo y nunca se mete adentro del
+juego**: nadie sigue jugando agrandado. `frenarAnimacion()` devuelve el radio original guardado,
+no uno fijo.
+
+**El bot espera a que termine** (`festejandoGol()`, `festejoHasta`). El acomodo automático metía a
+todos en la cancha apenas entraba el gol y la animación se cortaba a la mitad. Ahora
+`revisarArranque()`, `aplicarModoDeEquipos()` y `window.__acomodarSala()` **no hacen nada mientras
+se festeja**. Los tres preguntan con `typeof festejandoGol === "function"`, así que si el bloque de
+animaciones no está, siguen andando igual. El flag se libera en `frenarTodasLasAnimaciones()`, o
+sea también cuando se saca del medio antes de tiempo.
+
+**Los límites los pone el modelo, no la pantalla** (`AnimacionesModel.LIMITES`): hasta 10 cuadros,
+`msPorCuadro` 60–2000, `duracionMs` 300–10000, tamaño 0.3×–3×. Lo que viene fuera de rango **se
+recorta**, no se rechaza — salvo la clave (minúsculas, sin espacios) y "una de emojis sin ningún
+emoji", que sí cortan. Cada cuadro se recorta a 2 caracteres: HaxBall no muestra más en el avatar.
+
+**Quién puede qué**:
+
+| | Quién | Dónde |
+|---|---|---|
+| Armarlas y ponerles precio | **OWNER y CO-OWNER** | `middlewares/puedeVerRangos` en `AnimacionesRouter` |
+| Verlas en la tienda | cualquiera | `GET /api/animaciones` |
+| Comprar, vender, elegir | con sesión | `verificarToken()` |
+
+**En el inventario** (`public/frm/inventario/`) las animaciones tienen **su propio apartado**,
+aparte del de camisetas: se prenden y se apagan con "Activar"/"Desactivar" (`POST
+/api/animaciones/elegir`), se venden al 70% y se pueden **probar ahí mismo** — la vista previa usa
+la misma cuenta que la sala. El panel de detalle es uno solo para las dos cosas: `tipoElegido`
+decide a qué API le pega y qué muestra.
+
+La pantalla del panel es `public/frm/animaciones/` (nav "Animaciones", visible con `u.rangos`). Tiene una
+**vista previa** que corre la animación en el navegador con la misma cuenta que la sala, así se ve
+antes de guardarla. El candado del navegador es cosmético: el de verdad está en la API.
+
+En la sala: `!animaciones` (las que compró), `!animacion <nombre>` y `!animacion ninguna`. El
+launcher deja `window.__ANIMACIONES` y `window.__MIS_ANIMACIONES` cada 20 s (`refrescarAnimaciones`)
+y atiende `{tipo:"animacion"}` de la cola, igual que las camisetas.
+
+`npm run prueba-animaciones` cubre las tres puntas: la sala (festeja, se agranda, se corta al sacar
+del medio, y el que no tiene festeja como antes), el modelo contra la base (límites, compra, venta,
+inventario) y la API con permisos. Para eso el arnés ahora guarda `sala.avatares` y `sala.radios`.
+
 ## Sin límite de espectadores
 
 Dos parches, porque el script original echaba gente que solo miraba:
@@ -1178,7 +1243,7 @@ que compara el auth con el nick registrado y quedó igual.
 
 ## Probar sin gastar tokens
 
-Son 26 y **todas tienen que quedar en verde antes de commitear**:
+Son 27 y **todas tienen que quedar en verde antes de commitear**:
 
 | Comando | Qué mira |
 |---|---|
@@ -1205,6 +1270,7 @@ Son 26 y **todas tienen que quedar en verde antes de commitear**:
 | `prueba-elo-salas` | ELO por sala: tablas separadas, el procedimiento del general y el modo sin base |
 | `prueba-discord-vincular` | Vincular Discord: autorizar, entrar al servidor, sin guardar tokens |
 | `prueba-monedas` | Las monedas: paga solo el que gana, los topes, las atajadas y el historial |
+| `prueba-animaciones` | Las animaciones de gol: festeja solo el goleador, el bot espera, y el catálogo es de OWNER y CO-OWNER |
 
 Las que hablan con la base **no fallan si está apagada**: avisan y saltean esa parte.
 
@@ -1276,7 +1342,7 @@ Cosas que costaron encontrar y conviene no volver a pisar:
 
 1. Tocar los **bloques** en `parches/bloques/` (nunca el final de `script.js` a mano) y correr
    `npm run parchar`.
-2. `node --check script.js` y las **26 pruebas en verde**. No commitear con una en rojo: ya pasó
+2. `node --check script.js` y las **27 pruebas en verde**. No commitear con una en rojo: ya pasó
    una vez de pushear con `prueba-discord` fallando.
 3. Actualizar `README.md` (para la gente) y este archivo (para el que siga programando).
 4. Commit y push.

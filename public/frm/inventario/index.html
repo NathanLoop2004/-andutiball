@@ -40,10 +40,23 @@
     <div class="casillero puesta" id="casilleroPuesta"></div>
   </div>
 
+  <!-- Las animaciones de gol tienen su propio apartado, aparte de las camisetas -->
+  <div class="cofre" style="margin-top:18px">
+    <div class="cofre-titulo">Animaciones de gol</div>
+    <div class="casillero" id="casilleroAnim"></div>
+
+    <div class="cofre-titulo" style="margin-top:18px">Puesta</div>
+    <div class="casillero puesta" id="casilleroAnimPuesta"></div>
+  </div>
+
   <!-- Lo que hay en la casilla elegida -->
   <section class="tarjeta" id="detalle" hidden>
     <div class="tarjeta-cuerpo detalle-item">
       <div class="camiseta-grande" id="itemCamiseta"><span id="itemNumero">10</span></div>
+      <div class="previa-animacion" id="itemAnimacion" hidden>
+        <div class="jugador-mini" id="muneco"><span id="avatarMini"></span></div>
+        <button class="boton chico" type="button" id="probar">Probar</button>
+      </div>
       <div class="detalle-datos">
         <h2 id="itemNombre">—</h2>
         <p class="tenue" id="itemTexto"></p>
@@ -69,7 +82,13 @@ const fondoCamiseta = (c) => `linear-gradient(${(c.angulo || 0) + 90}deg, #${c.c
 
 const CASILLAS = 18;   // 3 filas de 6, como un cofre
 let inventario = { camisetas: [], puesta: null };
+let animaciones = { animaciones: [], puesta: null };
 let elegida = null;
+let tipoElegido = "camiseta";   // "camiseta" | "animacion"
+
+// La cara de una animación en el casillero: su primer cuadro, o una estrella si solo cambia
+// de tamaño (esas no tienen emoji).
+const caraDe = (a) => (a.cuadros && a.cuadros.length ? a.cuadros[0] : "✨");
 
 Sesion.pintarBarra($("derecha"));
 Sesion.mantener();
@@ -106,15 +125,69 @@ function pintar() {
        </button>`
     : '<div class="casilla vacia"><span class="tenue" style="font-size:11px">sin camiseta</span></div>';
 
-  if (!inventario.camisetas.length) {
-    avisar("Todavía no tenés nada. Las camisetas se compran en la portada, con las monedas que ganás jugando.", "info");
+  pintarAnimaciones();
+
+  if (!inventario.camisetas.length && !animaciones.animaciones.length) {
+    avisar("Todavía no tenés nada. Las camisetas y las animaciones se compran en la portada, con las monedas que ganás jugando.", "info");
   }
+}
+
+function pintarAnimaciones() {
+  const casillas = [];
+  for (let i = 0; i < Math.max(CASILLAS, animaciones.animaciones.length); i++) {
+    const a = animaciones.animaciones[i];
+    if (!a) {
+      casillas.push('<div class="casilla vacia" aria-hidden="true"></div>');
+      continue;
+    }
+    casillas.push(`
+      <button class="casilla${animaciones.puesta === a.clave ? " puesta" : ""}${tipoElegido === "animacion" && elegida === a.clave ? " elegida" : ""}"
+              type="button" data-animacion="${esc(a.clave)}" title="${esc(a.nombre)} · vale ${monedasTexto(a.vale)} 🪙">
+        <span class="casilla-emoji">${esc(caraDe(a))}</span>
+        <span class="casilla-nombre">${esc(a.nombre)}</span>
+      </button>`);
+  }
+  $("casilleroAnim").innerHTML = casillas.join("");
+
+  const puesta = animaciones.animaciones.find((a) => a.clave === animaciones.puesta);
+  $("casilleroAnimPuesta").innerHTML = puesta
+    ? `<button class="casilla puesta" type="button" data-animacion="${esc(puesta.clave)}">
+         <span class="casilla-emoji">${esc(caraDe(puesta))}</span>
+         <span class="casilla-nombre">${esc(puesta.nombre)}</span>
+       </button>`
+    : '<div class="casilla vacia"><span class="tenue" style="font-size:11px">sin animación</span></div>';
+}
+
+function abrirAnimacion(clave) {
+  const a = animaciones.animaciones.find((x) => x.clave === clave);
+  if (!a) return;
+  elegida = clave;
+  tipoElegido = "animacion";
+  frenarPrevia();
+  $("itemCamiseta").hidden = true;
+  $("itemAnimacion").hidden = false;
+  $("itemNombre").textContent = a.nombre;
+  const comoEs = a.tipo === "tamano" ? "Se hace grande y chico"
+    : a.tipo === "ambas" ? "Emojis y se hace grande y chico"
+    : "Le pasan emojis o letras";
+  $("itemTexto").textContent = (a.detalle || a.descripcion || comoEs) + " · dura " + (a.duracionMs / 1000).toFixed(1) + " s";
+  $("itemPagado").textContent = monedasTexto(a.pagada) + " 🪙";
+  $("itemVale").textContent = monedasTexto(a.vale) + " 🪙  (30% menos de lo que pagaste)";
+  $("itemCuando").textContent = new Date(a.comprada).toLocaleDateString("es-PY");
+  $("usar").textContent = animaciones.puesta === clave ? "Desactivar" : "Activar";
+  $("vender").textContent = "Vender por " + monedasTexto(a.vale) + " 🪙";
+  $("detalle").hidden = false;
+  pintar();
 }
 
 function abrir(clave) {
   const c = inventario.camisetas.find((x) => x.clave === clave);
   if (!c) return;
   elegida = clave;
+  tipoElegido = "camiseta";
+  frenarPrevia();
+  $("itemCamiseta").hidden = false;
+  $("itemAnimacion").hidden = true;
   $("itemCamiseta").style.background = fondoCamiseta(c);
   $("itemNumero").style.color = "#" + c.colorTexto;
   $("itemNombre").textContent = c.nombre;
@@ -130,10 +203,18 @@ function abrir(clave) {
 
 async function cargar() {
   try {
-    const [mias, cuenta] = await Promise.all([Sesion.pedir("/api/tienda/mias"), Sesion.pedir("/api/cuenta")]);
+    const [mias, misAnim, cuenta] = await Promise.all([
+      Sesion.pedir("/api/tienda/mias"),
+      Sesion.pedir("/api/animaciones/mias"),
+      Sesion.pedir("/api/cuenta"),
+    ]);
     inventario = mias;
+    animaciones = misAnim;
     $("saldo").textContent = monedasTexto(cuenta.cuenta.monedas);
-    if (elegida && !inventario.camisetas.some((c) => c.clave === elegida)) {
+    const sigueAhi = tipoElegido === "animacion"
+      ? animaciones.animaciones.some((a) => a.clave === elegida)
+      : inventario.camisetas.some((c) => c.clave === elegida);
+    if (elegida && !sigueAhi) {
       elegida = null;
       $("detalle").hidden = true;
     }
@@ -145,12 +226,28 @@ async function cargar() {
 }
 
 document.addEventListener("click", (e) => {
+  const deAnimacion = e.target.closest(".casilla[data-animacion]");
+  if (deAnimacion) return abrirAnimacion(deAnimacion.dataset.animacion);
   const casilla = e.target.closest(".casilla[data-clave]");
   if (casilla) abrir(casilla.dataset.clave);
 });
 
 $("usar").onclick = async () => {
   if (!elegida) return;
+
+  // Las animaciones se prenden y se apagan acá mismo
+  if (tipoElegido === "animacion") {
+    const apagar = animaciones.puesta === elegida;
+    try {
+      await Sesion.pedir("/api/animaciones/elegir", { method: "POST", body: JSON.stringify({ clave: apagar ? null : elegida }) });
+      avisar(apagar ? "Animación desactivada: volvés al festejo de siempre." : "Animación activada: la vas a usar en tu próximo gol.", "ok");
+      const cual = elegida;
+      await cargar();
+      if (animaciones.animaciones.some((a) => a.clave === cual)) abrirAnimacion(cual);
+    } catch (error) { avisar(error.message, "mal"); }
+    return;
+  }
+
   const sacar = inventario.puesta === elegida;
   try {
     await Sesion.pedir("/api/tienda/elegir", { method: "POST", body: JSON.stringify({ clave: sacar ? null : elegida }) });
@@ -162,6 +259,20 @@ $("usar").onclick = async () => {
 
 $("vender").onclick = async () => {
   if (!elegida) return;
+
+  if (tipoElegido === "animacion") {
+    const a = animaciones.animaciones.find((x) => x.clave === elegida);
+    if (!a || !confirm(`¿Vender la animación ${a.nombre}? Te devuelven ${monedasTexto(a.vale)} monedas de las ${monedasTexto(a.pagada)} que pagaste.`)) return;
+    try {
+      const r = await Sesion.pedir("/api/animaciones/vender", { method: "POST", body: JSON.stringify({ clave: elegida }) });
+      elegida = null;
+      $("detalle").hidden = true;
+      avisar(`Vendiste ${a.nombre} por ${monedasTexto(r.devuelto)} 🪙. Te quedan ${monedasTexto(r.saldo)} monedas.`, "ok");
+      cargar();
+    } catch (error) { avisar(error.message, "mal"); }
+    return;
+  }
+
   const c = inventario.camisetas.find((x) => x.clave === elegida);
   if (!c || !confirm(`¿Vender la camiseta de ${c.nombre}? Te devuelven ${monedasTexto(c.vale)} monedas de las ${monedasTexto(c.pagada)} que pagaste.`)) return;
   try {
@@ -171,6 +282,36 @@ $("vender").onclick = async () => {
     avisar(`Vendiste la de ${r.vendida} por ${monedasTexto(r.devuelto)} 🪙. Te quedan ${monedasTexto(r.saldo)} monedas.`, "ok");
     cargar();
   } catch (error) { avisar(error.message, "mal"); }
+};
+
+// ── Probar la animación acá mismo (la misma cuenta que hace la sala) ──
+let relojPrevia = null;
+function frenarPrevia() {
+  if (relojPrevia) clearInterval(relojPrevia);
+  relojPrevia = null;
+  if ($("avatarMini")) $("avatarMini").textContent = "";
+  if ($("muneco")) $("muneco").style.transform = "scale(1)";
+}
+
+$("probar").onclick = () => {
+  const a = animaciones.animaciones.find((x) => x.clave === elegida);
+  if (!a) return;
+  frenarPrevia();
+  const cuadros = a.cuadros || [];
+  const paso = Math.max(60, a.msPorCuadro || 200);
+  const pasos = Math.ceil(Math.max(paso, a.duracionMs || 3000) / paso);
+  const haceCuadros = a.tipo !== "tamano" && cuadros.length > 0;
+  const haceTamano = a.tipo !== "secuencia";
+  let i = 0;
+  relojPrevia = setInterval(() => {
+    if (haceCuadros) $("avatarMini").textContent = cuadros[i % cuadros.length];
+    if (haceTamano) {
+      const vaiven = (Math.sin((i / 2) * Math.PI) + 1) / 2;
+      $("muneco").style.transform = "scale(" + (a.tamanoDesde + (a.tamanoHasta - a.tamanoDesde) * vaiven) + ")";
+    }
+    i++;
+    if (i >= pasos) frenarPrevia();
+  }, paso);
 };
 
 cargar();

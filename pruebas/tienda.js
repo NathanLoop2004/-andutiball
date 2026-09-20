@@ -58,6 +58,15 @@ function revisar(titulo, condicion, detalle) {
   chat(ana, "!camiseta ninguna");
   revisar("Se la puede sacar", (contexto.__panelCola || []).some((e) => e.tipo === "camiseta" && e.clave === null));
 
+  // De espectador no se cambia la camiseta: primero hay que estar en la cancha
+  avanzar(6000);
+  contexto.__panelCola = [];
+  anuncios.length = 0;
+  room.setPlayerTeam(ana.id, 0);
+  chat(ana, "!camiseta olimpia");
+  revisar("De espectador no se puede cambiar la camiseta",
+    anuncios.some((a) => /Primero tenés que estar jugando/.test(a)) && !(contexto.__panelCola || []).some((e) => e.tipo === "camiseta"), anuncios[0]);
+
   // La camiseta la pone el CAPITÁN, y solo cuando los equipos se arman eligiendo.
   //
   // Ojo con el color que se usa para reconocerla: antes acá iba el negro de verdad de Olimpia

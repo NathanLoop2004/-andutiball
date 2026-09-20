@@ -47,6 +47,7 @@ const carruselRouter = require("./routes/CarruselRouter");
 const ajustesRouter = require("./routes/AjustesRouter");
 const equiposRouter = require("./routes/EquiposRouter");
 const tiendaRouter = require("./routes/TiendaRouter");
+const animacionesRouter = require("./routes/AnimacionesRouter");
 const vistasRouter = require("./routes/VistasRouter");
 
 // sala: adaptador de la sala local { estado(), expulsar(id, motivo, banear) }
@@ -87,6 +88,7 @@ function crearApp({ sala = null, salas = [] } = {}) {
   app.use("/api", ajustesRouter);
   app.use("/api", equiposRouter);
   app.use("/api", tiendaRouter);
+  app.use("/api", animacionesRouter);
 
   // Todo lo estático sale de public/ (igual que app-centralshop)
   app.use(express.static(path.join(__dirname, "public")));

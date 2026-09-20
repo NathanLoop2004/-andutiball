@@ -157,11 +157,11 @@ var CantidadCambiarTamano = 1;
 // ▇▇▇▇▇▇▇ ⚽👕 CAMISETAS POR DEFECTO ⚽👕 ▇▇▇▇▇▇▇
 
 // CAMISETA EQUIPO RED 🔴
-var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
+var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
 var NombreEquipoRojo = "OLIMPIA";
 
 // CAMISETA EQUIPO BLUE 🔵
-var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
+var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
 var NombreEquipoAzul = "CERRO PORTEÑO";
 
 
@@ -20724,6 +20724,43 @@ function hayCapitanes() {
 	return typeof SeleccionPorTurnos !== "undefined" && SeleccionPorTurnos === true;
 }
 
+// Quién eligió la camiseta de cada equipo: equipo → nick en minúscula.
+//
+// Hace falta acordarse. Antes la camiseta se aplicaba solo si en ESE momento había capitanes
+// (SeleccionPorTurnos), y en el modo "combinado" la elección se apaga sola entre partidos
+// cuando no sobra gente: al arrancar el siguiente ya no había capitán, no se aplicaba nada y
+// salía la del sorteo. O sea que el "la vas a usar en el próximo partido" del comando era
+// mentira. Guardando el nick, la camiseta le dura mientras esa persona siga en ese equipo.
+var camisetaDelEquipo = { 1: null, 2: null };
+
+function recordarQuienEligio(jugador) {
+	if (jugador && (jugador.team === 1 || jugador.team === 2)) {
+		camisetaDelEquipo[jugador.team] = String(jugador.name).toLowerCase();
+	}
+}
+
+function olvidarCamisetaDe(jugador) {
+	if (!jugador) return;
+	var nick = String(jugador.name).toLowerCase();
+	for (var equipo = 1; equipo <= 2; equipo++) {
+		if (camisetaDelEquipo[equipo] === nick) camisetaDelEquipo[equipo] = null;
+	}
+}
+
+// De quién es la camiseta que juega este equipo: el que la eligió si sigue acá, y si no,
+// el capitán de ahora (solo cuando se está eligiendo, como antes).
+function duenoDeLaCamiseta(equipo) {
+	var recordado = camisetaDelEquipo[equipo];
+	if (recordado) {
+		var sigue = room.getPlayerList().filter(function (j) {
+			return j.team === equipo && j.id !== 0 && String(j.name).toLowerCase() === recordado;
+		})[0];
+		if (sigue) return sigue;
+		camisetaDelEquipo[equipo] = null;   // se fue o se cambió de equipo
+	}
+	return hayCapitanes() ? capitanDelEquipo(equipo) : null;
+}
+
 // El capitán de un equipo: el primero de ese equipo en la lista (el que eligió)
 function capitanDelEquipo(equipo) {
 	if (typeof capitanDe === "function") {
@@ -20750,11 +20787,11 @@ function camisetaPuestaDe(jugador) {
 }
 
 function ponerCamisetaDelEquipo(equipo) {
-	if (!CamisetasCompradasActivas || !hayCapitanes()) return false;
-	var capitan = capitanDelEquipo(equipo);
+	if (!CamisetasCompradasActivas) return false;
+	var capitan = duenoDeLaCamiseta(equipo);
 	if (!capitan) return false;
 	var puesta = camisetaPuestaDe(capitan);
-	if (!puesta) return false;
+	if (!puesta) { olvidarCamisetaDe(capitan); return false; }
 
 	room.setTeamColors(
 		equipo,
@@ -20784,7 +20821,8 @@ function ponerCamisetaDelEquipo(equipo) {
 	var anteriorSalida = room.onPlayerLeave;
 	room.onPlayerLeave = function (jugador) {
 		if (typeof anteriorSalida === "function") anteriorSalida(jugador);
-		if (!hayCapitanes() || !jugador || jugador.team === 0) return;
+		olvidarCamisetaDe(jugador);
+		if (!jugador || jugador.team === 0) return;
 		var equipo = jugador.team;
 		setTimeout(function () {
 			try { ponerCamisetaDelEquipo(equipo); } catch (e) {}
@@ -20812,7 +20850,14 @@ function ponerCamisetaDelEquipo(equipo) {
 				return false;
 			}
 
-			if (hayCapitanes() && player.team !== 0 && !esCapitan(player)) {
+			// De espectador no se cambia la camiseta: la camiseta es la del equipo, así que
+			// primero hay que estar adentro de la cancha.
+			if (player.team === 0) {
+				room.sendAnnouncement("👕 Primero tenés que estar jugando para cambiar la camiseta.", player.id, 0xFF6B6B, "bold", 2);
+				return false;
+			}
+
+			if (hayCapitanes() && !esCapitan(player)) {
 				var cap = capitanDelEquipo(player.team);
 				room.sendAnnouncement(
 					"👕 La camiseta del equipo la elige el capitán" + (cap ? " (" + cap.name + ")" : "") + ". La tuya la podés cambiar cuando te toque serlo.",
@@ -20824,6 +20869,7 @@ function ponerCamisetaDelEquipo(equipo) {
 			var pedida = String(message).trim().slice(10).trim().toLowerCase();
 			if (pedida === "ninguna" || pedida === "sacar" || pedida === "-") {
 				avisarAlPanel({ tipo: "camiseta", nick: player.name, clave: null });
+				olvidarCamisetaDe(player);
 				room.sendAnnouncement("👕 Te sacaste la camiseta: volvés a la del sorteo.", player.id, 0xFFD100, "bold", 0);
 				return false;
 			}
@@ -20836,6 +20882,7 @@ function ponerCamisetaDelEquipo(equipo) {
 				return false;
 			}
 			avisarAlPanel({ tipo: "camiseta", nick: player.name, clave: elegida.clave });
+			recordarQuienEligio(player);   // para que le dure los partidos siguientes
 			room.sendAnnouncement("👕 Te pusiste la de " + elegida.nombre + ". La vas a usar en el próximo partido.", player.id, 0xFFD100, "bold", 2);
 			return false;
 		}
@@ -20989,6 +21036,188 @@ window.__monedasAviso = function (lista) {
 	};
 
 	console.log("🪙 Monedas: se cuentan las atajadas y se avisa lo que gana cada uno");
+})();
+
+
+// ▇▇▇▇▇▇▇▇▇ 🎉 ANIMACIONES DE GOL — ÑandutíHax ▇▇▇▇▇▇▇▇▇
+// El que hizo el gol festeja con la animación que compró en la web.
+//
+// Cómo se engancha: el script del autor ya festeja llamando a `avatarCelebration(id, emoji)`
+// (le hace parpadear el emoji un segundo). Esa es una *function declaration*, así que la
+// volvemos a declarar acá al final y gana la última (el mismo truco que los mapas y
+// sendLinkToDiscord). No hay que tocar nada de la zona minificada.
+//
+// Los tipos de animación:
+//   "secuencia" → le van pasando los cuadros (emojis o letras) por el avatar
+//   "tamano"    → se hace grande y chico
+//   "ambas"     → las dos cosas a la vez
+//
+// CUÁNTO DURA: hasta `duracionMs`, PERO se corta sola cuando se saca del medio
+// (onPositionsReset) o cuando termina o arranca el partido. O sea que dura lo que dura el
+// festejo y nunca se mete adentro del juego: nadie juega agrandado.
+//
+// El que no compró ninguna festeja como siempre (el parpadeo del autor).
+// La lista la deja el lanzador en window.__ANIMACIONES (nick en minúscula → la animación).
+
+var AnimacionesDeGolActivas = true;
+var MaxCuadrosDeAnimacion = 10;
+
+var animacionesEnCurso = {};   // id del jugador → { reloj, radioOriginal }
+
+function animacionDe(jugador) {
+	if (!jugador) return null;
+	return (window.__ANIMACIONES || {})[String(jugador.name).toLowerCase()] || null;
+}
+
+function radioDe(idJugador) {
+	try {
+		var d = room.getPlayerDiscProperties(idJugador);
+		return d && typeof d.radius === "number" ? d.radius : null;
+	} catch (e) { return null; }
+}
+
+// Deja al jugador como estaba: sin avatar puesto y con su tamaño de siempre
+function frenarAnimacion(idJugador) {
+	var enCurso = animacionesEnCurso[idJugador];
+	if (!enCurso) return;
+	clearInterval(enCurso.reloj);
+	delete animacionesEnCurso[idJugador];
+	try { room.setPlayerAvatar(idJugador, null); } catch (e) {}
+	if (enCurso.radioOriginal !== null && enCurso.radioOriginal !== undefined) {
+		try { room.setPlayerDiscProperties(idJugador, { radius: enCurso.radioOriginal }); } catch (e) {}
+	}
+}
+
+function frenarTodasLasAnimaciones() {
+	for (var id in animacionesEnCurso) frenarAnimacion(Number(id));
+}
+
+function reproducirAnimacion(idJugador, animacion) {
+	frenarAnimacion(idJugador);
+
+	var cuadros = Array.isArray(animacion.cuadros) ? animacion.cuadros.slice(0, MaxCuadrosDeAnimacion) : [];
+	var haceTamano = animacion.tipo === "tamano" || animacion.tipo === "ambas";
+	var haceCuadros = (animacion.tipo === "secuencia" || animacion.tipo === "ambas") && cuadros.length > 0;
+	if (!haceTamano && !haceCuadros) return false;
+
+	var paso = Math.max(60, Number(animacion.msPorCuadro) || 200);
+	var dura = Math.max(paso, Number(animacion.duracionMs) || 3000);
+	var radioOriginal = haceTamano ? radioDe(idJugador) : null;
+	var desde = Number(animacion.tamanoDesde) || 1;
+	var hasta = Number(animacion.tamanoHasta) || 1;
+
+	var i = 0;
+	var pasos = Math.ceil(dura / paso);
+
+	var reloj = setInterval(function () {
+		try {
+			if (haceCuadros) room.setPlayerAvatar(idJugador, cuadros[i % cuadros.length]);
+			if (haceTamano && radioOriginal) {
+				// Va y vuelve entre los dos tamaños, suave (media onda de seno por paso)
+				var vaivén = (Math.sin((i / 2) * Math.PI) + 1) / 2;   // 0 → 1 → 0
+				var factor = desde + (hasta - desde) * vaivén;
+				room.setPlayerDiscProperties(idJugador, { radius: radioOriginal * factor });
+			}
+		} catch (e) {}
+		i++;
+		if (i >= pasos) frenarAnimacion(idJugador);
+	}, paso);
+
+	animacionesEnCurso[idJugador] = { reloj: reloj, radioOriginal: radioOriginal };
+	return true;
+}
+
+// ── Redeclarada: gana sobre la del autor ──
+// El autor la llama con el emoji del gol; si el jugador no tiene animación comprada,
+// hacemos exactamente lo de antes (parpadear ese emoji un segundo).
+function avatarCelebration(idJugador, emoji) {
+	var jugador = null;
+	try { jugador = room.getPlayerList().filter(function (j) { return j.id === idJugador; })[0] || null; } catch (e) {}
+
+	if (AnimacionesDeGolActivas) {
+		var suya = animacionDe(jugador);
+		if (suya && reproducirAnimacion(idJugador, suya)) return;
+	}
+
+	// Sin animación propia: el parpadeo de siempre
+	try {
+		room.setPlayerAvatar(idJugador, emoji);
+		setTimeout(function () { try { room.setPlayerAvatar(idJugador, null); } catch (e) {} }, 250);
+		setTimeout(function () { try { room.setPlayerAvatar(idJugador, emoji); } catch (e) {} }, 500);
+		setTimeout(function () { try { room.setPlayerAvatar(idJugador, null); } catch (e) {} }, 1000);
+	} catch (e) {}
+}
+
+(function () {
+	// El festejo termina cuando se saca del medio: ahí se corta todo, así nadie juega agrandado
+	var anteriorReset = room.onPositionsReset;
+	room.onPositionsReset = function () {
+		frenarTodasLasAnimaciones();
+		if (typeof anteriorReset === "function") anteriorReset();
+	};
+
+	var anteriorStop = room.onGameStop;
+	room.onGameStop = function (byPlayer) {
+		frenarTodasLasAnimaciones();
+		if (typeof anteriorStop === "function") anteriorStop(byPlayer);
+	};
+
+	var anteriorInicio = room.onGameStart;
+	room.onGameStart = function (byPlayer) {
+		frenarTodasLasAnimaciones();
+		if (typeof anteriorInicio === "function") anteriorInicio(byPlayer);
+	};
+
+	// Si se va en pleno festejo, que no quede el reloj corriendo para un id que ya no existe
+	var anteriorSalida = room.onPlayerLeave;
+	room.onPlayerLeave = function (jugador) {
+		if (jugador) frenarAnimacion(jugador.id);
+		if (typeof anteriorSalida === "function") anteriorSalida(jugador);
+	};
+
+	// !animaciones → las que compró · !animacion <nombre> → se la pone · !animacion ninguna
+	var anteriorChat = room.onPlayerChat;
+	room.onPlayerChat = function (player, message) {
+		var bajo = String(message).trim().toLowerCase();
+		if (bajo !== "!animaciones" && bajo !== "!animacion" && bajo.indexOf("!animacion ") !== 0) {
+			return typeof anteriorChat === "function" ? anteriorChat(player, message) : true;
+		}
+
+		var mias = (window.__MIS_ANIMACIONES || {})[String(player.name).toLowerCase()] || [];
+		var puesta = animacionDe(player);
+
+		if (bajo === "!animaciones" || bajo === "!animacion") {
+			if (!mias.length) {
+				room.sendAnnouncement("🎉 Todavía no tenés animaciones de gol. Se compran con monedas en la web de ÑandutíHax.", player.id, 0xFFD100, "bold", 2);
+				if (window.__WEB_URL) room.sendAnnouncement("   " + window.__WEB_URL, player.id, 0x00C853, "small", 0);
+				return false;
+			}
+			room.sendAnnouncement("🎉 Tus animaciones: " + mias.map(function (a) { return a.nombre; }).join(" · "), player.id, 0xFFD100, "bold", 2);
+			room.sendAnnouncement("   Te ponés una con  !animacion " + mias[0].nombre.toLowerCase() + "   (o !animacion ninguna)", player.id, 0x93A1B0, "small", 0);
+			if (puesta) room.sendAnnouncement("   Ahora tenés puesta la de " + puesta.nombre + ".", player.id, 0x93A1B0, "small", 0);
+			return false;
+		}
+
+		var pedida = String(message).trim().slice(11).trim().toLowerCase();
+		if (pedida === "ninguna" || pedida === "sacar" || pedida === "-") {
+			avisarAlPanel({ tipo: "animacion", nick: player.name, clave: null });
+			room.sendAnnouncement("🎉 Te sacaste la animación: volvés al festejo de siempre.", player.id, 0xFFD100, "bold", 0);
+			return false;
+		}
+		var elegida = null;
+		for (var k = 0; k < mias.length; k++) {
+			if (mias[k].clave === pedida || mias[k].nombre.toLowerCase() === pedida) { elegida = mias[k]; break; }
+		}
+		if (!elegida) {
+			room.sendAnnouncement("🎉 Esa animación no es tuya. Las tuyas: " + (mias.length ? mias.map(function (a) { return a.nombre; }).join(" · ") : "ninguna todavía"), player.id, 0xFF6B6B, "bold", 2);
+			return false;
+		}
+		avisarAlPanel({ tipo: "animacion", nick: player.name, clave: elegida.clave });
+		room.sendAnnouncement("🎉 Te pusiste la animación " + elegida.nombre + ". La vas a usar en tu próximo gol.", player.id, 0xFFD100, "bold", 2);
+		return false;
+	};
+
+	console.log("🎉 Animaciones de gol listas");
 })();
 
 

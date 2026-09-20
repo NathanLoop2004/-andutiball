@@ -50,7 +50,8 @@
     "elo:juntar": "node --env-file-if-exists=.env juntar-elo.js",
     "prueba-equipos": "node --env-file-if-exists=.env pruebas/equipos.js",
     "prueba-tienda": "node --env-file-if-exists=.env pruebas/tienda.js",
-    "prueba-rachas": "node --env-file-if-exists=.env pruebas/rachas.js"
+    "prueba-rachas": "node --env-file-if-exists=.env pruebas/rachas.js",
+    "prueba-animaciones": "node --env-file-if-exists=.env pruebas/animaciones.js"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",
