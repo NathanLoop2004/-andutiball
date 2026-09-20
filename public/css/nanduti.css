@@ -822,3 +822,6 @@ input[type=number]:focus { outline: none; border-color: var(--acento); box-shado
 .tiempo-pista.muy-densa .punto { grid-template-rows: 16px 1fr; padding: 2px 0; border-radius: 4px; }
 .tiempo-pista.muy-densa .punto .cara { font-size: 10px; }
 .tiempo-pista.muy-densa .punto .medida { height: 18px; }
+/* Los dos mandos que manejan la línea de tiempo, arriba de ella */
+.mandos-tiempo { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 620px) { .mandos-tiempo { grid-template-columns: 1fr; gap: 10px; } }

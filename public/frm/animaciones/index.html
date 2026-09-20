@@ -65,9 +65,32 @@
           <div class="barra-festejo"><span id="barraFestejo"></span></div>
         </div>
 
+        <!-- Estos dos mandan sobre la línea de tiempo, así que van justo arriba -->
+        <div class="mandos-tiempo">
+          <div class="control-rango">
+            <span>Cuánto dura el festejo</span>
+            <div class="fila">
+              <input type="range" id="edDuracion" min="0.5" max="10" step="0.1" value="3">
+              <span class="valor" id="valorDuracion">3,0 s</span>
+            </div>
+            <small class="tenue">Los puntos de abajo se acomodan solos para llenar este tiempo.</small>
+          </div>
+
+          <div class="control-rango">
+            <span>Velocidad</span>
+            <div class="fila">
+              <input type="range" id="edFps" min="1" max="16" step="1" value="5">
+              <span class="valor" id="valorFps">5 por segundo</span>
+            </div>
+            <small class="tenue" id="textoFps">Cada punto se ve 0,20 s.</small>
+            <small class="tenue" id="avisoVelocidad"></small>
+          </div>
+        </div>
+
         <!-- La línea de tiempo: cada punto es un pedacito de la animación -->
         <div>
           <div class="cofre-titulo">Los puntos de la animación</div>
+          <p class="aviso info" id="duracionTotal">—</p>
           <div class="tiempo" id="tiempo">
             <div class="tiempo-regla" id="regla"></div>
             <div class="tiempo-pista" id="pista">
@@ -99,9 +122,10 @@
           </div>
 
           <p class="tenue">
-            Cada punto dura lo mismo (lo que diga la velocidad) y se muestran uno atrás del otro.
-            <strong>Tocá un punto</strong> para elegir su emoji y su tamaño, arrastralo para moverlo
-            de lugar, o la ✕ para sacarlo. Hasta <span id="maxCuadros">10</span>.
+            La cantidad de puntos la manda el tiempo de arriba: no se agregan ni se borran a mano.
+            <strong>Tocá uno</strong> para ponerle su emoji y su tamaño, y arrastralo para moverlo de
+            lugar. Un punto vacío es tiempo en el que no se le ve nada, así que también sirve.
+            Entran hasta <span id="maxCuadros">50</span>.
           </p>
         </div>
 
@@ -109,27 +133,7 @@
           <label>Nombre <input type="text" id="edNombre" maxlength="40" placeholder="Tricampeón" autocomplete="off"></label>
           <label>Descripción <input type="text" id="edDescripcion" maxlength="200" placeholder="Para los que meten goles en serio" autocomplete="off"></label>
 
-          <div class="control-rango">
-            <span>Cuánto dura el festejo</span>
-            <div class="fila">
-              <input type="range" id="edDuracion" min="0.5" max="10" step="0.1" value="3">
-              <span class="valor" id="valorDuracion">3,0 s</span>
-            </div>
-            <small class="tenue">Es el tiempo que va a estar festejando. Los puntos se acomodan solos para llenarlo.</small>
-          </div>
 
-          <div class="control-rango">
-            <span>Velocidad</span>
-            <div class="fila">
-              <input type="range" id="edFps" min="1" max="16" step="1" value="5">
-              <span class="valor" id="valorFps">5 por segundo</span>
-            </div>
-            <small class="tenue" id="textoFps">Cada punto se ve 0,20 s.</small>
-            <small class="tenue" id="avisoVelocidad"></small>
-          </div>
-
-
-          <p class="aviso info" id="duracionTotal">—</p>
           <p class="aviso info" id="queHace">—</p>
 
           <label>Precio en monedas <input type="number" id="edPrecio" min="0" step="0.1" placeholder="sin precio"></label>

@@ -1283,6 +1283,11 @@ Los puntos **no se agregan ni se borran a mano**: la cantidad la manda el tiempo
 "Vaciar punto" lo dejan vacío (sin emoji y en 1×), y un punto vacío es tiempo en el que no se le
 ve nada.
 
+**Los dos controles van ARRIBA de la línea de tiempo** (`.mandos-tiempo`), porque son los que la
+manejan. Estaban abajo y confundía: al abrir una animación guardada con poco tiempo (0,6 s) y
+subir la velocidad a 16 salían 10 puntos, y parecía un tope de 10 cuando en realidad era
+`0,6 × 16`. Con los controles a la vista se entiende de dónde sale el número.
+
 **La velocidad se muestra en puntos por segundo**, no en milisegundos: `msDeFps()` / `fpsDeMs()`
 convierten al guardar y al abrir. El modelo sigue guardando `msPorCuadro`. Abajo del control se
 dice cuánto dura cada punto y **cuántas veces se repite la secuencia** con la duración elegida:
