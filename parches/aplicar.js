@@ -273,25 +273,28 @@ reemplazar("👥 Dejar entrar a varios desde la misma conexión", "var MaximoJug
 // prende o se apaga el powershot, el script la vuelve a configurar con room.setDiscProperties(0)
 // y la deja como estaba. Así que los mismos números van en los dos lados.
 //
-//   damping 0.99 → 0.993   conserva más velocidad (tarda ~1,7 s en bajar a la mitad, no ~1,1 s)
+//   damping 0.99 → 0.991   conserva más velocidad (llega ~11% más lejos; 0.993 era demasiado)
 //   bCoef   0.4  → 0.5     rebota como una pelota normal de HaxBall, no muere contra la pared
 //
 // invMass queda igual (1.5 normal, PotenciaPowerShot cargada): es el peso, no la energía.
 // Real Soccer usa otras líneas (invMass 1.05, PelotaRS) y NO se tocan — pedido del usuario.
 // Lo mismo está en `mapas/generar.js` (FISICA_PELOTA): si cambia uno, cambian los dos.
-for (const [etiqueta, viejo, nuevo] of [
-  [
-    "⚽ Física de la pelota de futsal (normal)",
-    'setDiscProperties(0,{"bCoef":0.4,"invMass":1.5,"damping":0.99,',
-    'setDiscProperties(0,{"bCoef":0.5,"invMass":1.5,"damping":0.993,',
-  ],
-  [
-    "⚽ Física de la pelota de futsal (powershot)",
-    'setDiscProperties(0,{"bCoef":0.4,"invMass":PotenciaPowerShot,"damping":0.99,',
-    'setDiscProperties(0,{"bCoef":0.5,"invMass":PotenciaPowerShot,"damping":0.993,',
-  ],
+// Se buscan DOS orígenes: el valor del autor y el que hayamos dejado antes. Sin lo segundo,
+// al cambiar el número no pasaba nada: script.js ya no tenía el texto del autor y el
+// reemplazo decía "no se encontró" (pasó al bajar de 0.993 a 0.991).
+const DAMPING_PELOTA = "0.991";
+const DAMPING_VIEJOS = ["0.99", "0.993", "0.995"];   // el del autor y los nuestros de antes
+for (const [etiqueta, molde] of [
+  ["⚽ Física de la pelota de futsal (normal)", 'setDiscProperties(0,{"bCoef":COEF,"invMass":1.5,"damping":DAMP,'],
+  ["⚽ Física de la pelota de futsal (powershot)", 'setDiscProperties(0,{"bCoef":COEF,"invMass":PotenciaPowerShot,"damping":DAMP,'],
 ]) {
-  reemplazar(etiqueta, viejo, nuevo, nuevo);
+  const nuevo = molde.replace("COEF", "0.5").replace("DAMP", DAMPING_PELOTA);
+  for (const coef of ["0.4", "0.5"]) {
+    for (const damp of DAMPING_VIEJOS) {
+      const viejo = molde.replace("COEF", coef).replace("DAMP", damp);
+      if (viejo !== nuevo) reemplazar(etiqueta, viejo, nuevo, nuevo);
+    }
+  }
 }
 
 // ─────────────────────────────────────────────────────────────

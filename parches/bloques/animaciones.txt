@@ -21,7 +21,9 @@
 // La lista la deja el lanzador en window.__ANIMACIONES (nick en minúscula → la animación).
 
 var AnimacionesDeGolActivas = true;
-var MaxCuadrosDeAnimacion = 10;
+// El MISMO tope que AnimacionesModel.MAX_CUADROS. Si acá queda más chico, la animación se
+// corta y solo se ven los primeros puntos (pasó: en la sala salían 10 de 45).
+var MaxCuadrosDeAnimacion = 50;
 
 var animacionesEnCurso = {};   // id del jugador → { reloj, radioOriginal }
 
@@ -29,6 +31,11 @@ var animacionesEnCurso = {};   // id del jugador → { reloj, radioOriginal }
 // todos en la cancha apenas entra el gol y la animación se corta a la mitad / se ve rota.
 // Lo miran revisarArranque(), aplicarModoDeEquipos() y window.__acomodarSala().
 var festejoHasta = 0;
+
+// ¿El último gol fue en contra? El script llama al MISMO avatarCelebration cuando alguien se
+// mete un gol en su propio arco, y ahí no corresponde festejar. Se sabe comparando el equipo
+// del que tocó la pelota con el equipo al que le dieron el gol.
+var ultimoGolFueEnContra = false;
 
 function festejandoGol() {
 	return Date.now() < festejoHasta;
@@ -124,6 +131,12 @@ function avatarCelebration(idJugador, emoji) {
 	var jugador = null;
 	try { jugador = room.getPlayerList().filter(function (j) { return j.id === idJugador; })[0] || null; } catch (e) {}
 
+	// Un gol en contra no se festeja con la animación comprada
+	if (ultimoGolFueEnContra) {
+		festejoDeSiempre(idJugador, emoji);
+		return;
+	}
+
 	// La animación es SOLO del que metió el gol. El script también llama a esta función para
 	// el que dio la asistencia (con un 👟): ese festeja como siempre, aunque tenga una comprada.
 	var hizoElGol = true;
@@ -134,7 +147,11 @@ function avatarCelebration(idJugador, emoji) {
 		if (suya && reproducirAnimacion(idJugador, suya)) return;
 	}
 
-	// Sin animación propia: el parpadeo de siempre
+	festejoDeSiempre(idJugador, emoji);
+}
+
+// El parpadeo del autor: el emoji va y viene un segundo
+function festejoDeSiempre(idJugador, emoji) {
 	try {
 		room.setPlayerAvatar(idJugador, emoji);
 		setTimeout(function () { try { room.setPlayerAvatar(idJugador, null); } catch (e) {} }, 250);
@@ -144,6 +161,18 @@ function avatarCelebration(idJugador, emoji) {
 }
 
 (function () {
+	// Antes que nada: anotar si el gol fue en contra. Tiene que ser ANTES de llamar al handler
+	// del script, porque es ahí adentro donde se llama a avatarCelebration.
+	var anteriorGol = room.onTeamGoal;
+	room.onTeamGoal = function (equipo) {
+		try {
+			ultimoGolFueEnContra = typeof game !== "undefined" && game && game.lastKickerTeam
+				? game.lastKickerTeam !== equipo
+				: false;
+		} catch (e) { ultimoGolFueEnContra = false; }
+		if (typeof anteriorGol === "function") anteriorGol(equipo);
+	};
+
 	// El festejo termina cuando se saca del medio: ahí se corta todo, así nadie juega agrandado
 	var anteriorReset = room.onPositionsReset;
 	room.onPositionsReset = function () {

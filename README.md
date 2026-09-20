@@ -766,7 +766,7 @@ Si querés afinarlo, son dos números y hay que cambiarlos **en los dos lugares*
 
 | Número | Ahora | Qué hace |
 |---|---|---|
-| `damping` | 0.993 | Cuánto sigue rodando. Más cerca de 1 = llega más lejos. Arriba de 0.995 se vuelve un jabón |
+| `damping` | 0.991 | Cuánto sigue rodando. Más cerca de 1 = llega más lejos. Arriba de 0.995 se vuelve un jabón |
 | `bCoef` | 0.5 | Cuánto rebota al chocar. Más alto = más viva contra las paredes |
 
 Después: `npm run generar-mapas`, `npm run parchar`, `npm run prueba-mapas`. **El cambio se

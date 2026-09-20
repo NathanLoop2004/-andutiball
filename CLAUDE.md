@@ -785,7 +785,7 @@ La pelota del autor se frenaba sola enseguida. Desde el 20/09/2026:
 
 | | Autor | Ahora | Qué es |
 |---|---|---|---|
-| `damping` | 0.99 | **0.993** | Cuánta velocidad conserva por tick (60/s). Con 0.99 baja a la mitad en ~1,1 s; con 0.993, en ~1,7 s |
+| `damping` | 0.99 | **0.991** | Cuánta velocidad conserva por tick (60/s). Lo que se siente es cuánto lejos llega, y eso va como 1/(1-damping): 0.990 → 100 · 0.993 → 143 · 0.991 → 111 |
 | `bCoef` | 0.4 | **0.5** | Cuánto rebota contra paredes y jugadores (0.5 es el normal de HaxBall) |
 | `invMass` | 1.5 | 1.5 (igual) | El **peso**. No se tocó: cambia cuánto la mueve cada patada y cuánto la empujan al correr, que es otro problema |
 
@@ -802,6 +802,12 @@ el juego queda inconsistente según si hubo powershot o no.
 **Real Soccer no se toca** (pedido del usuario): usa sus propios mapas y sus propias líneas
 (`invMass:1.05`, `PelotaRS`). Al buscar en el script, las de futsal se reconocen por
 `invMass:1.5` / `PotenciaPowerShot` y `PelotaFutsal`.
+
+Estuvo en **0.993** unas horas y quedaba demasiado viva (pedido del usuario: "bajá un 20%").
+
+**El parcheador busca el valor del autor Y los nuestros de antes** (`DAMPING_VIEJOS`): sin eso, al
+cambiar el número no pasaba nada, porque `script.js` ya no tenía el texto original y el reemplazo
+decía "no se encontró". Si se vuelve a cambiar, agregar el valor viejo a esa lista.
 
 Orden para cambiarlo: tocar los dos lugares → `npm run generar-mapas` → `npm run parchar` →
 `npm run prueba-mapas`. **Se nota recién al reiniciar las salas.**
@@ -1189,6 +1195,11 @@ tamaños ≠ 1 → `tamano`, las dos → `ambas`). Lo mismo hace la pantalla con
 parpadear un emoji). Gana la última declaración, así que no hay que tocar nada minificado. Si el
 que hizo el gol no compró ninguna, se hace **exactamente lo de antes**.
 
+**Un gol EN CONTRA no se festeja.** El script llama al mismo `avatarCelebration` cuando alguien
+se la mete en su propio arco (con un emoji de autogol). El bloque envuelve `room.onTeamGoal` y
+compara `game.lastKickerTeam` con el equipo que recibió el gol; tiene que marcarse **antes** de
+llamar al handler del script, porque el festejo sale de adentro de ese handler.
+
 **Solo la hace el que metió el gol.** El script llama a `avatarCelebration` **dos veces**: con
 el goleador (`game.lastKickerId`) y con el de la asistencia (un 👟). El bloque compara contra
 `game.lastKickerId`: el asistidor festeja como siempre aunque tenga una comprada.
@@ -1297,6 +1308,10 @@ Como los puntos tienen tope (`MAX_CUADROS = 50`, antes 10 — con 10 no se llega
 que se limita es **la velocidad**, no el festejo: `limitarVelocidad()` baja el máximo del control
 a `50 / duración` (con 10 s, hasta 5 por segundo). Se prefiere recortar la velocidad antes que
 los segundos que pidió el usuario.
+
+**EL TOPE ESTÁ EN DOS LADOS Y TIENEN QUE COINCIDIR**: `AnimacionesModel.MAX_CUADROS` (la base) y
+`MaxCuadrosDeAnimacion` (el bloque de la sala). Al subirlo a 50 me olvidé del bloque y en la sala
+salían **10 de 37**: se guardaba bien y se reproducía cortada. Si se vuelve a tocar, cambiar los dos.
 
 Los puntos **no se agregan ni se borran a mano**: la cantidad la manda el tiempo. La ✕ y el botón
 "Vaciar punto" lo dejan vacío (sin emoji y en 1×), y un punto vacío es tiempo en el que no se le

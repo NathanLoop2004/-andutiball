@@ -85,6 +85,30 @@ function revisar(titulo, condicion, detalle) {
   if (room.onPositionsReset) room.onPositionsReset();
   avanzar(150);
 
+  // Un gol EN CONTRA no se festeja con la animación: el script llama al mismo
+  // avatarCelebration cuando alguien se la mete en su propio arco.
+  contexto.game.lastKickerTeam = 1;          // la tocó alguien de rojo…
+  sala.avatares.length = 0;
+  if (room.onTeamGoal) room.onTeamGoal(2);   // …y el gol fue para azul: gol en contra
+  contexto.avatarCelebration(ana.id, "😵");
+  avanzar(350);
+  const enContra = sala.avatares.filter((a) => a.id === ana.id).map((a) => a.avatar);
+  revisar("Un gol en contra no usa la animación", !enContra.some((a) => a === "🔥" || a === "👑"), enContra.join(" "));
+
+  // Y un gol normal sí vuelve a usarla
+  contexto.game.lastKickerTeam = 1;
+  sala.avatares.length = 0;
+  if (room.onTeamGoal) room.onTeamGoal(1);   // gol de rojo para rojo
+  contexto.avatarCelebration(ana.id, "⚽");
+  avanzar(350);
+  const normal = sala.avatares.filter((a) => a.id === ana.id).map((a) => a.avatar);
+  revisar("Y el gol normal sí la usa", normal.some((a) => a === "🔥" || a === "👑"), normal.join(" "));
+  if (room.onPositionsReset) room.onPositionsReset();
+  avanzar(150);
+
+  // La sala tiene que mostrar TODOS los puntos, no solo los primeros
+  revisar("En la sala entran los 50 puntos, no 10", sala.leer("MaxCuadrosDeAnimacion") === 50, sala.leer("MaxCuadrosDeAnimacion"));
+
   // El que no compró ninguna festeja como siempre (el parpadeo del autor)
   sala.avatares.length = 0;
   contexto.avatarCelebration(beto.id, "⚽");

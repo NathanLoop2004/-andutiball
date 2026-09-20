@@ -47,8 +47,10 @@ const DISCOS_OVEJA = [
 // las paredes. Estos dos números son los que mandan:
 //
 //   damping  cuánto de la velocidad conserva en cada tick (60 por segundo). Es el que hace que
-//            la pelota "siga". Con 0.99 tarda ~1,1 s en bajar a la mitad; con 0.993, ~1,7 s.
-//            Cuanto más cerca de 1, más lejos llega. Arriba de 0.995 se vuelve un jabón.
+//            la pelota "siga". Lo que se siente es cuánto lejos llega, y eso va como
+//            1/(1-damping): 0.990 → 100 (la del autor) · 0.993 → 143 · 0.991 → 111.
+//            Quedó en 0.991 (un 20% menos que 0.993, que era demasiado). Arriba de 0.995
+//            se vuelve un jabón.
 //   bCoef    cuánto rebota al chocar (paredes y jugadores). 0.4 era el del autor y se comía el
 //            rebote; 0.5 es el valor normal de HaxBall.
 //
@@ -60,7 +62,7 @@ const DISCOS_OVEJA = [
 // Si se cambian acá, hay que cambiarlos allá, o la pelota vuelve a la vieja al primer powershot.
 //
 // Real Soccer no entra acá: usa sus propios mapas y su propia pelota (invMass 1.05, PelotaRS).
-const FISICA_PELOTA = { damping: 0.993, bCoef: 0.5 };
+const FISICA_PELOTA = { damping: 0.991, bCoef: 0.5 };
 
 function pintarPelota(mapa) {
   const bola = mapa.discs && mapa.discs[0];
