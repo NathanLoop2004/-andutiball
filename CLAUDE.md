@@ -1251,6 +1251,11 @@ la misma cuenta que la sala. El panel de detalle es uno solo para las dos cosas:
 decide a qué API le pega y qué muestra.
 
 La pantalla del panel es `public/frm/animaciones/` (nav "Animaciones", visible con `u.rangos`).
+La **tabla** muestra de cada una: nombre y descripción, los primeros 6 emojis con un `+N` (con 45
+en la celda la fila se desarmaba), hasta cuánto crece, cuánto dura, el precio y unas etiquetas de
+estado. En el teléfono se esconden las dos columnas del medio. El botón **Ver** abre un modal de
+**previsualización** con la misma cancha que el editor y la ficha de la animación, y desde ahí se
+puede pasar a editarla.
 El candado del navegador es cosmético: el de verdad está en la API. El editor tiene dos partes:
 
 - **La cancha en bucle** (un `<canvas>`): una jugada de verdad, **nadie queda quieto**

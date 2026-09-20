@@ -837,3 +837,17 @@ input[type=number]:focus { outline: none; border-color: var(--acento); box-shado
 .tira-puntos { display: flex; flex-wrap: wrap; gap: 4px; margin: 10px 0; }
 /* La ficha de una animación: la cancha arriba y los datos abajo */
 .ficha-animacion { display: grid; gap: 18px; }
+
+/* La tabla de animaciones: que entre todo sin desarmarse */
+.tabla-animaciones td { vertical-align: middle; }
+.tabla-animaciones .chico { font-size: 12px; margin-top: 2px; }
+.tabla-animaciones .sin-cortar { white-space: nowrap; }
+.tabla-animaciones .sin-cortar .boton + .boton { margin-left: 6px; }
+.celda-puntos { max-width: 260px; line-height: 2; }
+.celda-puntos .cuadro { margin-right: 2px; }
+.celda-puntos .etiqueta { margin-left: 4px; }
+@media (max-width: 760px) {
+  /* En el teléfono se esconden las columnas que menos importan */
+  .tabla-animaciones thead th:nth-child(2), .tabla-animaciones tbody td:nth-child(2),
+  .tabla-animaciones thead th:nth-child(3), .tabla-animaciones tbody td:nth-child(3) { display: none; }
+}

@@ -35,15 +35,44 @@
 
   <div class="tarjeta">
     <p class="tenue" id="cargando">Cargando…</p>
-    <table class="tabla" id="tabla" hidden>
-      <thead>
-        <tr><th>Nombre</th><th>Qué hace</th><th>Los puntos</th><th>Dura</th><th>Precio</th><th>Tienda</th><th></th></tr>
-      </thead>
-      <tbody id="cuerpo"></tbody>
-    </table>
+    <div class="tabla-envoltorio">
+      <table class="tabla tabla-animaciones" id="tabla" hidden>
+        <thead>
+          <tr>
+            <th>Animación</th>
+            <th>Cómo se ve</th>
+            <th class="der">Dura</th>
+            <th class="der">Precio</th>
+            <th>Estado</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="cuerpo"></tbody>
+      </table>
+    </div>
     <p class="tenue" id="vacio" hidden>Todavía no hay ninguna. Creá la primera con “Nueva animación”.</p>
   </div>
 </main>
+
+
+<!-- Previsualizar: la misma cancha que el editor, pero sin poder tocar nada -->
+<div class="fondo-modal" id="fondoPrevia" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloPrevia">
+    <div class="modal-cabeza">
+      <h2 id="tituloPrevia">Animación</h2>
+      <button class="boton chico" type="button" id="cerrarPrevia">Cerrar</button>
+    </div>
+    <div class="modal-cuerpo">
+      <div class="cancha-previa">
+        <canvas id="lienzoPrevia" width="1240" height="600"></canvas>
+      </div>
+      <dl class="lista-datos" id="datosPrevia"></dl>
+    </div>
+    <div class="modal-pie">
+      <button class="boton" type="button" id="editarDesdePrevia">Editarla</button>
+    </div>
+  </div>
+</div>
 
 <div class="fondo-modal" id="fondoModal" hidden>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloModal">
@@ -253,19 +282,42 @@ function pintar() {
   $("cargando").hidden = true;
   $("tabla").hidden = animaciones.length === 0;
   $("vacio").hidden = animaciones.length > 0;
+
+  // De los puntos se muestran los primeros y cuántos quedan: con 50 emojis la fila se
+  // desarmaba. El detalle completo se ve con el botón de previsualizar.
+  const ASOMAN = 6;
+  const carita = (a) => {
+    const conAlgo = (a.cuadros || []).filter(Boolean);
+    // Si no tiene ni un emoji es de puro tamaño: ahí no corresponde el "+N", que quedaba
+    // como "sin emojis +3" y no se entendía.
+    if (!conAlgo.length) return '<span class="tenue">solo cambia de tamaño</span>';
+    const muestra = conAlgo.slice(0, ASOMAN).map((c) => `<span class="cuadro">${esc(c)}</span>`).join("");
+    const resto = conAlgo.length - Math.min(ASOMAN, conAlgo.length);
+    return muestra + (resto > 0 ? ` <span class="tenue">+${resto}</span>` : "");
+  };
+  const crece = (a) => {
+    const t = (a.tamanos || []).map(Number).filter((x) => x && x !== 1);
+    if (!t.length) return "";
+    return ` <span class="etiqueta">hasta ${unDecimal(Math.max(...t))}×</span>`;
+  };
+
   $("cuerpo").innerHTML = animaciones.map((a) => `
     <tr>
-      <td><strong>${esc(a.nombre)}</strong></td>
-      <td>${esc(NOMBRE_TIPO[a.tipo] || a.tipo)}</td>
-      <td>${(a.cuadros || []).map((c, i) => {
-            const t = (a.tamanos || [])[i];
-            const medida = t && Number(t) !== 1 ? `<sub>${unDecimal(t)}×</sub>` : "";
-            return `<span class="cuadro">${c ? esc(c) : "·"}${medida}</span>`;
-          }).join("")}</td>
-      <td>${unDecimal(a.duracionMs / 1000)} s</td>
-      <td>${a.sinPrecio ? '<span class="tenue">sin precio</span>' : a.precio + " 🪙"}</td>
-      <td>${a.enTienda ? "Sí" : "No"}${a.activa ? "" : ' <span class="tenue">(apagada)</span>'}</td>
-      <td><button class="boton chico" data-editar="${esc(a.clave)}">Editar</button></td>
+      <td>
+        <strong>${esc(a.nombre)}</strong>
+        <div class="tenue chico">${esc(a.descripcion || NOMBRE_TIPO[a.tipo] || "")}</div>
+      </td>
+      <td class="celda-puntos">${carita(a)}${crece(a)}</td>
+      <td class="der">${unDecimal(a.duracionMs / 1000)} s</td>
+      <td class="der">${a.sinPrecio ? '<span class="tenue">sin precio</span>' : "🪙 " + a.precio}</td>
+      <td>
+        ${a.enTienda ? '<span class="etiqueta ok">En la tienda</span>' : '<span class="etiqueta">Guardada</span>'}
+        ${a.activa ? "" : '<span class="etiqueta ban">Apagada</span>'}
+      </td>
+      <td class="der sin-cortar">
+        <button class="boton chico" data-ver="${esc(a.clave)}">Ver</button>
+        <button class="boton chico" data-editar="${esc(a.clave)}">Editar</button>
+      </td>
     </tr>`).join("");
 }
 
@@ -520,6 +572,44 @@ $("agrandar").onclick = () => {
   $("agrandar").textContent = grande ? "Achicar" : "Agrandar";
 };
 
+
+// ══════════ Previsualizar desde la tabla ══════════
+// Usa la MISMA cancha que el editor (js/cancha-animacion.js), así lo que se ve acá es
+// exactamente lo que va a pasar en la sala.
+let animacionEnPrevia = null;
+const canchaPrevia = CanchaAnimacion.crear($("lienzoPrevia"), {
+  puntos: () => (animacionEnPrevia
+    ? (animacionEnPrevia.cuadros || []).map((c, i) => ({ emoji: c, tamano: (animacionEnPrevia.tamanos || [])[i] || 1 }))
+    : []),
+  msPorCuadro: () => (animacionEnPrevia ? animacionEnPrevia.msPorCuadro : 200),
+});
+
+function verPrevia(clave) {
+  const a = animaciones.find((x) => x.clave === clave);
+  if (!a) return;
+  animacionEnPrevia = a;
+  $("tituloPrevia").textContent = a.nombre;
+  const grandes = (a.tamanos || []).map(Number).filter((x) => x && x !== 1);
+  $("datosPrevia").innerHTML = [
+    ["Qué hace", NOMBRE_TIPO[a.tipo] || a.tipo],
+    ["Dura", unDecimal(a.duracionMs / 1000) + " s"],
+    ["Puntos", (a.cuadros || []).length + " · " + Math.round(1000 / a.msPorCuadro) + " por segundo"],
+    ["Tamaño", grandes.length ? "hasta " + unDecimal(Math.max(...grandes)) + "×" : "siempre igual"],
+    ["Precio", a.sinPrecio ? "sin precio" : "🪙 " + a.precio + (a.enTienda ? " (en la tienda)" : " (guardada, no se vende)")],
+  ].map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(String(v))}</dd>`).join("");
+  $("fondoPrevia").hidden = false;
+  canchaPrevia.arrancar();
+}
+
+const cerrarPrevia = () => { $("fondoPrevia").hidden = true; canchaPrevia.pausar(); };
+$("cerrarPrevia").onclick = cerrarPrevia;
+$("fondoPrevia").addEventListener("click", (ev) => { if (ev.target === $("fondoPrevia")) cerrarPrevia(); });
+$("editarDesdePrevia").onclick = () => {
+  const clave = animacionEnPrevia && animacionEnPrevia.clave;
+  cerrarPrevia();
+  if (clave) abrir(clave);
+};
+
 // ══════════ Abrir, guardar, borrar ══════════
 function abrir(clave) {
   editando = clave || null;
@@ -552,9 +642,15 @@ function abrir(clave) {
 const cerrar = () => { $("fondoModal").hidden = true; cancha.pausar(); };
 $("nueva").onclick = () => abrir(null);
 $("cerrarModal").onclick = cerrar;
-document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && !$("fondoModal").hidden) cerrar(); });
+document.addEventListener("keydown", (ev) => {
+  if (ev.key !== "Escape") return;
+  if (!$("fondoPrevia").hidden) return cerrarPrevia();
+  if (!$("fondoModal").hidden) cerrar();
+});
 
 $("cuerpo").onclick = (ev) => {
+  const ver = ev.target.closest("[data-ver]");
+  if (ver) return verPrevia(ver.dataset.ver);
   const b = ev.target.closest("[data-editar]");
   if (b) abrir(b.dataset.editar);
 };
