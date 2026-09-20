@@ -651,6 +651,7 @@ input[type=number]:focus { outline: none; border-color: var(--acento); box-shado
 .casillero.puesta { grid-template-columns: repeat(6, 1fr); max-width: 140px; }
 
 .casilla {
+  position: relative; overflow: hidden;
   aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
   padding: 8px 4px; background: var(--superficie); border: 2px solid var(--borde-fuerte); border-radius: 10px;
   cursor: pointer; transition: transform .12s ease, border-color .12s ease, box-shadow .12s ease;
@@ -850,4 +851,20 @@ input[type=number]:focus { outline: none; border-color: var(--acento); box-shado
   /* En el teléfono se esconden las columnas que menos importan */
   .tabla-animaciones thead th:nth-child(2), .tabla-animaciones tbody td:nth-child(2),
   .tabla-animaciones thead th:nth-child(3), .tabla-animaciones tbody td:nth-child(3) { display: none; }
+}
+
+/* Al pasar el mouse por una casilla aparece el cartelito para prenderla o apagarla, sin
+   tener que abrir la ficha de abajo. Solo en pantallas con mouse: en el teléfono no hay
+   hover, y ahí tocar la casilla abre la ficha, que tiene los mismos botones. */
+.casilla-accion { display: none; }
+@media (hover: hover) {
+  .casilla-accion {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: color-mix(in srgb, var(--acento) 88%, transparent);
+    color: var(--sobre-acento); font-size: 12px; font-weight: 700; text-align: center;
+    opacity: 0; transition: opacity .12s ease; padding: 4px;
+  }
+  .casilla:hover .casilla-accion, .casilla:focus-visible .casilla-accion { opacity: 1; }
+  /* La que ya está puesta ofrece sacarla, y se distingue por el color */
+  .casilla.puesta .casilla-accion { background: color-mix(in srgb, var(--rojo) 88%, transparent); }
 }

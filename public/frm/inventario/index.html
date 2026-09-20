@@ -113,6 +113,7 @@ function pintar() {
               type="button" data-clave="${esc(c.clave)}" title="${esc(c.nombre)} · vale ${monedasTexto(c.vale)} 🪙">
         <span class="casilla-camiseta" style="background:${fondoCamiseta(c)}"></span>
         <span class="casilla-nombre">${esc(c.nombre)}</span>
+        <span class="casilla-accion" data-usar="${esc(c.clave)}">${inventario.puesta === c.clave ? "Sacármela" : "Usar"}</span>
       </button>`);
   }
   $("casillero").innerHTML = casillas.join("");
@@ -145,6 +146,7 @@ function pintarAnimaciones() {
               type="button" data-animacion="${esc(a.clave)}" title="${esc(a.nombre)} · vale ${monedasTexto(a.vale)} 🪙">
         <span class="casilla-emoji">${esc(caraDe(a))}</span>
         <span class="casilla-nombre">${esc(a.nombre)}</span>
+        <span class="casilla-accion" data-activar="${esc(a.clave)}">${animaciones.puesta === a.clave ? "Desactivar" : "Activar"}</span>
       </button>`);
   }
   $("casilleroAnim").innerHTML = casillas.join("");
@@ -225,7 +227,32 @@ async function cargar() {
   }
 }
 
+// Prende y apaga sin abrir el detalle: es lo que se hace todo el tiempo, y abrir la ficha
+// para dos clicks más era una vuelta al pedo.
+async function prenderApagar(tipo, clave) {
+  const ruta = tipo === "animacion" ? "/api/animaciones/elegir" : "/api/tienda/elegir";
+  const puesta = tipo === "animacion" ? animaciones.puesta : inventario.puesta;
+  const sacar = puesta === clave;
+  try {
+    await Sesion.pedir(ruta, { method: "POST", body: JSON.stringify({ clave: sacar ? null : clave }) });
+    if (tipo === "animacion") {
+      avisar(sacar ? "Animación desactivada: volvés al festejo de siempre." : "Animación activada: la vas a usar en tu próximo gol.", "ok");
+    } else {
+      avisar(sacar ? "Te la sacaste: volvés a la camiseta del sorteo." : "Listo. Si sos capitán, tu equipo juega con esta.", "ok");
+    }
+    await cargar();
+    // Si el detalle estaba abierto en esa misma cosa, se refresca para que el botón cambie
+    if (elegida === clave && tipoElegido === tipo) (tipo === "animacion" ? abrirAnimacion : abrir)(clave);
+  } catch (error) { avisar(error.message, "mal"); }
+}
+
 document.addEventListener("click", (e) => {
+  // Primero el cartelito de "Activar" / "Usar": si se tocó eso, no se abre la ficha
+  const activar = e.target.closest("[data-activar]");
+  if (activar) { e.preventDefault(); e.stopPropagation(); return prenderApagar("animacion", activar.dataset.activar); }
+  const usar = e.target.closest("[data-usar]");
+  if (usar) { e.preventDefault(); e.stopPropagation(); return prenderApagar("camiseta", usar.dataset.usar); }
+
   const deAnimacion = e.target.closest(".casilla[data-animacion]");
   if (deAnimacion) return abrirAnimacion(deAnimacion.dataset.animacion);
   const casilla = e.target.closest(".casilla[data-clave]");
