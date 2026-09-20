@@ -72,22 +72,50 @@ if (conDominio) {
   if (!WEB_URL) log(`${GRIS}⚠️ Poné WEB_URL en .env (por ejemplo https://nandutihax.com) para que los links salgan bien${RESET}`);
 }
 
-const proceso = spawn(cloudflared, argumentos, {
-  stdio: ["ignore", "pipe", "pipe"],
-});
+// Si Cloudflare rechaza el token (se rehizo o se borró el túnel), no dejamos la web adentro:
+// se avisa y se abre una dirección al azar, como antes, hasta que se ponga el token nuevo.
+let conDominioAhora = conDominio;
+let yaPasamosAlAzar = false;
+let cambiandoDeTunel = false;   // true mientras cerramos uno a propósito para abrir el otro
+let proceso = null;
 
-proceso.on("error", (error) => {
-  console.error("\n❌ No se pudo correr cloudflared: " + error.message);
-  console.error("   👉 Instalalo con:  winget install Cloudflare.cloudflared");
-  console.error("   👉 O poné la ruta del ejecutable en CLOUDFLARED_BIN (.env)\n");
-  process.exit(1);
-});
+function abrirCloudflared(args) {
+  proceso = spawn(cloudflared, args, { stdio: ["ignore", "pipe", "pipe"] });
+
+  proceso.on("error", (error) => {
+    console.error("\n❌ No se pudo correr cloudflared: " + error.message);
+    console.error("   👉 Instalalo con:  winget install Cloudflare.cloudflared");
+    console.error("   👉 O poné la ruta del ejecutable en CLOUDFLARED_BIN (.env)\n");
+    process.exit(1);
+  });
+
+  proceso.stdout.on("data", mirar);
+  proceso.stderr.on("data", mirar);
+  return proceso;
+}
+
+function pasarAlAzar(motivo) {
+  if (yaPasamosAlAzar || !conDominioAhora) return;
+  yaPasamosAlAzar = true;
+  conDominioAhora = false;
+  log(`⚠️ Cloudflare rechazó el túnel con dominio: ${motivo}.`);
+  log(`${GRIS}   El TUNEL_TOKEN de .env ya no sirve (se rehizo o se borró el túnel).${RESET}`);
+  log(`${GRIS}   Mientras tanto se abre una dirección al azar, para no dejar la web adentro.${RESET}`);
+  cambiandoDeTunel = true;
+  try { proceso.kill(); } catch (error) { /* ya estaba muerto */ }
+  setTimeout(() => {
+    vigilarSalida(abrirCloudflared(["tunnel", "--url", `http://localhost:${PUERTO}`, "--no-autoupdate"]));
+    cambiandoDeTunel = false;
+  }, 1500);
+}
 
 // cloudflared escribe casi todo por stderr; el link sale en una de esas líneas
 const mirar = (texto) => {
   // Con dominio propio la dirección la sabemos de antemano (WEB_URL): se avisa cuando el túnel
   // dice que ya está conectado. Con el túnel al azar, el link sale en una de estas líneas.
-  if (conDominio) {
+  if (/Invalid tunnel secret|tunnel not found|Unauthorized/i.test(texto)) pasarAlAzar("el token no sirve");
+
+  if (conDominioAhora) {
     if (!urlPublica && WEB_URL && /Registered tunnel connection|Connection .* registered/i.test(texto)) {
       urlPublica = WEB_URL;
       avisar({ url: urlPublica, estado: "arriba" });
@@ -105,8 +133,7 @@ const mirar = (texto) => {
   }
 };
 
-proceso.stdout.on("data", mirar);
-proceso.stderr.on("data", mirar);
+abrirCloudflared(argumentos);
 
 async function avisar(datos) {
   if (datos.estado === "arriba") {
@@ -138,9 +165,15 @@ async function cortar() {
 process.on("SIGINT", cortar);
 process.on("SIGTERM", cortar);
 
-proceso.on("exit", async (codigo) => {
-  if (cortando) return;
-  console.error(`\n❌ cloudflared se cerró (código ${codigo}).`);
-  if (urlPublica) await avisar({ estado: "problema", nota: "El túnel se cortó. Cuando vuelva, este mensaje se actualiza." });
-  process.exit(codigo || 1);
-});
+function vigilarSalida(hijo) {
+  hijo.on("exit", async (codigo) => {
+    // Si lo cerramos nosotros para pasar al túnel al azar, no es una caída
+    if (cortando || cambiandoDeTunel || hijo !== proceso) return;
+    console.error(`\n❌ cloudflared se cerró (código ${codigo}).`);
+    if (urlPublica) await avisar({ estado: "problema", nota: "El túnel se cortó. Cuando vuelva, este mensaje se actualiza." });
+    process.exit(codigo || 1);
+  });
+}
+
+vigilarSalida(proceso);
+
