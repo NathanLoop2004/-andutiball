@@ -702,6 +702,16 @@ de ese entorno usa `DATABASE_URL`. La conexión se abre recién cuando alguien l
 Es la primera versión y la vamos a ir cambiando: se toca `prisma/schema.prisma` y se corre
 `npm run base:migrar`.
 
+## 👕 La camiseta que compraste
+
+Si compraste camisetas en la tienda, las ves con **`!camisetas`** y te ponés una con
+**`!camiseta nacional`** (o el club que sea). Tu equipo juega con esa, en vez de la del sorteo.
+
+- La elige **el capitán** del equipo: el que armó el equipo en la elección.
+- **Le dura hasta que se vaya de la sala o se cambie de equipo.** Si gana y sigue, sigue con la
+  suya, partido tras partido. Cuando se va, el equipo vuelve a la camiseta del sorteo.
+- `!camiseta ninguna` te la saca y volvés a la del sorteo.
+
 ## ⚽ La pelota de futsal
 
 La pelota se frenaba demasiado rápido y quedaba muerta contra las paredes. Ahora conserva más

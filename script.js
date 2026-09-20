@@ -157,11 +157,11 @@ var CantidadCambiarTamano = 1;
 // ▇▇▇▇▇▇▇ ⚽👕 CAMISETAS POR DEFECTO ⚽👕 ▇▇▇▇▇▇▇
 
 // CAMISETA EQUIPO RED 🔴
-var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
+var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
 var NombreEquipoRojo = "OLIMPIA";
 
 // CAMISETA EQUIPO BLUE 🔵
-var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
+var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
 var NombreEquipoAzul = "CERRO PORTEÑO";
 
 
@@ -20724,6 +20724,43 @@ function hayCapitanes() {
 	return typeof SeleccionPorTurnos !== "undefined" && SeleccionPorTurnos === true;
 }
 
+// Quién eligió la camiseta de cada equipo: equipo → nick en minúscula.
+//
+// Hace falta acordarse. Antes la camiseta se aplicaba solo si en ESE momento había capitanes
+// (SeleccionPorTurnos), y en el modo "combinado" la elección se apaga sola entre partidos
+// cuando no sobra gente: al arrancar el siguiente ya no había capitán, no se aplicaba nada y
+// salía la del sorteo. O sea que el "la vas a usar en el próximo partido" del comando era
+// mentira. Guardando el nick, la camiseta le dura mientras esa persona siga en ese equipo.
+var camisetaDelEquipo = { 1: null, 2: null };
+
+function recordarQuienEligio(jugador) {
+	if (jugador && (jugador.team === 1 || jugador.team === 2)) {
+		camisetaDelEquipo[jugador.team] = String(jugador.name).toLowerCase();
+	}
+}
+
+function olvidarCamisetaDe(jugador) {
+	if (!jugador) return;
+	var nick = String(jugador.name).toLowerCase();
+	for (var equipo = 1; equipo <= 2; equipo++) {
+		if (camisetaDelEquipo[equipo] === nick) camisetaDelEquipo[equipo] = null;
+	}
+}
+
+// De quién es la camiseta que juega este equipo: el que la eligió si sigue acá, y si no,
+// el capitán de ahora (solo cuando se está eligiendo, como antes).
+function duenoDeLaCamiseta(equipo) {
+	var recordado = camisetaDelEquipo[equipo];
+	if (recordado) {
+		var sigue = room.getPlayerList().filter(function (j) {
+			return j.team === equipo && j.id !== 0 && String(j.name).toLowerCase() === recordado;
+		})[0];
+		if (sigue) return sigue;
+		camisetaDelEquipo[equipo] = null;   // se fue o se cambió de equipo
+	}
+	return hayCapitanes() ? capitanDelEquipo(equipo) : null;
+}
+
 // El capitán de un equipo: el primero de ese equipo en la lista (el que eligió)
 function capitanDelEquipo(equipo) {
 	if (typeof capitanDe === "function") {
@@ -20750,11 +20787,11 @@ function camisetaPuestaDe(jugador) {
 }
 
 function ponerCamisetaDelEquipo(equipo) {
-	if (!CamisetasCompradasActivas || !hayCapitanes()) return false;
-	var capitan = capitanDelEquipo(equipo);
+	if (!CamisetasCompradasActivas) return false;
+	var capitan = duenoDeLaCamiseta(equipo);
 	if (!capitan) return false;
 	var puesta = camisetaPuestaDe(capitan);
-	if (!puesta) return false;
+	if (!puesta) { olvidarCamisetaDe(capitan); return false; }
 
 	room.setTeamColors(
 		equipo,
@@ -20784,7 +20821,8 @@ function ponerCamisetaDelEquipo(equipo) {
 	var anteriorSalida = room.onPlayerLeave;
 	room.onPlayerLeave = function (jugador) {
 		if (typeof anteriorSalida === "function") anteriorSalida(jugador);
-		if (!hayCapitanes() || !jugador || jugador.team === 0) return;
+		olvidarCamisetaDe(jugador);
+		if (!jugador || jugador.team === 0) return;
 		var equipo = jugador.team;
 		setTimeout(function () {
 			try { ponerCamisetaDelEquipo(equipo); } catch (e) {}
@@ -20824,6 +20862,7 @@ function ponerCamisetaDelEquipo(equipo) {
 			var pedida = String(message).trim().slice(10).trim().toLowerCase();
 			if (pedida === "ninguna" || pedida === "sacar" || pedida === "-") {
 				avisarAlPanel({ tipo: "camiseta", nick: player.name, clave: null });
+				olvidarCamisetaDe(player);
 				room.sendAnnouncement("👕 Te sacaste la camiseta: volvés a la del sorteo.", player.id, 0xFFD100, "bold", 0);
 				return false;
 			}
@@ -20836,6 +20875,7 @@ function ponerCamisetaDelEquipo(equipo) {
 				return false;
 			}
 			avisarAlPanel({ tipo: "camiseta", nick: player.name, clave: elegida.clave });
+			recordarQuienEligio(player);   // para que le dure los partidos siguientes
 			room.sendAnnouncement("👕 Te pusiste la de " + elegida.nombre + ". La vas a usar en el próximo partido.", player.id, 0xFFD100, "bold", 2);
 			return false;
 		}

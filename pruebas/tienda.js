@@ -99,6 +99,40 @@ function revisar(titulo, condicion, detalle) {
   chat(beto, "!camiseta cerro porteño");
   revisar("Solo el capitán cambia la camiseta del equipo",
     anuncios.some((a) => /la elige el capitán/.test(a)) && !(contexto.__panelCola || []).some((e) => e.tipo === "camiseta"), anuncios[0]);
+  // La camiseta elegida DURA los partidos siguientes, aunque la elección de capitanes se apague.
+  // En el modo "combinado" eso pasa solo entre partidos cuando no sobra gente: antes se perdía
+  // la camiseta y salía la del sorteo, justo lo que el comando promete que no va a pasar.
+  avanzar(6000);
+  contexto.__MIS_CAMISETAS = { ana: [{ clave: "oli", nombre: "OLIMPIA" }] };
+  contexto.__CAMISETA_PUESTA = {};
+  vmSet(sala, "SeleccionPorTurnos", true);
+  room.setPlayerTeam(ana.id, 1);
+  room.setPlayerTeam(beto.id, 2);
+  chat(ana, "!camiseta olimpia");   // la elige siendo capitana
+  contexto.__CAMISETA_PUESTA = { ana: { clave: "oli", nombre: "OLIMPIA", angulo: 90, texto: "000000", colores: ["FFFFFF", "FF00FF", "FFFFFF"] } };
+
+  vmSet(sala, "SeleccionPorTurnos", false);   // el combinado apaga la elección entre partidos
+  sala.camisetas.length = 0;
+  room.stopGame();
+  room.startGame();
+  if (room.onGameStart) room.onGameStart(null);
+  avanzar(800);
+  const siguiente = sala.camisetas.filter((c) => c.equipo === 1).pop();
+  revisar("La camiseta elegida dura en el partido siguiente, aunque se apague la elección",
+    Boolean(siguiente) && siguiente.colores[1] === MAGENTA, JSON.stringify(siguiente));
+
+  // Si el que la eligió SE VA DE LA SALA, su camiseta deja de mandar y vuelve la del sorteo.
+  // Ojo: no alcanza con mandarlo a espectadores, porque el acomodo automático lo devuelve a la
+  // cancha en cuanto arranca el partido y la camiseta sigue siendo suya, con razón.
+  sala.sale(ana.id);
+  sala.camisetas.length = 0;
+  room.stopGame();
+  room.startGame();
+  if (room.onGameStart) room.onGameStart(null);
+  avanzar(800);
+  revisar("Si el que la eligió se va, vuelve la del sorteo",
+    !sala.camisetas.some((c) => c.equipo === 1 && c.colores[1] === MAGENTA), sala.camisetas.length + " camisetas");
+
   revisar("La sala no tiró errores", sala.errores.length === 0, sala.errores.slice(0, 2).join(" | "));
 
   // ── 2) Contra la base ──

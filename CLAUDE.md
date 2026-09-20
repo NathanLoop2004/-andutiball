@@ -896,6 +896,30 @@ cambia el que pierde (en `handleTeamVictory`). Viene apagado y los dos comandos 
 `npm run prueba-camisetas` arranca 8 partidos y comprueba que los clubes vayan cambiando. El arnés
 `sala-falsa.js` guarda cada `setTeamColors` en `sala.camisetas`.
 
+### La camiseta comprada le gana al sorteo
+
+Bloque `👕 EQUIPOS` (`parches/bloques/equipos.txt`). El que compró una camiseta en la tienda se la
+pone con `!camiseta <club>` y **su equipo juega con esa**, pisando el sorteo automático. Se aplica
+en un `setTimeout(300)` colgado de `onGameStart`, o sea **después** de `swapTeamColors()`, que
+corre sincrónico ahí adentro.
+
+**Cuánto le dura** (20/09/2026): desde que la elige **hasta que se va de la sala o se cambia de
+equipo**. Gana y sigue, cambia de partido, se apaga y se prende la elección: la camiseta queda.
+Cuando se va, `olvidarCamisetaDe()` la borra y vuelve la del sorteo.
+
+Eso obligó a **acordarse de quién la eligió** (`camisetaDelEquipo`: equipo → nick). Antes se
+miraba `hayCapitanes()` (o sea `SeleccionPorTurnos`) en el momento de aplicarla, y en el modo
+**combinado** eso se apaga solo entre partidos cuando no sobra gente: al arrancar el siguiente ya
+no había capitán, no se aplicaba nada y salía la del sorteo. El comando prometía "la vas a usar en
+el próximo partido" y era mentira. Ahora `duenoDeLaCamiseta(equipo)` devuelve al que la eligió si
+**sigue en ese equipo**, y solo si no hay ninguno recordado cae al capitán de turno.
+
+Quién puede cambiarla sigue igual: con la elección prendida, **solo el capitán** (`esCapitan`).
+
+**Trampa al probar esto**: mandar a alguien a espectadores **no** lo saca del equipo. El acomodo
+automático lo devuelve a la cancha apenas arranca el partido, así que su camiseta sigue mandando
+(y está bien). Para probar que vuelve la del sorteo hay que sacarlo de la sala (`sala.sale(id)`).
+
 ## Avisos sin spam
 
 Bloque `🔕 AVISOS SIN SPAM` (`parches/bloques/avisos.txt`, va antes de ⚙️ CONFIGURACIÓN). Envuelve
