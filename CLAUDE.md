@@ -1235,6 +1235,12 @@ emoji", que sí cortan. Cada cuadro se recorta a 2 caracteres: HaxBall no muestr
 | Verlas en la tienda | cualquiera | `GET /api/animaciones` |
 | Comprar, vender, elegir | con sesión | `verificarToken()` |
 
+**Al vender se paga el 70% de lo que VALE HOY**, no de lo que pagó en su momento (`loQueVale()`,
+en los dos modelos). Si al artículo le subieron o le bajaron el precio, el que lo vende cobra por
+el de ahora — es lo que espera cualquiera. Si ya no tiene precio (lo sacaron de la tienda), se cae
+a lo que había pagado, que es lo único que se sabe. El `vale` del inventario usa la misma cuenta,
+así lo que dice la pantalla es lo que se va a cobrar.
+
 **Cada cosa de la tienda tiene su propia URL**, no un modal (20/09/2026): `/frm/camiseta/?c=<clave>`
 y `/frm/animacion/?c=<clave>` (`VistasController.camiseta` / `.animacion`). Así el link se puede
 compartir, anda el botón de atrás y Google puede entrar — por eso además están en el `Allow` del

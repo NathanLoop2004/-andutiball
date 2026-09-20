@@ -245,8 +245,15 @@ function revisar(titulo, condicion, detalle) {
       Boolean(suya) && Array.isArray(suya.cuadros) && Array.isArray(suya.tamanos) && suya.cuadros.length === suya.tamanos.length,
       JSON.stringify(suya));
 
+    // Se vende por lo que VALE HOY, no por lo que pagó: se compró a 2 y ahora vale 10,
+    // así que tienen que devolverle 7 (el 70% de 10) y no 1,4 (el 70% de 2).
+    await AnimacionesModel.guardar(clave, { nombre: "De prueba", cuadros: ["⚽", ""], tamanos: [1, 1.8], precio: 10, enTienda: true }, "prueba");
+    const conNuevoPrecio = await AnimacionesModel.deLaCuenta(nick);
+    revisar("El inventario ya muestra lo que vale hoy", conNuevoPrecio.animaciones[0].vale === 7,
+      "pagó " + conNuevoPrecio.animaciones[0].pagada + " y vale " + conNuevoPrecio.animaciones[0].vale);
+
     const venta = await AnimacionesModel.vender(nick, clave);
-    revisar("Al venderla se devuelve el 70%", venta.devuelto === 1.4, "devolvió " + venta.devuelto);
+    revisar("Se vende por el precio de HOY, no por el que pagó", venta.devuelto === 7, "devolvió " + venta.devuelto);
     const despues = await AnimacionesModel.deLaCuenta(nick);
     revisar("Y se la saca de encima", despues.animaciones.length === 0 && despues.puesta === null);
 

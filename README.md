@@ -713,7 +713,8 @@ del otro) y **hacerte grande y chico**.
 - **Dura lo que dura el festejo**: se corta sola cuando se saca del medio, así que nadie sigue
   agrandado jugando. Y el bot **espera** a que termine antes de acomodar a la gente en la cancha.
 - Se prenden y se apagan desde **Mi inventario**, que tiene un apartado propio para animaciones,
-  aparte del de camisetas. Ahí también las podés probar y venderlas al 70%.
+  aparte del de camisetas. Ahí también las podés probar y venderlas: te devuelven el **70% de lo que vale hoy**, no de lo que
+  pagaste, así que si le subieron el precio cobrás más.
 - En la sala: `!animaciones` para ver las tuyas, `!animacion <nombre>` para ponértela y
   `!animacion ninguna` para sacártela.
 

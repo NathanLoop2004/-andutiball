@@ -208,19 +208,26 @@ function revisar(titulo, condicion, detalle) {
     await TiendaModel.elegir(nick, null);
     revisar("Y se la puede sacar", (await TiendaModel.deLaCuenta(nick)).puesta === null);
 
-    // ── Vender: se devuelve el 70% de lo que pagó ──
+    // ── Vender: se devuelve el 70% de lo que VALE HOY ──
+    // La compró a 2,5 y mientras tanto le subieron el precio a 4: tiene que cobrar 2,8
+    // (el 70% de 4), no 1,75 (el 70% de lo que pagó).
+    await TiendaModel.ponerPrecio(clave, { precio: 4, enTienda: true }, "prueba");
+    const conNuevoPrecio = await TiendaModel.deLaCuenta(nick);
+    revisar("El inventario ya muestra lo que vale hoy", conNuevoPrecio.camisetas[0].vale === 2.8,
+      `pagó ${conNuevoPrecio.camisetas[0].pagada} y vale ${conNuevoPrecio.camisetas[0].vale}`);
+
     await TiendaModel.elegir(nick, clave);   // puesta, para ver que también se la saca
     const saldoPrevio = await MonedasModel.saldo(nick);
     const venta = await TiendaModel.vender(nick, clave);
-    revisar("Al vender te devuelven el 70% de lo que pagaste", venta.devuelto === 1.75 && venta.pagaste === 2.5, `pagó ${venta.pagaste}, le dieron ${venta.devuelto}`);
-    revisar("Y esas monedas vuelven al saldo", MonedasModel.aCentesimas(venta.saldo) === saldoPrevio + 175, venta.saldo);
+    revisar("Se vende por el precio de HOY, no por el que pagó", venta.devuelto === 2.8 && venta.pagaste === 2.5, `pagó ${venta.pagaste}, le dieron ${venta.devuelto}`);
+    revisar("Y esas monedas vuelven al saldo", MonedasModel.aCentesimas(venta.saldo) === saldoPrevio + 280, venta.saldo);
 
     const despuesDeVender = await TiendaModel.deLaCuenta(nick);
     revisar("La camiseta sale del inventario", !despuesDeVender.camisetas.some((c) => c.clave === clave));
     revisar("Y si la tenía puesta, se la saca", despuesDeVender.puesta === null);
 
     const movimientoVenta = (await MonedasModel.historial(nick))[0];
-    revisar("La venta queda en el historial", movimientoVenta.motivo === "venta" && movimientoVenta.monto === 1.75, movimientoVenta.detalle);
+    revisar("La venta queda en el historial", movimientoVenta.motivo === "venta" && movimientoVenta.monto === 2.8, movimientoVenta.motivo + " " + movimientoVenta.monto);
 
     let yaVendida = null;
     try { await TiendaModel.vender(nick, clave); } catch (e) { yaVendida = e.message; }

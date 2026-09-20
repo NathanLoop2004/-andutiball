@@ -29,7 +29,11 @@
 const { base } = require("../services/ConexionBase");
 const MonedasModel = require("./MonedasModel");
 
-const DEVUELVE_AL_VENDER = 0.7;   // el 30% más barata, igual que las camisetas
+// El 70% de lo que VALE HOY, no de lo que pagó en su momento: si el precio cambió desde que
+// la compró, cobra por el de ahora. Sin precio (se sacó de la tienda) se cae a lo que pagó.
+const DEVUELVE_AL_VENDER = 0.7;
+const loQueVale = (precioDeHoy, loQuePago) =>
+  Math.max(0, Math.round((precioDeHoy === null || precioDeHoy === undefined ? loQuePago : precioDeHoy) * DEVUELVE_AL_VENDER));
 
 const TIPOS = ["secuencia", "tamano", "ambas"];
 // Cuántos puntos entran. El tope tiene que dar para llenar los 10 s con la velocidad más alta
@@ -218,8 +222,8 @@ class AnimacionesModel {
     const comprada = await base().animacionComprada.findUnique({ where: { nick_animacion: { nick: quien, animacion: cual } } });
     if (!comprada) throw new Error("Esa animación no está en tu inventario");
 
-    const devuelve = Math.round(comprada.precio * DEVUELVE_AL_VENDER);
     const animacion = await base().animacion.findUnique({ where: { clave: cual } });
+    const devuelve = loQueVale(animacion ? animacion.precio : null, comprada.precio);
 
     await base().animacionComprada.delete({ where: { id: comprada.id } });
     await base().usuario.updateMany({ where: { nick: quien, animacion: cual }, data: { animacion: null } });
@@ -251,7 +255,7 @@ class AnimacionesModel {
         .map((c) => ({
           ...paraMostrar(porClave.get(c.animacion)),
           pagada: MonedasModel.enMonedas(c.precio),
-          vale: MonedasModel.enMonedas(Math.round(c.precio * DEVUELVE_AL_VENDER)),
+          vale: MonedasModel.enMonedas(loQueVale(porClave.get(c.animacion).precio, c.precio)),
           comprada: c.comprada,
         })),
       puesta: usuario ? usuario.animacion : null,

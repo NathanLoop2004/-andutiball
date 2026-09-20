@@ -15,8 +15,13 @@ const { base } = require("../services/ConexionBase");
 const MonedasModel = require("./MonedasModel");
 const EquiposModel = require("./EquiposModel");
 
-// Cuánto se devuelve al vender: el 70% de lo que pagó (o sea, la vende un 30% más barata)
+// Cuánto se devuelve al vender: el 70% de lo que VALE HOY, no de lo que pagó en su momento.
+// Si el precio subió o bajó desde que la compró, cobra por el de ahora — es lo que espera
+// cualquiera que vende algo. Si la camiseta ya no tiene precio (se sacó de la tienda), se
+// cae a lo que había pagado, que es lo único que se sabe.
 const DEVUELVE_AL_VENDER = 0.7;
+const loQueVale = (precioDeHoy, loQuePago) =>
+  Math.max(0, Math.round((precioDeHoy === null || precioDeHoy === undefined ? loQuePago : precioDeHoy) * DEVUELVE_AL_VENDER));
 
 const paraMostrar = (e) => ({
   clave: e.clave,
@@ -106,9 +111,9 @@ class TiendaModel {
     const compra = await base().camisetaComprada.findUnique({ where: { nick_equipo: { nick: quien, equipo: cual } } });
     if (!compra) throw new Error("Esa camiseta no está en tu inventario");
 
-    const devuelto = Math.max(0, Math.round(compra.precio * DEVUELVE_AL_VENDER));
     const equipo = await base().equipo.findUnique({ where: { clave: cual } });
     const nombre = equipo ? equipo.nombre : cual;
+    const devuelto = loQueVale(equipo ? equipo.precio : null, compra.precio);
 
     await base().camisetaComprada.delete({ where: { id: compra.id } });
     const usuario = await base().usuario.findUnique({ where: { nick: quien }, select: { camiseta: true } });
@@ -145,7 +150,7 @@ class TiendaModel {
       camisetas: compradas.filter((c) => porClave.has(c.equipo)).map((c) => ({
         ...paraMostrar(porClave.get(c.equipo)),
         pagada: MonedasModel.enMonedas(c.precio),
-        vale: MonedasModel.enMonedas(Math.max(0, Math.round(c.precio * DEVUELVE_AL_VENDER))),
+        vale: MonedasModel.enMonedas(loQueVale(porClave.get(c.equipo) ? porClave.get(c.equipo).precio : null, c.precio)),
         comprada: c.comprada,
       })),
       puesta: usuario ? usuario.camiseta : null,
