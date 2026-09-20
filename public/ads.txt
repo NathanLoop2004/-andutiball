@@ -1,0 +1,5 @@
+# ads.txt — le dice a los compradores de publicidad quién puede vender los espacios de
+# nandutihax.com. Sin este archivo AdSense muestra "No encontrado" y no termina de aprobar
+# el sitio. El número es el mismo ADSENSE_CLIENTE del .env, sin el "ca-".
+# f08c47fec0942fa0 es el identificador de Google en el sistema de ads.txt: es igual para todos.
+google.com, pub-7182425734413085, DIRECT, f08c47fec0942fa0
