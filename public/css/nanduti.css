@@ -742,7 +742,7 @@ input[type=number]:focus { outline: none; border-color: var(--acento); box-shado
 .tiempo-regla span::after {
   content: ""; position: absolute; left: 50%; top: 13px; width: 1px; height: 5px; background: var(--borde-fuerte);
 }
-.tiempo-pista { position: relative; display: flex; gap: 4px; overflow-x: auto; padding-bottom: 4px; min-height: 96px; }
+.tiempo-pista { position: relative; display: flex; gap: 3px; padding-bottom: 4px; min-height: 96px; }
 .tiempo-cabezal {
   position: absolute; top: -24px; bottom: 0; width: 2px; background: var(--rojo);
   pointer-events: none; z-index: 3; display: none;
@@ -753,18 +753,20 @@ input[type=number]:focus { outline: none; border-color: var(--acento); box-shado
 }
 .tiempo.corriendo .tiempo-cabezal { display: block; }
 
+/* Cada punto ocupa la misma fracción del ancho: con 3 puntos son anchos, con 10 son finitos,
+   pero siempre caen justo debajo de su marca en la regla. Nada de scroll horizontal. */
 .punto {
-  position: relative; flex: none; width: 74px;
-  display: grid; grid-template-rows: 30px 1fr auto; gap: 3px; place-items: center;
+  position: relative; flex: 1 1 0; min-width: 0;
+  display: grid; grid-template-rows: 28px 1fr auto; gap: 2px; place-items: center;
   background: var(--superficie); border: 2px solid var(--borde); border-radius: 8px;
-  cursor: grab; padding: 5px 4px 4px;
+  cursor: grab; padding: 5px 2px 4px; overflow: hidden;
 }
 .punto:hover { border-color: var(--borde-fuerte); }
 .punto.activo { border-color: var(--acento); box-shadow: 0 0 0 3px var(--acento-suave); }
 .punto.arrastrando { opacity: .4; }
 .punto .cara { font-size: 24px; line-height: 1; }
 .punto .cara.sin { font-size: 11px; color: var(--tenue); font-weight: 600; }
-.punto small { font-size: 10px; font-weight: 600; color: var(--tenue); font-variant-numeric: tabular-nums; }
+.punto small { font-size: 9px; font-weight: 600; color: var(--tenue); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .punto .sacar {
   position: absolute; top: -7px; right: -7px; width: 19px; height: 19px;
   border-radius: 50%; border: none; cursor: pointer; font-size: 12px; line-height: 1;
@@ -777,11 +779,7 @@ input[type=number]:focus { outline: none; border-color: var(--acento); box-shado
 }
 .punto .medida.normal i { background: var(--borde-fuerte); }
 
-.punto-agregar {
-  flex: none; width: 74px; min-height: 96px; font-size: 26px; color: var(--tenue);
-  background: transparent; border: 2px dashed var(--borde-fuerte); border-radius: 8px; cursor: pointer;
-}
-.punto-agregar:hover { color: var(--acento); border-color: var(--acento); }
+.tiempo-pie { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
 .tiempo-pista .vacio { color: var(--tenue); font-size: 13px; padding: 0 6px; align-self: center; }
 
 /* Lo que se edita del punto elegido */
@@ -792,3 +790,24 @@ input[type=number]:focus { outline: none; border-color: var(--acento); box-shado
 .tiempo-regla { cursor: ew-resize; touch-action: none; }
 .tiempo-cabezal { cursor: ew-resize; touch-action: none; }
 .tiempo-cabezal::after { content: ""; position: absolute; inset: 0 -7px; }
+
+/* El editor de animaciones en pantallas chicas */
+@media (max-width: 620px) {
+  .cancha-previa canvas, .cancha-previa.grande canvas { max-width: 100%; }
+  .barra-festejo, .cancha-previa.grande .barra-festejo { max-width: 100%; }
+  .cancha-botones { font-size: 12px; }
+  .punto { grid-template-rows: 24px 1fr auto; padding: 4px 1px 3px; }
+  .punto .cara { font-size: 18px; }
+  .punto .cara.sin { font-size: 9px; }
+  .punto .medida { height: 18px; }
+  .punto small { font-size: 8px; }
+  .punto .sacar { width: 16px; height: 16px; font-size: 10px; top: -6px; right: -4px; }
+  .tiempo-regla span { font-size: 9px; }
+  .teclado-emoji button { min-width: 30px; padding: 4px 5px; font-size: 15px; }
+  .control-rango .valor { min-width: 84px; font-size: 12px; }
+}
+/* Con muchos puntos, el emoji y los textos se achican para que siga entrando todo */
+@media (max-width: 420px) {
+  .punto .cara { font-size: 15px; }
+  .punto small { display: none; }
+}

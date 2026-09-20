@@ -719,7 +719,8 @@ del otro) y **hacerte grande y chico**.
 **Para crearlas** (solo el OWNER y el CO-OWNER): panel → **Animaciones**. El editor tiene:
 
 - **Una cancha igual a la del juego** con una jugada que se repite sola: los dos jugadores suben
-  por la cancha, se pasan la pelota, el otro remata al arco y entra el gol. Ahí se ve tu animación
+  por la cancha **pasándose la pelota en movimiento**, el otro **remata corriendo**, entra el gol
+  y después **se va festejando al córner**. Ahí se ve tu animación
   tal como va a salir en la sala, con el emoji **adentro del jugador** (que es donde HaxBall lo
   muestra). Se puede **pausar** y **agrandar** — agrandala para
   ver bien el emoji, porque a tamaño normal la cancha está a escala real y el jugador es chico.

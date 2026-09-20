@@ -1223,10 +1223,13 @@ decide a qué API le pega y qué muestra.
 La pantalla del panel es `public/frm/animaciones/` (nav "Animaciones", visible con `u.rangos`).
 El candado del navegador es cosmético: el de verdad está en la API. El editor tiene dos partes:
 
-- **La cancha en bucle** (un `<canvas>`): una jugada de verdad, con los jugadores **moviéndose**
-  (`AVANCE` → `PASE` → `REMATE` → festejo → `ESPERA`): los dos rojos suben juntos desde su campo,
-  se la pasan, el otro define contra un arquero azul que se mueve. Las posiciones se calculan
-  para cada momento con una curva suave (`suave()`), no son fijas. Y en el
+- **La cancha en bucle** (un `<canvas>`): una jugada de verdad, **nadie queda quieto**
+  (`AVANCE` → `PASE` → `REMATE` → festejo → `ESPERA`). Los dos rojos suben en diagonal desde su
+  campo **mientras se pasan la pelota**, el que recibe **remata corriendo**, y después del gol
+  **se va festejando al córner** con el compañero atrás. La clave: el pase y el remate se
+  calculan entre las posiciones que tienen los jugadores **en ese instante** (`jugador`,
+  `companiero`), no entre puntos fijos — por eso se ve natural. Todo con `suave()` para que
+  arranque y frene como alguien corriendo. Y en el
   festejo corre la animación **con la misma cuenta que hace la sala**, así se ve tal cual va a
   quedar. Está dibujada con los colores del mapa de verdad (`mapas/nanduti-futsal-x3.hbs`): fondo
   `2a3a40`, líneas `b3b6b6`, áreas curvas `ff6363` y `0099ff`, palos `FFFF00`, pelota `FFD700`.
@@ -1236,7 +1239,12 @@ El candado del navegador es cosmético: el de verdad está en la API. El editor 
   vistazo. El botón Agrandar lo lleva a 840 px (clase `.grande`), que es cuando el emoji se lee
   bien: a tamaño normal el jugador es chico porque la cancha está a escala real.
   El bucle vive en `cuadro()` con `requestAnimationFrame`; `t0` se reinicia al abrir el editor.
-- **La línea de tiempo, estilo editor de video**: arriba una **regla con los segundos**, abajo los
+- **La línea de tiempo, estilo editor de video**. La regla y los clips salen de la **misma base**:
+  los puntos son `flex: 1 1 0` (reparten el ancho en partes iguales) y las marcas van en
+  `i / n * 100%`, así **coinciden siempre**, con 3 puntos o con 10 y en cualquier ancho de
+  pantalla. No hay scroll horizontal: con más puntos los clips se achican. Por eso el botón de
+  agregar está **afuera** de la pista (si estuviera adentro se comería ancho y se desalinearía).
+  Con más de 6 puntos las marcas se saltean para que no se pisen. Arriba una **regla con los segundos**, abajo los
   puntos como clips y un **cabezal rojo** que se mueve marcando el punto que se está viendo en la
   cancha (`marcarPunto()`). Cada clip muestra su emoji, una **barrita con su tamaño** (para ver de
   un vistazo dónde se hace grande) y su segundo. Se toca para editarlo, se arrastra para moverlo y
