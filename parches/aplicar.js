@@ -273,7 +273,8 @@ reemplazar("👥 Dejar entrar a varios desde la misma conexión", "var MaximoJug
 // prende o se apaga el powershot, el script la vuelve a configurar con room.setDiscProperties(0)
 // y la deja como estaba. Así que los mismos números van en los dos lados.
 //
-//   damping 0.99 → 0.991   conserva más velocidad (llega ~11% más lejos; 0.993 era demasiado)
+//   damping 0.99 → 0.9888  llega un poco MENOS lejos que la del autor (89 contra 100): se bajó
+//                           dos veces a pedido del usuario, 0.993 y 0.991 quedaban muy vivas
 //   bCoef   0.4  → 0.5     rebota como una pelota normal de HaxBall, no muere contra la pared
 //
 // invMass queda igual (1.5 normal, PotenciaPowerShot cargada): es el peso, no la energía.
@@ -282,8 +283,8 @@ reemplazar("👥 Dejar entrar a varios desde la misma conexión", "var MaximoJug
 // Se buscan DOS orígenes: el valor del autor y el que hayamos dejado antes. Sin lo segundo,
 // al cambiar el número no pasaba nada: script.js ya no tenía el texto del autor y el
 // reemplazo decía "no se encontró" (pasó al bajar de 0.993 a 0.991).
-const DAMPING_PELOTA = "0.991";
-const DAMPING_VIEJOS = ["0.99", "0.993", "0.995"];   // el del autor y los nuestros de antes
+const DAMPING_PELOTA = "0.9888";
+const DAMPING_VIEJOS = ["0.99", "0.991", "0.993", "0.995"];   // el del autor y los nuestros de antes
 for (const [etiqueta, molde] of [
   ["⚽ Física de la pelota de futsal (normal)", 'setDiscProperties(0,{"bCoef":COEF,"invMass":1.5,"damping":DAMP,'],
   ["⚽ Física de la pelota de futsal (powershot)", 'setDiscProperties(0,{"bCoef":COEF,"invMass":PotenciaPowerShot,"damping":DAMP,'],

@@ -785,7 +785,7 @@ La pelota del autor se frenaba sola enseguida. Desde el 20/09/2026:
 
 | | Autor | Ahora | Qué es |
 |---|---|---|---|
-| `damping` | 0.99 | **0.991** | Cuánta velocidad conserva por tick (60/s). Lo que se siente es cuánto lejos llega, y eso va como 1/(1-damping): 0.990 → 100 · 0.993 → 143 · 0.991 → 111 |
+| `damping` | 0.99 | **0.9888** | Cuánta velocidad conserva por tick (60/s). Lo que se siente es cuánto lejos llega, y eso va como 1/(1-damping): **0.9888 → 89** · 0.990 → 100 · 0.991 → 111 · 0.993 → 143 |
 | `bCoef` | 0.4 | **0.5** | Cuánto rebota contra paredes y jugadores (0.5 es el normal de HaxBall) |
 | `invMass` | 1.5 | 1.5 (igual) | El **peso**. No se tocó: cambia cuánto la mueve cada patada y cuánto la empujan al correr, que es otro problema |
 
@@ -803,7 +803,13 @@ el juego queda inconsistente según si hubo powershot o no.
 (`invMass:1.05`, `PelotaRS`). Al buscar en el script, las de futsal se reconocen por
 `invMass:1.5` / `PotenciaPowerShot` y `PelotaFutsal`.
 
-Estuvo en **0.993** unas horas y quedaba demasiado viva (pedido del usuario: "bajá un 20%").
+Bajó **dos veces** a pedido del usuario ("bajá un 20%" cada vez): 0.993 → 0.991 → 0.9888. Terminó
+un poco **por debajo** de la del autor (89 contra 100), o sea que hoy la pelota se frena antes que
+en el script original. Se le avisó y lo eligió así.
+
+Si vuelve a pedir que sea "menos fuerte", el damping ya no es el problema: lo que queda es el
+**rebote** (`bCoef` 0.5, era 0.4 en el original) o el **peso** (`invMass` 1.5 — más peso, o sea
+un número más chico, la hace salir más lenta de cada patada).
 
 **El parcheador busca el valor del autor Y los nuestros de antes** (`DAMPING_VIEJOS`): sin eso, al
 cambiar el número no pasaba nada, porque `script.js` ya no tenía el texto original y el reemplazo
