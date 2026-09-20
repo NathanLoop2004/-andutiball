@@ -36,7 +36,7 @@
     <p class="tenue" id="cargando">Cargando…</p>
     <table class="tabla" id="tabla" hidden>
       <thead>
-        <tr><th>Nombre</th><th>Tipo</th><th>Los puntos</th><th>Dura</th><th>Precio</th><th>Tienda</th><th></th></tr>
+        <tr><th>Nombre</th><th>Qué hace</th><th>Los puntos</th><th>Dura</th><th>Precio</th><th>Tienda</th><th></th></tr>
       </thead>
       <tbody id="cuerpo"></tbody>
     </table>
@@ -54,14 +54,15 @@
     <div class="modal-cuerpo">
       <div class="editor-animacion">
 
-        <!-- La cancha: pase, gol y festejo, en bucle -->
+        <!-- La cancha, dibujada igual que el mapa de futsal de la sala -->
         <div class="cancha-previa" id="cancha">
-          <canvas id="lienzo" width="840" height="420"></canvas>
+          <canvas id="lienzo" width="1240" height="600"></canvas>
           <div class="cancha-botones">
             <button class="boton chico" type="button" id="pausar">Pausar</button>
             <button class="boton chico" type="button" id="agrandar">Agrandar</button>
-            <span class="tenue" id="faseTexto">—</span>
+              <span class="tenue" id="faseTexto">—</span>
           </div>
+          <div class="barra-festejo"><span id="barraFestejo"></span></div>
         </div>
 
         <!-- Los puntos, uno por uno, como en un editor de video -->
@@ -70,24 +71,15 @@
           <div class="linea-tiempo" id="lineaTiempo"></div>
           <div class="teclado-emoji" id="teclado"></div>
           <p class="tenue">
-            Cada punto es un emoji o una letra, y se muestran uno atrás del otro.
+            Cada punto es un emoji o una letra, y se muestran uno atrás del otro adentro del jugador.
             Tocá un punto para cambiarlo, arrastralo para moverlo de lugar, o la ✕ para sacarlo.
-            Hasta <span id="maxCuadros">10</span>.
+            Hasta <span id="maxCuadros">10</span>. Si no ponés ninguno, la animación es solo de tamaño.
           </p>
         </div>
 
         <div class="editor-campos">
-          <label>Clave <input type="text" id="edClave" maxlength="30" placeholder="tricampeon" autocomplete="off"></label>
           <label>Nombre <input type="text" id="edNombre" maxlength="40" placeholder="Tricampeón" autocomplete="off"></label>
           <label>Descripción <input type="text" id="edDescripcion" maxlength="200" placeholder="Para los que meten goles en serio" autocomplete="off"></label>
-
-          <label>Tipo
-            <select id="edTipo">
-              <option value="secuencia">Le pasan emojis o letras</option>
-              <option value="tamano">Se hace grande y chico</option>
-              <option value="ambas">Las dos cosas</option>
-            </select>
-          </label>
 
           <div class="control-rango">
             <span>Velocidad</span>
@@ -107,23 +99,24 @@
             <small class="tenue" id="textoVueltas">—</small>
           </div>
 
-          <div id="zonaTamano" hidden>
-            <div class="control-rango">
-              <span>Tamaño: de</span>
-              <div class="fila">
-                <input type="range" id="edDesde" min="0.3" max="3" step="0.1" value="1">
-                <span class="valor" id="valorDesde">1,0×</span>
-              </div>
+          <!-- El tamaño se puede tocar SIEMPRE: si lo dejás en 1× y 1×, no se agranda y listo -->
+          <div class="control-rango">
+            <span>Se hace grande: de</span>
+            <div class="fila">
+              <input type="range" id="edDesde" min="0.3" max="3" step="0.1" value="1">
+              <span class="valor" id="valorDesde">1,0×</span>
             </div>
-            <div class="control-rango">
-              <span>Tamaño: hasta</span>
-              <div class="fila">
-                <input type="range" id="edHasta" min="0.3" max="3" step="0.1" value="1.6">
-                <span class="valor" id="valorHasta">1,6×</span>
-              </div>
-            </div>
-            <small class="tenue">1× es el tamaño de siempre.</small>
           </div>
+          <div class="control-rango">
+            <span>…hasta</span>
+            <div class="fila">
+              <input type="range" id="edHasta" min="0.3" max="3" step="0.1" value="1">
+              <span class="valor" id="valorHasta">1,0×</span>
+            </div>
+            <small class="tenue">1× es el tamaño de siempre. Dejá los dos en 1× si no querés que cambie de tamaño.</small>
+          </div>
+
+          <p class="aviso info" id="queHace">—</p>
 
           <label>Precio en monedas <input type="number" id="edPrecio" min="0" step="0.1" placeholder="sin precio"></label>
           <label class="linea"><input type="checkbox" id="edEnTienda"> Mostrarla en la tienda</label>
@@ -164,7 +157,7 @@ if (!(Sesion.usuario() || {}).rangos) {
 let animaciones = [];
 let maxCuadros = 10;
 let editando = null;
-let puntos = [];        // los cuadros, en orden
+let puntos = [];
 let puntoActivo = -1;
 
 const NOMBRE_TIPO = { secuencia: "Emojis / letras", tamano: "Grande y chico", ambas: "Las dos" };
@@ -173,6 +166,28 @@ const NOMBRE_TIPO = { secuencia: "Emojis / letras", tamano: "Grande y chico", am
 // milisegundos por punto, que es lo que usa la sala.
 const msDeFps = (fps) => Math.round(1000 / Number(fps));
 const fpsDeMs = (ms) => Math.min(16, Math.max(1, Math.round(1000 / Number(ms || 200))));
+
+// El "tipo" ya no se elige a mano: sale de lo que cargaste.
+const cambiaDeTamano = () => Number($("edDesde").value) !== 1 || Number($("edHasta").value) !== 1;
+function tipoDeAhora() {
+  if (puntos.length && cambiaDeTamano()) return "ambas";
+  if (puntos.length) return "secuencia";
+  return "tamano";
+}
+
+// La clave es un dato interno (para la base y para !animacion): sale sola del nombre.
+function claveDelNombre(nombre) {
+  const base = String(nombre || "")
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")   // saca los acentos
+    .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 26);
+  const raiz = base.length >= 2 ? base : "animacion";
+  if (!animaciones.some((a) => a.clave === raiz)) return raiz;
+  for (let i = 2; i < 100; i++) {
+    const intento = raiz + "-" + i;
+    if (!animaciones.some((a) => a.clave === intento)) return intento;
+  }
+  return raiz + "-" + Date.now().toString().slice(-4);
+}
 
 async function cargar() {
   try {
@@ -191,7 +206,7 @@ function pintar() {
   $("vacio").hidden = animaciones.length > 0;
   $("cuerpo").innerHTML = animaciones.map((a) => `
     <tr>
-      <td><strong>${esc(a.nombre)}</strong><br><span class="tenue">${esc(a.clave)}</span></td>
+      <td><strong>${esc(a.nombre)}</strong></td>
       <td>${esc(NOMBRE_TIPO[a.tipo] || a.tipo)}</td>
       <td>${(a.cuadros || []).map((c) => `<span class="cuadro">${esc(c)}</span>`).join("")}
           ${a.tipo !== "secuencia" ? `<span class="tenue">${a.tamanoDesde}× → ${a.tamanoHasta}×</span>` : ""}</td>
@@ -217,7 +232,7 @@ function pintarLinea() {
   const agregar = puntos.length < maxCuadros
     ? '<button class="punto-agregar" type="button" id="agregarPunto" title="Agregar un punto">+</button>'
     : "";
-  $("lineaTiempo").innerHTML = (html || '<span class="vacio">Sin puntos todavía: agregá el primero con el + o tocando un emoji de abajo.</span>') + agregar;
+  $("lineaTiempo").innerHTML = (html || '<span class="vacio">Sin puntos: la animación va a ser solo de tamaño. Agregá uno con el + o con un emoji de abajo.</span>') + agregar;
   actualizarTextos();
 }
 
@@ -247,7 +262,7 @@ $("lineaTiempo").onclick = (ev) => {
   }
 };
 
-// Arrastrar para reordenar, como en un editor de video
+// Arrastrar para reordenar
 let arrastrando = -1;
 $("lineaTiempo").addEventListener("dragstart", (ev) => {
   const p = ev.target.closest(".punto");
@@ -267,12 +282,8 @@ $("lineaTiempo").addEventListener("drop", (ev) => {
   arrastrando = -1;
   pintarLinea();
 });
-$("lineaTiempo").addEventListener("dragend", () => {
-  arrastrando = -1;
-  pintarLinea();
-});
+$("lineaTiempo").addEventListener("dragend", () => { arrastrando = -1; pintarLinea(); });
 
-// Tocar un emoji del teclado: cambia el punto elegido, o agrega uno al final
 $("teclado").onclick = (ev) => {
   const b = ev.target.closest("[data-emoji]");
   if (!b) return;
@@ -290,12 +301,12 @@ $("teclado").onclick = (ev) => {
 function actualizarTextos() {
   const fps = Number($("edFps").value);
   const paso = msDeFps(fps);
-  $("valorFps").textContent = fps + (fps === 1 ? " por segundo" : " por segundo");
+  $("valorFps").textContent = fps + " por segundo";
   $("textoFps").textContent = "Cada punto se ve " + (paso / 1000).toFixed(2).replace(".", ",") + " s.";
 
   const dura = Number($("edDuracion").value);
   $("valorDuracion").textContent = unDecimal(dura) + " s";
-  if (puntos.length && $("edTipo").value !== "tamano") {
+  if (puntos.length) {
     const vueltas = (dura * 1000) / (paso * puntos.length);
     $("textoVueltas").textContent = "Con " + puntos.length + " puntos, la secuencia se repite " +
       (vueltas >= 1 ? unDecimal(vueltas) + " veces" : "menos de una vez (no se llega a ver entera)") + ".";
@@ -305,107 +316,156 @@ function actualizarTextos() {
 
   $("valorDesde").textContent = unDecimal($("edDesde").value) + "×";
   $("valorHasta").textContent = unDecimal($("edHasta").value) + "×";
+
+  const tipo = tipoDeAhora();
+  $("queHace").textContent =
+    tipo === "ambas" ? "Le van a pasar los puntos por adentro Y se va a hacer grande y chico."
+    : tipo === "secuencia" ? "Le van a pasar los puntos por adentro. Movés los dos de tamaño si además querés que crezca."
+    : "Solo se va a hacer grande y chico. Agregá puntos si además querés emojis o letras.";
 }
 
 for (const id of ["edFps", "edDuracion", "edDesde", "edHasta"]) $(id).addEventListener("input", actualizarTextos);
 
-function mostrarSegunTipo() {
-  $("zonaTamano").hidden = $("edTipo").value === "secuencia";
-  actualizarTextos();
-}
-$("edTipo").onchange = mostrarSegunTipo;
-
-// ══════════ La cancha en bucle ══════════
-// Un mini partido que se repite: le pasan la pelota, el jugador remata, entra el gol y ahí
-// se ve el festejo con la animación tal como va a salir en la sala.
+// ══════════ La cancha ══════════
+// Dibujada con los colores del mapa de verdad (mapas/nanduti-futsal-x3.hbs):
+// fondo 2a3a40, líneas b3b6b6 y F8F8F8, áreas ff6363 y 0099ff, pelota FFD700.
+// El emoji va ADENTRO del jugador, que es donde HaxBall muestra el avatar.
 const lienzo = $("lienzo");
 const ctx = lienzo.getContext("2d");
 const A = lienzo.width, AL = lienzo.height;
 let corriendo = true;
 let t0 = performance.now();
 
-const PASE = 900, REMATE = 700, ESPERA = 700;   // ms de cada parte, antes del festejo
-
+const PASE = 900, REMATE = 700, ESPERA = 700;
 const entre = (a, b, p) => a + (b - a) * Math.max(0, Math.min(1, p));
 
+// El mapa mide 620 x 300. Se dibuja a escala dejando margen a los costados, porque los arcos
+// sobresalen del borde de la cancha (como en HaxBall) y si no quedaban cortados.
+const ESC = A / 700;
+const cx = (x) => A / 2 + x * ESC;
+const cy = (y) => AL / 2 + y * ESC;
+
 function dibujarCancha() {
-  ctx.fillStyle = "#1b7a3e";
+  ctx.fillStyle = "#2a3a40";
   ctx.fillRect(0, 0, A, AL);
-  ctx.strokeStyle = "rgba(255,255,255,.75)";
-  ctx.lineWidth = 3;
-  ctx.strokeRect(24, 24, A - 48, AL - 48);
-  ctx.beginPath(); ctx.moveTo(A / 2, 24); ctx.lineTo(A / 2, AL - 24); ctx.stroke();
-  ctx.beginPath(); ctx.arc(A / 2, AL / 2, 52, 0, Math.PI * 2); ctx.stroke();
-  // El arco, a la derecha
-  ctx.strokeStyle = "#fff"; ctx.lineWidth = 5;
-  ctx.strokeRect(A - 24, AL / 2 - 62, 16, 124);
-  ctx.strokeStyle = "rgba(255,255,255,.75)"; ctx.lineWidth = 3;
-  ctx.strokeRect(A - 110, AL / 2 - 96, 86, 192);
+
+  ctx.lineWidth = 3 * ESC;
+  ctx.strokeStyle = "#b3b6b6";
+
+  // El borde de la cancha
+  ctx.strokeRect(cx(-310), cy(-150), 620 * ESC, 300 * ESC);
+  // La línea del medio y el círculo
+  ctx.beginPath(); ctx.moveTo(cx(0), cy(-150)); ctx.lineTo(cx(0), cy(150)); ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx(0), cy(0), 70 * ESC, 0, Math.PI * 2); ctx.stroke();
+
+  // Las áreas curvas de cada arco, como en el futsal de HaxBall
+  const area = (lado, color) => {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 4 * ESC;
+    ctx.beginPath();
+    ctx.moveTo(cx(lado * 310), cy(-130));
+    ctx.bezierCurveTo(cx(lado * 180), cy(-130), cx(lado * 180), cy(130), cx(lado * 310), cy(130));
+    ctx.stroke();
+  };
+  area(-1, "#ff6363");
+  area(1, "#0099ff");
+
+  // Los arcos: dos palos con su punto amarillo
+  ctx.strokeStyle = "#F8F8F8";
+  ctx.lineWidth = 4 * ESC;
+  for (const lado of [-1, 1]) {
+    ctx.beginPath();
+    ctx.moveTo(cx(lado * 310), cy(-42));
+    ctx.lineTo(cx(lado * 336), cy(-42));
+    ctx.moveTo(cx(lado * 310), cy(42));
+    ctx.lineTo(cx(lado * 336), cy(42));
+    ctx.moveTo(cx(lado * 336), cy(-42));
+    ctx.lineTo(cx(lado * 336), cy(42));
+    ctx.stroke();
+    for (const y of [-42, 42]) {
+      ctx.beginPath();
+      ctx.arc(cx(lado * 310), cy(y), 5 * ESC, 0, Math.PI * 2);
+      ctx.fillStyle = "#FFFF00";
+      ctx.fill();
+    }
+  }
 }
 
-function disco(x, y, r, color) {
+// Un jugador, como lo dibuja HaxBall: disco de color, borde oscuro y el avatar ADENTRO
+function jugadorHax(x, y, radio, color, avatar) {
   ctx.beginPath();
-  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.arc(x, y, radio, 0, Math.PI * 2);
   ctx.fillStyle = color;
   ctx.fill();
-  ctx.lineWidth = 3;
-  ctx.strokeStyle = "rgba(255,255,255,.9)";
+  ctx.lineWidth = Math.max(2, radio * 0.13);
+  ctx.strokeStyle = "#000";
   ctx.stroke();
+  if (avatar) {
+    ctx.font = "600 " + Math.round(radio * 1.15) + "px 'Segoe UI Emoji', 'Apple Color Emoji', Inter, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#fff";
+    ctx.fillText(avatar, x, y + radio * 0.04);
+  }
 }
 
 function cuadro() {
   const paso = msDeFps($("edFps").value);
   const dura = Number($("edDuracion").value) * 1000;
-  const tipo = $("edTipo").value;
+  const tipo = tipoDeAhora();
   const total = PASE + REMATE + dura + ESPERA;
   const t = (performance.now() - t0) % total;
 
   dibujarCancha();
 
-  const yMedio = AL / 2;
-  const companiero = { x: 150, y: yMedio + 90 };
-  const jugador = { x: A / 2 - 40, y: yMedio };
-  const arco = { x: A - 30, y: yMedio };
-  const R = 26;
+  const R = 15 * ESC;                       // el radio del jugador en HaxBall
+  const companiero = { x: cx(-150), y: cy(80) };
+  const jugador = { x: cx(-40), y: cy(0) };
+  const arco = { x: cx(318), y: cy(-10) };
 
-  let pelota, escala = 1, festejando = false, fase;
+  let pelota, escala = 1, fase, avatar = null;
+  const enFestejo = t - PASE - REMATE;
 
   if (t < PASE) {
     fase = "Le pasan la pelota";
     const p = t / PASE;
-    pelota = { x: entre(companiero.x, jugador.x - R - 10, p), y: entre(companiero.y, jugador.y, p) };
+    pelota = { x: entre(companiero.x, jugador.x - R - 8, p), y: entre(companiero.y, jugador.y, p) };
   } else if (t < PASE + REMATE) {
     fase = "Remata";
     const p = (t - PASE) / REMATE;
-    pelota = { x: entre(jugador.x + R + 10, arco.x, p), y: entre(jugador.y, yMedio - 18, p) };
+    pelota = { x: entre(jugador.x + R + 8, arco.x, p), y: entre(jugador.y, arco.y, p) };
   } else {
-    fase = "¡Gol! " + (tipo === "tamano" ? "Se hace grande y chico" : "Pasan los puntos");
-    festejando = true;
-    pelota = { x: arco.x, y: yMedio - 18 };
-    const enFestejo = t - PASE - REMATE;
-    if (enFestejo < dura && (tipo === "tamano" || tipo === "ambas")) {
+    pelota = arco;
+    if (enFestejo < dura) {
+      // El reloj del festejo va en tiempo real: lo que dice acá es exactamente lo que va a
+      // durar en la sala. Si ponés 10 s, el bucle festeja 10 s.
+      fase = "¡Gol! Festejando " + unDecimal(enFestejo / 1000) + " / " + unDecimal(dura / 1000) + " s";
       const i = Math.floor(enFestejo / paso);
-      const vaiven = (Math.sin((i / 2) * Math.PI) + 1) / 2;
-      escala = Number($("edDesde").value) + (Number($("edHasta").value) - Number($("edDesde").value)) * vaiven;
+      if (puntos.length && (tipo === "secuencia" || tipo === "ambas")) avatar = puntos[i % puntos.length];
+      if (tipo === "tamano" || tipo === "ambas") {
+        const vaiven = (Math.sin((i / 2) * Math.PI) + 1) / 2;
+        escala = Number($("edDesde").value) + (Number($("edHasta").value) - Number($("edDesde").value)) * vaiven;
+      }
+    } else {
+      fase = "Se acabó el festejo: el bot recién acá acomoda a la gente";
     }
-    if (enFestejo >= dura) fase = "Se acabó el festejo: el bot recién acá acomoda a la gente";
   }
 
-  disco(companiero.x, companiero.y, R, "#2f6fd0");
-  disco(jugador.x, jugador.y, R * escala, "#d33a3a");
-  disco(pelota.x, pelota.y, 11, "#ffd700");
+  jugadorHax(companiero.x, companiero.y, R, "#5689E5", null);
+  jugadorHax(jugador.x, jugador.y, R * escala, "#E56E56", avatar);
 
-  // El emoji del festejo, arriba del jugador (como el avatar en HaxBall)
-  const enFestejo = t - PASE - REMATE;
-  if (festejando && enFestejo < dura && puntos.length && (tipo === "secuencia" || tipo === "ambas")) {
-    const i = Math.floor(enFestejo / paso) % puntos.length;
-    ctx.font = "42px 'Segoe UI Emoji', 'Apple Color Emoji', sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "bottom";
-    ctx.fillText(puntos[i], jugador.x, jugador.y - R * escala - 8);
-  }
+  // La pelota, amarilla como en nuestros mapas
+  ctx.beginPath();
+  ctx.arc(pelota.x, pelota.y, 5.76 * ESC, 0, Math.PI * 2);
+  ctx.fillStyle = "#FFD700";
+  ctx.fill();
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = "#000";
+  ctx.stroke();
 
   $("faseTexto").textContent = fase;
+  const avance = enFestejo > 0 && enFestejo < dura ? (enFestejo / dura) * 100 : (enFestejo >= dura ? 100 : 0);
+  $("barraFestejo").style.width = avance + "%";
   if (corriendo) requestAnimationFrame(cuadro);
 }
 
@@ -424,22 +484,18 @@ function abrir(clave) {
   editando = clave || null;
   const a = clave ? animaciones.find((x) => x.clave === clave) : null;
   $("tituloModal").textContent = a ? "Editar " + a.nombre : "Nueva animación";
-  $("edClave").value = a ? a.clave : "";
-  $("edClave").disabled = Boolean(a);
   $("edNombre").value = a ? a.nombre : "";
   $("edDescripcion").value = a && a.descripcion ? a.descripcion : "";
-  $("edTipo").value = a ? a.tipo : "secuencia";
   puntos = a ? (a.cuadros || []).slice() : ["⚽", "🔥", "🎉"];
   puntoActivo = -1;
   $("edFps").value = a ? fpsDeMs(a.msPorCuadro) : 5;
   $("edDuracion").value = a ? a.duracionMs / 1000 : 3;
   $("edDesde").value = a ? a.tamanoDesde : 1;
-  $("edHasta").value = a ? a.tamanoHasta : 1.6;
+  $("edHasta").value = a ? a.tamanoHasta : 1;
   $("edPrecio").value = a && !a.sinPrecio ? a.precio : "";
   $("edEnTienda").checked = a ? a.enTienda : false;
   $("edActiva").checked = a ? a.activa : true;
   $("borrar").hidden = !a;
-  mostrarSegunTipo();
   pintarLinea();
   $("fondoModal").hidden = false;
   t0 = performance.now();
@@ -457,12 +513,16 @@ $("cuerpo").onclick = (ev) => {
 };
 
 $("guardar").onclick = async () => {
-  const clave = $("edClave").value.trim().toLowerCase();
-  if (!clave) return avisar("Ponele una clave", "mal");
+  const nombre = $("edNombre").value.trim();
+  if (!nombre) return avisar("Ponele un nombre", "mal");
+  const tipo = tipoDeAhora();
+  if (tipo !== "tamano" && !puntos.length) return avisar("Agregá al menos un punto, o movés el tamaño para que sea solo de tamaño", "mal");
+
+  const clave = editando || claveDelNombre(nombre);
   const cuerpo = {
-    nombre: $("edNombre").value.trim(),
+    nombre,
     descripcion: $("edDescripcion").value.trim(),
-    tipo: $("edTipo").value,
+    tipo,
     cuadros: puntos,
     msPorCuadro: msDeFps($("edFps").value),
     duracionMs: Math.round(Number($("edDuracion").value) * 1000),
@@ -484,7 +544,8 @@ $("guardar").onclick = async () => {
 
 $("borrar").onclick = async () => {
   if (!editando) return;
-  if (!confirm('¿Borrar "' + editando + '"? También se la saca a los que la compraron.')) return;
+  const a = animaciones.find((x) => x.clave === editando);
+  if (!confirm('¿Borrar "' + (a ? a.nombre : editando) + '"? También se la saca a los que la compraron.')) return;
   try {
     await Sesion.pedir("/api/animaciones/" + encodeURIComponent(editando), { method: "DELETE" });
     cerrar();

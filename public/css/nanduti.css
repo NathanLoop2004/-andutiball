@@ -750,3 +750,7 @@ input[type=number]:focus { outline: none; border-color: var(--acento); box-shado
 .control-rango .fila { display: flex; align-items: center; gap: 10px; }
 .control-rango input[type="range"] { flex: 1; }
 .control-rango .valor { min-width: 108px; text-align: right; font-weight: 600; font-size: 13px; }
+/* Cuánto va del festejo en la vista previa: el largo es el tiempo real de la animación */
+.barra-festejo { width: 100%; max-width: 420px; height: 5px; border-radius: 3px; background: var(--superficie-2); overflow: hidden; }
+.cancha-previa.grande .barra-festejo { max-width: 840px; }
+.barra-festejo span { display: block; height: 100%; width: 0; background: var(--acento); }

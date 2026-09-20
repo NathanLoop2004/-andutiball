@@ -1213,12 +1213,25 @@ El candado del navegador es cosmético: el de verdad está en la API. El editor 
 
 - **La cancha en bucle** (un `<canvas>`): repite pase → remate → gol → festejo → espera, y en el
   festejo corre la animación **con la misma cuenta que hace la sala**, así se ve tal cual va a
-  quedar. Abajo dice en qué fase está, y el botón Agrandar la lleva a 840 px (clase `.grande`).
+  quedar. Está dibujada con los colores del mapa de verdad (`mapas/nanduti-futsal-x3.hbs`): fondo
+  `2a3a40`, líneas `b3b6b6`, áreas curvas `ff6363` y `0099ff`, palos `FFFF00`, pelota `FFD700`.
+  **El emoji va ADENTRO del disco**, que es donde HaxBall muestra el avatar (no arriba).
+  El festejo corre **en tiempo real**: si se ponen 10 s, el bucle festeja 10 s, y el cartel de
+  abajo va diciendo "Festejando 3,4 / 10,0 s" con una barra de avance — así se comprueba de un
+  vistazo. El botón Agrandar lo lleva a 840 px (clase `.grande`), que es cuando el emoji se lee
+  bien: a tamaño normal el jugador es chico porque la cancha está a escala real.
   El bucle vive en `cuadro()` con `requestAnimationFrame`; `t0` se reinicia al abrir el editor.
 - **La línea de tiempo**: cada cuadro es un "punto" que se toca para cambiarlo, se arrastra para
   moverlo de lugar y se saca con la ✕, más el + para agregar. Debajo, un teclado de emojis que
   cambia el punto elegido (o agrega uno si no hay ninguno elegido). Cada punto muestra **en qué
   segundo aparece**.
+
+**No se pide la clave**: es un dato interno y se genera sola del nombre (`claveDelNombre()`:
+saca acentos, pasa a minúsculas, cambia lo que no sea letra o número por guiones y agrega `-2`,
+`-3`… si ya existe). Al editar se conserva la que tenía. **Tampoco se elige el tipo**:
+`tipoDeAhora()` lo deduce de lo que se cargó (puntos → `secuencia`, tamaño distinto de 1× →
+`tamano`, las dos cosas → `ambas`), y los controles de tamaño están **siempre** a la vista. Antes
+estaban escondidos detrás del selector de tipo y parecía que no se podía cambiar el tamaño.
 
 **La velocidad se muestra en puntos por segundo**, no en milisegundos: `msDeFps()` / `fpsDeMs()`
 convierten al guardar y al abrir. El modelo sigue guardando `msPorCuadro`. Abajo del control se
