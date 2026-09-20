@@ -109,6 +109,33 @@ function revisar(titulo, condicion, detalle) {
   // La sala tiene que mostrar TODOS los puntos, no solo los primeros
   revisar("En la sala entran los 50 puntos, no 10", sala.leer("MaxCuadrosDeAnimacion") === 50, sala.leer("MaxCuadrosDeAnimacion"));
 
+  // La sala tiene que mostrar TODOS los puntos guardados, aunque la duración no cuadre.
+  // Acá se manda una animación de 30 puntos con una duración a propósito equivocada (500 ms,
+  // que darían 5 pasos): antes se cortaba, ahora manda la cantidad de puntos.
+  const treinta = [];
+  for (let i = 0; i < 30; i++) treinta.push(String.fromCharCode(65 + (i % 26)));
+  contexto.__ANIMACIONES = {
+    ana: { clave: "larga", nombre: "Larga", tipo: "secuencia", cuadros: treinta,
+           tamanos: treinta.map(() => 1), msPorCuadro: 100, duracionMs: 500 },
+  };
+  sala.avatares.length = 0;
+  contexto.game.lastKickerTeam = 1;
+  if (room.onTeamGoal) room.onTeamGoal(1);
+  contexto.avatarCelebration(ana.id, "⚽");
+  avanzar(100 * 30 + 300);
+  // Se cuentan los cambios de avatar, no los distintos: las letras se repiten después de la Z
+  const cambios = sala.avatares.filter((a) => a.id === ana.id && a.avatar).length;
+  revisar("Se ven los 30 puntos guardados, no los que diga la duración",
+    cambios === 30, cambios + " puntos mostrados");
+  if (room.onPositionsReset) room.onPositionsReset();
+  avanzar(150);
+
+  // Y se vuelve a dejar la de siempre para lo que sigue
+  contexto.__ANIMACIONES = {
+    ana: { clave: "tri", nombre: "Tricampeón", tipo: "ambas", cuadros: ["⚽", "🔥", "👑"],
+           tamanos: [1, 2, 1], msPorCuadro: 100, tamanoDesde: 1, tamanoHasta: 1, duracionMs: 300 },
+  };
+
   // El que no compró ninguna festeja como siempre (el parpadeo del autor)
   sala.avatares.length = 0;
   contexto.avatarCelebration(beto.id, "⚽");

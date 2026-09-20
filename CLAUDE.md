@@ -1309,6 +1309,11 @@ que se limita es **la velocidad**, no el festejo: `limitarVelocidad()` baja el m
 a `50 / duración` (con 10 s, hasta 5 por segundo). Se prefiere recortar la velocidad antes que
 los segundos que pidió el usuario.
 
+**La sala reproduce EXACTAMENTE los puntos guardados**: `pasos = cuadros.length`, una sola
+pasada. Antes salía de `duracionMs` (`pasos = duracion / paso`), y eso se despega apenas los dos
+números no coinciden — si la duración quedaba recortada por el tope, la animación se cortaba a la
+mitad sin que nadie se enterara. Los puntos son el dato de verdad; la duración es una consecuencia.
+
 **EL TOPE ESTÁ EN DOS LADOS Y TIENEN QUE COINCIDIR**: `AnimacionesModel.MAX_CUADROS` (la base) y
 `MaxCuadrosDeAnimacion` (el bloque de la sala). Al subirlo a 50 me olvidé del bloque y en la sala
 salían **10 de 37**: se guardaba bien y se reproducía cortada. Si se vuelve a tocar, cambiar los dos.
