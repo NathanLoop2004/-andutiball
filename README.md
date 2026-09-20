@@ -724,13 +724,15 @@ del otro) y **hacerte grande y chico**.
   ver bien el emoji, porque a tamaño normal la cancha está a escala real y el jugador es chico.
 - **El festejo dura lo que vos pongas**: si ponés 10 segundos, el bucle festeja 10 segundos. Abajo
   te va marcando "Festejando 3,4 / 10,0 s" con una barra.
-- **Una línea de tiempo** con los puntos de la animación, uno al lado del otro. Tocá un punto para
-  cambiarlo, arrastralo para moverlo de lugar, la ✕ para sacarlo y el **+** para agregar. Abajo hay
-  un teclado de emojis para ir armándola rápido. Cada punto te dice en qué segundo aparece.
+- **Una línea de tiempo como la de un editor de video**: arriba los segundos, abajo tus puntos y
+  una rayita roja que va marcando cuál se está viendo en la cancha. Tocá un punto y abajo elegís
+  **su emoji y su tamaño**: así decidís en qué momento el jugador se hace grande y cuánto. Cada
+  punto muestra su tamaño en una barrita, para verlo de un vistazo. Arrastralos para cambiarlos de
+  lugar, la ✕ los saca y el **+** agrega. También podés duplicar un punto o dejarlo sin emoji (que
+  solo cambie el tamaño).
 - **La velocidad en puntos por segundo** (no en milisegundos), y te avisa cuántas veces se va a
   repetir la secuencia con la duración que pusiste.
-- **El tamaño se toca siempre**: dejá los dos en 1× si no querés que el jugador crezca. No hace
-  falta elegir "tipo" de animación: sale solo de lo que cargues.
+- **No hace falta elegir "tipo"** de animación: sale solo de lo que cargues en los puntos.
 
 ## 👕 La camiseta que compraste
 

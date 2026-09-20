@@ -157,11 +157,11 @@ var CantidadCambiarTamano = 1;
 // ▇▇▇▇▇▇▇ ⚽👕 CAMISETAS POR DEFECTO ⚽👕 ▇▇▇▇▇▇▇
 
 // CAMISETA EQUIPO RED 🔴
-var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
+var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
 var NombreEquipoRojo = "OLIMPIA";
 
 // CAMISETA EQUIPO BLUE 🔵
-var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
+var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
 var NombreEquipoAzul = "CERRO PORTEÑO";
 
 
@@ -19067,6 +19067,8 @@ if (!window.__arbitroAutonomo) {
 
 	window.__acomodarSala = function () {
 		if (typeof room === "undefined") return;
+		// Mientras se festeja un gol no se mete a nadie: la animación tiene que terminar de pasar
+		if (typeof festejandoGol === "function" && festejandoGol()) return;
 		var jugadores = room.getPlayerList().filter(function (p) { return p.id !== 0; });
 		if (!jugadores.length) return;
 
@@ -19826,6 +19828,9 @@ function partidoPausado() {
 function revisarArranque() {
 	if (!AutoArranque) return;
 
+	// Mientras se festeja un gol no se toca nada: si no, se corta la animación a la mitad
+	if (typeof festejandoGol === "function" && festejandoGol()) return;
+
 	// Si el script está en pleno cambio de mapa, no nos metemos
 	if (typeof gameRestarting !== "undefined" && gameRestarting) return;
 
@@ -20008,6 +20013,9 @@ function hayJugadoresDeMas() {
 // Durante un partido no reacomodamos nada (salvo que un admin lo pida): se mueve gente en pleno juego.
 function aplicarModoDeEquipos(forzar) {
 	if (ModoDeEquipos === "config") return;
+
+	// Mientras se festeja un gol no se acomoda a nadie (ver 🎉 ANIMACIONES DE GOL)
+	if (typeof festejandoGol === "function" && festejandoGol()) return;
 
 	// Con un partido en curso no movemos a nadie, PERO sí dejamos prender la elección: eso no
 	// mueve jugadores y hace que el arranque automático pause el partido para que elijan
@@ -21064,6 +21072,15 @@ var MaxCuadrosDeAnimacion = 10;
 
 var animacionesEnCurso = {};   // id del jugador → { reloj, radioOriginal }
 
+// Hasta cuándo se está festejando. Mientras tanto, el bot NO acomoda a nadie: si no, mete a
+// todos en la cancha apenas entra el gol y la animación se corta a la mitad / se ve rota.
+// Lo miran revisarArranque(), aplicarModoDeEquipos() y window.__acomodarSala().
+var festejoHasta = 0;
+
+function festejandoGol() {
+	return Date.now() < festejoHasta;
+}
+
 function animacionDe(jugador) {
 	if (!jugador) return null;
 	return (window.__ANIMACIONES || {})[String(jugador.name).toLowerCase()] || null;
@@ -21090,6 +21107,7 @@ function frenarAnimacion(idJugador) {
 
 function frenarTodasLasAnimaciones() {
 	for (var id in animacionesEnCurso) frenarAnimacion(Number(id));
+	festejoHasta = 0;   // se terminó el festejo: el bot puede volver a acomodar
 }
 
 function reproducirAnimacion(idJugador, animacion) {
@@ -21124,6 +21142,8 @@ function reproducirAnimacion(idJugador, animacion) {
 	}, paso);
 
 	animacionesEnCurso[idJugador] = { reloj: reloj, radioOriginal: radioOriginal };
+	// El bot no acomoda a nadie hasta que termine de pasar la animación
+	festejoHasta = Math.max(festejoHasta, Date.now() + dura);
 	return true;
 }
 
@@ -21134,7 +21154,12 @@ function avatarCelebration(idJugador, emoji) {
 	var jugador = null;
 	try { jugador = room.getPlayerList().filter(function (j) { return j.id === idJugador; })[0] || null; } catch (e) {}
 
-	if (AnimacionesDeGolActivas) {
+	// La animación es SOLO del que metió el gol. El script también llama a esta función para
+	// el que dio la asistencia (con un 👟): ese festeja como siempre, aunque tenga una comprada.
+	var hizoElGol = true;
+	try { hizoElGol = typeof game === "undefined" || !game || game.lastKickerId === undefined || game.lastKickerId === idJugador; } catch (e) {}
+
+	if (AnimacionesDeGolActivas && hizoElGol) {
 		var suya = animacionDe(jugador);
 		if (suya && reproducirAnimacion(idJugador, suya)) return;
 	}

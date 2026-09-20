@@ -398,8 +398,12 @@ model Animacion {
   // "tamano"    = se hace grande y chico
   // "ambas"     = las dos cosas a la vez
   tipo        String   @default("secuencia")
-  // Hasta 10 cuadros: cada uno es un emoji o una letra
+  // Hasta 10 cuadros: cada uno es un emoji o una letra (puede ir vacío si ese punto
+  // solo cambia el tamaño)
   cuadros     String[] @default([])
+  // El tamaño de cada punto, en paralelo a cuadros: mismo largo y misma posición.
+  // Vacío = se usa el vaivén viejo entre tamanoDesde y tamanoHasta.
+  tamanos     Float[]  @default([])
   msPorCuadro Int      @default(200)
   // Multiplicadores del tamaño normal del jugador (1 = como siempre)
   tamanoDesde Float    @default(1)

@@ -36,18 +36,31 @@ const LIMITES = {
   tamano: { min: 0.3, max: 3 },
 };
 
+const entre = (valor, { min, max }) => Math.min(max, Math.max(min, valor));
+
 // Un cuadro es UN emoji o UNA letra. HaxBall no muestra más de 2 caracteres en el avatar,
 // así que se recorta ahí mismo: más largo no se vería y solo confundiría al que la arma.
-function limpiarCuadros(cuadros) {
+//
+// Los cuadros y los tamaños van EN PARALELO: mismo largo y misma posición, así cada punto
+// puede tener su emoji, su tamaño, o las dos cosas. Un cuadro vacío ("") es un punto que solo
+// cambia el tamaño, y por eso acá NO se filtran los vacíos: se perdería el orden.
+function limpiarPuntos(cuadros, tamanos) {
   const lista = Array.isArray(cuadros) ? cuadros : String(cuadros || "").split(/\s+/);
-  return lista
-    .map((c) => String(c == null ? "" : c).trim())
-    .filter(Boolean)
-    .map((c) => [...c].slice(0, 2).join(""))
+  const limpios = lista
+    .map((c) => [...String(c == null ? "" : c).trim()].slice(0, 2).join(""))
     .slice(0, MAX_CUADROS);
+
+  const crudos = Array.isArray(tamanos) ? tamanos : [];
+  const medidas = limpios.map((_, i) => {
+    const t = Number(crudos[i]);
+    return Number.isFinite(t) ? Math.round(entre(t, LIMITES.tamano) * 100) / 100 : 1;
+  });
+
+  return { cuadros: limpios, tamanos: medidas };
 }
 
-const entre = (valor, { min, max }) => Math.min(max, Math.max(min, valor));
+// ¿Este punto hace algo? (tiene emoji o cambia el tamaño)
+const puntoSirve = (emoji, tamano) => Boolean(emoji) || Number(tamano) !== 1;
 
 const paraMostrar = (a) => ({
   clave: a.clave,
@@ -56,6 +69,7 @@ const paraMostrar = (a) => ({
   detalle: a.detalle,
   tipo: a.tipo,
   cuadros: a.cuadros,
+  tamanos: a.tamanos,
   msPorCuadro: a.msPorCuadro,
   tamanoDesde: a.tamanoDesde,
   tamanoHasta: a.tamanoHasta,
@@ -88,17 +102,24 @@ class AnimacionesModel {
     const nombre = String(datos.nombre || "").trim();
     if (!nombre) throw new Error("Ponele un nombre");
 
-    const tipo = TIPOS.includes(datos.tipo) ? datos.tipo : "secuencia";
-    const cuadros = limpiarCuadros(datos.cuadros);
-    if (tipo !== "tamano" && !cuadros.length) {
-      throw new Error("Para esta animación hace falta al menos un emoji o una letra");
+    const { cuadros, tamanos } = limpiarPuntos(datos.cuadros, datos.tamanos);
+    const sirveAlguno = cuadros.some((c, i) => puntoSirve(c, tamanos[i]));
+    if (!sirveAlguno) {
+      throw new Error("Hace falta al menos un punto con un emoji, una letra o un tamaño distinto");
     }
+
+    // El tipo sale de lo que se cargó, no hace falta elegirlo: si hay emojis es "secuencia",
+    // si algún punto cambia el tamaño es "tamano", y si hay de las dos cosas es "ambas".
+    const hayEmojis = cuadros.some(Boolean);
+    const hayTamanos = tamanos.some((t) => t !== 1);
+    const tipo = hayEmojis && hayTamanos ? "ambas" : hayEmojis ? "secuencia" : "tamano";
 
     const guardar = {
       nombre,
       descripcion: String(datos.descripcion || "").trim().slice(0, 200) || null,
       tipo,
       cuadros,
+      tamanos,
       msPorCuadro: Math.round(entre(Number(datos.msPorCuadro) || 200, LIMITES.msPorCuadro)),
       tamanoDesde: entre(Number(datos.tamanoDesde) || 1, LIMITES.tamano),
       tamanoHasta: entre(Number(datos.tamanoHasta) || 1, LIMITES.tamano),
@@ -257,6 +278,7 @@ class AnimacionesModel {
         nombre: a.nombre,
         tipo: a.tipo,
         cuadros: a.cuadros,
+        tamanos: a.tamanos,
         msPorCuadro: a.msPorCuadro,
         tamanoDesde: a.tamanoDesde,
         tamanoHasta: a.tamanoHasta,

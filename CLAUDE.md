@@ -1162,11 +1162,23 @@ monedas, **igual que las camisetas**: el circuito es el mismo (`AnimacionesModel
 `TiendaModel`). Tablas `animaciones` y `animaciones_compradas` + `usuarios.animacion` (la puesta),
 migración `20260920120000_animaciones`.
 
+**Cada punto tiene su emoji Y su tamaño** (20/09/2026, migración
+`20260920160000_animaciones_tamano_por_punto`): `cuadros String[]` y `tamanos Float[]` van **en
+paralelo**, mismo largo y misma posición. Un cuadro vacío (`""`) es un punto que solo cambia el
+tamaño, por eso `limpiarPuntos()` **no filtra los vacíos**: se perdería el orden. Así el que la
+arma decide en qué momento el jugador se hace grande y cuánto.
+
+`tamanoDesde`/`tamanoHasta` quedan **solo para las animaciones viejas**: si `tamanos` viene vacío,
+el bloque usa el vaivén de seno de antes. Las nuevas siempre traen `tamanos`.
+
 | Tipo | Qué hace |
 |---|---|
 | `secuencia` | Le van pasando los cuadros (emojis o letras) por el avatar |
-| `tamano` | Se hace grande y chico (`setPlayerDiscProperties`, radio × factor) |
+| `tamano` | Cambia de tamaño (`setPlayerDiscProperties`, radio × el factor de ese punto) |
 | `ambas` | Las dos cosas a la vez |
+
+**El tipo no se elige**: lo deduce el modelo de lo que se cargó (hay emojis → `secuencia`, hay
+tamaños ≠ 1 → `tamano`, las dos → `ambas`). Lo mismo hace la pantalla con `tipoDeAhora()`.
 
 **Cómo se engancha en la sala** (`parches/bloques/animaciones.txt`): se **redeclara**
 `avatarCelebration(id, emoji)`, que es la que el script del autor ya llama en cada gol (le hacía
@@ -1221,10 +1233,12 @@ El candado del navegador es cosmético: el de verdad está en la API. El editor 
   vistazo. El botón Agrandar lo lleva a 840 px (clase `.grande`), que es cuando el emoji se lee
   bien: a tamaño normal el jugador es chico porque la cancha está a escala real.
   El bucle vive en `cuadro()` con `requestAnimationFrame`; `t0` se reinicia al abrir el editor.
-- **La línea de tiempo**: cada cuadro es un "punto" que se toca para cambiarlo, se arrastra para
-  moverlo de lugar y se saca con la ✕, más el + para agregar. Debajo, un teclado de emojis que
-  cambia el punto elegido (o agrega uno si no hay ninguno elegido). Cada punto muestra **en qué
-  segundo aparece**.
+- **La línea de tiempo, estilo editor de video**: arriba una **regla con los segundos**, abajo los
+  puntos como clips y un **cabezal rojo** que se mueve marcando el punto que se está viendo en la
+  cancha (`marcarPunto()`). Cada clip muestra su emoji, una **barrita con su tamaño** (para ver de
+  un vistazo dónde se hace grande) y su segundo. Se toca para editarlo, se arrastra para moverlo y
+  la ✕ lo saca. Al elegir uno se abre abajo su editor: emoji (con teclado), **tamaño de ESE punto**,
+  y los botones Sacarle el emoji / Duplicar / Borrar.
 
 **No se pide la clave**: es un dato interno y se genera sola del nombre (`claveDelNombre()`:
 saca acentos, pasa a minúsculas, cambia lo que no sea letra o número por guiones y agrega `-2`,

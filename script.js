@@ -157,11 +157,11 @@ var CantidadCambiarTamano = 1;
 // ▇▇▇▇▇▇▇ ⚽👕 CAMISETAS POR DEFECTO ⚽👕 ▇▇▇▇▇▇▇
 
 // CAMISETA EQUIPO RED 🔴
-var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
+var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
 var NombreEquipoRojo = "OLIMPIA";
 
 // CAMISETA EQUIPO BLUE 🔵
-var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
+var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
 var NombreEquipoAzul = "CERRO PORTEÑO";
 
 
@@ -21114,8 +21114,15 @@ function reproducirAnimacion(idJugador, animacion) {
 	frenarAnimacion(idJugador);
 
 	var cuadros = Array.isArray(animacion.cuadros) ? animacion.cuadros.slice(0, MaxCuadrosDeAnimacion) : [];
-	var haceTamano = animacion.tipo === "tamano" || animacion.tipo === "ambas";
-	var haceCuadros = (animacion.tipo === "secuencia" || animacion.tipo === "ambas") && cuadros.length > 0;
+	// El tamaño de cada punto va en paralelo a los cuadros. Las animaciones viejas no lo tienen:
+	// esas siguen con el vaivén entre tamanoDesde y tamanoHasta.
+	var medidas = Array.isArray(animacion.tamanos) ? animacion.tamanos.slice(0, MaxCuadrosDeAnimacion) : [];
+	var porPunto = medidas.length > 0;
+
+	var haceTamano = porPunto
+		? medidas.some(function (t) { return Number(t) !== 1; })
+		: (animacion.tipo === "tamano" || animacion.tipo === "ambas");
+	var haceCuadros = cuadros.some(function (c) { return Boolean(c); });
 	if (!haceTamano && !haceCuadros) return false;
 
 	var paso = Math.max(60, Number(animacion.msPorCuadro) || 200);
@@ -21129,11 +21136,21 @@ function reproducirAnimacion(idJugador, animacion) {
 
 	var reloj = setInterval(function () {
 		try {
-			if (haceCuadros) room.setPlayerAvatar(idJugador, cuadros[i % cuadros.length]);
+			if (haceCuadros) {
+				var cuadro = cuadros[i % cuadros.length];
+				room.setPlayerAvatar(idJugador, cuadro ? cuadro : null);
+			}
 			if (haceTamano && radioOriginal) {
-				// Va y vuelve entre los dos tamaños, suave (media onda de seno por paso)
-				var vaivén = (Math.sin((i / 2) * Math.PI) + 1) / 2;   // 0 → 1 → 0
-				var factor = desde + (hasta - desde) * vaivén;
+				var factor;
+				if (porPunto) {
+					// Cada punto tiene su tamaño: el que armó la animación decide en qué
+					// momento se hace grande y cuánto.
+					factor = Number(medidas[i % medidas.length]) || 1;
+				} else {
+					// Animación vieja: va y vuelve entre los dos tamaños (media onda de seno)
+					var vaivén = (Math.sin((i / 2) * Math.PI) + 1) / 2;   // 0 → 1 → 0
+					factor = desde + (hasta - desde) * vaivén;
+				}
 				room.setPlayerDiscProperties(idJugador, { radius: radioOriginal * factor });
 			}
 		} catch (e) {}

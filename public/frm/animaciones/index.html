@@ -65,15 +65,40 @@
           <div class="barra-festejo"><span id="barraFestejo"></span></div>
         </div>
 
-        <!-- Los puntos, uno por uno, como en un editor de video -->
+        <!-- La línea de tiempo: cada punto es un pedacito de la animación -->
         <div>
           <div class="cofre-titulo">Los puntos de la animación</div>
-          <div class="linea-tiempo" id="lineaTiempo"></div>
-          <div class="teclado-emoji" id="teclado"></div>
+          <div class="tiempo" id="tiempo">
+            <div class="tiempo-regla" id="regla"></div>
+            <div class="tiempo-pista" id="pista">
+              <div class="tiempo-cabezal" id="cabezal"></div>
+            </div>
+          </div>
+
+          <div class="punto-editor" id="puntoEditor" hidden>
+            <h4 id="puntoTitulo">Punto 1</h4>
+            <label>Qué se le ve adentro
+              <input type="text" id="puntoEmoji" maxlength="2" placeholder="vacío = no se le ve nada" autocomplete="off">
+            </label>
+            <div class="teclado-emoji" id="teclado"></div>
+            <div class="control-rango" style="margin-top:10px">
+              <span>Tamaño en este punto</span>
+              <div class="fila">
+                <input type="range" id="puntoTamano" min="0.3" max="3" step="0.1" value="1">
+                <span class="valor" id="valorPuntoTamano">1,0×</span>
+              </div>
+            </div>
+            <div class="fila-botones">
+              <button class="boton chico" type="button" id="puntoVacio">Sacarle el emoji</button>
+              <button class="boton chico" type="button" id="puntoDuplicar">Duplicar</button>
+              <button class="boton chico peligro" type="button" id="puntoBorrar">Borrar punto</button>
+            </div>
+          </div>
+
           <p class="tenue">
-            Cada punto es un emoji o una letra, y se muestran uno atrás del otro adentro del jugador.
-            Tocá un punto para cambiarlo, arrastralo para moverlo de lugar, o la ✕ para sacarlo.
-            Hasta <span id="maxCuadros">10</span>. Si no ponés ninguno, la animación es solo de tamaño.
+            Cada punto dura lo mismo (lo que diga la velocidad) y se muestran uno atrás del otro.
+            <strong>Tocá un punto</strong> para elegir su emoji y su tamaño, arrastralo para moverlo
+            de lugar, o la ✕ para sacarlo. Hasta <span id="maxCuadros">10</span>.
           </p>
         </div>
 
@@ -97,23 +122,6 @@
               <span class="valor" id="valorDuracion">3,0 s</span>
             </div>
             <small class="tenue" id="textoVueltas">—</small>
-          </div>
-
-          <!-- El tamaño se puede tocar SIEMPRE: si lo dejás en 1× y 1×, no se agranda y listo -->
-          <div class="control-rango">
-            <span>Se hace grande: de</span>
-            <div class="fila">
-              <input type="range" id="edDesde" min="0.3" max="3" step="0.1" value="1">
-              <span class="valor" id="valorDesde">1,0×</span>
-            </div>
-          </div>
-          <div class="control-rango">
-            <span>…hasta</span>
-            <div class="fila">
-              <input type="range" id="edHasta" min="0.3" max="3" step="0.1" value="1">
-              <span class="valor" id="valorHasta">1,0×</span>
-            </div>
-            <small class="tenue">1× es el tamaño de siempre. Dejá los dos en 1× si no querés que cambie de tamaño.</small>
           </div>
 
           <p class="aviso info" id="queHace">—</p>
@@ -167,12 +175,11 @@ const NOMBRE_TIPO = { secuencia: "Emojis / letras", tamano: "Grande y chico", am
 const msDeFps = (fps) => Math.round(1000 / Number(fps));
 const fpsDeMs = (ms) => Math.min(16, Math.max(1, Math.round(1000 / Number(ms || 200))));
 
-// El "tipo" ya no se elige a mano: sale de lo que cargaste.
-const cambiaDeTamano = () => Number($("edDesde").value) !== 1 || Number($("edHasta").value) !== 1;
+// El "tipo" no se elige a mano: sale de lo que tengan los puntos.
 function tipoDeAhora() {
-  if (puntos.length && cambiaDeTamano()) return "ambas";
-  if (puntos.length) return "secuencia";
-  return "tamano";
+  const hayEmojis = puntos.some((p) => p.emoji);
+  const hayTamanos = puntos.some((p) => Number(p.tamano) !== 1);
+  return hayEmojis && hayTamanos ? "ambas" : hayEmojis ? "secuencia" : "tamano";
 }
 
 // La clave es un dato interno (para la base y para !animacion): sale sola del nombre.
@@ -208,8 +215,11 @@ function pintar() {
     <tr>
       <td><strong>${esc(a.nombre)}</strong></td>
       <td>${esc(NOMBRE_TIPO[a.tipo] || a.tipo)}</td>
-      <td>${(a.cuadros || []).map((c) => `<span class="cuadro">${esc(c)}</span>`).join("")}
-          ${a.tipo !== "secuencia" ? `<span class="tenue">${a.tamanoDesde}× → ${a.tamanoHasta}×</span>` : ""}</td>
+      <td>${(a.cuadros || []).map((c, i) => {
+            const t = (a.tamanos || [])[i];
+            const medida = t && Number(t) !== 1 ? `<sub>${unDecimal(t)}×</sub>` : "";
+            return `<span class="cuadro">${c ? esc(c) : "·"}${medida}</span>`;
+          }).join("")}</td>
       <td>${unDecimal(a.duracionMs / 1000)} s</td>
       <td>${a.sinPrecio ? '<span class="tenue">sin precio</span>' : a.precio + " 🪙"}</td>
       <td>${a.enTienda ? "Sí" : "No"}${a.activa ? "" : ' <span class="tenue">(apagada)</span>'}</td>
@@ -218,34 +228,66 @@ function pintar() {
 }
 
 // ══════════ La línea de tiempo ══════════
+// Cada punto guarda su emoji y su tamaño: { emoji: "⚽", tamano: 1.4 }
 const EMOJIS = ["⚽", "🔥", "🎉", "💥", "👑", "🐐", "🚀", "⭐", "💣", "🏆", "😎", "🇵🇾", "🕸️", "💪", "⚡", "🥶", "🤫", "🙌"];
 $("teclado").innerHTML = EMOJIS.map((e) => `<button type="button" class="boton chico" data-emoji="${e}">${e}</button>`).join("");
 
+// El alto de la barrita de tamaño, para que se vea de un vistazo dónde se hace grande
+const altoMedida = (t) => Math.round(((Number(t) - 0.3) / (3 - 0.3)) * 24) + 2;
+
+function pintarRegla() {
+  const paso = msDeFps($("edFps").value) / 1000;
+  const total = Math.max(puntos.length * paso, Number($("edDuracion").value));
+  const cada = total <= 3 ? 0.5 : total <= 6 ? 1 : 2;
+  let html = "";
+  for (let t = 0; t <= total + 0.001; t += cada) {
+    html += `<span style="left:${(t / total) * 100}%">${unDecimal(t)}s</span>`;
+  }
+  $("regla").innerHTML = html;
+}
+
 function pintarLinea() {
   const paso = msDeFps($("edFps").value) / 1000;
-  const html = puntos.map((c, i) => `
-    <div class="punto${i === puntoActivo ? " activo" : ""}" draggable="true" data-i="${i}" title="Tocá para cambiarlo, arrastrá para moverlo">
-      <span>${esc(c)}</span>
-      <small>${unDecimal(i * paso)} s</small>
+  const html = puntos.map((p, i) => `
+    <div class="punto${i === puntoActivo ? " activo" : ""}" draggable="true" data-i="${i}"
+         title="Tocá para editarlo, arrastrá para moverlo">
+      <span class="cara${p.emoji ? "" : " sin"}">${p.emoji ? esc(p.emoji) : "sin emoji"}</span>
+      <span class="medida${Number(p.tamano) === 1 ? " normal" : ""}"><i style="height:${altoMedida(p.tamano)}px"></i></span>
+      <small>${unDecimal(i * paso)}s · ${unDecimal(p.tamano)}×</small>
       <button class="sacar" type="button" data-sacar="${i}" title="Sacar este punto">✕</button>
     </div>`).join("");
   const agregar = puntos.length < maxCuadros
     ? '<button class="punto-agregar" type="button" id="agregarPunto" title="Agregar un punto">+</button>'
     : "";
-  $("lineaTiempo").innerHTML = (html || '<span class="vacio">Sin puntos: la animación va a ser solo de tamaño. Agregá uno con el + o con un emoji de abajo.</span>') + agregar;
+  const cabezal = '<div class="tiempo-cabezal" id="cabezal"></div>';
+  $("pista").innerHTML = cabezal + (html || '<span class="vacio">Sin puntos: agregá el primero con el +.</span>') + agregar;
+  pintarRegla();
+  pintarEditorDelPunto();
   actualizarTextos();
 }
 
-$("lineaTiempo").onclick = (ev) => {
+function pintarEditorDelPunto() {
+  const p = puntos[puntoActivo];
+  $("puntoEditor").hidden = !p;
+  if (!p) return;
+  $("puntoTitulo").textContent = "Punto " + (puntoActivo + 1) + " de " + puntos.length;
+  $("puntoEmoji").value = p.emoji;
+  $("puntoTamano").value = p.tamano;
+  $("valorPuntoTamano").textContent = unDecimal(p.tamano) + "×";
+}
+
+const nuevoPunto = (emoji) => ({ emoji: emoji === undefined ? "⚽" : emoji, tamano: 1 });
+
+$("pista").onclick = (ev) => {
   const sacar = ev.target.closest("[data-sacar]");
   if (sacar) {
     puntos.splice(Number(sacar.dataset.sacar), 1);
-    puntoActivo = -1;
+    puntoActivo = Math.min(puntoActivo, puntos.length - 1);
     return pintarLinea();
   }
   if (ev.target.closest("#agregarPunto")) {
     if (puntos.length >= maxCuadros) return avisar("Ya tenés " + maxCuadros + " puntos, que es el máximo", "mal");
-    puntos.push("⚽");
+    puntos.push(nuevoPunto());
     puntoActivo = puntos.length - 1;
     return pintarLinea();
   }
@@ -253,25 +295,19 @@ $("lineaTiempo").onclick = (ev) => {
   if (punto) {
     puntoActivo = Number(punto.dataset.i);
     pintarLinea();
-    const nuevo = prompt("¿Qué va en este punto? Un emoji o una letra:", puntos[puntoActivo]);
-    if (nuevo !== null) {
-      const limpio = [...nuevo.trim()].slice(0, 2).join("");
-      if (limpio) puntos[puntoActivo] = limpio;
-    }
-    pintarLinea();
   }
 };
 
 // Arrastrar para reordenar
 let arrastrando = -1;
-$("lineaTiempo").addEventListener("dragstart", (ev) => {
+$("pista").addEventListener("dragstart", (ev) => {
   const p = ev.target.closest(".punto");
   if (!p) return;
   arrastrando = Number(p.dataset.i);
   p.classList.add("arrastrando");
 });
-$("lineaTiempo").addEventListener("dragover", (ev) => ev.preventDefault());
-$("lineaTiempo").addEventListener("drop", (ev) => {
+$("pista").addEventListener("dragover", (ev) => ev.preventDefault());
+$("pista").addEventListener("drop", (ev) => {
   ev.preventDefault();
   const p = ev.target.closest(".punto");
   if (!p || arrastrando < 0) return;
@@ -282,18 +318,54 @@ $("lineaTiempo").addEventListener("drop", (ev) => {
   arrastrando = -1;
   pintarLinea();
 });
-$("lineaTiempo").addEventListener("dragend", () => { arrastrando = -1; pintarLinea(); });
+$("pista").addEventListener("dragend", () => { arrastrando = -1; pintarLinea(); });
 
+// ── Lo que se edita del punto elegido ──
 $("teclado").onclick = (ev) => {
   const b = ev.target.closest("[data-emoji]");
   if (!b) return;
-  if (puntoActivo >= 0 && puntoActivo < puntos.length) {
-    puntos[puntoActivo] = b.dataset.emoji;
-  } else {
+  if (puntoActivo < 0 || !puntos[puntoActivo]) {
     if (puntos.length >= maxCuadros) return avisar("Ya tenés " + maxCuadros + " puntos, que es el máximo", "mal");
-    puntos.push(b.dataset.emoji);
+    puntos.push(nuevoPunto(b.dataset.emoji));
     puntoActivo = puntos.length - 1;
+  } else {
+    puntos[puntoActivo].emoji = b.dataset.emoji;
   }
+  pintarLinea();
+};
+
+$("puntoEmoji").addEventListener("input", () => {
+  if (!puntos[puntoActivo]) return;
+  puntos[puntoActivo].emoji = [...$("puntoEmoji").value.trim()].slice(0, 2).join("");
+  pintarLinea();
+  $("puntoEmoji").focus();
+});
+
+$("puntoTamano").addEventListener("input", () => {
+  if (!puntos[puntoActivo]) return;
+  puntos[puntoActivo].tamano = Number($("puntoTamano").value);
+  $("valorPuntoTamano").textContent = unDecimal(puntos[puntoActivo].tamano) + "×";
+  pintarLinea();
+});
+
+$("puntoVacio").onclick = () => {
+  if (!puntos[puntoActivo]) return;
+  puntos[puntoActivo].emoji = "";
+  pintarLinea();
+};
+
+$("puntoDuplicar").onclick = () => {
+  if (!puntos[puntoActivo]) return;
+  if (puntos.length >= maxCuadros) return avisar("Ya tenés " + maxCuadros + " puntos, que es el máximo", "mal");
+  puntos.splice(puntoActivo + 1, 0, Object.assign({}, puntos[puntoActivo]));
+  puntoActivo++;
+  pintarLinea();
+};
+
+$("puntoBorrar").onclick = () => {
+  if (!puntos[puntoActivo]) return;
+  puntos.splice(puntoActivo, 1);
+  puntoActivo = Math.min(puntoActivo, puntos.length - 1);
   pintarLinea();
 };
 
@@ -308,28 +380,38 @@ function actualizarTextos() {
   $("valorDuracion").textContent = unDecimal(dura) + " s";
   if (puntos.length) {
     const vueltas = (dura * 1000) / (paso * puntos.length);
-    $("textoVueltas").textContent = "Con " + puntos.length + " puntos, la secuencia se repite " +
+    $("textoVueltas").textContent = "Tus " + puntos.length + " puntos duran " +
+      unDecimal((paso * puntos.length) / 1000) + " s, así que se repiten " +
       (vueltas >= 1 ? unDecimal(vueltas) + " veces" : "menos de una vez (no se llega a ver entera)") + ".";
   } else {
     $("textoVueltas").textContent = "El festejo se corta igual cuando se saca del medio.";
   }
 
-  $("valorDesde").textContent = unDecimal($("edDesde").value) + "×";
-  $("valorHasta").textContent = unDecimal($("edHasta").value) + "×";
-
   const tipo = tipoDeAhora();
   $("queHace").textContent =
-    tipo === "ambas" ? "Le van a pasar los puntos por adentro Y se va a hacer grande y chico."
-    : tipo === "secuencia" ? "Le van a pasar los puntos por adentro. Movés los dos de tamaño si además querés que crezca."
-    : "Solo se va a hacer grande y chico. Agregá puntos si además querés emojis o letras.";
+    tipo === "ambas" ? "Le van a pasar los emojis por adentro Y va a cambiar de tamaño."
+    : tipo === "secuencia" ? "Le van a pasar los emojis por adentro. Movele el tamaño a algún punto si además querés que crezca."
+    : "Solo va a cambiar de tamaño. Ponele un emoji a algún punto si además querés que se le vea algo.";
 }
 
-for (const id of ["edFps", "edDuracion", "edDesde", "edHasta"]) $(id).addEventListener("input", actualizarTextos);
+for (const id of ["edFps", "edDuracion"]) $(id).addEventListener("input", () => { pintarLinea(); });
 
 // ══════════ La cancha ══════════
 // Dibujada con los colores del mapa de verdad (mapas/nanduti-futsal-x3.hbs):
 // fondo 2a3a40, líneas b3b6b6 y F8F8F8, áreas ff6363 y 0099ff, pelota FFD700.
 // El emoji va ADENTRO del jugador, que es donde HaxBall muestra el avatar.
+// Mueve el cabezal de la línea de tiempo al punto que se está viendo ahora en la cancha
+let puntoEnPantalla = -1;
+function marcarPunto(i) {
+  if (i === puntoEnPantalla) return;
+  puntoEnPantalla = i;
+  const cabezal = $("cabezal");
+  if (!cabezal) return;
+  const clip = i >= 0 ? $("pista").querySelector('.punto[data-i="' + i + '"]') : null;
+  $("tiempo").classList.toggle("corriendo", Boolean(clip));
+  if (clip) cabezal.style.left = (clip.offsetLeft + clip.offsetWidth / 2) + "px";
+}
+
 const lienzo = $("lienzo");
 const ctx = lienzo.getContext("2d");
 const A = lienzo.width, AL = lienzo.height;
@@ -440,11 +522,11 @@ function cuadro() {
       // El reloj del festejo va en tiempo real: lo que dice acá es exactamente lo que va a
       // durar en la sala. Si ponés 10 s, el bucle festeja 10 s.
       fase = "¡Gol! Festejando " + unDecimal(enFestejo / 1000) + " / " + unDecimal(dura / 1000) + " s";
-      const i = Math.floor(enFestejo / paso);
-      if (puntos.length && (tipo === "secuencia" || tipo === "ambas")) avatar = puntos[i % puntos.length];
-      if (tipo === "tamano" || tipo === "ambas") {
-        const vaiven = (Math.sin((i / 2) * Math.PI) + 1) / 2;
-        escala = Number($("edDesde").value) + (Number($("edHasta").value) - Number($("edDesde").value)) * vaiven;
+      if (puntos.length) {
+        const i = Math.floor(enFestejo / paso) % puntos.length;
+        avatar = puntos[i].emoji || null;
+        escala = Number(puntos[i].tamano) || 1;
+        marcarPunto(i);
       }
     } else {
       fase = "Se acabó el festejo: el bot recién acá acomoda a la gente";
@@ -462,6 +544,8 @@ function cuadro() {
   ctx.lineWidth = 2;
   ctx.strokeStyle = "#000";
   ctx.stroke();
+
+  if (!(enFestejo > 0 && enFestejo < dura)) marcarPunto(-1);
 
   $("faseTexto").textContent = fase;
   const avance = enFestejo > 0 && enFestejo < dura ? (enFestejo / dura) * 100 : (enFestejo >= dura ? 100 : 0);
@@ -486,12 +570,17 @@ function abrir(clave) {
   $("tituloModal").textContent = a ? "Editar " + a.nombre : "Nueva animación";
   $("edNombre").value = a ? a.nombre : "";
   $("edDescripcion").value = a && a.descripcion ? a.descripcion : "";
-  puntos = a ? (a.cuadros || []).slice() : ["⚽", "🔥", "🎉"];
-  puntoActivo = -1;
+  // Los puntos vienen como dos listas en paralelo (emojis y tamaños) y acá se juntan
+  if (a) {
+    const emojis = a.cuadros || [];
+    const medidas = a.tamanos || [];
+    puntos = emojis.map((e, i) => ({ emoji: e || "", tamano: Number(medidas[i]) || 1 }));
+  } else {
+    puntos = [{ emoji: "⚽", tamano: 1 }, { emoji: "🔥", tamano: 1.5 }, { emoji: "🎉", tamano: 1 }];
+  }
+  puntoActivo = puntos.length ? 0 : -1;
   $("edFps").value = a ? fpsDeMs(a.msPorCuadro) : 5;
   $("edDuracion").value = a ? a.duracionMs / 1000 : 3;
-  $("edDesde").value = a ? a.tamanoDesde : 1;
-  $("edHasta").value = a ? a.tamanoHasta : 1;
   $("edPrecio").value = a && !a.sinPrecio ? a.precio : "";
   $("edEnTienda").checked = a ? a.enTienda : false;
   $("edActiva").checked = a ? a.activa : true;
@@ -515,19 +604,21 @@ $("cuerpo").onclick = (ev) => {
 $("guardar").onclick = async () => {
   const nombre = $("edNombre").value.trim();
   if (!nombre) return avisar("Ponele un nombre", "mal");
+  if (!puntos.length) return avisar("Agregá al menos un punto", "mal");
+  if (!puntos.some((p) => p.emoji || Number(p.tamano) !== 1)) {
+    return avisar("Tus puntos no hacen nada: ponele un emoji a alguno, o cambiale el tamaño", "mal");
+  }
   const tipo = tipoDeAhora();
-  if (tipo !== "tamano" && !puntos.length) return avisar("Agregá al menos un punto, o movés el tamaño para que sea solo de tamaño", "mal");
 
   const clave = editando || claveDelNombre(nombre);
   const cuerpo = {
     nombre,
     descripcion: $("edDescripcion").value.trim(),
     tipo,
-    cuadros: puntos,
+    cuadros: puntos.map((p) => p.emoji),
+    tamanos: puntos.map((p) => p.tamano),
     msPorCuadro: msDeFps($("edFps").value),
     duracionMs: Math.round(Number($("edDuracion").value) * 1000),
-    tamanoDesde: Number($("edDesde").value),
-    tamanoHasta: Number($("edHasta").value),
     enTienda: $("edEnTienda").checked,
     activa: $("edActiva").checked,
   };

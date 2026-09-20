@@ -31,7 +31,8 @@ function revisar(titulo, condicion, detalle) {
 
   // Ana tiene una animación de las dos cosas; Beto no tiene ninguna
   contexto.__ANIMACIONES = {
-    ana: { clave: "tri", nombre: "Tricampeón", tipo: "ambas", cuadros: ["⚽", "🔥", "👑"], msPorCuadro: 100, tamanoDesde: 1, tamanoHasta: 2, duracionMs: 1000 },
+    ana: { clave: "tri", nombre: "Tricampeón", tipo: "ambas", cuadros: ["⚽", "🔥", "👑"],
+           tamanos: [1, 2, 1], msPorCuadro: 100, tamanoDesde: 1, tamanoHasta: 1, duracionMs: 1000 },
   };
   contexto.__MIS_ANIMACIONES = { ana: [{ clave: "tri", nombre: "Tricampeón" }] };
 
@@ -49,6 +50,10 @@ function revisar(titulo, condicion, detalle) {
 
   const radios = sala.radios.filter((r) => r.id === ana.id).map((r) => r.radius);
   revisar("Y se hace más grande", radios.some((r) => r > sala.radioNormal), radios.slice(0, 4).map((r) => r.toFixed(1)).join(" "));
+
+  // Cada punto tiene su tamaño: [1, 2, 1] sobre un radio de 15 → 15, 30, 15 y nada en el medio
+  const medidas = [...new Set(radios.map((r) => Math.round(r)))].sort((a, b) => a - b);
+  revisar("Usa el tamaño de cada punto, no un vaivén", medidas.length === 2 && medidas[0] === 15 && medidas[1] === 30, medidas.join(" y "));
 
   // Cuando se saca del medio, el festejo se termina: nadie juega agrandado
   if (room.onPositionsReset) room.onPositionsReset();
@@ -124,27 +129,31 @@ function revisar(titulo, condicion, detalle) {
     try { await AnimacionesModel.guardar("Con Mayúsculas Y Espacios", { nombre: "x" }, "prueba"); } catch (e) { mala = e.message; }
     revisar("La clave tiene que ser simple", /minúsculas/.test(mala || ""), mala);
 
-    let sinCuadros = null;
-    try { await AnimacionesModel.guardar(clave, { nombre: "Sin cuadros", tipo: "secuencia", cuadros: [] }, "prueba"); } catch (e) { sinCuadros = e.message; }
-    revisar("Una de emojis necesita al menos uno", /emoji o una letra/.test(sinCuadros || ""), sinCuadros);
+    let sinNada = null;
+    try { await AnimacionesModel.guardar(clave, { nombre: "Sin nada", cuadros: ["", ""], tamanos: [1, 1] }, "prueba"); } catch (e) { sinNada = e.message; }
+    revisar("Puntos que no hacen nada se rechazan", /al menos un punto/.test(sinNada || ""), sinNada);
 
     const creada = await AnimacionesModel.guardar(clave, {
       nombre: "De prueba",
       tipo: "ambas",
-      cuadros: ["⚽", "🔥", "👑", "⭐", "💥", "🎉", "🚀", "🏆", "😎", "💪", "🐐", "⚡"],   // 12: se recortan a 10
+      cuadros: ["⚽", "🔥", "", "⭐", "💥", "🎉", "🚀", "🏆", "😎", "💪", "🐐", "⚡"],   // 12: se recortan a 10
+      tamanos: [9, 0.01, 2, 1, 1, 1, 1, 1, 1, 1],   // 9 baja a 3 y 0.01 sube a 0.3
       msPorCuadro: 5,        // por debajo del mínimo: sube a 60
       duracionMs: 999999,    // por arriba del máximo: baja a 10000
-      tamanoHasta: 9,        // por arriba del máximo: baja a 3
     }, "prueba");
     revisar("No deja más de 10 cuadros", creada.cuadros.length === 10, creada.cuadros.length + " cuadros");
     revisar("La velocidad y la duración quedan dentro de lo posible", creada.msPorCuadro === 60 && creada.duracionMs === 10000, creada.msPorCuadro + " ms · " + creada.duracionMs + " ms");
-    revisar("El tamaño también", creada.tamanoHasta === 3, creada.tamanoHasta);
+    revisar("Los tamaños de cada punto se recortan a lo posible",
+      creada.tamanos.length === 10 && creada.tamanos[0] === 3 && creada.tamanos[1] === 0.3,
+      creada.tamanos.slice(0, 3).join(" "));
+    revisar("Un punto sin emoji se conserva (es solo de tamaño)", creada.cuadros[2] === "", JSON.stringify(creada.cuadros.slice(0, 4)));
+    revisar("El tipo sale solo de lo que se cargó", creada.tipo === "ambas", creada.tipo);
 
     let enTiendaSinPrecio = null;
-    try { await AnimacionesModel.guardar(clave, { nombre: "De prueba", tipo: "tamano", enTienda: true }, "prueba"); } catch (e) { enTiendaSinPrecio = e.message; }
+    try { await AnimacionesModel.guardar(clave, { nombre: "De prueba", cuadros: [""], tamanos: [2], enTienda: true }, "prueba"); } catch (e) { enTiendaSinPrecio = e.message; }
     revisar("No se puede poner en la tienda sin precio", /precio/.test(enTiendaSinPrecio || ""), enTiendaSinPrecio);
 
-    await AnimacionesModel.guardar(clave, { nombre: "De prueba", tipo: "ambas", cuadros: ["⚽"], precio: 2, enTienda: true }, "prueba");
+    await AnimacionesModel.guardar(clave, { nombre: "De prueba", cuadros: ["⚽", ""], tamanos: [1, 1.8], precio: 2, enTienda: true }, "prueba");
     const vitrina = await AnimacionesModel.vitrina();
     revisar("Con precio sale en la tienda", vitrina.some((a) => a.clave === clave && a.precio === 2));
 
@@ -167,9 +176,10 @@ function revisar(titulo, condicion, detalle) {
     revisar("Queda en el inventario y puesta", inventario.animaciones.length === 1 && inventario.puesta === clave);
 
     const paraLaSala = await AnimacionesModel.paraLaSala();
-    revisar("La sala la recibe con todo lo que necesita",
-      paraLaSala[nick.toLowerCase()] && paraLaSala[nick.toLowerCase()].tipo === "ambas" && Array.isArray(paraLaSala[nick.toLowerCase()].cuadros),
-      JSON.stringify(paraLaSala[nick.toLowerCase()]));
+    const suya = paraLaSala[nick.toLowerCase()];
+    revisar("La sala la recibe con los emojis Y los tamaños de cada punto",
+      Boolean(suya) && Array.isArray(suya.cuadros) && Array.isArray(suya.tamanos) && suya.cuadros.length === suya.tamanos.length,
+      JSON.stringify(suya));
 
     const venta = await AnimacionesModel.vender(nick, clave);
     revisar("Al venderla se devuelve el 70%", venta.devuelto === 1.4, "devolvió " + venta.devuelto);
@@ -216,7 +226,7 @@ function revisar(titulo, condicion, detalle) {
     const comoOwner = await pedir("/api/animaciones/panel", { headers: { Authorization: "Bearer " + tokenOwner } });
     revisar("El OWNER sí", comoOwner.status === 200 && Array.isArray(comoOwner.datos.animaciones), "HTTP " + comoOwner.status);
 
-    const guardaOwner = await pedir("/api/animaciones/" + clave, json({ __metodo: "PUT", nombre: "De prueba", tipo: "secuencia", cuadros: ["🔥"], duracionMs: 2000 }, tokenOwner));
+    const guardaOwner = await pedir("/api/animaciones/" + clave, json({ __metodo: "PUT", nombre: "De prueba", cuadros: ["🔥"], tamanos: [1.5], duracionMs: 2000 }, tokenOwner));
     revisar("Y puede guardarla", guardaOwner.status === 200 && guardaOwner.datos.animacion.duracionMs === 2000, guardaOwner.datos.error);
 
     servidor.close();
