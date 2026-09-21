@@ -1383,9 +1383,20 @@ En la sala: `!carteles`, `!cartel <nombre>` y `!cartel ninguno`. El launcher dej
 `{tipo:"score"}` de la cola.
 
 **La pantalla** es `public/frm/scores/` (nav "Carteles", con `u.rangos`: **solo OWNER y
-CO-OWNER**, igual que las animaciones). Tiene la **vista previa en vivo**: un chat de HaxBall de
-mentira donde se ve el cartel con su color y su tamaño mientras se escribe, y botones para meter
-cada hueco. La página pública de cada uno es `public/frm/score/`.
+CO-OWNER**, igual que las animaciones). Tiene la **vista previa en vivo**, en **dos** formas, y
+las dos salen mientras se escribe: la línea del chat de HaxBall (la ve todo el mundo) y la
+**cancha con el cartel encima**, que es como lo muestra la extensión. En la tabla, cada cartel
+tiene un botón **Ver** que abre las dos vistas sin entrar a editar (y de ahí se pasa a editar).
+La página pública de cada uno (`public/frm/score/`) muestra las mismas dos.
+
+`public/js/cartel-cancha.js` (`CartelCancha.crear(caja, { cartel, ancho })`) es el componente
+compartido: apoya el cartel sobre `CanchaAnimacion` y lo hace aparecer en el festejo. **El
+degradé, el tamaño de la letra y la animación están calcados del userscript**: si se tocan allá,
+hay que tocarlos acá o la vista previa empieza a mentir. El cartel se lee con una función
+(`cartel: () => …`) porque el editor cambia mientras se escribe y la cancha se crea una sola vez.
+Ojo con dos cosas que ya se pisaron: la cancha **no se puede crear con el modal oculto** (no se
+puede medir), y el festejo dura `puntos × msPorCuadro`, así que va un punto de 3200 ms para que
+dure lo mismo que en el juego.
 
 `npm run prueba-scores` cubre las tres puntas: la sala (cambia el aviso, el que no tiene ve el de
 siempre, el autogol no lo usa), el modelo contra la base (validaciones, compra, venta al precio

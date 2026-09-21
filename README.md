@@ -741,8 +741,11 @@ salga con tu texto, tu color y tu tamaño de letra, en vez del de siempre.
 
 **Para crearlos** (solo el OWNER y el CO-OWNER): panel → **Carteles**. Escribís el texto con
 huecos como `{jugador}` o `{golesPropios}` — hay botones para meterlos —, elegís el color y el
-tamaño de la letra, y al costado tenés una **vista previa** que imita el chat de HaxBall y se
-actualiza mientras escribís.
+tamaño de la letra, y tenés **dos vistas previas** que se actualizan mientras escribís: cómo
+queda la línea en el chat de HaxBall, y cómo se ve **arriba de la cancha** para los que tengan
+la extensión puesta (la jugada corre sola y el cartel aparece en el festejo del gol). En la tabla,
+el botón **Ver** muestra las dos sin tener que entrar a editar. Las mismas dos vistas salen en la
+página de cada cartel, así el que lo compra ve exactamente lo que va a tener.
 
 ## 🎉 Animaciones de gol
 

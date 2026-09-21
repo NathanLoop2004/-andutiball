@@ -62,6 +62,11 @@
         <div class="chat-linea tenue">FAXSS: uhhh</div>
       </div>
 
+      <!-- Y arriba de la cancha, que es como lo ve el que tiene la extensión puesta -->
+      <div class="cofre-titulo" style="margin-top:16px">Y arriba de la cancha, con la extensión</div>
+      <div id="canchaPrevia"></div>
+      <p class="tenue chico">Esperá al gol: el cartel sale en el festejo, tapando el “Blue Scores!” de HaxBall.</p>
+
       <div class="editor-campos" style="margin-top:16px">
         <label>Nombre <input type="text" id="edNombre" maxlength="40" placeholder="Golazo" autocomplete="off"></label>
         <label>Descripción <input type="text" id="edDescripcion" maxlength="200" placeholder="Para los que la clavan al ángulo" autocomplete="off"></label>
@@ -110,6 +115,32 @@
   </div>
 </div>
 
+<!-- Previsualización sola, sin editar: se abre con el botón Ver de la tabla -->
+<div class="fondo-modal" id="fondoVer" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloVer">
+    <div class="modal-cabeza">
+      <h2 id="tituloVer">Cómo se ve</h2>
+      <button class="boton chico" type="button" id="cerrarVer">Cerrar</button>
+    </div>
+    <div class="modal-cuerpo">
+      <div class="cofre-titulo">Arriba de la cancha, con la extensión</div>
+      <div id="canchaVer"></div>
+      <div class="cofre-titulo" style="margin-top:16px">Y en el chat, para todos</div>
+      <div class="chat-previa">
+        <div class="chat-linea tenue">JINDER: dale que va</div>
+        <div class="chat-linea" id="verCartel">—</div>
+        <div class="chat-linea tenue">FAXSS: uhhh</div>
+      </div>
+      <p class="tenue chico" id="verDatos"></p>
+    </div>
+    <div class="modal-pie">
+      <button class="boton principal" type="button" id="editarDesdeVer">Editar este</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/cancha-animacion.js"></script>
+<script src="/js/cartel-cancha.js"></script>
 <script>
 Sesion.pintarBarra("derecha");
 Sesion.pintarNavAdmin("scores");
@@ -181,20 +212,36 @@ function pintar() {
         ${s.enTienda ? '<span class="etiqueta ok">En la tienda</span>' : '<span class="etiqueta">Guardado</span>'}
         ${s.activo ? "" : '<span class="etiqueta ban">Apagado</span>'}
       </td>
-      <td class="der sin-cortar"><button class="boton chico" data-editar="${esc(s.clave)}">Editar</button></td>
+      <td class="der sin-cortar">
+        <button class="boton chico" data-ver="${esc(s.clave)}">Ver</button>
+        <button class="boton chico" data-editar="${esc(s.clave)}">Editar</button>
+      </td>
     </tr>`).join("");
 }
 
 // ── La previsualización, en vivo ──
+// Dos vistas del mismo cartel: la línea del chat (la ve todo el mundo) y la cancha, que es
+// como lo muestra la extensión. La cancha se arma una sola vez y se refresca al escribir.
+let canchaEditor = null;
+
+function loQueSeEscribio() {
+  return {
+    texto: armar($("edPlantilla").value, ejemploDe()),
+    color: $("edColorTexto").value || "#FFD700",
+    estilo: $("edEstilo").value,
+  };
+}
+
 function pintarPrevia() {
-  const texto = armar($("edPlantilla").value, ejemploDe());
+  const c = loQueSeEscribio();
   const linea = $("previaCartel");
-  linea.textContent = texto || "(escribí algo arriba)";
-  linea.style.color = $("edColorTexto").value || "#FFD700";
-  linea.style.fontWeight = $("edEstilo").value === "bold" ? "700" : "400";
-  linea.style.fontSize = $("edEstilo").value === "small" ? "11px" : $("edEstilo").value === "bold" ? "15px" : "13px";
+  linea.textContent = c.texto || "(escribí algo arriba)";
+  linea.style.color = c.color;
+  linea.style.fontWeight = c.estilo === "bold" ? "700" : "400";
+  linea.style.fontSize = c.estilo === "small" ? "11px" : c.estilo === "bold" ? "15px" : "13px";
   const largo = $("edPlantilla").value.length;
   $("cuentaLargo").textContent = largo + " de " + largoMaximo + " caracteres" + (largo > largoMaximo ? " — se pasa" : "");
+  if (canchaEditor) canchaEditor.refrescar();
 }
 
 for (const id of ["edPlantilla", "edEstilo"]) $(id).addEventListener("input", pintarPrevia);
@@ -234,13 +281,67 @@ function abrir(clave) {
   $("borrar").hidden = !s;
   pintarPrevia();
   $("fondoModal").hidden = false;
+  // La cancha se crea recién acá: adentro de un modal oculto no se puede medir
+  if (!canchaEditor) canchaEditor = CartelCancha.crear($("canchaPrevia"), { cartel: loQueSeEscribio, ancho: 520 });
+  canchaEditor.refrescar();
+  canchaEditor.arrancar();
 }
 
-const cerrar = () => { $("fondoModal").hidden = true; };
+const cerrar = () => {
+  $("fondoModal").hidden = true;
+  if (canchaEditor) canchaEditor.parar();     // sin esto la jugada sigue corriendo al pedo
+};
 $("nuevo").onclick = () => abrir(null);
 $("cerrarModal").onclick = cerrar;
-document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && !$("fondoModal").hidden) cerrar(); });
+
+// ── Ver: la previsualización sola, sin tocar nada ──
+let canchaVer = null;
+let viendo = null;
+// El cartel que está mirando la cancha. Es una variable aparte (y no el argumento de
+// CartelCancha) porque la cancha se crea una sola vez y después se cambia de cartel.
+let cartelQueSeVe = { texto: "", color: "#FFD700", estilo: "bold" };
+
+function ver(clave) {
+  const s = scores.find((x) => x.clave === clave);
+  if (!s) return;
+  viendo = clave;
+  const c = { texto: s.ejemplo, color: "#" + s.color, estilo: s.estilo };
+  cartelQueSeVe = c;
+  $("tituloVer").textContent = s.nombre;
+  const linea = $("verCartel");
+  linea.textContent = c.texto;
+  linea.style.color = c.color;
+  linea.style.fontWeight = c.estilo === "bold" ? "700" : "400";
+  linea.style.fontSize = c.estilo === "small" ? "11px" : c.estilo === "bold" ? "15px" : "13px";
+  $("verDatos").textContent = [
+    s.descripcion || "",
+    NOMBRE_ESTILO[s.estilo] ? "Letra " + NOMBRE_ESTILO[s.estilo].toLowerCase() : "",
+    s.sinPrecio ? "Sin precio" : "🪙 " + s.precio,
+    s.enTienda ? "En la tienda" : "Guardado",
+  ].filter(Boolean).join(" · ");
+
+  $("fondoVer").hidden = false;
+  if (!canchaVer) canchaVer = CartelCancha.crear($("canchaVer"), { cartel: () => cartelQueSeVe, ancho: 520 });
+  canchaVer.refrescar();
+  canchaVer.arrancar();
+}
+
+function cerrarVer() {
+  $("fondoVer").hidden = true;
+  if (canchaVer) canchaVer.parar();
+}
+$("cerrarVer").onclick = cerrarVer;
+$("editarDesdeVer").onclick = () => { const c = viendo; cerrarVer(); abrir(c); };
+
+document.addEventListener("keydown", (ev) => {
+  if (ev.key !== "Escape") return;
+  if (!$("fondoModal").hidden) cerrar();
+  else if (!$("fondoVer").hidden) cerrarVer();
+});
+
 $("cuerpo").onclick = (ev) => {
+  const v = ev.target.closest("[data-ver]");
+  if (v) return ver(v.dataset.ver);
   const b = ev.target.closest("[data-editar]");
   if (b) abrir(b.dataset.editar);
 };

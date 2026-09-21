@@ -25,7 +25,11 @@
   <div class="tarjeta" id="ficha" hidden>
     <div class="tarjeta-cuerpo ficha-animacion">
       <div>
-        <div class="cofre-titulo">Cómo se ve en el chat</div>
+        <div class="cofre-titulo">Arriba de la cancha, con la extensión</div>
+        <div id="canchaPrevia"></div>
+        <p class="tenue chico">Sale en el festejo del gol, tapando el “Blue Scores!” de HaxBall. Lo ven los que tengan <a href="/frm/extension/">la extensión</a>.</p>
+
+        <div class="cofre-titulo" style="margin-top:14px">Y en el chat, para todos</div>
         <div class="chat-previa">
           <div class="chat-linea tenue">JINDER: dale que va</div>
           <div class="chat-linea" id="previaCartel">—</div>
@@ -64,6 +68,8 @@
 
 <script src="/js/sesion.js"></script>
 <script src="/js/mercado.js"></script>
+<script src="/js/cancha-animacion.js"></script>
+<script src="/js/cartel-cancha.js"></script>
 <script>
 const $ = (id) => document.getElementById(id);
 const esc = Sesion.escapar;
@@ -106,6 +112,13 @@ async function cargar() {
   linea.style.fontSize = cartel.estilo === "small" ? "11px" : cartel.estilo === "bold" ? "15px" : "13px";
 
   $("ficha").hidden = false;
+
+  // La cancha se arma recién con la ficha a la vista: antes no se puede medir
+  CartelCancha.crear($("canchaPrevia"), {
+    cartel: () => ({ texto: cartel.ejemplo || cartel.plantilla, color: "#" + cartel.color, estilo: cartel.estilo }),
+    ancho: 460,
+  }).arrancar();
+
   Mercado.pintar($("mercado"), "score", clave);
 
   const u = Sesion.usuario();
