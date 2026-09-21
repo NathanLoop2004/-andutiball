@@ -703,6 +703,16 @@ de ese entorno usa `DATABASE_URL`. La conexión se abre recién cuando alguien l
 Es la primera versión y la vamos a ir cambiando: se toca `prisma/schema.prisma` y se corre
 `npm run base:migrar`.
 
+## 🏆 Ligas de las camisetas
+
+Las camisetas se pueden agrupar en ligas: Primera División, Intermedia, selecciones, lo que
+quieras. Se arman en el panel → **Equipos → Ligas**: le ponés nombre, país y un color.
+
+- En la tabla de camisetas cada una muestra su liga, y arriba tenés un **filtro** para ver solo
+  las de una liga (o las que todavía no tienen).
+- La liga de cada camiseta se elige en su editor, en el desplegable **Liga**.
+- **Borrar una liga no borra las camisetas**: quedan sin liga y te avisa cuántas son.
+
 ## 🥅 Carteles de gol
 
 Cuando hacés un gol sale un aviso con el marcador. Podés comprar **tu propio cartel** para que

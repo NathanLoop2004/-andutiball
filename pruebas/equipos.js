@@ -114,6 +114,39 @@ function revisar(titulo, condicion, detalle) {
     await EquiposModel.borrarEquipo(claves[0]);
     revisar("Borrado el clásico, el equipo se puede borrar", !(await EquiposModel.listar()).equipos.some((e) => e.clave === claves[0]));
 
+    // ── Las ligas ──
+    console.log("\n🏆 Las ligas:\n");
+
+    const nombreLiga = "Liga " + marca;
+    const liga = await EquiposModel.guardarLiga({ nombre: nombreLiga, pais: "Paraguay", color: "#ff0000" }, "prueba");
+    revisar("La clave de la liga sale del nombre", /^liga-/.test(liga.clave), liga.clave);
+    revisar("Y el color se guarda sin # y en mayúsculas", liga.color === "FF0000", liga.color);
+
+    let sinNombre = null;
+    try { await EquiposModel.guardarLiga({ nombre: "" }, "prueba"); } catch (e) { sinNombre = e.message; }
+    revisar("Una liga sin nombre se rechaza", /nombre/.test(sinNombre || ""), sinNombre);
+
+    // Se le pone la liga a una camiseta
+    await EquiposModel.ponerLiga([claves[1]], liga.clave, "prueba");
+    const conLiga = (await EquiposModel.listar()).equipos.find((e) => e.clave === claves[1]);
+    revisar("La camiseta queda en esa liga", conLiga.liga === liga.clave, conLiga.liga);
+    revisar("Y la liga viene en el listado", (await EquiposModel.listar()).ligas.some((l) => l.clave === liga.clave));
+
+    let ligaInventada = null;
+    try { await EquiposModel.ponerLiga([claves[1]], "no-existe", "prueba"); } catch (e) { ligaInventada = e.message; }
+    revisar("No se puede poner una liga que no existe", /no existe/.test(ligaInventada || ""), ligaInventada);
+
+    // Guardar con el mismo nombre la actualiza, no la duplica
+    await EquiposModel.guardarLiga({ nombre: nombreLiga, pais: "Argentina" }, "prueba");
+    const ligas = (await EquiposModel.listar()).ligas.filter((l) => l.clave === liga.clave);
+    revisar("Guardarla de nuevo la actualiza, no la duplica", ligas.length === 1 && ligas[0].pais === "Argentina", ligas.length + " · " + ligas[0].pais);
+
+    // Al borrarla, sus camisetas quedan sueltas pero NO se borran
+    const borrada = await EquiposModel.borrarLiga(liga.clave);
+    revisar("Al borrar la liga dice cuántas quedaron sueltas", borrada.camisetasSueltas === 1, borrada.camisetasSueltas);
+    const suelta = (await EquiposModel.listar()).equipos.find((e) => e.clave === claves[1]);
+    revisar("La camiseta sigue existiendo, sin liga", Boolean(suelta) && suelta.liga === null, suelta && String(suelta.liga));
+
     // ── 3) La API ──
     console.log("\n🔐 La API:\n");
     const { crearApp } = require("../app");

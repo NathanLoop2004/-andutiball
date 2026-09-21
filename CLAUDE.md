@@ -1241,6 +1241,28 @@ el de ahora — es lo que espera cualquiera. Si ya no tiene precio (lo sacaron d
 a lo que había pagado, que es lo único que se sabe. El `vale` del inventario usa la misma cuenta,
 así lo que dice la pantalla es lo que se va a cobrar.
 
+## Ligas de las camisetas (🏆)
+
+Las camisetas se agrupan en ligas (Primera División, Intermedia, selecciones…) que se crean desde
+el panel: **Equipos → Ligas**. Tabla `ligas` + `equipos.liga`, migración `20260921120000_ligas`.
+Mismo permiso que el resto de esa pantalla (`puedeConfigurar`: OWNER, CO-OWNER, HOSTER, AYUDANTE).
+
+**Reemplazó al campo `division`**, que era texto libre de 40 caracteres y estaba **vacío en las
+29 camisetas**: nunca se usó y no se podía listar ni agrupar por él. La migración pasa lo que
+hubiera a una liga antes de sacar la columna, por las dudas.
+
+- La **clave sale del nombre** (`guardarLiga`: saca acentos, minúsculas, guiones), así que guardar
+  con el mismo nombre **actualiza** la liga en vez de duplicarla.
+- **Borrar una liga no borra camisetas**: las que eran de ahí quedan sin liga, y la respuesta dice
+  cuántas (`camisetasSueltas`) para poder avisarlo en la pantalla.
+- `ponerLiga(claves, liga)` cambia varias de una sola vez, que es lo que más se hace al ordenar.
+- En la tabla de camisetas cada una muestra su liga como etiqueta **con el color de la liga**, y
+  arriba hay un filtro con la cuenta de cada una (incluido "Sin liga"), que es la única forma de
+  encontrar algo cuando hay muchas.
+
+API: `POST /api/equipos/ligas` · `DELETE /api/equipos/ligas/:clave` · `POST /api/equipos/poner-liga`.
+`GET /api/equipos` ahora devuelve también `ligas`.
+
 ## Carteles de gol (🥅)
 
 El aviso con el marcador que sale cuando alguien convierte. Cada uno puede comprar el suyo:
@@ -1253,6 +1275,13 @@ texto, su color y su tamaño de letra. Tablas `scores` y `scores_comprados` +
 está **tres veces** y tiene que dar igual: `ScoresModel.armar()` (la web), `armarCartel()` (el
 bloque de la sala) y `armar()` en la pantalla del panel, para la vista previa. El servidor manda
 el `ejemplo` ya resuelto en `paraMostrar()`, así la portada y la página pública no lo rearman.
+
+**OJO CON EL NOMBRE**: "cartel de gol" es el **aviso del chat**. El marcador de arriba de la
+pantalla (los dos cuadraditos con `0 - 0` y el reloj) **NO se puede tocar desde el host**: lo
+dibuja el cliente de HaxBall y la API headless no tiene ningún método para eso. Lo único del host
+que cambia cómo se ve ese marcador son los colores de equipo (`setTeamColors`), o sea las
+camisetas. Ya se preguntó una vez; está verificado contra la lista completa de métodos que usa el
+script (`getScores`, `setTeamColors`, `sendAnnouncement`, `setPlayerAvatar`, `setDiscProperties`…).
 
 **Cómo se engancha en la sala** (`parches/bloques/scores.txt`): el aviso lo arma el script
 adentro de su propio `onTeamGoal`, así que **no hay función que redeclarar**. Se usa el mismo

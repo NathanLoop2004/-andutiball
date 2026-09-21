@@ -36,7 +36,7 @@ function revisarEquipo(datos, { conClave = false } = {}) {
   const limpio = {
     nombre: limpiarTexto(datos.nombre, "el nombre", 30).toUpperCase(),
     descripcion: datos.descripcion ? String(datos.descripcion).trim().slice(0, 80) : null,
-    division: datos.division ? String(datos.division).trim().slice(0, 40) : null,
+    liga: datos.liga ? String(datos.liga).trim().toLowerCase().slice(0, 30) : null,
     angulo: Number.isFinite(Number(datos.angulo)) ? Math.round(Number(datos.angulo)) : 0,
     // Solo la primera franja es obligatoria: las otras dos y el número tienen un valor razonable
     colorTexto: limpiarColor(datos.colorTexto || "FFFFFF", "el color del número"),
@@ -68,7 +68,7 @@ class EquiposModel {
           clave,
           nombre: kit.nombre,
           descripcion: kit.com || null,
-          division: null,
+          liga: null,
           angulo: kit.angle,
           colorTexto: kit.text.toUpperCase(),
           color1: kit.colors[0].toUpperCase(),
@@ -91,11 +91,69 @@ class EquiposModel {
 
   static async listar() {
     await EquiposModel.sembrar();
-    const [equipos, clasicos] = await Promise.all([
+    const [equipos, clasicos, ligas] = await Promise.all([
       base().equipo.findMany({ orderBy: [{ orden: "asc" }, { nombre: "asc" }] }),
       base().clasico.findMany({ orderBy: [{ demanda: "desc" }, { id: "asc" }] }),
+      base().liga.findMany({ orderBy: [{ orden: "asc" }, { nombre: "asc" }] }),
     ]);
-    return { equipos, clasicos };
+    return { equipos, clasicos, ligas };
+  }
+
+  // ── Las ligas ─────────────────────────────────────────────────────────────
+  // Sirven para agrupar las camisetas: Primera División, Intermedia, selecciones, lo que sea.
+  // Reemplazaron al campo "division", que era texto libre y nunca se usó.
+
+  static async guardarLiga(datos, quien) {
+    const nombre = limpiarTexto(datos.nombre, "el nombre de la liga", 40);
+    const clave = String(datos.clave || nombre)
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
+      .slice(0, 30);
+    if (clave.length < 2) throw new Error("El nombre de la liga es muy corto");
+
+    const limpia = {
+      nombre,
+      descripcion: datos.descripcion ? String(datos.descripcion).trim().slice(0, 120) : null,
+      pais: datos.pais ? String(datos.pais).trim().slice(0, 40) : null,
+      color: limpiarColor(datos.color || "2563EB", "el color de la liga"),
+      activa: datos.activa === undefined ? true : Boolean(datos.activa),
+      orden: Number.isFinite(Number(datos.orden)) ? Math.round(Number(datos.orden)) : 0,
+      cambiadoPor: quien || null,
+      cambiado: new Date(),
+    };
+
+    const existe = await base().liga.findUnique({ where: { clave } });
+    if (existe) return base().liga.update({ where: { clave }, data: limpia });
+
+    const ultima = await base().liga.findFirst({ orderBy: { orden: "desc" } });
+    return base().liga.create({ data: { clave, ...limpia, orden: limpia.orden || (ultima ? ultima.orden + 10 : 10) } });
+  }
+
+  // Al borrar una liga, las camisetas que eran de ahí quedan sin liga (no se borran)
+  static async borrarLiga(clave) {
+    const cual = String(clave || "").trim().toLowerCase();
+    const existe = await base().liga.findUnique({ where: { clave: cual } });
+    if (!existe) throw new Error("Esa liga no existe");
+    const cuantas = await base().equipo.count({ where: { liga: cual } });
+    await base().equipo.updateMany({ where: { liga: cual }, data: { liga: null } });
+    await base().liga.delete({ where: { clave: cual } });
+    return { borrada: cual, camisetasSueltas: cuantas };
+  }
+
+  // Le cambia la liga a varias camisetas de una (es lo que más se hace al ordenar)
+  static async ponerLiga(claves, liga, quien) {
+    const lista = (Array.isArray(claves) ? claves : [claves]).map((c) => String(c || "").trim().toLowerCase()).filter(Boolean);
+    if (!lista.length) throw new Error("No elegiste ninguna camiseta");
+    const cual = liga === null || liga === undefined || liga === "" ? null : String(liga).trim().toLowerCase();
+    if (cual) {
+      const existe = await base().liga.findUnique({ where: { clave: cual } });
+      if (!existe) throw new Error("Esa liga no existe");
+    }
+    const r = await base().equipo.updateMany({
+      where: { clave: { in: lista } },
+      data: { liga: cual, cambiadoPor: quien || null, cambiado: new Date() },
+    });
+    return { cambiadas: r.count, liga: cual };
   }
 
   static async guardarEquipo(clave, datos, quien) {

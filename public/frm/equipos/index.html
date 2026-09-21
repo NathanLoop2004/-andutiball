@@ -32,6 +32,7 @@
 
   <div class="pestanas" id="pestanas" role="tablist">
     <button data-vista="equipos" role="tab" aria-selected="true">Camisetas</button>
+    <button data-vista="ligas" role="tab" aria-selected="false">Ligas</button>
     <button data-vista="clasicos" role="tab" aria-selected="false">Clásicos</button>
     <button data-vista="tienda" role="tab" aria-selected="false" id="pestanaTienda" hidden>Tienda</button>
   </div>
@@ -40,11 +41,14 @@
 
   <!-- Camisetas -->
   <section id="vistaEquipos">
+    <div class="fila-filtro">
+      <label>Ver <select id="filtroLiga"></select></label>
+    </div>
     <div class="tarjeta">
       <div class="tarjeta-cuerpo tenue" id="cargandoEquipos">Cargando…</div>
       <div class="tabla-envoltorio" id="tablaEquipos" hidden>
         <table class="tabla">
-          <thead><tr><th>Camiseta</th><th>Equipo</th><th>Clave</th><th>Colores</th><th class="der">Ángulo</th><th>En uso</th><th class="der">Acciones</th></tr></thead>
+          <thead><tr><th>Camiseta</th><th>Equipo</th><th>Liga</th><th>Clave</th><th>Colores</th><th class="der">Ángulo</th><th>En uso</th><th class="der">Acciones</th></tr></thead>
           <tbody id="cuerpoEquipos"></tbody>
         </table>
       </div>
@@ -52,6 +56,31 @@
   </section>
 
   <!-- Clásicos -->
+  <section id="vistaLigas" hidden>
+    <div class="tarjeta">
+      <div class="tarjeta-cuerpo">
+        <h2>Agregar una liga</h2>
+        <p class="tenue">Sirven para agrupar las camisetas: Primera División, Intermedia, selecciones, lo que quieras.</p>
+        <div class="fila-liga">
+          <label>Nombre <input type="text" id="ligaNombre" maxlength="40" placeholder="Primera División"></label>
+          <label>País <input type="text" id="ligaPais" maxlength="40" placeholder="Paraguay"></label>
+          <label>Color <input type="color" id="ligaColor" value="#2563EB"></label>
+          <button class="boton principal" type="button" id="agregarLiga">Agregar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tarjeta" style="margin-top:16px">
+      <div class="tabla-envoltorio">
+        <table class="tabla">
+          <thead><tr><th>Liga</th><th>País</th><th class="der">Camisetas</th><th></th></tr></thead>
+          <tbody id="cuerpoLigas"></tbody>
+        </table>
+      </div>
+      <p class="tenue" id="sinLigas" hidden>Todavía no hay ninguna liga.</p>
+    </div>
+  </section>
+
   <section id="vistaClasicos" hidden>
     <div class="tarjeta" style="margin-bottom:16px">
       <div class="tarjeta-cabeza"><h2>Agregar un clásico</h2></div>
@@ -107,7 +136,7 @@
           <label>Nombre <input type="text" id="edNombre" maxlength="30" placeholder="OLIMPIA"></label>
           <label>Clave <input type="text" id="edClave" maxlength="12" placeholder="oli"></label>
           <label>Descripción <input type="text" id="edDescripcion" maxlength="80" placeholder="CLUB OLIMPIA (Decano)"></label>
-          <label>División <input type="text" id="edDivision" maxlength="40" placeholder="Primera división"></label>
+          <label>Liga <select id="edLiga"></select></label>
           <div class="colores-fila">
             <label>Franja 1 <input type="color" id="edColor1"></label>
             <label>Franja 2 <input type="color" id="edColor2"></label>
@@ -159,16 +188,41 @@ const camisetaChica = (equipo) => `<span class="camiseta" style="background:${fo
 function pintarEquipos() {
   $("cargandoEquipos").hidden = true;
   $("tablaEquipos").hidden = false;
-  $("cuerpoEquipos").innerHTML = datos.equipos.map((e) => `
+
+  // El filtro por liga: con muchas camisetas es la única forma de encontrar algo
+  const filtro = $("filtroLiga").value;
+  const lista = filtro === "" ? datos.equipos
+    : filtro === "sin" ? datos.equipos.filter((e) => !e.liga)
+    : datos.equipos.filter((e) => e.liga === filtro);
+
+  const ligaDe = (clave) => (datos.ligas || []).find((l) => l.clave === clave);
+  const chapita = (e) => {
+    const l = ligaDe(e.liga);
+    return l
+      ? `<span class="etiqueta" style="border-color:#${esc(l.color)};color:#${esc(l.color)}">${esc(l.nombre)}</span>`
+      : '<span class="tenue chico">sin liga</span>';
+  };
+
+  $("cuerpoEquipos").innerHTML = lista.map((e) => `
     <tr>
       <td>${camisetaChica(e)}</td>
       <td><b>${esc(e.nombre)}</b>${e.descripcion ? `<div class="tenue" style="font-size:12px">${esc(e.descripcion)}</div>` : ""}</td>
+      <td>${chapita(e)}</td>
       <td class="tenue">${esc(e.clave)}</td>
       <td class="tenue" style="font-size:12px">${esc(e.color1)} · ${esc(e.color2)} · ${esc(e.color3)}</td>
       <td class="der tenue">${e.angulo}°</td>
       <td>${e.activo ? '<span class="etiqueta ok">Sí</span>' : '<span class="etiqueta">No</span>'}</td>
       <td class="der"><button class="boton chico" data-editar="${esc(e.clave)}">Editar</button></td>
     </tr>`).join("");
+
+  // El propio filtro, con cuántas hay en cada liga
+  const cuantas = (clave) => datos.equipos.filter((e) => (clave === "sin" ? !e.liga : e.liga === clave)).length;
+  const elegido = $("filtroLiga").value;
+  $("filtroLiga").innerHTML =
+    `<option value="">Todas las ligas (${datos.equipos.length})</option>` +
+    (datos.ligas || []).map((l) => `<option value="${esc(l.clave)}">${esc(l.nombre)} (${cuantas(l.clave)})</option>`).join("") +
+    `<option value="sin">Sin liga (${cuantas("sin")})</option>`;
+  $("filtroLiga").value = elegido;
 }
 
 function pintarClasicos() {
@@ -212,6 +266,7 @@ function pintarVistaClasicoNuevo() {
 async function cargar() {
   try {
     datos = await Sesion.pedir("/api/equipos");
+    pintarLigas();
     pintarEquipos();
     pintarClasicos();
   } catch (error) {
@@ -230,7 +285,7 @@ function abrirEditor(clave) {
   $("edClave").value = e.clave || "";
   $("edClave").disabled = Boolean(clave);
   $("edDescripcion").value = e.descripcion || "";
-  $("edDivision").value = e.division || "";
+  $("edLiga").value = e.liga || "";
   $("edColor1").value = hex(e.color1);
   $("edColor2").value = hex(e.color2);
   $("edColor3").value = hex(e.color3);
@@ -247,7 +302,7 @@ function equipoDelEditor() {
     clave: $("edClave").value.trim().toLowerCase(),
     nombre: $("edNombre").value.trim(),
     descripcion: $("edDescripcion").value.trim(),
-    division: $("edDivision").value.trim(),
+    liga: $("edLiga").value,
     angulo: Number($("edAngulo").value),
     colorTexto: sinNumeral($("edColorTexto").value),
     color1: sinNumeral($("edColor1").value),
@@ -383,12 +438,76 @@ $("cuerpoTienda").addEventListener("change", async (e) => {
   }
 });
 
+$("filtroLiga").addEventListener("change", pintarEquipos);
+
+// ══════════ Ligas ══════════
+// Agrupan las camisetas. Reemplazaron al campo "división", que era texto libre: así se
+// pueden crear, editar y ver cuántas camisetas tiene cada una.
+function pintarLigas() {
+  const ligas = datos.ligas || [];
+  $("sinLigas").hidden = ligas.length > 0;
+  const cuantas = (clave) => (datos.equipos || []).filter((e) => e.liga === clave).length;
+
+  $("cuerpoLigas").innerHTML = ligas.map((l) => `
+    <tr>
+      <td><span class="punto-liga" style="background:#${esc(l.color)}"></span> <strong>${esc(l.nombre)}</strong>
+        ${l.activa ? "" : ' <span class="etiqueta ban">apagada</span>'}
+        ${l.descripcion ? `<div class="tenue chico">${esc(l.descripcion)}</div>` : ""}</td>
+      <td>${esc(l.pais || "—")}</td>
+      <td class="der">${cuantas(l.clave)}</td>
+      <td class="der"><button class="boton chico peligro" data-borrar-liga="${esc(l.clave)}">Borrar</button></td>
+    </tr>`).join("");
+
+  // El selector del editor de camisetas
+  const elegida = $("edLiga").value;
+  $("edLiga").innerHTML = '<option value="">Sin liga</option>' +
+    ligas.map((l) => `<option value="${esc(l.clave)}">${esc(l.nombre)}</option>`).join("");
+  $("edLiga").value = elegida;
+}
+
+$("agregarLiga").onclick = async () => {
+  const nombre = $("ligaNombre").value.trim();
+  if (!nombre) return avisar("Ponele un nombre a la liga", "mal");
+  try {
+    await Sesion.pedir("/api/equipos/ligas", {
+      method: "POST",
+      body: JSON.stringify({
+        nombre,
+        pais: $("ligaPais").value.trim(),
+        color: $("ligaColor").value.replace(/^#/, ""),
+      }),
+    });
+    $("ligaNombre").value = "";
+    $("ligaPais").value = "";
+    avisar("Liga agregada", "bien");
+    await cargar();
+  } catch (error) { avisar(error.message, "mal"); }
+};
+
+$("cuerpoLigas").addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-borrar-liga]");
+  if (!b) return;
+  const clave = b.dataset.borrarLiga;
+  const liga = (datos.ligas || []).find((l) => l.clave === clave);
+  const cuantas = (datos.equipos || []).filter((x) => x.liga === clave).length;
+  const aviso = cuantas
+    ? `¿Borrar la liga "${liga ? liga.nombre : clave}"? Sus ${cuantas} camisetas quedan sin liga (no se borran).`
+    : `¿Borrar la liga "${liga ? liga.nombre : clave}"?`;
+  if (!confirm(aviso)) return;
+  try {
+    await Sesion.pedir("/api/equipos/ligas/" + encodeURIComponent(clave), { method: "DELETE" });
+    avisar("Liga borrada", "bien");
+    await cargar();
+  } catch (error) { avisar(error.message, "mal"); }
+});
+
 // ── Pestañas ──
 $("pestanas").addEventListener("click", (e) => {
   const b = e.target.closest("[data-vista]");
   if (!b) return;
   document.querySelectorAll("#pestanas button").forEach((p) => p.setAttribute("aria-selected", String(p === b)));
   $("vistaEquipos").hidden = b.dataset.vista !== "equipos";
+  $("vistaLigas").hidden = b.dataset.vista !== "ligas";
   $("vistaClasicos").hidden = b.dataset.vista !== "clasicos";
   $("vistaTienda").hidden = b.dataset.vista !== "tienda";
   $("nuevoEquipo").hidden = b.dataset.vista !== "equipos";

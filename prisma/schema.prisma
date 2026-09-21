@@ -325,7 +325,9 @@ model Equipo {
   clave       String   @id
   nombre      String
   descripcion String?
-  division    String?
+  // De qué liga es (la clave de una fila de "ligas"). Reemplazó al campo "division", que era
+  // texto libre y nunca se usó: así las ligas se pueden crear y editar de verdad.
+  liga        String?
   angulo      Int      @default(0)
   colorTexto  String   @default("FFFFFF")
   color1      String
@@ -504,4 +506,20 @@ model ScoreComprado {
   @@unique([nick, score])
   @@index([nick])
   @@map("scores_comprados")
+}
+
+// Las ligas de las camisetas: Primera División, Intermedia, selecciones, lo que sea.
+// Se arman desde el panel (Equipos → Ligas), igual que los clásicos.
+model Liga {
+  clave       String   @id
+  nombre      String
+  descripcion String?
+  pais        String?
+  color       String   @default("2563EB")   // para distinguirla de un vistazo
+  activa      Boolean  @default(true)
+  orden       Int      @default(0)
+  cambiadoPor String?
+  cambiado    DateTime @default(now())
+
+  @@map("ligas")
 }

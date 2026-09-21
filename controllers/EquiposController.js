@@ -32,6 +32,24 @@ class EquiposController {
     catch (error) { responder(res, error); }
   };
 
+  // ── Las ligas ──
+  static guardarLiga = async (req, res) => {
+    try { res.json({ ok: true, liga: await EquiposModel.guardarLiga(req.body || {}, req.usuario.nick) }); }
+    catch (error) { responder(res, error); }
+  };
+
+  static borrarLiga = async (req, res) => {
+    try { res.json({ ok: true, ...(await EquiposModel.borrarLiga(req.params.clave)) }); }
+    catch (error) { responder(res, error); }
+  };
+
+  static ponerLiga = async (req, res) => {
+    try {
+      const { claves, liga } = req.body || {};
+      res.json({ ok: true, ...(await EquiposModel.ponerLiga(claves, liga, req.usuario.nick)) });
+    } catch (error) { responder(res, error); }
+  };
+
   static borrarClasico = async (req, res) => {
     try { res.json({ ok: true, ...(await EquiposModel.borrarClasico(req.params.id)) }); }
     catch (error) { responder(res, error); }
