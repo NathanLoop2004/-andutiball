@@ -60,14 +60,62 @@
             <a class="boton" href="https://addons.mozilla.org/firefox/addon/tampermonkey/" target="_blank" rel="noopener">Firefox</a>
           </div>
         </li>
+        <li style="margin-top:14px" id="pasoDesarrollador">
+          <b>Activá el modo desarrollador</b> en tu navegador. Sin esto Chrome y Edge no dejan
+          correr ningún agregado de estos, y el panel no te va a aparecer nunca.
+          <p class="tenue chico" style="margin-top:6px">
+            Por seguridad, <b>ninguna página puede activártelo ni llevarte sola hasta ahí</b> —ni esta—,
+            así que copiá la dirección y pegala en una pestaña nueva:
+          </p>
+          <div class="direccion">
+            <code id="direccionExt">chrome://extensions</code>
+            <button class="boton chico" type="button" id="copiarDireccion">Copiar</button>
+          </div>
+          <ol class="pasos-adentro">
+            <li>Pegá esa dirección en una pestaña nueva y apretá Enter.</li>
+            <li>Arriba a la derecha, prendé <b>Modo de desarrollador</b>.</li>
+            <li>
+              Si en vez de eso te aparece <b>Tampermonkey</b> con un cartel rojo, tocá
+              <b>Detalles</b> y prendé <b>Permitir secuencias de comandos de usuario</b>
+              (en los Chrome nuevos el permiso se pide así).
+            </li>
+          </ol>
+          <p class="tenue chico" id="notaFirefox" hidden>En Firefox este paso no hace falta: pasá al siguiente.</p>
+        </li>
         <li style="margin-top:14px">
           Tocá acá y dale <b>Instalar</b> en la ventana que se abre:
           <div class="botones" style="margin-top:8px">
             <a class="boton principal grande" href="/nandutihax.user.js">Instalar la extensión</a>
           </div>
         </li>
-        <li style="margin-top:14px">Entrá a jugar. El panel aparece solo, arriba a la derecha.</li>
+        <li style="margin-top:14px">Volvé a HaxBall y <b>recargá la página</b> (Ctrl + F5). El panel aparece solo, arriba a la derecha.</li>
       </ol>
+    </div>
+  </div>
+
+  <div class="tarjeta" style="margin-top:16px">
+    <div class="tarjeta-cuerpo">
+      <h2>Y después, ¿qué?</h2>
+      <ol class="pasos-instalar">
+        <li><b>Entrá a cualquiera de las salas.</b> El panel se abre solo y podés elegir de cuál querés ver el marcador. Arrastralo a donde te quede cómodo: se acuerda.</li>
+        <li>
+          <b>Elegí tu cartel de gol.</b> Se compran con monedas en la portada y se prenden en
+          <a href="/frm/inventario/">Mi inventario</a>. En la sala también sirve escribir
+          <code>!carteles</code> para ver los tuyos y <code>!cartel &lt;nombre&gt;</code> para ponerte uno.
+        </li>
+        <li><b>Hacé un gol.</b> En vez del “Blue Scores!” de siempre vas a ver tu cartel, grande, arriba de la cancha.</li>
+      </ol>
+
+      <h2 style="margin-top:22px">Si no te aparece</h2>
+      <ul class="lista-simple">
+        <li>Fijate que esté el <b>modo desarrollador</b> prendido: es lo que falla casi siempre.</li>
+        <li>Recargá HaxBall con <b>Ctrl + F5</b>.</li>
+        <li>
+          Para comprobarlo: apretá <b>F12</b> en la pestaña de HaxBall y mirá la pestaña
+          <i>Console</i>. Tiene que decir <code>[NandutiHax] panel listo</code>.
+        </li>
+        <li>Si ya la tenías instalada de antes, volvé a tocar “Instalar la extensión”: así te la actualiza a la última.</li>
+      </ul>
     </div>
   </div>
 
@@ -96,6 +144,40 @@
 </main>
 
 <script src="/js/sesion.js"></script>
-<script>Sesion.pintarBarra("derecha");</script>
+<script>
+Sesion.pintarBarra("derecha");
+
+// La dirección del modo desarrollador cambia según el navegador, y en Firefox ni hace falta.
+// Ninguna página puede abrir chrome:// ni edge://, así que lo único que se puede hacer es
+// dejar la dirección lista para copiar.
+(function () {
+  const ua = navigator.userAgent;
+  const esFirefox = /Firefox\//.test(ua);
+  const esEdge = /Edg\//.test(ua);
+  const direccion = esFirefox ? "about:addons" : esEdge ? "edge://extensions" : "chrome://extensions";
+  document.getElementById("direccionExt").textContent = direccion;
+  if (esFirefox) {
+    document.getElementById("notaFirefox").hidden = false;
+    document.getElementById("pasoDesarrollador").classList.add("tenue");
+  }
+
+  const boton = document.getElementById("copiarDireccion");
+  boton.onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(direccion);
+      boton.textContent = "¡Copiada!";
+    } catch (e) {
+      // Sin permiso para el portapapeles: se selecciona, que es lo que se puede hacer
+      const rango = document.createRange();
+      rango.selectNodeContents(document.getElementById("direccionExt"));
+      const sel = getSelection();
+      sel.removeAllRanges();
+      sel.addRange(rango);
+      boton.textContent = "Copiala con Ctrl + C";
+    }
+    setTimeout(() => { boton.textContent = "Copiar"; }, 2500);
+  };
+})();
+</script>
 </body>
 </html>

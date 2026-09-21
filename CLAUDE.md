@@ -1276,6 +1276,18 @@ cartelón del gol lo es.
 nuestra web, se actualiza solo (`updateURL`) y no hay que esperar ninguna revisión. Corre con
 Tampermonkey o Violentmonkey.
 
+**EL MODO DESARROLLADOR ES EL PASO QUE MÁS SE TRABA.** Desde Chrome 120 y pico, Tampermonkey no
+puede correr nada si el navegador no tiene prendido *Modo de desarrollador* (en los Chrome más
+nuevos, el permiso se pide como *Permitir secuencias de comandos de usuario* en Detalles de la
+extensión). Sin eso el panel no aparece **y no hay ningún error**: parece que la instalación
+falló. Por eso `/frm/extension/` lo tiene como paso 2, con la dirección lista para copiar y las
+dos variantes explicadas. **Una página web no puede prenderlo ni siquiera navegar a
+`chrome://extensions`** (el navegador lo bloquea a propósito): lo único que se puede hacer es
+copiar la dirección, y la página lo dice con todas las letras para que no parezca que falta un
+botón. La dirección cambia sola según el navegador (`chrome://` · `edge://` · en Firefox no hace
+falta). Si el portapapeles falla, el texto se selecciona solo y el botón pasa a decir "Copiala
+con Ctrl + C".
+
 - Usa `GM_xmlhttpRequest` **a propósito**: un `fetch` normal desde haxball.com choca con CORS.
 - Se acuerda de dónde lo arrastraste y de si lo dejaste plegado (`localStorage`).
 - **Corre en dos ventanas distintas** (`arrancarTodo()`): en la de arriba va el panel del
