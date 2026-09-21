@@ -20,3 +20,6 @@ datos/prisma.firma
 datos/respaldo-*.json
 # El ELO de cada sala (espejo de las tablas elo_<sala> de la base)
 datos/elo-*.json
+
+# Archivos de espacio de trabajo del editor
+*.code-workspace
