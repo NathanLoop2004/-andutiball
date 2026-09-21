@@ -172,6 +172,41 @@ api.on("error", (error) => {
     "--disable-setuid-sandbox",
     "--disable-features=WebRtcHideLocalIpsWithMdns",
   ];
+
+  // ── Que cada sala coma menos RAM ───────────────────────────────────────────────────────
+  // Son 4 navegadores abiertos todo el día, y medidos daban 493 MB cada uno: casi 2 GB.
+  // Con estas opciones bajan a ~311 MB cada uno, o sea unos 700 MB menos en total.
+  //
+  // Se puede bajar la calidad sin miedo porque LA PÁGINA DEL HOST NO MUESTRA NINGÚN PARTIDO:
+  // es la consola de haxball.com/headless, sin cancha ni jugadores dibujados. El juego lo ve
+  // cada jugador en SU navegador, y eso no se toca.
+  //
+  // Comprobado con las opciones puestas: HBInit sigue estando, WebRTC y WebSocket también
+  // (es lo que usa la sala para hablar con los jugadores), script.js entra y parsea, y los
+  // temporizadores siguen corriendo a tiempo (la sala vive de setInterval).
+  // Si alguna vez hace falta volver atrás: CHROME_LIVIANO=no en el .env.
+  if ((process.env.CHROME_LIVIANO || "").toLowerCase() !== "no") {
+    argsChrome.push(
+      "--disable-gpu",                          // sin GPU no hay nada que dibujar acá
+      "--disable-software-rasterizer",
+      "--blink-settings=imagesEnabled=false",   // la página del host no tiene imágenes que importen
+      "--mute-audio",
+      "--disable-extensions",
+      "--disable-background-networking",
+      "--disable-background-timer-throttling",  // OJO: esto NO frena los timers, los protege
+      "--disable-client-side-phishing-detection",
+      "--disable-component-update",
+      "--disable-default-apps",
+      "--disable-sync",
+      "--no-first-run",
+      "--no-default-browser-check",
+      "--metrics-recording-only",
+      "--disk-cache-size=1048576",              // 1 MB de caché: la página se carga una vez
+      "--js-flags=--max-old-space-size=256",    // medido: la sala usa 3 MB de JavaScript
+      "--renderer-process-limit=1",
+      "--disable-dev-shm-usage"                 // para cuando corre en Docker
+    );
+  }
   if (proxyParaChrome) {
     argsChrome.push(`--proxy-server=${proxyParaChrome}`);
     console.log(`🌐 Esta sala sale por proxy: ${proxyParaChrome}${credencialesProxy ? " (con usuario)" : ""}`);

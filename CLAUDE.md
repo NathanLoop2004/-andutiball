@@ -45,6 +45,33 @@ Contexto para trabajar en este proyecto. La documentación para personas está e
 - **Cuidado con los nombres**: la sala de futsal automático tiene clave `todos` (hosts/todos.json, TOKEN_TODOS), pero `npm start todos` levanta **las 4** (el usuario lo escribía esperando eso y le salía una sola). Esa sala sola se abre con `npm start futsal` (o `auto`), por el `alias` en `todas.js`. `npm run sala todos` (launcher.js directo) sigue siendo esa sala sola.
 - No duplicar `script.js` por sala: los cambios por sala van en `hosts/*.json`.
 
+## Cuánta RAM come cada sala (y cómo se bajó)
+
+Son **4 Chrome abiertos todo el día**. Medidos con `scratchpad/medir-ram.js` (suma el árbol de
+procesos, que es lo que muestra el Administrador de tareas):
+
+| | Por sala | Las 4 |
+|---|---|---|
+| Como estaba | 493 MB | ~1,9 GB |
+| Con las opciones livianas | **311 MB** | **~1,2 GB** |
+
+Las opciones están en `launcher.js` (`argsChrome`, detrás de `CHROME_LIVIANO`, que con `no` las
+apaga): sin GPU, **sin imágenes** (`--blink-settings=imagesEnabled=false`), sin sonido, sin
+extensiones ni servicios de fondo, 1 MB de caché y `--max-old-space-size=256`.
+
+**Por qué se puede bajar la calidad sin romper nada**: la página del host **no muestra ningún
+partido**. Es la consola de `haxball.com/headless`: no dibuja cancha ni jugadores. El juego lo
+dibuja el navegador de cada jugador, y eso no se toca. Lo comprobado antes de aplicarlo
+(`scratchpad/probar-liviano.js`): `HBInit` sigue estando, WebRTC y WebSocket también (es como la
+sala habla con los jugadores), `script.js` entra y parsea (1,8 MB), y los temporizadores siguen
+corriendo a tiempo — la sala vive de `setInterval`, así que eso era lo más delicado.
+`--disable-background-timer-throttling` **no** frena los timers: los protege de que Chrome los
+frene por estar en segundo plano.
+
+**Lo que queda por ganar, si alguna vez hace falta**: las 4 salas podrían compartir UN solo
+Chrome con 4 pestañas (hoy es un proceso por sala). Ahorraría el arranque de 3 navegadores
+(~150 MB cada uno), pero un cuelgue se llevaría las 4 salas de una: hoy se cae una sola.
+
 ## Base de datos (Postgres + Prisma)
 
 La base tiene su propio compose y su propio ciclo de vida (los datos no se apagan con las salas),

@@ -54,7 +54,8 @@
     "prueba-animaciones": "node --env-file-if-exists=.env pruebas/animaciones.js",
     "prueba-mercado": "node --env-file-if-exists=.env pruebas/mercado.js",
     "prueba-scores": "node --env-file-if-exists=.env pruebas/scores.js",
-    "prueba-momentos": "node --env-file-if-exists=.env pruebas/momentos.js"
+    "prueba-momentos": "node --env-file-if-exists=.env pruebas/momentos.js",
+    "medir-ram": "node pruebas/medir-ram.js"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",

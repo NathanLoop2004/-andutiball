@@ -747,6 +747,15 @@ quieras. Se arman en el panel → **Equipos → Ligas**: le ponés nombre, país
 - La liga de cada camiseta se elige en su editor, en el desplegable **Liga**.
 - **Borrar una liga no borra las camisetas**: quedan sin liga y te avisa cuántas son.
 
+## 🧠 Que no te coma la RAM
+
+Cada sala abre su propio Chrome y son cuatro todo el día. Ahora arrancan en modo liviano —sin
+GPU, sin imágenes y sin sonido—, y **cada sala pasó de 493 MB a 311 MB**: unos 700 MB menos en
+total. No se pierde nada: la página del host no muestra ningún partido, es solo la consola que
+mantiene la sala abierta; el juego lo dibuja el navegador de cada jugador.
+
+Si alguna vez querés volver atrás, poné `CHROME_LIVIANO=no` en el `.env`.
+
 ## 🎬 Carteles de arranque y de victoria
 
 Dos avisos que no son goles y que se arman en el panel → **Arranque y victoria**:
