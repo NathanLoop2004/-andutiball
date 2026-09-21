@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ÑandutíHax
 // @namespace    https://nandutihax.com/
-// @version      1.6.0
+// @version      1.6.1
 // @description  Un panel de ÑandutíHax arriba del juego: el marcador, quién está en cancha y el ELO de cada uno, en vivo.
 // @author       Jinder
 // @icon         https://nandutihax.com/img/logo-chico.png
@@ -36,7 +36,7 @@
 // se instala con un clic y no hay que esperar ninguna revisión.
 // =============================================================================
 
-const VERSION_INSTALADA = "1.6.0";
+const VERSION_INSTALADA = "1.6.1";
 const API_SALAS = "https://nandutihax.com/api/publico/salas";
 
 // ── SOLO EN LAS SALAS DE ÑANDUTÍHAX ──────────────────────────────────────────────────
@@ -60,6 +60,12 @@ function codigoDeLaSala() {
 
 const esDeNandutihax = (salas, codigo) =>
   Boolean(codigo) && (salas || []).some((s) => String(s.link || "").indexOf(codigo) >= 0);
+
+// ¿Se muestra el panel? Adentro de una sala, SOLO si es nuestra. Pero en la pantalla de
+// HaxBall (sin sala todavía, o sea sin ?c= en la dirección) también se muestra: es donde se
+// mira qué salas hay y por dónde entrar. Si no, el panel "desaparecía" y parecía roto:
+// con las salas cerradas no había ningún link contra el cual comparar.
+const sePuedeVerElPanel = (salas, codigo) => !codigo || esDeNandutihax(salas, codigo);
 
 // Lo que la extensión necesita saber de afuera: qué salas hay y cómo es el cartel de inicio
 async function pedirLoNuestro() {
@@ -211,7 +217,9 @@ function arrancarNandutiHax() {
 
   const panel = document.createElement("div");
   panel.id = "nh-panel";
-  panel.style.display = "none";      // hasta confirmar que la sala es de ÑandutíHax
+  // Adentro de una sala arranca escondido hasta saber si es nuestra; en la pantalla de
+  // HaxBall se muestra en el acto, sin esperar la respuesta de la API.
+  panel.style.display = codigoDeLaSala() ? "none" : "";
   if (!abierto) panel.classList.add("cerrado");
   panel.innerHTML = `
     <div id="nh-cabeza">
@@ -371,12 +379,14 @@ function arrancarNandutiHax() {
     // El panel solo se muestra en las salas de ÑandutíHax: en una sala ajena la extensión
     // no pinta nada (pedido del usuario). Se revisa en cada vuelta porque los códigos de
     // las salas cambian cada vez que se reinician.
-    const nuestra = esDeNandutihax(salas, codigoDeLaSala());
-    enUnaSalaNuestra = nuestra;
+    const codigo = codigoDeLaSala();
+    const enNuestraSala = esDeNandutihax(salas, codigo);
+    const seVe = sePuedeVerElPanel(salas, codigo);
+    enUnaSalaNuestra = seVe;
     acomodarReloj();
-    panel.style.display = nuestra ? "" : "none";
-    marcarActiva(nuestra);
-    if (!nuestra) return;
+    panel.style.display = seVe ? "" : "none";
+    marcarActiva(enNuestraSala);        // el cartel de HaxBall solo se toca en las nuestras
+    if (!seVe) return;
 
     if (!sala || !salas.some((s) => s.clave === sala)) {
       // La primera vez, la que tenga más gente

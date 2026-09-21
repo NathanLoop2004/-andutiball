@@ -1374,8 +1374,14 @@ victoria del panel). Además muestra el del arranque. Ninguno se inventa: son lo
 host ya manda al chat, reconocidos por su marca invisible.
 
 **SOLO EN LAS SALAS DE ÑANDUTÍHAX** (v1.4.0, pedido del usuario): se compara el código del link
-(`…/play?c=XXXX`, que se lee de la ventana de arriba) con los de `/api/publico/salas`. Si no es
-una sala nuestra, no se dibuja el panel, no salen carteles y el cartel de HaxBall queda intacto.
+(`…/play?c=XXXX`, que se lee de la ventana de arriba) con los de `/api/publico/salas`. Adentro de
+una sala ajena no se dibuja el panel, no salen carteles y el cartel de HaxBall queda intacto.
+
+**PERO EN LA PANTALLA DE HAXBALL (sin `?c=`) EL PANEL SE MUESTRA IGUAL** (v1.6.1). La primera
+versión lo escondía también ahí, y el usuario lo reportó como "desapareció la barra": con las
+salas cerradas no hay ningún link contra el cual comparar, así que el panel no aparecía nunca y
+parecía roto. Ahí es justamente donde sirve —se mira qué salas hay y por dónde entrar—, y además
+se muestra **en el acto**, sin esperar la respuesta de la API.
 El parche del lienzo mira `data-nh-activo` **en cada dibujo**, porque la respuesta llega después
 (hay que preguntarle a la API) y puede cambiar sin recargar.
 
