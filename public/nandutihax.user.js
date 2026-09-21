@@ -144,6 +144,8 @@ function arrancarNandutiHax() {
     if (!panel.isConnected) document.body.appendChild(panel);
   };
   montar();
+  // Para poder comprobar en la consola (F12) que la versión nueva está andando
+  console.log("[NandutiHax] panel listo, version 1.0.1");
 
   // Se acuerda de dónde lo dejaste
   if (guardado.x !== undefined && guardado.y !== undefined) {
