@@ -1247,6 +1247,15 @@ así lo que dice la pantalla es lo que se va a cobrar.
 navegador de cada jugador: el marcador de la sala que elija, quién está en cada equipo y el ELO
 de cada uno. Se instala desde `/frm/extension/`.
 
+**EL PANEL DICE SU VERSIÓN Y SI EL PARCHE ESTÁ PUESTO** (abajo de todo: `v1.3.0 · sin el cartel
+de HaxBall`). No es un adorno: tres veces seguidas se reportó "no funciona" y en realidad estaba
+corriendo una versión vieja (Tampermonkey no actualiza en el momento). Pedir la consola no
+alcanzó; con esto se ve de un vistazo y se puede mandar una captura. El estado sale del atributo
+`data-nh-cartel` que el parche deja en el `<html>` del iframe: es lo único que se ve desde los
+dos mundos. **Hay que volver a ponerlo después del `DOMContentLoaded`**, porque el documento se
+reemplaza al cargar el juego y la marca se pierde (el panel decía "sigue puesto" con el parche
+andando).
+
 **Las imágenes de la guía** (`public/img/guia-*.png`, en `/frm/extension/` y en el README) se
 rehacen con `scratchpad/guia-imagenes.js`: saca las capturas **de verdad** (la tienda de Chrome,
 `chrome://extensions` —que Puppeteer sí puede abrir— y nuestra página) y lo único que dibuja
@@ -1295,7 +1304,11 @@ botón. La dirección cambia sola según el navegador (`chrome://` · `edge://` 
 falta). Si el portapapeles falla, el texto se selecciona solo y el botón pasa a decir "Copiala
 con Ctrl + C".
 
-- Usa `GM_xmlhttpRequest` **a propósito**: un `fetch` normal desde haxball.com choca con CORS.
+- **Los datos van por un `fetch` común y el script corre con `@grant none`** (v1.3.0). Antes se
+  pedían con `GM_xmlhttpRequest`, y en el navegador del usuario el gestor lo frenaba con
+  *"Refused to connect … Blocked by @connect CORS check"*: el panel quedaba sin datos. No hacía
+  falta: `/api/publico/salas` manda `Access-Control-Allow-Origin: *`. Y de yapa, con `@grant
+  none` el script corre **en el mundo de la página**, que es donde el parche del lienzo sirve.
 - Se acuerda de dónde lo arrastraste y de si lo dejaste plegado (`localStorage`).
 - **Corre en dos ventanas distintas** (`arrancarTodo()`): en la de arriba va el panel del
   costado; **adentro del iframe `game.html` va el cartel de gol**. El juego entero vive en ese
@@ -1306,7 +1319,7 @@ con Ctrl + C".
   colgar del `body` si HaxBall rehace la pantalla. Al depurar: en la consola tiene que salir
   `[NandutiHax] panel listo, version X` y `[NandutiHax] cartel de gol enganchado`.
 
-### El cartel de gol (v1.2.1)
+### El cartel de gol (v1.3.0)
 
 Cuando alguien convierte, **se le saca a HaxBall su "Blue Scores!" y en su lugar aparece el
 cartel que el goleador compró** en la tienda. El cartel no se inventa: es el aviso que el host
@@ -1343,7 +1356,14 @@ Dos cosas imprescindibles, las dos aprendidas a los golpes:
   (comprobado con `curl -I`), se le mete un `<script>` con el parche adentro y ahí sí queda del
   lado correcto. `unsafeWindow` quedó solo como respaldo.
 
-Se prueba con `scratchpad/probar-sin-cartel.js`, que copia el `bq()` de HaxBall, cuenta los
+**La prueba de todo esto es `scratchpad/probar-extension.js`**, y corre en LOS DOS MUNDOS (el de
+la página y uno aparte creado con CDP `worldName`, que es el de un gestor con permisos). Mira que
+"Red", "Blue" y "Scores!" queden en 0 píxeles —dibujados y pegados con `drawImage`—, que "Paused",
+"Victorious!" y un jugador llamado "Blue" se sigan viendo, que el panel traiga las 4 salas con el
+fetch y que muestre la versión. **Correrla en los dos mundos es obligatorio**: con el de la página
+solo, la v1.2.0 daba verde estando rota.
+
+Se probó antes con `scratchpad/probar-sin-cartel.js`, que copia el `bq()` de HaxBall, cuenta los
 píxeles pintados (0 para "Red", "Blue" y "Scores!"; > 0 para "Paused", "Victorious!" y un jugador
 llamado "Blue") y lo hace **en los dos mundos**: el de la página y uno aparte creado con CDP
 (`Page.addScriptToEvaluateOnNewDocument` con `worldName`), que es el caso de Tampermonkey. Correr
