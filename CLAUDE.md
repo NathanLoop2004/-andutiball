@@ -1247,6 +1247,12 @@ así lo que dice la pantalla es lo que se va a cobrar.
 navegador de cada jugador: el marcador de la sala que elija, quién está en cada equipo y el ELO
 de cada uno. Se instala desde `/frm/extension/`.
 
+**Dónde se la encuentra** (si no se la ve, no la instala nadie): una sección en la portada
+(`#seccionExtension`, antes del ranking, para todos con o sin sesión) con la foto del panel y el
+botón, el ítem "La extensión" en el menú de la cuenta (`public/js/sesion.js`) y la URL en
+`sitemap.xml`. La foto es `public/img/extension.png` (286×306, el panel de verdad corrido con
+Puppeteer y recortado a `deviceScaleFactor: 2`); se rehace si el panel cambia de pinta.
+
 **POR QUÉ NO CAMBIA EL MARCADOR DE HAXBALL.** Es la pregunta que siempre vuelve. Dos paredes, y
 las dos son definitivas:
 

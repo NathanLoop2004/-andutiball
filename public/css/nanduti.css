@@ -919,3 +919,15 @@ input[type=number]:focus { outline: none; border-color: var(--acento); box-shado
 .pasos-instalar { margin: 14px 0 0; padding-left: 22px; line-height: 1.7; }
 .pasos-instalar > li { margin-bottom: 4px; }
 .lista-simple { margin: 12px 0 0; padding-left: 20px; line-height: 1.8; }
+/* La foto del panel: en la página de la extensión y en la portada */
+.foto-extension {
+  display: block; width: 100%; max-width: 286px; height: auto;
+  border-radius: 12px; border: 1px solid var(--borde); box-shadow: 0 10px 30px rgba(0,0,0,.22);
+}
+/* La invitación de la portada: foto a un lado, texto al otro, y apilada en el celular */
+.fila-extension { display: grid; grid-template-columns: 286px 1fr; gap: 22px; align-items: center; }
+.fila-extension p { margin: 8px 0 0; }
+@media (max-width: 720px) {
+  .fila-extension { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+  .fila-extension .botones { justify-content: center; }
+}

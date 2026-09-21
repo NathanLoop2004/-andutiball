@@ -709,6 +709,9 @@ Un panel con el marcador, quién está en cada equipo y el ELO de cada uno, **ar
 para no tener que salir del partido. Se instala desde <https://nandutihax.com/frm/extension/>:
 primero Tampermonkey y después un clic en "Instalar la extensión".
 
+Para encontrarla: hay una **invitación en la portada** (con la foto del panel y el botón) y, si
+tenés sesión, el ítem **La extensión** en el menú de tu cuenta.
+
 Se puede arrastrar, se pliega y se acuerda de dónde lo dejaste.
 
 **No cambia el marcador que dibuja HaxBall** (los cuadraditos con el resultado y el reloj): eso

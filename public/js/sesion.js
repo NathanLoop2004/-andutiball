@@ -95,6 +95,7 @@ const Sesion = {
       salir: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>',
       config: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>',
       inventario: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M3 12h18"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+      extension: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3h4a1 1 0 0 1 1 1v1.5a1.5 1.5 0 0 0 3 0V4h2a1 1 0 0 1 1 1v4h-1.5a1.5 1.5 0 0 0 0 3H21v4a1 1 0 0 1-1 1h-4v-1.5a1.5 1.5 0 0 0-3 0V20a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1v-4H5.5a1.5 1.5 0 0 1 0-3H7V5a1 1 0 0 1 1-1h2z"/></svg>',
       flecha: '<svg class="flecha" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
     };
 
@@ -113,6 +114,7 @@ const Sesion = {
           <a role="menuitem" href="/">${icono.inicio} Inicio</a>
           <a role="menuitem" href="/frm/cuenta/">${icono.cuenta} Mi cuenta</a>
           <a role="menuitem" href="/frm/inventario/">${icono.inventario} Mi inventario</a>
+          <a role="menuitem" href="/frm/extension/">${icono.extension} La extensión</a>
           <a role="menuitem" href="/frm/cuenta/#seguridad">${icono.clave} Cambiar contraseña</a>
           ${(u.admin || u.modera) ? `<a role="menuitem" href="/frm/panel/">${icono.panel} Panel de administración</a>` : ""}
           ${(!u.admin && !u.modera && u.configura) ? `<a role="menuitem" href="/frm/config/">${icono.panel} Configuración de salas</a>` : ""}
