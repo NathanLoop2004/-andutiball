@@ -747,6 +747,19 @@ quieras. Se arman en el panel → **Equipos → Ligas**: le ponés nombre, país
 - La liga de cada camiseta se elige en su editor, en el desplegable **Liga**.
 - **Borrar una liga no borra las camisetas**: quedan sin liga y te avisa cuántas son.
 
+## 🎬 Carteles de arranque y de victoria
+
+Dos avisos que no son goles y que se arman en el panel → **Arranque y victoria**:
+
+- **Arranque**: sale cuando empieza el partido. Antes, al sacar del medio, salía un "¡GOL! 0 - 0"
+  porque el marcador se pone en cero: eso ya no pasa.
+- **Victoria**: sale al final y, con la extensión puesta, **reemplaza al "Red is Victorious!"** de
+  HaxBall.
+
+Lo lindo: podés **pintar cada letra de un color distinto** (hay un botón de arcoíris). En el chat
+de HaxBall el cartel sale de un solo color —HaxBall no permite más—, pero los que tengan la
+extensión lo ven con todas las letras de colores, grande arriba de la cancha.
+
 ## 🥅 Carteles de gol
 
 Cuando hacés un gol sale un aviso con el marcador. Podés comprar **tu propio cartel** para que

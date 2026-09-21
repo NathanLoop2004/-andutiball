@@ -20,6 +20,7 @@ router.get("/frm/animacion", VistasController.animacion);     // una animación 
 router.get("/frm/extension", VistasController.extension);   // cómo instalar la extensión
 router.get("/frm/score", VistasController.score);             // un cartel de la tienda
 router.get("/frm/scores", VistasController.scores);           // armarlos  ← OWNER y CO-OWNER
+router.get("/frm/momentos", VistasController.momentos);       // arranque y victoria ← OWNER y CO-OWNER
 router.get("/frm/animaciones", VistasController.animaciones);   // animaciones de gol  ← OWNER y CO-OWNER
 router.get("/frm/panel", VistasController.panel);
 router.get("/frm/rangos", VistasController.rangos);

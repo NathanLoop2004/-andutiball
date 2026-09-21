@@ -21,6 +21,7 @@ Disallow: /frm/config
 Disallow: /frm/carrusel
 Disallow: /frm/equipos
 Disallow: /frm/scores
+Disallow: /frm/momentos
 Disallow: /frm/rangos
 Disallow: /frm/actualizaciones
 Disallow: /frm/usuarios

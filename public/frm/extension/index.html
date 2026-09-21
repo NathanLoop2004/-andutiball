@@ -49,6 +49,23 @@
     </div>
   </div>
 
+  <!-- Qué versión tenés puesta. Lo sabe porque la extensión, cuando está instalada, deja
+       su versión en esta misma página (data-nandutihax en el <html>). -->
+  <div class="tarjeta" style="margin-top:16px">
+    <div class="tarjeta-cuerpo">
+      <div class="fila-version">
+        <div>
+          <h2 style="margin:0">Tu versión</h2>
+          <p class="tenue chico" style="margin:4px 0 0" id="versionDetalle">Mirando si la tenés instalada…</p>
+        </div>
+        <div class="botones">
+          <span class="etiqueta" id="versionEtiqueta">…</span>
+          <a class="boton principal" id="botonActualizar" href="/nandutihax.user.js" hidden>Actualizar la extensión</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="tarjeta" style="margin-top:16px">
     <div class="tarjeta-cuerpo">
       <h2>Cómo se instala</h2>
@@ -155,6 +172,62 @@
 <script src="/js/sesion.js"></script>
 <script>
 Sesion.pintarBarra("derecha");
+
+// ── Qué versión tenés puesta ──────────────────────────────────────────────────────────
+// La extensión también corre en esta página (solo para eso) y deja su versión en el <html>.
+// La última sale del propio archivo .user.js, que es la única fuente de verdad.
+(function () {
+  const etiqueta = document.getElementById("versionEtiqueta");
+  const detalle = document.getElementById("versionDetalle");
+  const boton = document.getElementById("botonActualizar");
+
+  const laQueTengo = () => document.documentElement.getAttribute("data-nandutihax");
+
+  async function laUltima() {
+    try {
+      const r = await fetch("/nandutihax.user.js?t=" + Date.now(), { cache: "no-store" });
+      const m = (await r.text()).match(/@version\s+([\d.]+)/);
+      return m ? m[1] : null;
+    } catch (e) { return null; }
+  }
+
+  // La extensión puede tardar un instante en dejar su marca: se espera un poco
+  function esperarLaMarca(intentos) {
+    const tengo = laQueTengo();
+    if (tengo || intentos <= 0) return Promise.resolve(tengo);
+    return new Promise((listo) => setTimeout(() => listo(esperarLaMarca(intentos - 1)), 250));
+  }
+
+  Promise.all([esperarLaMarca(8), laUltima()]).then(([tengo, ultima]) => {
+    // Para que el gestor no sirva una copia vieja al actualizar
+    if (ultima) boton.href = "/nandutihax.user.js?v=" + ultima;
+
+    if (!ultima) {
+      etiqueta.textContent = "no se pudo comprobar";
+      detalle.textContent = "No pudimos leer la última versión. Probá recargar la página.";
+      return;
+    }
+    if (!tengo) {
+      etiqueta.className = "etiqueta";
+      etiqueta.textContent = "no instalada";
+      detalle.textContent = "No la tenés instalada en este navegador. La última es la " + ultima + ".";
+      boton.hidden = false;
+      boton.textContent = "Instalar la extensión";
+      return;
+    }
+    if (tengo === ultima) {
+      etiqueta.className = "etiqueta ok";
+      etiqueta.textContent = "al día · v" + tengo;
+      detalle.textContent = "Tenés la última versión. No hay nada que hacer.";
+      return;
+    }
+    etiqueta.className = "etiqueta ban";
+    etiqueta.textContent = "desactualizada · v" + tengo;
+    detalle.innerHTML = "Tenés la <b>" + Sesion.escapar(tengo) + "</b> y la última es la <b>" +
+      Sesion.escapar(ultima) + "</b>. Tocá el botón y dale <b>Reinstalar</b> en la ventana que se abre.";
+    boton.hidden = false;
+  });
+})();
 
 // La dirección del modo desarrollador cambia según el navegador, y en Firefox ni hace falta.
 // Ninguna página puede abrir chrome:// ni edge://, así que lo único que se puede hacer es

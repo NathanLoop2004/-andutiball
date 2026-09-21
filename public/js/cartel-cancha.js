@@ -41,10 +41,24 @@ window.CartelCancha = {
 
     const pintar = () => {
       const c = (o.cartel && o.cartel()) || {};
-      texto.textContent = c.texto || "";
-      texto.style.color = c.color || "#FFD700";
       const factor = window.CartelCancha.TAMANO[c.estilo] || 1;
       texto.style.fontSize = Math.max(11, Math.min(26, (ancho / 26) * factor)) + "px";
+
+      // Con colores por letra (el cartel de inicio) se arma letra por letra, igual que en la
+      // extensión; si no, va todo de un color.
+      const lista = c.colores || [];
+      if (lista.length) {
+        texto.textContent = "";
+        [...String(c.texto || "")].forEach((letra, i) => {
+          const span = document.createElement("span");
+          span.textContent = letra;
+          span.style.color = "#" + String(lista[i] || lista[lista.length - 1] || "FFD700").replace(/^#/, "");
+          texto.appendChild(span);
+        });
+      } else {
+        texto.textContent = c.texto || "";
+        texto.style.color = c.color || "#FFD700";
+      }
     };
 
     let festejando = false;

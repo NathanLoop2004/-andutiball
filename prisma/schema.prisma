@@ -508,6 +508,30 @@ model ScoreComprado {
   @@map("scores_comprados")
 }
 
+// Los carteles de los MOMENTOS del partido: el del ARRANQUE (que no es un gol: antes el
+// 0-0 del saque se tomaba como tal) y el de la VICTORIA, que reemplaza al "Red is
+// Victorious!" de HaxBall. No se venden: son configuración, y queda uno puesto por momento.
+// `colores` es un color por LETRA, en el mismo orden que el texto ya armado; el chat de
+// HaxBall solo admite un color por mensaje (se usa `color`), y las letras de colores se ven
+// con la extensión.
+model CartelMomento {
+  clave       String   @id
+  momento     String   @default("inicio")   // inicio · victoria
+  nombre      String
+  descripcion String?
+  plantilla   String
+  colores     String[] @default([])
+  color       String   @default("FFD700")
+  estilo      String   @default("bold")     // normal · bold · small
+  sonido      Int      @default(2)
+  puesto      Boolean  @default(false)
+  cambiadoPor String?
+  cambiado    DateTime @default(now())
+
+  @@index([momento])
+  @@map("carteles_momento")
+}
+
 // Las ligas de las camisetas: Primera División, Intermedia, selecciones, lo que sea.
 // Se arman desde el panel (Equipos → Ligas), igual que los clásicos.
 model Liga {

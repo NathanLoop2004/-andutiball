@@ -1319,11 +1319,18 @@ con Ctrl + C".
   colgar del `body` si HaxBall rehace la pantalla. Al depurar: en la consola tiene que salir
   `[NandutiHax] panel listo, version X` y `[NandutiHax] cartel de gol enganchado`.
 
-### El cartel de gol (v1.3.0)
+### Los carteles en pantalla (v1.5.0)
 
-Cuando alguien convierte, **se le saca a HaxBall su "Blue Scores!" y en su lugar aparece el
-cartel que el goleador compró** en la tienda. El cartel no se inventa: es el aviso que el host
-ya manda al chat.
+La extensión **le saca a HaxBall sus dos cartelones y pone los nuestros**: el "Blue Scores!" del
+gol (sale el cartel que compró el goleador) y el "Red is Victorious!" del final (sale el de
+victoria del panel). Además muestra el del arranque. Ninguno se inventa: son los avisos que el
+host ya manda al chat, reconocidos por su marca invisible.
+
+**SOLO EN LAS SALAS DE ÑANDUTÍHAX** (v1.4.0, pedido del usuario): se compara el código del link
+(`…/play?c=XXXX`, que se lee de la ventana de arriba) con los de `/api/publico/salas`. Si no es
+una sala nuestra, no se dibuja el panel, no salen carteles y el cartel de HaxBall queda intacto.
+El parche del lienzo mira `data-nh-activo` **en cada dibujo**, porque la respuesta llega después
+(hay que preguntarle a la API) y puede cambiar sin recargar.
 
 **Cómo se SACA el cartel de HaxBall** (`sacarElCartelDeHaxball()`, v1.2.0). Antes se le ponía el
 nuestro encima y el de HaxBall asomaba igual: quedaba feo. Leyendo `game-min.js` se ve que esos
@@ -1422,6 +1429,41 @@ hubiera a una liga antes de sacar la columna, por las dudas.
 
 API: `POST /api/equipos/ligas` · `DELETE /api/equipos/ligas/:clave` · `POST /api/equipos/poner-liga`.
 `GET /api/equipos` ahora devuelve también `ligas`.
+
+## Carteles del partido: arranque y victoria (🎬)
+
+Los dos avisos que **no son goles**. Se arman en el panel → **Arranque y victoria**
+(`public/frm/momentos/`, dos pestañas), son **configuración y no se venden**, y queda uno
+puesto **por momento**. Tabla `carteles_momento` (migraciones `20260921160000_inicio` y
+`20260921170000_momentos`, que la renombró y le agregó `momento`), modelo `MomentosModel`.
+
+| Momento | Cuándo sale | Huecos |
+|---|---|---|
+| `inicio` | Al arrancar el partido (`onGameStart`) | `{sala} {rojo} {azul} {mapa} {jugadores}` |
+| `victoria` | Al terminarlo (`onTeamVictory`) | `{ganador} {perdedor} {golesGanador} {golesPerdedor} {sala}` |
+
+**El de arranque nació de un error**: la extensión detecta los goles mirando el marcador del
+cliente, y en el saque ese marcador se pone en 0-0 — así que salía un **"¡GOL! 0 - 0"** al
+empezar. Ahora el respaldo solo se dispara si el marcador **sube** (`subioElRojo || subioElAzul`),
+y el arranque tiene su propio cartel.
+
+**LOS COLORES VAN POR LETRA** (`colores`: un color por cada letra del texto ya armado; si hay
+menos, las que sobran usan el último). Ojo con la limitación: **el chat de HaxBall admite un solo
+color por mensaje**, así que ahí va `color` y las letras de colores se ven **solo con la
+extensión**. Por eso los colores viajan por `/api/publico/salas` (`inicio` y `victoria`) y no por
+el chat: por el chat solo llega el texto con su marca invisible.
+
+Cada cartel tiene **su propia marca invisible**, y son tres: gol `​​`, arranque
+`​‌`, victoria `​⁠`. Así la extensión sabe cuál es cuál.
+
+En la sala: bloque `🎬 CARTELES DEL PARTIDO` (`parches/bloques/momentos.txt`), que envuelve
+`onGameStart` y `onTeamVictory`. **El marcador de la victoria se lee ANTES de llamar al handler
+del autor**: después el partido ya no está y `getScores()` devuelve null. El lanzador deja
+`window.__INICIO` y `window.__VICTORIA` cada 20 s.
+
+`npm run prueba-momentos` cubre las tres puntas: la sala (los dos carteles con su marca y sus
+huecos resueltos, y que sin cartel puesto no salga nada), el modelo (colores por letra, uno
+puesto por momento, que un momento no pise al otro) y la API con permisos.
 
 ## Carteles de gol (🥅)
 

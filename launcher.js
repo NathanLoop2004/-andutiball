@@ -21,6 +21,7 @@ const EquiposModel = require("./models/EquiposModel");
 const TiendaModel = require("./models/TiendaModel");
 const AnimacionesModel = require("./models/AnimacionesModel");
 const ScoresModel = require("./models/ScoresModel");
+const MomentosModel = require("./models/MomentosModel");
 const RachasModel = require("./models/RachasModel");
 const Parametros = require("./lib/parametros");
 const WebhookWeb = require("./services/WebhookWeb");
@@ -678,6 +679,20 @@ api.on("error", (error) => {
     }
   };
 
+  // Los carteles del ARRANQUE y de la VICTORIA: son configuración, los mismos para las 4
+  // salas. Sin base quedan en null y la sala simplemente no anuncia nada.
+  const refrescarInicio = async () => {
+    try {
+      const [inicio, victoria] = await Promise.all([
+        MomentosModel.elPuesto("inicio"),
+        MomentosModel.elPuesto("victoria"),
+      ]);
+      await frame.evaluate((i, v) => { window.__INICIO = i; window.__VICTORIA = v; }, inicio, victoria);
+    } catch (error) {
+      // Sin base no pasa nada: no salen esos carteles
+    }
+  };
+
   const refrescarConfig = async () => {
     if (!claveSala) return;
     try {
@@ -703,6 +718,8 @@ api.on("error", (error) => {
   setInterval(refrescarAnimaciones, 20000);
   await refrescarScores();
   setInterval(refrescarScores, 20000);
+  await refrescarInicio();
+  setInterval(refrescarInicio, 20000);
 
   // El link de la web puede aparecer después (el túnel tarda unos segundos en abrir)
   await refrescarLinkWeb();

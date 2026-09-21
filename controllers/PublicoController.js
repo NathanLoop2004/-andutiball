@@ -3,6 +3,7 @@
 // abierto: es información que ya se ve entrando a la sala (marcador y quién está jugando).
 const SalasModel = require("../models/SalasModel");
 const PublicoModel = require("../models/PublicoModel");
+const MomentosModel = require("../models/MomentosModel");
 
 class PublicoController {
   static _ctx = (req) => req.app.locals;
@@ -13,7 +14,23 @@ class PublicoController {
       res.set("Access-Control-Allow-Origin", "*");
       res.set("Cache-Control", "no-store");
       const salas = await SalasModel.listar(PublicoController._ctx(req));
-      res.json({ ok: true, salas: PublicoModel.salas(salas), cuando: new Date().toISOString() });
+
+      // Los carteles del arranque y de la victoria viajan acá porque la extensión necesita
+      // los colores POR LETRA, y por el chat solo puede llegar un color. Sin base van en
+      // null y no pasa nada.
+      let inicio = null, victoria = null;
+      try {
+        inicio = await MomentosModel.elPuesto("inicio");
+        victoria = await MomentosModel.elPuesto("victoria");
+      } catch (error) { /* sin base, sin carteles */ }
+
+      res.json({
+        ok: true,
+        salas: PublicoModel.salas(salas),
+        inicio: inicio && { colores: inicio.colores, color: inicio.color, estilo: inicio.estilo },
+        victoria: victoria && { colores: victoria.colores, color: victoria.color, estilo: victoria.estilo },
+        cuando: new Date().toISOString(),
+      });
     } catch (error) { next(error); }
   };
 }

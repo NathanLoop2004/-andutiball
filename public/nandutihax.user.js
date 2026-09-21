@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         ÑandutíHax
 // @namespace    https://nandutihax.com/
-// @version      1.3.0
+// @version      1.5.0
 // @description  Un panel de ÑandutíHax arriba del juego: el marcador, quién está en cancha y el ELO de cada uno, en vivo.
 // @author       Jinder
 // @icon         https://nandutihax.com/img/logo-chico.png
 // @match        https://*.haxball.com/*
+// @match        https://nandutihax.com/*
 // @connect      nandutihax.com
 // @grant        none
 // @downloadURL  https://nandutihax.com/nandutihax.user.js
@@ -35,11 +36,71 @@
 // se instala con un clic y no hay que esperar ninguna revisión.
 // =============================================================================
 
+const VERSION_INSTALADA = "1.5.0";
+const API_SALAS = "https://nandutihax.com/api/publico/salas";
+
+// ── SOLO EN LAS SALAS DE ÑANDUTÍHAX ──────────────────────────────────────────────────
+// La extensión no trabaja en cualquier sala de HaxBall: solo en las nuestras. La sala se
+// reconoce por el código del link (…/play?c=XXXX), comparándolo con el de las salas que
+// devuelve nuestra API. Si no coincide, no se dibuja el panel, no salen carteles y el
+// cartel de HaxBall queda como estaba.
+function esNuestraWeb() {
+  return /(^|\.)nandutihax\.com$/i.test(location.hostname);
+}
+
+// Adentro del juego el código no está en la URL del iframe, sino en la ventana de arriba
+function codigoDeLaSala() {
+  try {
+    const arriba = window.top && window.top.location ? window.top.location.href : location.href;
+    return new URL(arriba).searchParams.get("c") || "";
+  } catch (e) {
+    try { return new URL(location.href).searchParams.get("c") || ""; } catch (e2) { return ""; }
+  }
+}
+
+const esDeNandutihax = (salas, codigo) =>
+  Boolean(codigo) && (salas || []).some((s) => String(s.link || "").indexOf(codigo) >= 0);
+
+// Lo que la extensión necesita saber de afuera: qué salas hay y cómo es el cartel de inicio
+async function pedirLoNuestro() {
+  try {
+    const r = await fetch(API_SALAS + "?t=" + Date.now(), { cache: "no-store", credentials: "omit" });
+    return await r.json();
+  } catch (e) { return null; }
+}
+
+// El parche del lienzo mira este atributo en cada dibujo, así que la marca es la forma de
+// prenderlo y apagarlo desde acá (el <html> se ve desde los dos mundos)
+function marcarActiva(si) {
+  try { document.documentElement.setAttribute("data-nh-activo", si ? "si" : "no"); } catch (e) {}
+}
+
+let loNuestro = { salas: [], inicio: null, victoria: null, nuestra: false };
+
+function vigilarSiEsSalaNuestra() {
+  const preguntar = async () => {
+    const datos = await pedirLoNuestro();
+    if (datos) {
+      loNuestro = {
+        salas: datos.salas || [],
+        inicio: datos.inicio || null,
+        victoria: datos.victoria || null,
+        nuestra: esDeNandutihax(datos.salas, codigoDeLaSala()),
+      };
+    }
+    marcarActiva(loNuestro.nuestra);
+  };
+  preguntar();
+  setInterval(preguntar, 30000);
+  // El <html> se reemplaza al cargar el juego y la marca se pierde: se vuelve a poner
+  setInterval(() => marcarActiva(loNuestro.nuestra), 2000);
+}
+
 function arrancarNandutiHax() {
   "use strict";
 
-  const VERSION = "1.3.0";
-  const API = "https://nandutihax.com/api/publico/salas";
+  const VERSION = VERSION_INSTALADA;
+  const API = API_SALAS;
   const CADA = 4000;          // cada cuánto se refresca
   const LLAVE = "nandutihax_panel";
 
@@ -139,6 +200,7 @@ function arrancarNandutiHax() {
 
   const panel = document.createElement("div");
   panel.id = "nh-panel";
+  panel.style.display = "none";      // hasta confirmar que la sala es de ÑandutíHax
   if (!abierto) panel.classList.add("cerrado");
   panel.innerHTML = `
     <div id="nh-cabeza">
@@ -293,6 +355,15 @@ function arrancarNandutiHax() {
       return;
     }
     salas = datos.salas || [];
+
+    // El panel solo se muestra en las salas de ÑandutíHax: en una sala ajena la extensión
+    // no pinta nada (pedido del usuario). Se revisa en cada vuelta porque los códigos de
+    // las salas cambian cada vez que se reinician.
+    const nuestra = esDeNandutihax(salas, codigoDeLaSala());
+    panel.style.display = nuestra ? "" : "none";
+    marcarActiva(nuestra);
+    if (!nuestra) return;
+
     if (!sala || !salas.some((s) => s.clave === sala)) {
       // La primera vez, la que tenga más gente
       const conGente = salas.slice().sort((a, b) => b.cuantos - a.cuantos)[0];
@@ -341,8 +412,7 @@ function arrancarNandutiHax() {
 // Se toca SOLO esa combinación —lienzo fuera de la página, 90 px de alto, letra de 70 px y
 // una de las tres palabras del cartel del gol—, así que no afecta a nada más: los nombres
 // de los jugadores se dibujan en el lienzo del juego (que sí está en la página) y con otra
-// letra, y los otros carteles ("Time is Up!", "Red is Victorious!", "Game Paused") usan
-// palabras distintas y siguen saliendo igual.
+// letra. "Time is Up!" y "Game Paused" usan palabras distintas y siguen saliendo igual.
 //
 // Tiene que correr ANTES que el juego (@run-at document-start), porque las texturas se
 // arman una sola vez.
@@ -359,7 +429,10 @@ function arrancarNandutiHax() {
 // que bastarse sola (nada de variables de afuera).
 function parcheDelLienzo(W) {
   W = W || window;
-  var PALABRAS = { Red: 1, Blue: 1, "Scores!": 1 };
+  // Las palabras de los dos cartelones que reemplazamos: el del gol ("Red"/"Blue" +
+  // "Scores!") y el del final ("Red is"/"Blue is" + "Victorious!"). "Time is Up!" y
+  // "Game Paused" NO se tocan: esos siguen saliendo como siempre.
+  var PALABRAS = { Red: 1, Blue: 1, "Scores!": 1, "Red is": 1, "Blue is": 1, "Victorious!": 1 };
   var proto = W.CanvasRenderingContext2D && W.CanvasRenderingContext2D.prototype;
   if (!proto || proto.__nhSinCartel) return;
 
@@ -372,12 +445,20 @@ function parcheDelLienzo(W) {
   // 1. Que las palabras del cartel no se dibujen. Alcanza con mirar que el lienzo NO esté en
   //    la página: los carteles se pre-dibujan en lienzos sueltos, mientras que los nombres de
   //    los jugadores se pintan en el lienzo del juego, que sí está en la página.
+  // ¿Estamos en una sala de ÑandutíHax? Se mira en cada dibujo, porque la respuesta llega
+  // después (hay que preguntarle a la API) y puede cambiar sin recargar.
+  var activa = function () {
+    try { return W.document.documentElement.getAttribute("data-nh-activo") === "si"; }
+    catch (e) { return false; }
+  };
+
   var fill = proto.fillText;
   proto.fillText = function (texto) {
     try {
       var lienzo = this.canvas;
       if (lienzo && !lienzo.isConnected && PALABRAS[String(texto)]) {
         lienzo.__nhCartel = true;               // queda marcado para el paso 2
+        if (!activa()) return fill.apply(this, arguments);   // sala ajena: no se toca nada
         W.__nhBloqueos = (W.__nhBloqueos || 0) + 1;
         anotar("data-nh-bloqueos", String(W.__nhBloqueos));
         return;
@@ -389,7 +470,7 @@ function parcheDelLienzo(W) {
   // 2. Y por si alguna quedó dibujada antes de que llegáramos: tampoco se pega en la cancha
   var pegar = proto.drawImage;
   proto.drawImage = function (origen) {
-    try { if (origen && origen.__nhCartel) return; } catch (e) {}
+    try { if (origen && origen.__nhCartel && activa()) return; } catch (e) {}
     return pegar.apply(this, arguments);
   };
 
@@ -442,7 +523,9 @@ function sacarElCartelDeHaxball() {
 function arrancarCartelDeGol() {
   "use strict";
 
-  const MARCA = "​​";   // la marca invisible que el host le pega al cartel de gol
+  const MARCA = "​​";        // marca invisible del cartel de GOL
+  const MARCA_INICIO = "​‌";  // …la del cartel de INICIO (el saque)
+  const MARCA_VICTORIA = "​⁠";// …y la del cartel de VICTORIA (el final)
   const DURA = 3200;              // cuánto se queda en pantalla
   const ESPERA = 900;             // cuánto se le da al cartel del host antes de usar el nuestro
 
@@ -476,8 +559,19 @@ function arrancarCartelDeGol() {
     return capa;
   };
 
+  // Un color por letra, igual que InicioModel.coloresDeCadaLetra() del lado de la web: si
+  // hay menos colores que letras, las que sobran usan el último.
+  const coloresPorLetra = (texto, inicio) => {
+    const lista = (inicio && inicio.colores) || [];
+    if (!lista.length) return null;
+    const base = (inicio && inicio.color) || "FFD700";
+    const salida = [];
+    for (let i = 0; i < texto.length; i++) salida.push(lista[i] || lista[lista.length - 1] || base);
+    return salida;
+  };
+
   // Se acomoda sobre el lienzo, justo donde HaxBall escribe su "Scores!"
-  const mostrar = (texto, color, tamano) => {
+  const mostrar = (texto, color, tamano, colores) => {
     const lienzo = document.querySelector(".game-state-view canvas");
     if (!lienzo || !texto) return;
     const r = lienzo.getBoundingClientRect();
@@ -490,9 +584,21 @@ function arrancarCartelDeGol() {
     c.style.height = Math.max(90, r.height * 0.34) + "px";
 
     const dentro = c.querySelector(".texto");
-    dentro.textContent = texto;
-    dentro.style.color = color || "#ffffff";
     dentro.style.fontSize = Math.max(16, Math.min(40, (tamano || 1) * r.width / 26)) + "px";
+
+    // Con colores por letra se arma letra por letra; si no, va todo de un color
+    if (colores && colores.length) {
+      dentro.textContent = "";
+      for (let i = 0; i < texto.length; i++) {
+        const letra = document.createElement("span");
+        letra.textContent = texto[i];
+        letra.style.color = "#" + String(colores[i] || colores[colores.length - 1]).replace(/^#/, "");
+        dentro.appendChild(letra);
+      }
+    } else {
+      dentro.textContent = texto;
+      dentro.style.color = color || "#ffffff";
+    }
 
     void c.offsetWidth;                      // para que la animación arranque de nuevo
     c.classList.add("viendose");
@@ -504,8 +610,27 @@ function arrancarCartelDeGol() {
   const mirarElChat = (log) => {
     const ojo = new MutationObserver((cambios) => {
       cambios.forEach((c) => c.addedNodes.forEach((n) => {
-        if (n.nodeType !== 1) return;
+        if (n.nodeType !== 1 || !loNuestro.nuestra) return;
         const texto = n.textContent || "";
+
+        // El cartel del ARRANQUE: el host lo marca distinto y acá se pinta con los colores
+        // por letra que se cargaron en el panel (el chat solo puede con un color).
+        if (texto.indexOf(MARCA_INICIO) >= 0) {
+          clearTimeout(porLasDudas);
+          const limpio = texto.split(MARCA_INICIO).join("").trim();
+          const inicio = loNuestro.inicio || {};
+          mostrar(limpio, n.style && n.style.color, 1, coloresPorLetra(limpio, inicio));
+          return;
+        }
+
+        // El cartel del FINAL, que reemplaza al "Red is Victorious!" de HaxBall
+        if (texto.indexOf(MARCA_VICTORIA) >= 0) {
+          clearTimeout(porLasDudas);
+          const limpio = texto.split(MARCA_VICTORIA).join("").trim();
+          mostrar(limpio, n.style && n.style.color, 1.1, coloresPorLetra(limpio, loNuestro.victoria || {}));
+          return;
+        }
+
         if (texto.indexOf(MARCA) < 0) return;
         clearTimeout(porLasDudas);
         const color = n.style && n.style.color;
@@ -518,17 +643,27 @@ function arrancarCartelDeGol() {
 
   // El marcador del propio juego: cambia en el instante del gol, sin pasar por ningún servidor
   const mirarElMarcador = (r, a) => {
-    const leer = (e) => (e.textContent || "").trim();
-    let antes = leer(r) + "-" + leer(a);
+    const numero = (e) => Number(String(e.textContent || "").trim()) || 0;
+    let rojo = numero(r), azul = numero(a);
     const ojo = new MutationObserver(() => {
-      const ahora = leer(r) + "-" + leer(a);
-      if (ahora === antes) return;
-      const subioElRojo = Number(leer(r)) > Number(antes.split("-")[0]);
-      antes = ahora;
-      // Si el host manda un cartel comprado, gana ese; si no, a los 900 ms va el nuestro
+      const rojoAhora = numero(r), azulAhora = numero(a);
+      if (rojoAhora === rojo && azulAhora === azul) return;
+
+      const subioElRojo = rojoAhora > rojo;
+      const subioElAzul = azulAhora > azul;
+      rojo = rojoAhora;
+      azul = azulAhora;
+
+      // GOL es solo cuando el marcador SUBE. Al empezar el partido vuelve a 0-0 (o se pone
+      // en 0 por primera vez) y eso también mueve estos números: antes salía un "¡GOL! 0 - 0"
+      // en el saque inicial.
       clearTimeout(porLasDudas);
+      if (!subioElRojo && !subioElAzul) return;
+      if (!loNuestro.nuestra) return;        // sala ajena: la extensión no se mete
+
+      // Si el host manda un cartel comprado, gana ese; si no, a los 900 ms va el nuestro
       porLasDudas = setTimeout(() => {
-        mostrar("¡GOL!   " + leer(r) + " - " + leer(a), subioElRojo ? "#e56e56" : "#5689e5", 1.1);
+        mostrar("¡GOL!   " + rojoAhora + " - " + azulAhora, subioElRojo ? "#e56e56" : "#5689e5", 1.1);
       }, ESPERA);
     });
     ojo.observe(r, { childList: true, characterData: true, subtree: true });
@@ -550,20 +685,38 @@ function arrancarCartelDeGol() {
   }, 1500);
 }
 
+// =============================================================================
+// EN NUESTRA WEB: solo decirle qué versión está instalada
+//
+// El script también corre en nandutihax.com, pero ahí no dibuja nada: deja la versión en el
+// <html> para que la página de la extensión pueda decir "tenés la 1.4.0, está al día" o
+// "estás desactualizado". Es la forma de saberlo sin pedirle a nadie que abra la consola.
+// =============================================================================
+function avisarLaVersionEnLaWeb() {
+  const dejarla = () => {
+    try { document.documentElement.setAttribute("data-nandutihax", VERSION_INSTALADA); } catch (e) {}
+  };
+  dejarla();
+  document.addEventListener("DOMContentLoaded", dejarla, { once: true });
+  setTimeout(dejarla, 1200);
+}
+
 // Ojo: según el gestor de userscripts, esto puede correr ANTES de que exista el <html>
 // (document-start). Ahí `document.documentElement` es null y el panel no se dibujaba nunca:
 // tiraba "Cannot read properties of null (reading 'appendChild')" y el script moría en silencio.
 function arrancarTodo() {
+  if (esNuestraWeb()) return avisarLaVersionEnLaWeb();
   // El panel del costado va en la ventana de arriba; el cartel de gol, adentro del juego
   if (window.top === window.self) arrancarNandutiHax();
   else arrancarCartelDeGol();
 }
 
-// Esto NO toca el DOM y tiene que ser lo primero de todo, antes de que el juego arme sus
-// texturas: por eso va suelto acá y no adentro de arrancarTodo()
-if (window.top !== window.self) {
+// El parche del lienzo NO toca el DOM y tiene que ser lo primero de todo, antes de que el
+// juego arme sus texturas: por eso va suelto acá y no adentro de arrancarTodo(). Queda en
+// espera (`data-nh-activo`) hasta que se confirme que la sala es de ÑandutíHax.
+if (!esNuestraWeb() && window.top !== window.self) {
   sacarElCartelDeHaxball();
-  console.log("[NandutiHax] parche del lienzo inyectado en la pagina (sin cartel de HaxBall)");
+  vigilarSiEsSalaNuestra();
 }
 
 if (document.body) arrancarTodo();

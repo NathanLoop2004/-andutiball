@@ -18,6 +18,7 @@ class VistasController {
   static extension = pantalla("frm", "extension");       // cómo instalar la extensión
   static score = pantalla("frm", "score");               // la ficha de un cartel (con su URL)
   static scores = pantalla("frm", "scores");             // armar carteles (OWNER y CO-OWNER)
+  static momentos = pantalla("frm", "momentos");         // arranque y victoria (OWNER y CO-OWNER)
   static animaciones = pantalla("frm", "animaciones");   // animaciones de gol (OWNER y CO-OWNER)
   static equipos = pantalla("frm", "equipos");       // camisetas de los clubes y clásicos
   static inventario = pantalla("frm", "inventario"); // las camisetas que compró cada uno

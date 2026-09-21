@@ -50,6 +50,7 @@ const tiendaRouter = require("./routes/TiendaRouter");
 const animacionesRouter = require("./routes/AnimacionesRouter");
 const mercadoRouter = require("./routes/MercadoRouter");
 const scoresRouter = require("./routes/ScoresRouter");
+const momentosRouter = require("./routes/MomentosRouter");
 const publicoRouter = require("./routes/PublicoRouter");
 const vistasRouter = require("./routes/VistasRouter");
 
@@ -94,6 +95,7 @@ function crearApp({ sala = null, salas = [] } = {}) {
   app.use("/api", animacionesRouter);
   app.use("/api", mercadoRouter);
   app.use("/api", scoresRouter);
+  app.use("/api", momentosRouter);
   app.use("/api", publicoRouter);
 
   // Todo lo estático sale de public/ (igual que app-centralshop)
