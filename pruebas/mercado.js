@@ -71,7 +71,7 @@ function revisar(titulo, condicion, detalle) {
 
     let tipoMalo = null;
     try { await MercadoModel.ficha("cualquiera", clave); } catch (e) { tipoMalo = e.message; }
-    revisar("Un tipo inventado se rechaza", /camiseta ni una animación/.test(tipoMalo || ""), tipoMalo);
+    revisar("Un tipo inventado se rechaza", /nada de lo que se vende/.test(tipoMalo || ""), tipoMalo);
 
     // ── La API ──
     console.log("\n🔐 La API:\n");

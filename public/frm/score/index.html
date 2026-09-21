@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cartel de gol · ÑandutíHax</title>
+<meta name="description" content="Los carteles de gol de ÑandutíHax se compran con las monedas que ganás jugando.">
+<link rel="icon" href="/img/logo-chico.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/css/nanduti.css">
+<script src="/js/tema.js"></script>
+</head>
+<body>
+
+<header class="barra">
+  <a class="marca" href="/"><img src="/img/logo-chico.png" alt=""><span>ÑandutíHax</span></a>
+  <div class="derecha" id="derecha"></div>
+</header>
+
+<main class="contenido">
+  <p class="tenue"><a href="/">← Volver a la portada</a></p>
+
+  <div class="tarjeta" id="ficha" hidden>
+    <div class="tarjeta-cuerpo ficha-animacion">
+      <div>
+        <div class="cofre-titulo">Cómo se ve en el chat</div>
+        <div class="chat-previa">
+          <div class="chat-linea tenue">JINDER: dale que va</div>
+          <div class="chat-linea" id="previaCartel">—</div>
+          <div class="chat-linea tenue">FAXSS: uhhh</div>
+        </div>
+      </div>
+      <div class="detalle-datos">
+        <h1 id="nombre">—</h1>
+        <p class="tenue" id="detalle"></p>
+        <dl class="lista-datos">
+          <dt>Qué hace</dt><dd id="queHace">—</dd>
+        </dl>
+        <div class="precio" id="precio"></div>
+        <div class="aviso" id="aviso"></div>
+        <div class="acciones">
+          <button class="boton principal" type="button" id="comprar" hidden>Comprar</button>
+          <a class="boton" id="entrar" href="/frm/login/" hidden>Iniciá sesión para comprarla</a>
+          <a class="boton" href="/frm/inventario/" id="verInventario" hidden>Ver mi inventario</a>
+        </div>
+        <p class="tenue" id="saldo"></p>
+      </div>
+    </div>
+    <div class="tarjeta-cuerpo" id="mercado"></div>
+  </div>
+
+  <div class="tarjeta" id="noEsta" hidden>
+    <div class="tarjeta-cuerpo">
+      <h1>No encontramos ese cartel</h1>
+      <p class="tenue">Puede que ya no esté a la venta. Mirá los que hay en la portada.</p>
+      <p><a class="boton principal" href="/">Ir a la portada</a></p>
+    </div>
+  </div>
+
+  <p class="tenue" id="cargando">Cargando…</p>
+</main>
+
+<script src="/js/sesion.js"></script>
+<script src="/js/mercado.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = Sesion.escapar;
+const monedasTexto = (n) => Number(n || 0).toFixed(2).replace(/\.00$/, "").replace(/(\.\d)0$/, "$1").replace(".", ",");
+const unDecimal = (n) => Number(n).toFixed(1).replace(".", ",");
+
+Sesion.pintarBarra("derecha");
+
+const clave = new URLSearchParams(location.search).get("c");
+let cartel = null;
+
+function avisar(texto, clase) {
+  $("aviso").className = "aviso" + (texto ? " " + clase : "");
+  $("aviso").textContent = texto;
+}
+
+// El ejemplo ya viene armado del servidor (ScoresModel lo resuelve con datos de muestra),
+// así que acá solo se pinta: una cuenta menos que se pueda despegar de la de la sala.
+async function cargar() {
+  let carteles = [];
+  try {
+    const r = await fetch("/api/scores", { cache: "no-store" });
+    carteles = (await r.json()).scores || [];
+  } catch (e) { /* sin conexión: se muestra el cartel de no encontrada */ }
+
+  cartel = carteles.find((a) => a.clave === clave) || null;
+  $("cargando").hidden = true;
+  if (!cartel) { $("noEsta").hidden = false; return; }
+
+  document.title = cartel.nombre + " · ÑandutíHax";
+  $("nombre").textContent = cartel.nombre;
+  $("detalle").textContent = cartel.detalle || cartel.descripcion || "Cartel de gol.";
+  $("queHace").textContent = "Sale cuando hacés un gol, en vez del cartel de siempre";
+  $("precio").textContent = "🪙 " + monedasTexto(cartel.precio) + " monedas";
+
+  const linea = $("previaCartel");
+  linea.textContent = cartel.ejemplo || cartel.plantilla;
+  linea.style.color = "#" + cartel.color;
+  linea.style.fontWeight = cartel.estilo === "bold" ? "700" : "400";
+  linea.style.fontSize = cartel.estilo === "small" ? "11px" : cartel.estilo === "bold" ? "15px" : "13px";
+
+  $("ficha").hidden = false;
+  Mercado.pintar($("mercado"), "score", clave);
+
+  const u = Sesion.usuario();
+  $("comprar").hidden = !u;
+  $("entrar").hidden = Boolean(u);
+  if (!u) return;
+
+  $("entrar").href = "/frm/login/?volver=" + encodeURIComponent(location.pathname + location.search);
+  try {
+    const { cuenta } = await Sesion.pedir("/api/cuenta");
+    $("saldo").textContent = "Tenés " + monedasTexto(cuenta.monedas) + " monedas";
+  } catch (e) { /* si no se puede leer el saldo, igual se puede intentar comprar */ }
+
+  try {
+    const mios = await Sesion.pedir("/api/scores/mios");
+    if ((mios.scores || []).some((s) => s.clave === clave)) {
+      $("comprar").hidden = true;
+      $("verInventario").hidden = false;
+      avisar("Este cartel ya es tuyo. Lo prendés desde tu inventario.", "info");
+    }
+  } catch (e) { /* sin inventario, se deja el botón de comprar */ }
+}
+
+$("comprar").onclick = async () => {
+  $("comprar").disabled = true;
+  try {
+    const r = await Sesion.pedir("/api/scores/comprar", { method: "POST", body: JSON.stringify({ clave }) });
+    avisar("¡Listo! Es tuyo. Prendelo desde tu inventario. Te quedan " + monedasTexto(r.saldo) + " monedas.", "ok");
+    $("comprar").hidden = true;
+    $("verInventario").hidden = false;
+    $("saldo").textContent = "Tenés " + monedasTexto(r.saldo) + " monedas";
+  } catch (error) {
+    avisar(error.message, "mal");
+    $("comprar").disabled = false;
+  }
+};
+
+cargar();
+</script>
+</body>
+</html>

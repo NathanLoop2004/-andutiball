@@ -29,6 +29,7 @@ model Usuario {
   nick            String    @unique
   camiseta        String?   // la camiseta que tiene puesta, de las que compró
   animacion       String?   // la animación de gol que tiene puesta, de las que compró
+  score           String?   // el cartel de gol que tiene puesto, de los que compró
   auth            String?   @unique
   clave           String?   // hash scrypt. null = todavía no se registró
   claveCambiada   DateTime?
@@ -464,4 +465,43 @@ model Favorito {
   @@unique([nick, tipo, clave])
   @@index([tipo, clave])
   @@map("favoritos")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Los carteles de gol ("scores"): cómo se ve el aviso con el marcador cuando alguien
+// convierte. Se arman desde el panel (solo OWNER y CO-OWNER) y se venden como todo lo demás.
+// ─────────────────────────────────────────────────────────────────────────────
+model Score {
+  clave       String   @id
+  nombre      String
+  descripcion String?
+  // El texto con los huecos: {jugador} {equipo} {rival} {golesPropios} {golesRival}
+  // {minuto} {asistencia}. Puede tener dos líneas.
+  plantilla   String
+  color       String   @default("FFD700")   // el color del cartel en el chat
+  estilo      String   @default("bold")     // normal · bold · small
+  sonido      Int      @default(2)          // 0 nada · 1 suave · 2 el de siempre
+  activo      Boolean  @default(true)
+  orden       Int      @default(0)
+  // Tienda: precio en centésimas de moneda (null = no se vende)
+  precio      Int?
+  enTienda    Boolean  @default(false)
+  detalle     String?
+  cambiadoPor String?
+  cambiado    DateTime @default(now())
+
+  @@map("scores")
+}
+
+// Cada cartel que compró una cuenta
+model ScoreComprado {
+  id       Int      @id @default(autoincrement())
+  nick     String
+  score    String
+  precio   Int
+  comprada DateTime @default(now())
+
+  @@unique([nick, score])
+  @@index([nick])
+  @@map("scores_comprados")
 }

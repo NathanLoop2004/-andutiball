@@ -891,3 +891,19 @@ input[type=number]:focus { outline: none; border-color: var(--acento); box-shado
 .historial-punto:last-child i { background: var(--verde); }
 .historial-punto small { font-size: 10px; color: var(--tenue); font-variant-numeric: tabular-nums; }
 .chico { font-size: 12px; }
+
+/* La previsualización de un cartel de gol: se imita el chat de HaxBall */
+.chat-previa {
+  background: #2a3a40; border-radius: var(--radio); padding: 12px 14px;
+  display: grid; gap: 6px; font-family: var(--mono); font-size: 13px; line-height: 1.5;
+}
+.chat-previa .chat-linea { color: #d8dee2; word-break: break-word; white-space: pre-wrap; }
+.chat-previa .chat-linea.tenue { color: #7d8b92; }
+/* Y en la tabla, el cartel en chiquito */
+.cartel-mini { font-size: 12px; font-weight: 600; word-break: break-word; }
+/* Un cartel de gol en la vidriera de la portada: como es texto, la tarjeta va más ancha */
+.vidriera-item.ancho { width: 250px; }
+.cartel-vidriera {
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  font-size: 12px; font-weight: 600; line-height: 1.4; text-align: center; min-height: 50px;
+}

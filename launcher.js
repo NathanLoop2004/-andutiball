@@ -20,12 +20,15 @@ const MonedasModel = require("./models/MonedasModel");
 const EquiposModel = require("./models/EquiposModel");
 const TiendaModel = require("./models/TiendaModel");
 const AnimacionesModel = require("./models/AnimacionesModel");
+const ScoresModel = require("./models/ScoresModel");
 const RachasModel = require("./models/RachasModel");
 const Parametros = require("./lib/parametros");
 const WebhookWeb = require("./services/WebhookWeb");
 const { leerRoles } = require("./lib/roles");
 const { ARCHIVO: ARCHIVO_RANGOS, leerRangos, guardarRangos, sinClave } = require("./lib/rangos");
 const { leerElo, guardarElo, aplicarPartido, ranking, paraLaSala, ambitoValido, DIVISIONES } = require("./lib/elo");
+
+const AVISO_SCORE = "⚠️ No se pudo guardar el cartel de gol de ";
 
 // Qué sala levantar: "npm start 3v3" pesa más que el HOST_CONFIG del .env.
 // Sin argumento, usa el .env; si tampoco está, la sala de futsal automático.
@@ -236,6 +239,12 @@ api.on("error", (error) => {
         AnimacionesModel.elegir(evento.nick, evento.clave)
           .then(() => refrescarAnimaciones())
           .catch((error) => console.warn(`⚠️ No se pudo guardar la animación de ${evento.nick}: ${String(error.message).split("\n")[0]}`));
+        break;
+      // Alguien se puso un cartel de gol con !cartel en la sala
+      case "score":
+        ScoresModel.elegir(evento.nick, evento.clave)
+          .then(() => refrescarScores())
+          .catch((error) => console.warn(AVISO_SCORE + evento.nick + ": " + String(error.message).split("\n")[0]));
         break;
       case "config-sala":
         if (salaElegida) {
@@ -658,6 +667,17 @@ api.on("error", (error) => {
     }
   };
 
+  // Los carteles de gol comprados: cuál tiene puesto cada uno y qué compró
+  const refrescarScores = async () => {
+    try {
+      const nombres = await frame.evaluate(() => (window.__sala ? window.__sala.getPlayerList().map((j) => j.name) : []));
+      const [puestos, comprados] = await Promise.all([ScoresModel.paraLaSala(), ScoresModel.deVariasCuentas(nombres)]);
+      await frame.evaluate((p, c) => { window.__SCORES = p; window.__MIS_SCORES = c; }, puestos, comprados);
+    } catch (error) {
+      // Sin base no pasa nada: sale el cartel de siempre
+    }
+  };
+
   const refrescarConfig = async () => {
     if (!claveSala) return;
     try {
@@ -681,6 +701,8 @@ api.on("error", (error) => {
   setInterval(refrescarCamisetas, 20000);
   await refrescarAnimaciones();
   setInterval(refrescarAnimaciones, 20000);
+  await refrescarScores();
+  setInterval(refrescarScores, 20000);
 
   // El link de la web puede aparecer después (el túnel tarda unos segundos en abrir)
   await refrescarLinkWeb();

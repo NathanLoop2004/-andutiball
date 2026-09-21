@@ -49,10 +49,22 @@
     <div class="casillero puesta" id="casilleroAnimPuesta"></div>
   </div>
 
+  <!-- Los carteles de gol, su propio apartado -->
+  <div class="cofre" style="margin-top:18px">
+    <div class="cofre-titulo">Carteles de gol</div>
+    <div class="casillero" id="casilleroScores"></div>
+
+    <div class="cofre-titulo" style="margin-top:18px">Puesto</div>
+    <div class="casillero puesta" id="casilleroScorePuesto"></div>
+  </div>
+
   <!-- Lo que hay en la casilla elegida -->
   <section class="tarjeta" id="detalle" hidden>
     <div class="tarjeta-cuerpo detalle-item">
       <div class="camiseta-grande" id="itemCamiseta"><span id="itemNumero">10</span></div>
+      <div id="itemScore" hidden>
+        <div class="chat-previa"><div class="chat-linea" id="previaCartel">—</div></div>
+      </div>
       <div class="previa-animacion" id="itemAnimacion" hidden>
         <div class="jugador-mini" id="muneco"><span id="avatarMini"></span></div>
         <button class="boton chico" type="button" id="probar">Probar</button>
@@ -83,6 +95,7 @@ const fondoCamiseta = (c) => `linear-gradient(${(c.angulo || 0) + 90}deg, #${c.c
 const CASILLAS = 18;   // 3 filas de 6, como un cofre
 let inventario = { camisetas: [], puesta: null };
 let animaciones = { animaciones: [], puesta: null };
+let scores = { scores: [], puesto: null };
 let elegida = null;
 let tipoElegido = "camiseta";   // "camiseta" | "animacion"
 
@@ -127,8 +140,9 @@ function pintar() {
     : '<div class="casilla vacia"><span class="tenue" style="font-size:11px">sin camiseta</span></div>';
 
   pintarAnimaciones();
+  pintarScores();
 
-  if (!inventario.camisetas.length && !animaciones.animaciones.length) {
+  if (!inventario.camisetas.length && !animaciones.animaciones.length && !scores.scores.length) {
     avisar("Todavía no tenés nada. Las camisetas y las animaciones se compran en la portada, con las monedas que ganás jugando.", "info");
   }
 }
@@ -160,6 +174,57 @@ function pintarAnimaciones() {
     : '<div class="casilla vacia"><span class="tenue" style="font-size:11px">sin animación</span></div>';
 }
 
+function pintarScores() {
+  const casillas = [];
+  for (let i = 0; i < Math.max(CASILLAS, scores.scores.length); i++) {
+    const s = scores.scores[i];
+    if (!s) {
+      casillas.push('<div class="casilla vacia" aria-hidden="true"></div>');
+      continue;
+    }
+    casillas.push(`
+      <button class="casilla${scores.puesto === s.clave ? " puesta" : ""}${tipoElegido === "score" && elegida === s.clave ? " elegida" : ""}"
+              type="button" data-score="${esc(s.clave)}" title="${esc(s.nombre)} · vale ${monedasTexto(s.vale)} 🪙">
+        <span class="casilla-emoji" style="color:#${esc(s.color)};font-size:19px">🥅</span>
+        <span class="casilla-nombre">${esc(s.nombre)}</span>
+        <span class="casilla-accion" data-ponerscore="${esc(s.clave)}">${scores.puesto === s.clave ? "Desactivar" : "Activar"}</span>
+      </button>`);
+  }
+  $("casilleroScores").innerHTML = casillas.join("");
+
+  const puesto = scores.scores.find((s) => s.clave === scores.puesto);
+  $("casilleroScorePuesto").innerHTML = puesto
+    ? `<button class="casilla puesta" type="button" data-score="${esc(puesto.clave)}">
+         <span class="casilla-emoji" style="color:#${esc(puesto.color)};font-size:19px">🥅</span>
+         <span class="casilla-nombre">${esc(puesto.nombre)}</span>
+       </button>`
+    : '<div class="casilla vacia"><span class="tenue" style="font-size:11px">sin cartel</span></div>';
+}
+
+function abrirScore(clave) {
+  const s = scores.scores.find((x) => x.clave === clave);
+  if (!s) return;
+  elegida = clave;
+  tipoElegido = "score";
+  frenarPrevia();
+  $("itemCamiseta").hidden = true;
+  $("itemAnimacion").hidden = true;
+  $("itemScore").hidden = false;
+  $("itemNombre").textContent = s.nombre;
+  $("itemTexto").textContent = s.detalle || s.descripcion || "Sale cuando hacés un gol.";
+  const linea = $("previaCartel");
+  linea.textContent = s.ejemplo || s.plantilla;
+  linea.style.color = "#" + s.color;
+  linea.style.fontWeight = s.estilo === "bold" ? "700" : "400";
+  $("itemPagado").textContent = monedasTexto(s.pagada) + " 🪙";
+  $("itemVale").textContent = monedasTexto(s.vale) + " 🪙  (30% menos de lo que vale hoy)";
+  $("itemCuando").textContent = new Date(s.comprada).toLocaleDateString("es-PY");
+  $("usar").textContent = scores.puesto === clave ? "Desactivar" : "Activar";
+  $("vender").textContent = "Vender por " + monedasTexto(s.vale) + " 🪙";
+  $("detalle").hidden = false;
+  pintar();
+}
+
 function abrirAnimacion(clave) {
   const a = animaciones.animaciones.find((x) => x.clave === clave);
   if (!a) return;
@@ -167,6 +232,7 @@ function abrirAnimacion(clave) {
   tipoElegido = "animacion";
   frenarPrevia();
   $("itemCamiseta").hidden = true;
+  $("itemScore").hidden = true;
   $("itemAnimacion").hidden = false;
   $("itemNombre").textContent = a.nombre;
   const comoEs = a.tipo === "tamano" ? "Se hace grande y chico"
@@ -190,6 +256,7 @@ function abrir(clave) {
   frenarPrevia();
   $("itemCamiseta").hidden = false;
   $("itemAnimacion").hidden = true;
+  $("itemScore").hidden = true;
   $("itemCamiseta").style.background = fondoCamiseta(c);
   $("itemNumero").style.color = "#" + c.colorTexto;
   $("itemNombre").textContent = c.nombre;
@@ -205,16 +272,18 @@ function abrir(clave) {
 
 async function cargar() {
   try {
-    const [mias, misAnim, cuenta] = await Promise.all([
+    const [mias, misAnim, misScores, cuenta] = await Promise.all([
       Sesion.pedir("/api/tienda/mias"),
       Sesion.pedir("/api/animaciones/mias"),
+      Sesion.pedir("/api/scores/mios"),
       Sesion.pedir("/api/cuenta"),
     ]);
     inventario = mias;
     animaciones = misAnim;
+    scores = misScores;
     $("saldo").textContent = monedasTexto(cuenta.cuenta.monedas);
-    const sigueAhi = tipoElegido === "animacion"
-      ? animaciones.animaciones.some((a) => a.clave === elegida)
+    const sigueAhi = tipoElegido === "animacion" ? animaciones.animaciones.some((a) => a.clave === elegida)
+      : tipoElegido === "score" ? scores.scores.some((s) => s.clave === elegida)
       : inventario.camisetas.some((c) => c.clave === elegida);
     if (elegida && !sigueAhi) {
       elegida = null;
@@ -230,29 +299,37 @@ async function cargar() {
 // Prende y apaga sin abrir el detalle: es lo que se hace todo el tiempo, y abrir la ficha
 // para dos clicks más era una vuelta al pedo.
 async function prenderApagar(tipo, clave) {
-  const ruta = tipo === "animacion" ? "/api/animaciones/elegir" : "/api/tienda/elegir";
-  const puesta = tipo === "animacion" ? animaciones.puesta : inventario.puesta;
+  const ruta = tipo === "animacion" ? "/api/animaciones/elegir" : tipo === "score" ? "/api/scores/elegir" : "/api/tienda/elegir";
+  const puesta = tipo === "animacion" ? animaciones.puesta : tipo === "score" ? scores.puesto : inventario.puesta;
   const sacar = puesta === clave;
   try {
     await Sesion.pedir(ruta, { method: "POST", body: JSON.stringify({ clave: sacar ? null : clave }) });
     if (tipo === "animacion") {
       avisar(sacar ? "Animación desactivada: volvés al festejo de siempre." : "Animación activada: la vas a usar en tu próximo gol.", "ok");
+    } else if (tipo === "score") {
+      avisar(sacar ? "Cartel desactivado: vuelve el de siempre." : "Cartel activado: se va a ver en tu próximo gol.", "ok");
     } else {
       avisar(sacar ? "Te la sacaste: volvés a la camiseta del sorteo." : "Listo. Si sos capitán, tu equipo juega con esta.", "ok");
     }
     await cargar();
     // Si el detalle estaba abierto en esa misma cosa, se refresca para que el botón cambie
-    if (elegida === clave && tipoElegido === tipo) (tipo === "animacion" ? abrirAnimacion : abrir)(clave);
+    if (elegida === clave && tipoElegido === tipo) {
+      (tipo === "animacion" ? abrirAnimacion : tipo === "score" ? abrirScore : abrir)(clave);
+    }
   } catch (error) { avisar(error.message, "mal"); }
 }
 
 document.addEventListener("click", (e) => {
   // Primero el cartelito de "Activar" / "Usar": si se tocó eso, no se abre la ficha
+  const ponerScore = e.target.closest("[data-ponerscore]");
+  if (ponerScore) { e.preventDefault(); e.stopPropagation(); return prenderApagar("score", ponerScore.dataset.ponerscore); }
   const activar = e.target.closest("[data-activar]");
   if (activar) { e.preventDefault(); e.stopPropagation(); return prenderApagar("animacion", activar.dataset.activar); }
   const usar = e.target.closest("[data-usar]");
   if (usar) { e.preventDefault(); e.stopPropagation(); return prenderApagar("camiseta", usar.dataset.usar); }
 
+  const deScore = e.target.closest(".casilla[data-score]");
+  if (deScore) return abrirScore(deScore.dataset.score);
   const deAnimacion = e.target.closest(".casilla[data-animacion]");
   if (deAnimacion) return abrirAnimacion(deAnimacion.dataset.animacion);
   const casilla = e.target.closest(".casilla[data-clave]");
@@ -261,6 +338,8 @@ document.addEventListener("click", (e) => {
 
 $("usar").onclick = async () => {
   if (!elegida) return;
+
+  if (tipoElegido === "score") return prenderApagar("score", elegida);
 
   // Las animaciones se prenden y se apagan acá mismo
   if (tipoElegido === "animacion") {
@@ -286,6 +365,19 @@ $("usar").onclick = async () => {
 
 $("vender").onclick = async () => {
   if (!elegida) return;
+
+  if (tipoElegido === "score") {
+    const s = scores.scores.find((x) => x.clave === elegida);
+    if (!s || !confirm(`¿Vender el cartel ${s.nombre}? Te devuelven ${monedasTexto(s.vale)} monedas.`)) return;
+    try {
+      const r = await Sesion.pedir("/api/scores/vender", { method: "POST", body: JSON.stringify({ clave: elegida }) });
+      elegida = null;
+      $("detalle").hidden = true;
+      avisar(`Vendiste ${s.nombre} por ${monedasTexto(r.devuelto)} 🪙. Te quedan ${monedasTexto(r.saldo)} monedas.`, "ok");
+      cargar();
+    } catch (error) { avisar(error.message, "mal"); }
+    return;
+  }
 
   if (tipoElegido === "animacion") {
     const a = animaciones.animaciones.find((x) => x.clave === elegida);

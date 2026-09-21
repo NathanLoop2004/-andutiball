@@ -22,7 +22,7 @@ Contexto para trabajar en este proyecto. La documentación para personas está e
 - `services/`: la conexión a la base por entorno y los webhooks (actualizaciones, link de la web).
 - `prisma/` + `docker-compose.base.yml`: las tablas y la base, que va **aparte** de las salas.
 - `tunel.js`, `actualizacion.js`, `sembrar.js`: los comandos sueltos (túnel de Cloudflare, novedades, sembrar la base).
-- `pruebas/`: 28 pruebas que corren sin gastar tokens (ver “Probar sin gastar tokens”).
+- `pruebas/`: 29 pruebas que corren sin gastar tokens (ver “Probar sin gastar tokens”).
 
 ## Despliegue (launcher.js)
 
@@ -1241,10 +1241,49 @@ el de ahora — es lo que espera cualquiera. Si ya no tiene precio (lo sacaron d
 a lo que había pagado, que es lo único que se sabe. El `vale` del inventario usa la misma cuenta,
 así lo que dice la pantalla es lo que se va a cobrar.
 
+## Carteles de gol (🥅)
+
+El aviso con el marcador que sale cuando alguien convierte. Cada uno puede comprar el suyo:
+en vez de "⚡ ¡GOOOLAZO!   OLIMPIA 1 🆚 0 CERRO   A los 03:12 🕒" sale el que eligió, con su
+texto, su color y su tamaño de letra. Tablas `scores` y `scores_comprados` +
+`usuarios.score`, migración `20260921090000_scores`. Mismo circuito que las otras dos tiendas.
+
+**La plantilla tiene huecos** que se resuelven con los datos del gol: `{jugador}` `{equipo}`
+`{rival}` `{golesPropios}` `{golesRival}` `{minuto}` `{asistencia}`. La cuenta que los reemplaza
+está **tres veces** y tiene que dar igual: `ScoresModel.armar()` (la web), `armarCartel()` (el
+bloque de la sala) y `armar()` en la pantalla del panel, para la vista previa. El servidor manda
+el `ejemplo` ya resuelto en `paraMostrar()`, así la portada y la página pública no lo rearman.
+
+**Cómo se engancha en la sala** (`parches/bloques/scores.txt`): el aviso lo arma el script
+adentro de su propio `onTeamGoal`, así que **no hay función que redeclarar**. Se usa el mismo
+truco que el color del nombre por ELO: se envuelve `room.sendAnnouncement` **solo mientras corre
+el handler del gol**, se reconoce el aviso del marcador (es el único que lleva `🆚`) y se lo
+cambia por el del jugador. Todo lo demás del handler sale igual. `yaCambiado` evita tocar dos
+avisos, y el `finally` devuelve `sendAnnouncement` aunque el handler tire.
+
+El bloque va **después** de `animaciones.txt` en la lista del parcheador: los dos envuelven
+`onTeamGoal` y este tiene que quedar más afuera para poder cambiar lo que arma el de adentro.
+
+**Un gol en contra no usa el cartel** (misma comparación que las animaciones:
+`game.lastKickerTeam` contra el equipo que recibió el gol).
+
+En la sala: `!carteles`, `!cartel <nombre>` y `!cartel ninguno`. El launcher deja
+`window.__SCORES` y `window.__MIS_SCORES` cada 20 s (`refrescarScores`) y atiende
+`{tipo:"score"}` de la cola.
+
+**La pantalla** es `public/frm/scores/` (nav "Carteles", con `u.rangos`: **solo OWNER y
+CO-OWNER**, igual que las animaciones). Tiene la **vista previa en vivo**: un chat de HaxBall de
+mentira donde se ve el cartel con su color y su tamaño mientras se escribe, y botones para meter
+cada hueco. La página pública de cada uno es `public/frm/score/`.
+
+`npm run prueba-scores` cubre las tres puntas: la sala (cambia el aviso, el que no tiene ve el de
+siempre, el autogol no lo usa), el modelo contra la base (validaciones, compra, venta al precio
+de hoy) y la API con permisos.
+
 ## El mercado: historial de precios, comprados y favoritos
 
-Lo que las dos tiendas tienen en común (`models/MercadoModel.js`, migración
-`20260920200000_mercado`). Las dos tablas llevan `tipo` (`"camiseta"` | `"animacion"`), así no
+Lo que las **tres** tiendas tienen en común (`models/MercadoModel.js`, migración
+`20260920200000_mercado`). Las dos tablas llevan `tipo` (`"camiseta"` | `"animacion"` | `"score"`), así no
 hay que duplicar nada:
 
 | Tabla | Qué guarda |
@@ -1411,7 +1450,7 @@ que compara el auth con el nick registrado y quedó igual.
 
 ## Probar sin gastar tokens
 
-Son 28 y **todas tienen que quedar en verde antes de commitear**:
+Son 29 y **todas tienen que quedar en verde antes de commitear**:
 
 | Comando | Qué mira |
 |---|---|
@@ -1440,6 +1479,7 @@ Son 28 y **todas tienen que quedar en verde antes de commitear**:
 | `prueba-monedas` | Las monedas: paga solo el que gana, los topes, las atajadas y el historial |
 | `prueba-animaciones` | Las animaciones de gol: festeja solo el goleador, el bot espera, y el catálogo es de OWNER y CO-OWNER |
 | `prueba-mercado` | Historial de precios, cuántos compraron y favoritos (y que no se diga quiénes) |
+| `prueba-scores` | Los carteles de gol: cambian el aviso del marcador, y el catálogo es de OWNER y CO-OWNER |
 
 Las que hablan con la base **no fallan si está apagada**: avisan y saltean esa parte.
 
@@ -1511,7 +1551,7 @@ Cosas que costaron encontrar y conviene no volver a pisar:
 
 1. Tocar los **bloques** en `parches/bloques/` (nunca el final de `script.js` a mano) y correr
    `npm run parchar`.
-2. `node --check script.js` y las **28 pruebas en verde**. No commitear con una en rojo: ya pasó
+2. `node --check script.js` y las **29 pruebas en verde**. No commitear con una en rojo: ya pasó
    una vez de pushear con `prueba-discord` fallando.
 3. Actualizar `README.md` (para la gente) y este archivo (para el que siga programando).
 4. Commit y push.

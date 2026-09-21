@@ -1,5 +1,6 @@
 // =============================================================================
-// MercadoModel — lo que las dos tiendas (camisetas y animaciones) tienen en común:
+// MercadoModel — lo que las tres tiendas (camisetas, animaciones y carteles de gol)
+// tienen en común:
 // cómo se fue moviendo el precio, cuánta gente lo compró y a cuánta le gusta.
 //
 //   anotarPrecio(tipo, clave, centesimas, quien)   guarda un punto del historial
@@ -16,12 +17,14 @@
 const { base } = require("../services/ConexionBase");
 const MonedasModel = require("./MonedasModel");
 
-const TIPOS = ["camiseta", "animacion"];
+// Los tres tipos de cosas que se venden. Si aparece una cuarta, se agrega acá y en
+// cuantosCompraron(), que es lo único que cambia entre una y otra.
+const TIPOS = ["camiseta", "animacion", "score"];
 const PUNTOS_MAXIMOS = 30;   // los últimos cambios, que es lo que se muestra
 
 const revisarTipo = (tipo) => {
   const t = String(tipo || "").trim().toLowerCase();
-  if (!TIPOS.includes(t)) throw new Error("Eso no es una camiseta ni una animación");
+  if (!TIPOS.includes(t)) throw new Error("Eso no es nada de lo que se vende en la tienda");
   return t;
 };
 
@@ -61,9 +64,9 @@ class MercadoModel {
   static async cuantosCompraron(tipo, clave) {
     const t = revisarTipo(tipo);
     const cual = String(clave || "").trim().toLowerCase();
-    return t === "camiseta"
-      ? base().camisetaComprada.count({ where: { equipo: cual } })
-      : base().animacionComprada.count({ where: { animacion: cual } });
+    if (t === "camiseta") return base().camisetaComprada.count({ where: { equipo: cual } });
+    if (t === "animacion") return base().animacionComprada.count({ where: { animacion: cual } });
+    return base().scoreComprado.count({ where: { score: cual } });
   }
 
   static async cuantosFavoritos(tipo, clave) {
@@ -121,9 +124,10 @@ class MercadoModel {
   // Las claves que esa persona marcó, para pintar el corazón en la portada
   static async misFavoritos(nick) {
     const quien = String(nick || "").trim();
-    if (!quien) return { camiseta: [], animacion: [] };
+    const vacio = () => Object.fromEntries(TIPOS.map((t) => [t, []]));
+    if (!quien) return vacio();
     const filas = await base().favorito.findMany({ where: { nick: quien }, select: { tipo: true, clave: true } });
-    const salida = { camiseta: [], animacion: [] };
+    const salida = vacio();
     for (const f of filas) if (salida[f.tipo]) salida[f.tipo].push(f.clave);
     return salida;
   }

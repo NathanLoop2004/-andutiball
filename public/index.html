@@ -136,6 +136,17 @@
     </div>
   </section>
 
+  <!-- Carteles de gol: la misma vidriera -->
+  <section id="seccionScores" hidden>
+    <div class="seccion-titulo">
+      <h2>Carteles de gol</h2>
+      <span class="tenue">Cómo se anuncia tu gol en el chat</span>
+    </div>
+    <div class="vidriera" id="vidrieraScores">
+      <div class="vidriera-pista" id="pistaScores"></div>
+    </div>
+  </section>
+
   <!-- Rachas: las mejores de la historia y las que están vivas -->
   <section id="seccionRachas" hidden>
     <div class="seccion-titulo">
@@ -533,6 +544,21 @@ async function cargarAnimaciones() {
     </a>`);
 }
 
+async function cargarScores() {
+  let scores = [];
+  try {
+    const r = await fetch("/api/scores", { cache: "no-store" });
+    scores = (await r.json()).scores || [];
+  } catch (error) { return; }
+
+  llenarVidriera($("pistaScores"), $("seccionScores"), scores, (s, copia) => `
+    <a class="vidriera-item ancho" href="/frm/score/?c=${encodeURIComponent(s.clave)}" ${copia ? 'tabindex="-1" aria-hidden="true"' : ""}>
+      <span class="cartel-vidriera" style="color:#${esc(s.color)}">${esc(s.ejemplo)}</span>
+      <span class="vidriera-nombre">${esc(s.nombre)}</span>
+      <span class="vidriera-precio">🪙 ${monedasTexto(s.precio)}</span>
+    </a>`);
+}
+
 // ══════════ Rachas ══════════
 async function cargarRachas() {
   let datos;
@@ -563,6 +589,7 @@ async function cargarRachas() {
 Carrusel.cargar();
 cargarCamisetas();
 cargarAnimaciones();
+cargarScores();
 cargarRachas();
 cargarRanking();
 pintar();

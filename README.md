@@ -703,6 +703,21 @@ de ese entorno usa `DATABASE_URL`. La conexión se abre recién cuando alguien l
 Es la primera versión y la vamos a ir cambiando: se toca `prisma/schema.prisma` y se corre
 `npm run base:migrar`.
 
+## 🥅 Carteles de gol
+
+Cuando hacés un gol sale un aviso con el marcador. Podés comprar **tu propio cartel** para que
+salga con tu texto, tu color y tu tamaño de letra, en vez del de siempre.
+
+- Se compran con monedas, como todo lo demás, y se prenden desde **Mi inventario**.
+- En la sala: `!carteles` para ver los tuyos, `!cartel <nombre>` para ponerte uno y
+  `!cartel ninguno` para sacártelo.
+- **Solo sale en tus goles.** Si te hacés un gol en contra, aparece el de siempre.
+
+**Para crearlos** (solo el OWNER y el CO-OWNER): panel → **Carteles**. Escribís el texto con
+huecos como `{jugador}` o `{golesPropios}` — hay botones para meterlos —, elegís el color y el
+tamaño de la letra, y al costado tenés una **vista previa** que imita el chat de HaxBall y se
+actualiza mientras escribís.
+
 ## 🎉 Animaciones de gol
 
 Cuando hacés un gol podés festejar con una animación que compraste con monedas. Hay dos cosas

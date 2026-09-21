@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Carteles de gol · ÑandutíHax</title>
+<link rel="icon" href="/img/logo-chico.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/css/nanduti.css">
+<script src="/js/tema.js"></script>
+<script src="/js/sesion.js"></script>
+<script>if (!Sesion.usuario()) location.replace("/frm/login/?volver=" + encodeURIComponent("/frm/scores/"));</script>
+</head>
+<body>
+
+<header class="barra ancha">
+  <a class="marca" href="/"><img src="/img/logo-chico.png" alt=""><span>ÑandutíHax</span></a>
+  <div class="derecha" id="derecha"></div>
+</header>
+
+<main class="contenido ancho" id="pantalla">
+  <div class="cabecera">
+    <div>
+      <h1>Carteles de gol</h1>
+      <p>Cómo se ve el aviso con el marcador cuando alguien hace un gol. Las salas los toman en unos segundos, sin reiniciar.</p>
+    </div>
+    <button class="boton principal" type="button" id="nuevo">Nuevo cartel</button>
+  </div>
+
+  <div class="aviso" id="aviso"></div>
+
+  <div class="tarjeta">
+    <p class="tenue" id="cargando">Cargando…</p>
+    <div class="tabla-envoltorio">
+      <table class="tabla tabla-animaciones" id="tabla" hidden>
+        <thead>
+          <tr><th>Cartel</th><th>Cómo se ve</th><th class="der">Precio</th><th>Estado</th><th></th></tr>
+        </thead>
+        <tbody id="cuerpo"></tbody>
+      </table>
+    </div>
+    <p class="tenue" id="vacio" hidden>Todavía no hay ninguno. Creá el primero con “Nuevo cartel”.</p>
+  </div>
+</main>
+
+<div class="fondo-modal" id="fondoModal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloModal">
+    <div class="modal-cabeza">
+      <h2 id="tituloModal">Cartel de gol</h2>
+      <button class="boton chico" type="button" id="cerrarModal">Cerrar</button>
+    </div>
+
+    <div class="modal-cuerpo">
+      <!-- La previsualización: el chat de HaxBall, con el cartel como se va a ver -->
+      <div class="cofre-titulo">Cómo se va a ver en el chat</div>
+      <div class="chat-previa">
+        <div class="chat-linea tenue">JINDER: dale que va</div>
+        <div class="chat-linea" id="previaCartel">—</div>
+        <div class="chat-linea tenue">FAXSS: uhhh</div>
+      </div>
+
+      <div class="editor-campos" style="margin-top:16px">
+        <label>Nombre <input type="text" id="edNombre" maxlength="40" placeholder="Golazo" autocomplete="off"></label>
+        <label>Descripción <input type="text" id="edDescripcion" maxlength="200" placeholder="Para los que la clavan al ángulo" autocomplete="off"></label>
+
+        <label>El cartel
+          <textarea id="edPlantilla" rows="3" maxlength="240" placeholder="⚽ ¡GOL DE {jugador}! {equipo} {golesPropios} 🆚 {golesRival} {rival}"></textarea>
+          <span class="tenue" id="cuentaLargo"></span>
+        </label>
+
+        <div>
+          <span class="tenue">Tocá un hueco para agregarlo:</span>
+          <div class="teclado-emoji" id="huecos"></div>
+        </div>
+
+        <label class="linea">Color
+          <input type="color" id="edColor" value="#FFD700">
+          <input type="text" id="edColorTexto" maxlength="7" style="max-width:110px">
+        </label>
+
+        <label>Tamaño de la letra
+          <select id="edEstilo">
+            <option value="bold">Grande y en negrita</option>
+            <option value="normal">Normal</option>
+            <option value="small">Chiquita</option>
+          </select>
+        </label>
+
+        <label>Sonido
+          <select id="edSonido">
+            <option value="2">El de siempre</option>
+            <option value="1">Suave</option>
+            <option value="0">Sin sonido</option>
+          </select>
+        </label>
+
+        <label>Precio en monedas <input type="number" id="edPrecio" min="0" step="0.1" placeholder="sin precio"></label>
+        <label class="linea"><input type="checkbox" id="edEnTienda"> Mostrarlo en la tienda</label>
+        <label class="linea"><input type="checkbox" id="edActivo" checked> Activo</label>
+      </div>
+    </div>
+
+    <div class="modal-pie">
+      <button class="boton peligro" type="button" id="borrar" hidden>Borrar</button>
+      <button class="boton principal" type="button" id="guardar">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+Sesion.pintarBarra("derecha");
+Sesion.pintarNavAdmin("scores");
+
+const $ = (id) => document.getElementById(id);
+const esc = Sesion.escapar;
+
+function avisar(texto, clase) {
+  $("aviso").className = "aviso" + (texto ? " " + clase : "");
+  $("aviso").textContent = texto;
+  clearTimeout(avisar._t);
+  if (texto && clase !== "mal") avisar._t = setTimeout(() => avisar(""), 4000);
+}
+
+// Solo OWNER y CO-OWNER. El candado de verdad está en la API (puedeVerRangos); esto es
+// para no mostrar una pantalla que igual no va a poder guardar nada.
+if (!(Sesion.usuario() || {}).rangos) {
+  $("pantalla").innerHTML = '<div class="tarjeta"><h2>No tenés permiso</h2><p>Los carteles de gol los arman el OWNER y el CO-OWNER.</p></div>';
+  throw new Error("sin permiso");
+}
+
+let scores = [];
+let huecos = [];
+let largoMaximo = 240;
+let editando = null;
+
+const NOMBRE_ESTILO = { bold: "Grande", normal: "Normal", small: "Chiquita" };
+
+// El ejemplo con el que se dibuja la previsualización: los mismos datos que usa el servidor
+const ejemploDe = () => Object.fromEntries(huecos.map((h) => [h.hueco.slice(1, -1), h.ejemplo]));
+
+// La misma cuenta que hace ScoresModel.armar() y el bloque de la sala
+function armar(plantilla, datos) {
+  let texto = String(plantilla || "");
+  for (const nombre of Object.keys(datos)) {
+    texto = texto.split("{" + nombre + "}").join(datos[nombre] == null ? "" : String(datos[nombre]));
+  }
+  return texto.replace(/[ \t]{2,}/g, "  ").trim();
+}
+
+async function cargar() {
+  try {
+    const r = await Sesion.pedir("/api/scores/panel");
+    scores = r.scores || [];
+    huecos = r.huecos || [];
+    largoMaximo = r.largoMaximo || 240;
+    $("huecos").innerHTML = huecos
+      .map((h) => `<button type="button" class="boton chico" data-hueco="${esc(h.hueco)}" title="${esc(h.que)}">${esc(h.hueco)}</button>`)
+      .join("");
+    pintar();
+  } catch (e) {
+    $("cargando").textContent = "No se pudo cargar: " + e.message;
+  }
+}
+
+function pintar() {
+  $("cargando").hidden = true;
+  $("tabla").hidden = scores.length === 0;
+  $("vacio").hidden = scores.length > 0;
+  $("cuerpo").innerHTML = scores.map((s) => `
+    <tr>
+      <td>
+        <strong>${esc(s.nombre)}</strong>
+        <div class="tenue chico">${esc(s.descripcion || NOMBRE_ESTILO[s.estilo] || "")}</div>
+      </td>
+      <td><span class="cartel-mini" style="color:#${esc(s.color)}">${esc(s.ejemplo)}</span></td>
+      <td class="der">${s.sinPrecio ? '<span class="tenue">sin precio</span>' : "🪙 " + s.precio}</td>
+      <td>
+        ${s.enTienda ? '<span class="etiqueta ok">En la tienda</span>' : '<span class="etiqueta">Guardado</span>'}
+        ${s.activo ? "" : '<span class="etiqueta ban">Apagado</span>'}
+      </td>
+      <td class="der sin-cortar"><button class="boton chico" data-editar="${esc(s.clave)}">Editar</button></td>
+    </tr>`).join("");
+}
+
+// ── La previsualización, en vivo ──
+function pintarPrevia() {
+  const texto = armar($("edPlantilla").value, ejemploDe());
+  const linea = $("previaCartel");
+  linea.textContent = texto || "(escribí algo arriba)";
+  linea.style.color = $("edColorTexto").value || "#FFD700";
+  linea.style.fontWeight = $("edEstilo").value === "bold" ? "700" : "400";
+  linea.style.fontSize = $("edEstilo").value === "small" ? "11px" : $("edEstilo").value === "bold" ? "15px" : "13px";
+  const largo = $("edPlantilla").value.length;
+  $("cuentaLargo").textContent = largo + " de " + largoMaximo + " caracteres" + (largo > largoMaximo ? " — se pasa" : "");
+}
+
+for (const id of ["edPlantilla", "edEstilo"]) $(id).addEventListener("input", pintarPrevia);
+$("edColor").addEventListener("input", () => { $("edColorTexto").value = $("edColor").value.toUpperCase(); pintarPrevia(); });
+$("edColorTexto").addEventListener("input", () => {
+  const v = $("edColorTexto").value.trim();
+  if (/^#?[0-9A-Fa-f]{6}$/.test(v)) $("edColor").value = v.startsWith("#") ? v : "#" + v;
+  pintarPrevia();
+});
+
+$("huecos").onclick = (ev) => {
+  const b = ev.target.closest("[data-hueco]");
+  if (!b) return;
+  const campo = $("edPlantilla");
+  const desde = campo.selectionStart || campo.value.length;
+  campo.value = campo.value.slice(0, desde) + b.dataset.hueco + campo.value.slice(campo.selectionEnd || desde);
+  campo.focus();
+  campo.selectionStart = campo.selectionEnd = desde + b.dataset.hueco.length;
+  pintarPrevia();
+};
+
+// ── Abrir, guardar, borrar ──
+function abrir(clave) {
+  editando = clave || null;
+  const s = clave ? scores.find((x) => x.clave === clave) : null;
+  $("tituloModal").textContent = s ? "Editar " + s.nombre : "Nuevo cartel";
+  $("edNombre").value = s ? s.nombre : "";
+  $("edDescripcion").value = s && s.descripcion ? s.descripcion : "";
+  $("edPlantilla").value = s ? s.plantilla : "⚽ ¡GOL DE {jugador}! {equipo} {golesPropios} 🆚 {golesRival} {rival}";
+  $("edColorTexto").value = "#" + (s ? s.color : "FFD700");
+  $("edColor").value = "#" + (s ? s.color : "FFD700");
+  $("edEstilo").value = s ? s.estilo : "bold";
+  $("edSonido").value = String(s ? s.sonido : 2);
+  $("edPrecio").value = s && !s.sinPrecio ? s.precio : "";
+  $("edEnTienda").checked = s ? s.enTienda : false;
+  $("edActivo").checked = s ? s.activo : true;
+  $("borrar").hidden = !s;
+  pintarPrevia();
+  $("fondoModal").hidden = false;
+}
+
+const cerrar = () => { $("fondoModal").hidden = true; };
+$("nuevo").onclick = () => abrir(null);
+$("cerrarModal").onclick = cerrar;
+document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && !$("fondoModal").hidden) cerrar(); });
+$("cuerpo").onclick = (ev) => {
+  const b = ev.target.closest("[data-editar]");
+  if (b) abrir(b.dataset.editar);
+};
+
+// La clave sale sola del nombre: es un dato interno
+function claveDelNombre(nombre) {
+  const base = String(nombre || "")
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 26);
+  const raiz = base.length >= 2 ? base : "cartel";
+  if (!scores.some((s) => s.clave === raiz)) return raiz;
+  for (let i = 2; i < 100; i++) if (!scores.some((s) => s.clave === raiz + "-" + i)) return raiz + "-" + i;
+  return raiz + "-" + Date.now().toString().slice(-4);
+}
+
+$("guardar").onclick = async () => {
+  const nombre = $("edNombre").value.trim();
+  if (!nombre) return avisar("Ponele un nombre", "mal");
+  if (!$("edPlantilla").value.trim()) return avisar("Escribí cómo se ve el cartel", "mal");
+
+  const clave = editando || claveDelNombre(nombre);
+  const cuerpo = {
+    nombre,
+    descripcion: $("edDescripcion").value.trim(),
+    plantilla: $("edPlantilla").value.trim(),
+    color: $("edColorTexto").value.replace(/^#/, ""),
+    estilo: $("edEstilo").value,
+    sonido: Number($("edSonido").value),
+    enTienda: $("edEnTienda").checked,
+    activo: $("edActivo").checked,
+  };
+  const precio = $("edPrecio").value.trim();
+  if (precio !== "") cuerpo.precio = Number(precio);
+
+  try {
+    await Sesion.pedir("/api/scores/" + encodeURIComponent(clave), { method: "PUT", body: JSON.stringify(cuerpo) });
+    cerrar();
+    avisar(editando ? "Cartel guardado" : "Cartel creado", "bien");
+    cargar();
+  } catch (e) { avisar(e.message, "mal"); }
+};
+
+$("borrar").onclick = async () => {
+  if (!editando) return;
+  const s = scores.find((x) => x.clave === editando);
+  if (!confirm('¿Borrar "' + (s ? s.nombre : editando) + '"? También se lo saca a los que lo compraron.')) return;
+  try {
+    await Sesion.pedir("/api/scores/" + encodeURIComponent(editando), { method: "DELETE" });
+    cerrar();
+    avisar("Cartel borrado", "bien");
+    cargar();
+  } catch (e) { avisar(e.message, "mal"); }
+};
+
+cargar();
+</script>
+</body>
+</html>

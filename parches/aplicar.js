@@ -393,6 +393,9 @@ const BLOQUES = [
   { archivo: "monedas.txt", marca: "🪙 MONEDAS", nombre: "🪙 Monedas", siFalta: () => true },
   // Va DESPUÉS de elo.txt, que es donde se declara avisarAlPanel()
   { archivo: "animaciones.txt", marca: "🎉 ANIMACIONES DE GOL", nombre: "🎉 Animaciones de gol", siFalta: () => true },
+  // Va DESPUÉS de animaciones.txt: los dos envuelven onTeamGoal y este tiene que quedar
+  // más afuera, para poder cambiar el aviso que arma el handler del autor.
+  { archivo: "scores.txt", marca: "🥅 CARTELES DE GOL", nombre: "🥅 Carteles de gol", siFalta: () => true },
   { archivo: "avisos.txt", marca: "🔕 AVISOS SIN SPAM", nombre: "🔕 Avisos sin spam", siFalta: () => true },
   { archivo: "config.txt", marca: "⚙️ CONFIGURACIÓN DESDE LA BASE", nombre: "⚙️ Configuración desde la base", siFalta: () => true },
   { archivo: "sin-webhooks.txt", marca: "🔒 NADA SE VA A DISCORD DESDE LA SALA", nombre: "🔒 Sin webhooks en la sala", siFalta: () => true },
