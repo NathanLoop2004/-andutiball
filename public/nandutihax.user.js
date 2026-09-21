@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ÑandutíHax
 // @namespace    https://nandutihax.com/
-// @version      1.2.0
+// @version      1.2.1
 // @description  Un panel de ÑandutíHax arriba del juego: el marcador, quién está en cancha y el ELO de cada uno, en vivo.
 // @author       Jinder
 // @icon         https://nandutihax.com/img/logo-chico.png
@@ -148,7 +148,7 @@ function arrancarNandutiHax() {
   };
   montar();
   // Para poder comprobar en la consola (F12) que la versión nueva está andando
-  console.log("[NandutiHax] panel listo, version 1.2.0");
+  console.log("[NandutiHax] panel listo, version 1.2.1");
 
   // Se acuerda de dónde lo dejaste
   if (guardado.x !== undefined && guardado.y !== undefined) {
@@ -309,19 +309,27 @@ function arrancarNandutiHax() {
 // palabras distintas y siguen saliendo igual.
 //
 // Tiene que correr ANTES que el juego (@run-at document-start), porque las texturas se
-// arman una sola vez. Y sobre unsafeWindow: el gestor de userscripts corre en un mundo
-// aparte, y si se parchea el prototipo de ese mundo la página no se entera.
+// arman una sola vez.
+//
+// EL PARCHE VA INYECTADO EN LA PÁGINA, no en el userscript. Los gestores de userscripts
+// corren el código en un mundo aparte, con SUS PROPIOS prototipos: parchear ahí el
+// CanvasRenderingContext2D no cambia nada para el juego, y eso es exactamente lo que pasó
+// en la primera versión (el cartel seguía saliendo). Como haxball.com no manda ninguna
+// CSP, se le puede meter un <script> a la página y ahí sí el parche queda del lado bueno.
+// unsafeWindow queda como respaldo, por si algún día no se pudiera inyectar.
 // =============================================================================
-function sacarElCartelDeHaxball() {
-  const PALABRAS = { Red: 1, Blue: 1, "Scores!": 1 };
-  const W = (typeof unsafeWindow !== "undefined" && unsafeWindow) || window;
-  const proto = W.CanvasRenderingContext2D && W.CanvasRenderingContext2D.prototype;
-  if (!proto || proto.__nhSinCartel) return false;
 
-  const original = proto.fillText;
+// Ojo: esta función se convierte a texto y se ejecuta adentro de la página, así que tiene
+// que bastarse sola (nada de variables de afuera).
+function parcheDelLienzo(W) {
+  W = W || window;
+  var PALABRAS = { Red: 1, Blue: 1, "Scores!": 1 };
+  var proto = W.CanvasRenderingContext2D && W.CanvasRenderingContext2D.prototype;
+  if (!proto || proto.__nhSinCartel) return;
+  var original = proto.fillText;
   proto.fillText = function (texto) {
     try {
-      const lienzo = this.canvas;
+      var lienzo = this.canvas;
       if (lienzo && !lienzo.isConnected && lienzo.height === 90 &&
           PALABRAS[String(texto)] && String(this.font).indexOf("70px") >= 0) {
         return;                       // este es el cartelón del gol: no se dibuja
@@ -330,6 +338,38 @@ function sacarElCartelDeHaxball() {
     return original.apply(this, arguments);
   };
   proto.__nhSinCartel = true;
+  W.__nhCartelSacado = true;
+}
+
+function sacarElCartelDeHaxball() {
+  const codigo = "(" + parcheDelLienzo.toString() + ")(window);";
+
+  // 1. Lo de siempre: un <script> propio, que la página ejecuta como si fuera suyo
+  const meterEnLaPagina = () => {
+    const destino = document.head || document.documentElement;
+    if (!destino) return false;
+    const etiqueta = document.createElement("script");
+    etiqueta.textContent = codigo;
+    destino.appendChild(etiqueta);
+    etiqueta.remove();                // ya corrió: no hace falta dejarlo en el DOM
+    return true;
+  };
+
+  if (!meterEnLaPagina()) {
+    // Todavía no existe ni el <html> (pasa con document-start): lo metemos apenas aparezca
+    const ojo = new MutationObserver(() => { if (meterEnLaPagina()) ojo.disconnect(); });
+    ojo.observe(document, { childList: true, subtree: true });
+  }
+
+  // 2. Respaldo: el mundo del userscript. Si resulta ser el mismo de la página, no hace
+  //    nada (el parche de arriba ya dejó la marca puesta).
+  try {
+    const W = (typeof unsafeWindow !== "undefined" && unsafeWindow) || window;
+    if (W.CanvasRenderingContext2D && !W.CanvasRenderingContext2D.prototype.__nhSinCartel) {
+      parcheDelLienzo(W);
+    }
+  } catch (e) { /* si el gestor no deja, ya está el <script> inyectado */ }
+
   return true;
 }
 
@@ -456,7 +496,8 @@ function arrancarTodo() {
 // Esto NO toca el DOM y tiene que ser lo primero de todo, antes de que el juego arme sus
 // texturas: por eso va suelto acá y no adentro de arrancarTodo()
 if (window.top !== window.self) {
-  console.log("[NandutiHax] cartel de HaxBall sacado del lienzo:", sacarElCartelDeHaxball());
+  sacarElCartelDeHaxball();
+  console.log("[NandutiHax] parche del lienzo inyectado en la pagina (sin cartel de HaxBall)");
 }
 
 if (document.body) arrancarTodo();

@@ -1306,7 +1306,7 @@ con Ctrl + C".
   colgar del `body` si HaxBall rehace la pantalla. Al depurar: en la consola tiene que salir
   `[NandutiHax] panel listo, version X` y `[NandutiHax] cartel de gol enganchado`.
 
-### El cartel de gol (v1.2.0)
+### El cartel de gol (v1.2.1)
 
 Cuando alguien convierte, **se le saca a HaxBall su "Blue Scores!" y en su lugar aparece el
 cartel que el goleador compró** en la tienda. El cartel no se inventa: es el aviso que el host
@@ -1335,13 +1335,20 @@ Dos cosas imprescindibles, las dos aprendidas a los golpes:
 - **`@run-at document-start`**: las texturas se arman una sola vez al cargar. Si el parche llega
   después, no sirve. Por eso el parche del lienzo va **suelto al final del archivo** (no toca el
   DOM) y todo lo que sí toca el DOM espera al `DOMContentLoaded`.
-- **`unsafeWindow`**: el gestor de userscripts corre en un mundo aparte, con sus propios
-  prototipos. Parcheando el `CanvasRenderingContext2D` del mundo del script, la página **no se
-  entera**. Va `(typeof unsafeWindow !== "undefined" && unsafeWindow) || window`.
+- **EL PARCHE VA INYECTADO EN LA PÁGINA, no en el userscript** (v1.2.1). Esta es LA trampa: los
+  gestores de userscripts corren el código en **otro mundo de JavaScript**, con sus propios
+  prototipos. En la v1.2.0 se parcheaba `CanvasRenderingContext2D.prototype` de ese mundo (con
+  `unsafeWindow` como respaldo) y **la página no se enteraba**: el cartel seguía saliendo en el
+  navegador del usuario aunque la prueba diera verde. Como haxball.com **no manda ninguna CSP**
+  (comprobado con `curl -I`), se le mete un `<script>` con el parche adentro y ahí sí queda del
+  lado correcto. `unsafeWindow` quedó solo como respaldo.
 
-Se prueba con `scratchpad/probar-sin-cartel.js`, que copia el `bq()` de HaxBall y cuenta los
-píxeles pintados: 0 para "Red", "Blue" y "Scores!", y > 0 para "Paused", "Victorious!" y un
-jugador llamado "Blue".
+Se prueba con `scratchpad/probar-sin-cartel.js`, que copia el `bq()` de HaxBall, cuenta los
+píxeles pintados (0 para "Red", "Blue" y "Scores!"; > 0 para "Paused", "Victorious!" y un jugador
+llamado "Blue") y lo hace **en los dos mundos**: el de la página y uno aparte creado con CDP
+(`Page.addScriptToEvaluateOnNewDocument` con `worldName`), que es el caso de Tampermonkey. Correr
+la prueba en los dos es obligatorio: con el mundo de la página sola, la v1.2.0 daba verde estando
+rota.
 
 - El host le pega al final una **marca invisible**, dos espacios de ancho cero
   (`MarcaParaLaExtension = "​​"` en `parches/bloques/scores.txt`). No se ve en el chat
