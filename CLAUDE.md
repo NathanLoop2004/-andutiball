@@ -1253,27 +1253,60 @@ botón, el ítem "La extensión" en el menú de la cuenta (`public/js/sesion.js`
 `sitemap.xml`. La foto es `public/img/extension.png` (286×306, el panel de verdad corrido con
 Puppeteer y recortado a `deviceScaleFactor: 2`); se rehace si el panel cambia de pinta.
 
-**POR QUÉ NO CAMBIA EL MARCADOR DE HAXBALL.** Es la pregunta que siempre vuelve. Dos paredes, y
-las dos son definitivas:
+**QUÉ SE PUEDE Y QUÉ NO (corregido el 21/09/2026, lo anterior estaba mal).** Acá hay dos
+preguntas distintas que se venían mezclando:
 
-1. **El host no puede tocar la pantalla del jugador.** `script.js` corre en *nuestra* página de
-   Puppeteer, que es la del host y no muestra ningún partido. Cada jugador está en su propio
-   navegador, en `haxball.com/play`, conectado por red. Entre los dos solo viaja lo que la API
-   permite: posiciones, colores de equipo, avatares y chat. No hay canal para mandar HTML ni CSS.
-2. **Ese marcador está dibujado adentro del lienzo del juego**, no es un elemento de la página:
-   ni parado en la máquina del jugador se lo puede pisar con CSS.
+1. **Desde el HOST no se puede tocar la pantalla del jugador, y eso sigue siendo cierto.**
+   `script.js` corre en *nuestra* página de Puppeteer. Entre el host y cada jugador solo viaja lo
+   que la API permite: posiciones, colores de equipo, avatares y chat. No hay canal para mandar
+   HTML ni CSS.
+2. **Desde la EXTENSIÓN sí, porque corre en el navegador del jugador.** Y ahí se comprobó,
+   entrando a una sala nuestra con Puppeteer (`[data-hook]` de HaxBall), que:
+   - **el marcador de arriba ES HTML**: `<div class="scoreboard">` con
+     `[data-hook="red-score"]`, `[data-hook="blue-score"]`, los dos `.teamicon` y
+     `.game-timer-view`, todo encima del lienzo. **Se puede cambiar** (todavía no lo hacemos).
+   - **el chat también es HTML**: cada aviso es un `<p class="announcement" style="color:…">`.
+   - lo único pintado adentro del lienzo es **la cancha y el "Blue Scores!"** del gol
+     (`new da(["Blue","Scores!"], …)` en `game-min.js`). Eso **no se edita, pero se tapa**.
 
-Por eso la extensión pone un panel **al lado**, que sí es HTML nuestro. Lo único del marcador de
-HaxBall que el host controla son los dos cuadraditos de color (`setTeamColors`), o sea las
-camisetas.
+Antes este archivo (y la web) decían que el marcador era parte del lienzo. Era falso: solo el
+cartelón del gol lo es.
 
 **Es un userscript, no una extensión de la tienda de Chrome**: se instala con un clic desde
 nuestra web, se actualiza solo (`updateURL`) y no hay que esperar ninguna revisión. Corre con
 Tampermonkey o Violentmonkey.
 
 - Usa `GM_xmlhttpRequest` **a propósito**: un `fetch` normal desde haxball.com choca con CORS.
-- Corta si está adentro de un iframe (`window.top !== window.self`), o el panel saldría dos veces.
 - Se acuerda de dónde lo arrastraste y de si lo dejaste plegado (`localStorage`).
+- **Corre en dos ventanas distintas** (`arrancarTodo()`): en la de arriba va el panel del
+  costado; **adentro del iframe `game.html` va el cartel de gol**. El juego entero vive en ese
+  iframe, así que el chat y el marcador solo se ven desde adentro.
+- **El `@run-at` importa**: con `document-start` el script corría antes de que existiera el
+  `<html>`, `document.documentElement` era `null` y moría con "Cannot read properties of null
+  (reading 'appendChild')" **sin dibujar nada**. Ahora espera al `DOMContentLoaded` y se vuelve a
+  colgar del `body` si HaxBall rehace la pantalla. Al depurar: en la consola tiene que salir
+  `[NandutiHax] panel listo, version X` y `[NandutiHax] cartel de gol enganchado`.
+
+### El cartel de gol (v1.1.0)
+
+Cuando alguien convierte, **se tapa el "Blue Scores!" de HaxBall con el cartel que el goleador
+compró** en la tienda. El cartel no se inventa: es el aviso que el host ya manda al chat.
+
+- El host le pega al final una **marca invisible**, dos espacios de ancho cero
+  (`MarcaParaLaExtension = "​​"` en `parches/bloques/scores.txt`). No se ve en el chat
+  de nadie y es lo único que distingue ese aviso de cualquier otro. `prueba-scores` comprueba que
+  esté y que no agregue nada visible.
+- La extensión escucha `[data-hook="log-contents"]` con un `MutationObserver`, agarra el `<p>`
+  con la marca y lo muestra grande sobre el lienzo, **con el color que eligió el comprador**
+  (sale del `style.color` del propio `<p>`).
+- **Respaldo sin cartel comprado**: también mira `[data-hook="red-score"]` / `"blue-score"`, que
+  cambian en el instante del gol. Si a los 900 ms no llegó ningún aviso marcado, muestra un
+  "¡GOL! 2 - 1" con el color del equipo. Así los goles en contra y la gente sin cartel también
+  ven algo. Los números salen del marcador **del propio cliente**: no hay atraso de red.
+
+Probarlo: `scratchpad/probar-cartel.js` entra a una sala de verdad con el userscript puesto
+(también en el iframe), mete en el chat el aviso tal cual con la marca y comprueba el cartel, que
+se vaya solo a los 3,2 s, y el respaldo moviendo el marcador a mano.
 
 **Los datos salen de `GET /api/publico/salas`** (`PublicoModel` + `PublicoController`), que es
 nuevo y **a propósito devuelve un subconjunto chico**: nombre de la sala, si está abierta, el

@@ -714,9 +714,10 @@ tenés sesión, el ítem **La extensión** en el menú de tu cuenta.
 
 Se puede arrastrar, se pliega y se acuerda de dónde lo dejaste.
 
-**No cambia el marcador que dibuja HaxBall** (los cuadraditos con el resultado y el reloj): eso
-está dibujado adentro del lienzo del juego y no se puede reemplazar desde afuera. Por eso el
-panel va al lado.
+**Y tu cartel de gol en pantalla.** Cuando convertís, en vez del "Blue Scores!" de siempre sale
+**el cartel que compraste en la tienda**, grande, arriba de la cancha y con tu color. Lo ven los
+que tengan la extensión instalada; en el chat el cartel le sigue saliendo a todos igual. Si el
+goleador no tiene ninguno comprado (o es gol en contra), sale un "¡GOL!" con el resultado.
 
 ## 🏆 Ligas de las camisetas
 

@@ -157,11 +157,11 @@ var CantidadCambiarTamano = 1;
 // ▇▇▇▇▇▇▇ ⚽👕 CAMISETAS POR DEFECTO ⚽👕 ▇▇▇▇▇▇▇
 
 // CAMISETA EQUIPO RED 🔴
-var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
+var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
 var NombreEquipoRojo = "OLIMPIA";
 
 // CAMISETA EQUIPO BLUE 🔵
-var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
+var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
 var NombreEquipoAzul = "CERRO PORTEÑO";
 
 
@@ -21296,6 +21296,169 @@ function festejoDeSiempre(idJugador, emoji) {
 	};
 
 	console.log("🎉 Animaciones de gol listas");
+})();
+
+
+// ▇▇▇▇▇▇▇▇▇ 🥅 CARTELES DE GOL — ÑandutíHax ▇▇▇▇▇▇▇▇▇
+// El que hizo el gol puede tener comprado su propio cartel: en vez del aviso de siempre
+// ("⚡ ¡GOOOLAZO!   OLIMPIA 1 🆚 0 CERRO   A los 03:12 🕒") sale el suyo, con su texto,
+// su color y su estilo.
+//
+// CÓMO SE ENGANCHA. El aviso lo arma el script adentro de su propio onTeamGoal, así que no
+// hay función que redeclarar. Se usa el mismo truco que el color del nombre por ELO:
+// se envuelve room.sendAnnouncement SOLO mientras corre el handler del gol, se reconoce el
+// aviso del marcador (es el único que lleva 🆚) y se lo cambia por el del jugador.
+// Todo lo demás del handler sale igual que siempre.
+//
+// Si el que convirtió no tiene cartel comprado, o fue gol en contra, no se toca nada.
+// La lista la deja el lanzador en window.__SCORES (nick en minúscula → el cartel).
+
+var CartelesDeGolActivos = true;
+var MarcaDelCartelDeGol = "🆚";   // por acá se reconoce el aviso del marcador
+
+function cartelDe(jugador) {
+	if (!jugador) return null;
+	return (window.__SCORES || {})[String(jugador.name).toLowerCase()] || null;
+}
+
+// Reemplaza los huecos. Es la MISMA cuenta que hace ScoresModel.armar() del lado de la web,
+// así lo que se ve al armarlo en el panel es lo que sale acá.
+function armarCartel(plantilla, datos) {
+	var texto = String(plantilla || "");
+	for (var nombre in datos) {
+		var valor = datos[nombre] === null || datos[nombre] === undefined ? "" : String(datos[nombre]);
+		texto = texto.split("{" + nombre + "}").join(valor);
+	}
+	return texto.replace(/[ \t]{2,}/g, "  ").trim();
+}
+
+// Los datos del gol, sacados de lo que ya sabe el script
+function datosDelGol(equipoQueConvirtio) {
+	var marcador = { red: 0, blue: 0, time: 0 };
+	try { marcador = room.getScores() || marcador; } catch (e) {}
+
+	var esRojo = equipoQueConvirtio === 1;
+	var propios = esRojo ? marcador.red : marcador.blue;
+	var rival = esRojo ? marcador.blue : marcador.red;
+
+	var minuto = "";
+	try { minuto = typeof secondsToMinutes === "function" ? secondsToMinutes(Math.floor(marcador.time)) : ""; } catch (e) {}
+
+	var nombreRojo = typeof teamRed !== "undefined" && teamRed ? teamRed : "Rojo";
+	var nombreAzul = typeof teamBlue !== "undefined" && teamBlue ? teamBlue : "Azul";
+
+	var quien = "";
+	var asistio = "";
+	try {
+		quien = (game && game.lastKickerName) || "";
+		asistio = (game && game.secondLastKickerName) || "";
+	} catch (e) {}
+
+	return {
+		jugador: quien,
+		equipo: esRojo ? nombreRojo : nombreAzul,
+		rival: esRojo ? nombreAzul : nombreRojo,
+		golesPropios: propios,
+		golesRival: rival,
+		minuto: minuto,
+		asistencia: asistio,
+	};
+}
+
+(function () {
+	var anteriorGolCartel = room.onTeamGoal;
+	room.onTeamGoal = function (equipo) {
+		var cartel = null;
+		var datos = null;
+
+		if (CartelesDeGolActivos) {
+			try {
+				// Solo el que convirtió: el gol en contra no le pone el cartel a nadie
+				var enContra = typeof game !== "undefined" && game && game.lastKickerTeam && game.lastKickerTeam !== equipo;
+				if (!enContra) {
+					var jugador = room.getPlayerList().filter(function (j) { return j.id === (game && game.lastKickerId); })[0];
+					cartel = cartelDe(jugador);
+					if (cartel) datos = datosDelGol(equipo);
+				}
+			} catch (e) { cartel = null; }
+		}
+
+		// Sin cartel propio: todo sigue igual que siempre
+		if (!cartel || !datos) {
+			if (typeof anteriorGolCartel === "function") anteriorGolCartel(equipo);
+			return;
+		}
+
+		// Con cartel: se cambia SOLO el aviso del marcador, mientras corre el handler
+		var original = room.sendAnnouncement;
+		var yaCambiado = false;
+		room.sendAnnouncement = function (mensaje, destino, color, estilo, sonido) {
+			if (!yaCambiado && destino == null && String(mensaje || "").indexOf(MarcaDelCartelDeGol) >= 0) {
+				yaCambiado = true;
+				try {
+					return original.call(
+						room,
+						armarCartel(cartel.plantilla, datos),
+						null,
+						parseInt(cartel.color, 16),
+						cartel.estilo || "bold",
+						typeof cartel.sonido === "number" ? cartel.sonido : 2
+					);
+				} catch (e) { /* si algo sale mal, se manda el de siempre */ }
+			}
+			return original.apply(room, arguments);
+		};
+
+		try {
+			if (typeof anteriorGolCartel === "function") anteriorGolCartel(equipo);
+		} finally {
+			room.sendAnnouncement = original;
+		}
+	};
+
+	// !carteles → los que compró · !cartel <nombre> → se lo pone · !cartel ninguno
+	var anteriorChatCartel = room.onPlayerChat;
+	room.onPlayerChat = function (player, message) {
+		var bajo = String(message).trim().toLowerCase();
+		if (bajo !== "!carteles" && bajo !== "!cartel" && bajo.indexOf("!cartel ") !== 0) {
+			return typeof anteriorChatCartel === "function" ? anteriorChatCartel(player, message) : true;
+		}
+
+		var mios = (window.__MIS_SCORES || {})[String(player.name).toLowerCase()] || [];
+		var puesto = cartelDe(player);
+
+		if (bajo === "!carteles" || bajo === "!cartel") {
+			if (!mios.length) {
+				room.sendAnnouncement("🥅 Todavía no tenés carteles de gol. Se compran con monedas en la web de ÑandutíHax.", player.id, 0xFFD100, "bold", 2);
+				if (window.__WEB_URL) room.sendAnnouncement("   " + window.__WEB_URL, player.id, 0x00C853, "small", 0);
+				return false;
+			}
+			room.sendAnnouncement("🥅 Tus carteles: " + mios.map(function (s) { return s.nombre; }).join(" · "), player.id, 0xFFD100, "bold", 2);
+			room.sendAnnouncement("   Te ponés uno con  !cartel " + mios[0].nombre.toLowerCase() + "   (o !cartel ninguno)", player.id, 0x93A1B0, "small", 0);
+			if (puesto) room.sendAnnouncement("   Ahora tenés puesto el de " + puesto.nombre + ".", player.id, 0x93A1B0, "small", 0);
+			return false;
+		}
+
+		var pedido = String(message).trim().slice(8).trim().toLowerCase();
+		if (pedido === "ninguno" || pedido === "ninguna" || pedido === "sacar" || pedido === "-") {
+			avisarAlPanel({ tipo: "score", nick: player.name, clave: null });
+			room.sendAnnouncement("🥅 Te sacaste el cartel: vuelve el de siempre.", player.id, 0xFFD100, "bold", 0);
+			return false;
+		}
+		var elegido = null;
+		for (var k = 0; k < mios.length; k++) {
+			if (mios[k].clave === pedido || mios[k].nombre.toLowerCase() === pedido) { elegido = mios[k]; break; }
+		}
+		if (!elegido) {
+			room.sendAnnouncement("🥅 Ese cartel no es tuyo. Los tuyos: " + (mios.length ? mios.map(function (s) { return s.nombre; }).join(" · ") : "ninguno todavía"), player.id, 0xFF6B6B, "bold", 2);
+			return false;
+		}
+		avisarAlPanel({ tipo: "score", nick: player.name, clave: elegido.clave });
+		room.sendAnnouncement("🥅 Te pusiste el cartel " + elegido.nombre + ". Se va a ver en tu próximo gol.", player.id, 0xFFD100, "bold", 2);
+		return false;
+	};
+
+	console.log("🥅 Carteles de gol listos");
 })();
 
 

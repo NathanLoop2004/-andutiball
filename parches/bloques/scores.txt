@@ -16,6 +16,10 @@
 
 var CartelesDeGolActivos = true;
 var MarcaDelCartelDeGol = "🆚";   // por acá se reconoce el aviso del marcador
+// Marca INVISIBLE (dos espacios de ancho cero) que se le pega al final del cartel de gol.
+// No se ve en el chat de nadie, y es lo que mira la extensión de ÑandutíHax para saber que
+// ESE aviso es el cartel del gol y mostrarlo grande arriba de la cancha.
+var MarcaParaLaExtension = "​​";
 
 function cartelDe(jugador) {
 	if (!jugador) return null;
@@ -99,7 +103,7 @@ function datosDelGol(equipoQueConvirtio) {
 				try {
 					return original.call(
 						room,
-						armarCartel(cartel.plantilla, datos),
+						armarCartel(cartel.plantilla, datos) + MarcaParaLaExtension,
 						null,
 						parseInt(cartel.color, 16),
 						cartel.estilo || "bold",

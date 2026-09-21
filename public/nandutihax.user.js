@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ÑandutíHax
 // @namespace    https://nandutihax.com/
-// @version      1.0.1
+// @version      1.1.0
 // @description  Un panel de ÑandutíHax arriba del juego: el marcador, quién está en cancha y el ELO de cada uno, en vivo.
 // @author       Jinder
 // @icon         https://nandutihax.com/img/logo-chico.png
@@ -15,15 +15,19 @@
 // ==/UserScript==
 
 // =============================================================================
-// QUÉ HACE Y QUÉ NO
+// QUÉ HACE
 //
-// El marcador que dibuja HaxBall arriba de la pantalla (los dos cuadraditos, el 0-0 y el
-// reloj) está DENTRO del lienzo del juego: no es HTML y no se puede pisar con CSS. Esta
-// extensión no lo toca.
+// Dos cosas, en dos ventanas distintas:
 //
-// Lo que hace es poner AL LADO un panel propio de ÑandutíHax, que sí es HTML nuestro, con
-// el marcador, quién está en cada equipo y el ELO de cada uno. Los datos salen de
-// https://nandutihax.com/api/publico/salas, que devuelve solo eso.
+//   1. En la página de HaxBall, un panel al costado con el marcador de la sala que elijas,
+//      quién está en cada equipo y el ELO de cada uno. Sale de
+//      https://nandutihax.com/api/publico/salas, que devuelve solo eso.
+//   2. Adentro del juego (el iframe game.html), el CARTEL DE GOL: cuando alguien convierte,
+//      se tapa el "Blue Scores!" de HaxBall con el cartel que el goleador compró en la
+//      tienda. Ver el comentario de arrancarCartelDeGol().
+//
+// Lo único que sigue sin poder tocarse es lo que está pintado adentro del lienzo (la cancha
+// y ese "Scores!"): se puede tapar, no editar. El marcador de arriba, en cambio, SÍ es HTML.
 //
 // Se pide con GM_xmlhttpRequest a propósito: un fetch normal desde haxball.com choca con
 // CORS. Por eso es un userscript (Tampermonkey/Violentmonkey) y no una extensión de la
@@ -72,7 +76,7 @@ function arrancarNandutiHax() {
   // ── El panel ──
   const css = `
     #nh-panel {
-      position: fixed; top: 12px; right: 12px; z-index: 2147483647;
+      position: fixed; top: 44px; right: 12px; z-index: 2147483647;
       width: 268px; font-family: Inter, system-ui, "Segoe UI", sans-serif; font-size: 13px;
       color: #e8edf2; background: rgba(23, 32, 38, .94); border: 1px solid rgba(255,255,255,.12);
       border-radius: 10px; box-shadow: 0 10px 34px rgba(0,0,0,.45); overflow: hidden;
@@ -145,7 +149,7 @@ function arrancarNandutiHax() {
   };
   montar();
   // Para poder comprobar en la consola (F12) que la versión nueva está andando
-  console.log("[NandutiHax] panel listo, version 1.0.1");
+  console.log("[NandutiHax] panel listo, version 1.1.0");
 
   // Se acuerda de dónde lo dejaste
   if (guardado.x !== undefined && guardado.y !== undefined) {
@@ -268,10 +272,141 @@ function arrancarNandutiHax() {
   window.addEventListener("beforeunload", () => clearInterval(reloj));
 }
 
+// =============================================================================
+// EL CARTEL DE GOL, ARRIBA DE LA CANCHA
+//
+// Cuando alguien convierte, HaxBall dibuja "Blue Scores!" en el medio de la pantalla. Eso
+// está pintado adentro del lienzo, así que no se puede editar… pero sí TAPAR: esto pone
+// encima el cartel que el goleador compró en la tienda, que el host ya manda al chat.
+//
+// Dos cosas hicieron que esto sea posible, y las dos se comprobaron entrando a una sala:
+//   · el chat de HaxBall SÍ es HTML (<p class="announcement" style="color:…">), así que se
+//     lee el cartel tal cual, con su color;
+//   · el marcador de arriba también es HTML ([data-hook="red-score"] / "blue-score"), así
+//     que el gol se detecta en el acto, sin preguntarle nada a ningún servidor.
+//
+// El juego vive adentro del iframe game.html, por eso esta parte corre AHÍ y no en la
+// ventana de arriba (donde va el panel del costado).
+// =============================================================================
+function arrancarCartelDeGol() {
+  "use strict";
+
+  const MARCA = "​​";   // la marca invisible que el host le pega al cartel de gol
+  const DURA = 3200;              // cuánto se queda en pantalla
+  const ESPERA = 900;             // cuánto se le da al cartel del host antes de usar el nuestro
+
+  let capa = null, reloj = null, porLasDudas = null, rojo = null, azul = null, observando = null;
+
+  const estilo = document.createElement("style");
+  estilo.textContent = `
+    #nh-gol {
+      position: fixed; z-index: 2147483647; pointer-events: none;
+      display: flex; align-items: center; justify-content: center; text-align: center;
+      font-family: Inter, system-ui, "Segoe UI", sans-serif; font-weight: 800;
+      background: linear-gradient(180deg, rgba(8,12,16,0) 0%, rgba(8,12,16,.88) 18%, rgba(8,12,16,.88) 82%, rgba(8,12,16,0) 100%);
+      opacity: 0; transition: opacity .18s ease;
+    }
+    #nh-gol.viendose { opacity: 1; }
+    #nh-gol .texto {
+      padding: 0 16px; line-height: 1.25; text-shadow: 0 3px 14px rgba(0,0,0,.85);
+      transform: scale(.86); transition: transform .28s cubic-bezier(.2,1.5,.4,1);
+      word-break: break-word;
+    }
+    #nh-gol.viendose .texto { transform: scale(1); }
+  `;
+
+  const armarCapa = () => {
+    if (capa && capa.isConnected) return capa;
+    capa = document.createElement("div");
+    capa.id = "nh-gol";
+    capa.innerHTML = '<div class="texto"></div>';
+    if (!estilo.isConnected) (document.head || document.documentElement).appendChild(estilo);
+    document.body.appendChild(capa);
+    return capa;
+  };
+
+  // Se acomoda sobre el lienzo, justo donde HaxBall escribe su "Scores!"
+  const mostrar = (texto, color, tamano) => {
+    const lienzo = document.querySelector(".game-state-view canvas");
+    if (!lienzo || !texto) return;
+    const r = lienzo.getBoundingClientRect();
+    if (r.width < 50 || r.height < 50) return;
+
+    const c = armarCapa();
+    c.style.left = r.left + "px";
+    c.style.top = (r.top + r.height * 0.28) + "px";
+    c.style.width = r.width + "px";
+    c.style.height = Math.max(90, r.height * 0.34) + "px";
+
+    const dentro = c.querySelector(".texto");
+    dentro.textContent = texto;
+    dentro.style.color = color || "#ffffff";
+    dentro.style.fontSize = Math.max(16, Math.min(40, (tamano || 1) * r.width / 26)) + "px";
+
+    void c.offsetWidth;                      // para que la animación arranque de nuevo
+    c.classList.add("viendose");
+    clearTimeout(reloj);
+    reloj = setTimeout(() => c.classList.remove("viendose"), DURA);
+  };
+
+  // El cartel del host: un <p class="announcement"> con la marca invisible al final
+  const mirarElChat = (log) => {
+    const ojo = new MutationObserver((cambios) => {
+      cambios.forEach((c) => c.addedNodes.forEach((n) => {
+        if (n.nodeType !== 1) return;
+        const texto = n.textContent || "";
+        if (texto.indexOf(MARCA) < 0) return;
+        clearTimeout(porLasDudas);
+        const color = n.style && n.style.color;
+        mostrar(texto.split(MARCA).join("").trim(), color, 1);
+      }));
+    });
+    ojo.observe(log, { childList: true });
+    return ojo;
+  };
+
+  // El marcador del propio juego: cambia en el instante del gol, sin pasar por ningún servidor
+  const mirarElMarcador = (r, a) => {
+    const leer = (e) => (e.textContent || "").trim();
+    let antes = leer(r) + "-" + leer(a);
+    const ojo = new MutationObserver(() => {
+      const ahora = leer(r) + "-" + leer(a);
+      if (ahora === antes) return;
+      const subioElRojo = Number(leer(r)) > Number(antes.split("-")[0]);
+      antes = ahora;
+      // Si el host manda un cartel comprado, gana ese; si no, a los 900 ms va el nuestro
+      clearTimeout(porLasDudas);
+      porLasDudas = setTimeout(() => {
+        mostrar("¡GOL!   " + leer(r) + " - " + leer(a), subioElRojo ? "#e56e56" : "#5689e5", 1.1);
+      }, ESPERA);
+    });
+    ojo.observe(r, { childList: true, characterData: true, subtree: true });
+    ojo.observe(a, { childList: true, characterData: true, subtree: true });
+    return ojo;
+  };
+
+  // HaxBall rehace su pantalla al entrar y al salir de una sala, así que se revisa seguido
+  setInterval(() => {
+    const log = document.querySelector('[data-hook="log-contents"]');
+    const r = document.querySelector('[data-hook="red-score"]');
+    const a = document.querySelector('[data-hook="blue-score"]');
+    if (!log || !r || !a) return;
+    if (log === observando && r === rojo && a === azul) return;
+    observando = log; rojo = r; azul = a;
+    mirarElChat(log);
+    mirarElMarcador(r, a);
+    console.log("[NandutiHax] cartel de gol enganchado");
+  }, 1500);
+}
+
 // Ojo: según el gestor de userscripts, esto puede correr ANTES de que exista el <html>
 // (document-start). Ahí `document.documentElement` es null y el panel no se dibujaba nunca:
 // tiraba "Cannot read properties of null (reading 'appendChild')" y el script moría en silencio.
-if (window.top === window.self) {
-  if (document.body) arrancarNandutiHax();
-  else document.addEventListener("DOMContentLoaded", arrancarNandutiHax, { once: true });
+function arrancarTodo() {
+  // El panel del costado va en la ventana de arriba; el cartel de gol, adentro del juego
+  if (window.top === window.self) arrancarNandutiHax();
+  else arrancarCartelDeGol();
 }
+
+if (document.body) arrancarTodo();
+else document.addEventListener("DOMContentLoaded", arrancarTodo, { once: true });

@@ -59,6 +59,12 @@ function revisar(titulo, condicion, detalle) {
     anuncios.filter((a) => a.includes("🆚")).length === 1,
     anuncios.filter((a) => a.includes("🆚")).length + " avisos con marcador");
 
+  // La marca invisible para la extensión: va pegada al final y no se ve en el chat
+  revisar("El cartel lleva la marca invisible de la extensión",
+    Boolean(conCartel[0]) && conCartel[0].endsWith("​​"), JSON.stringify(conCartel[0] || "").slice(-24));
+  revisar("Y no le agrega nada visible",
+    Boolean(conCartel[0]) && conCartel[0].replace(/​/g, "") === conCartel[0].slice(0, -2), conCartel[0]);
+
   // Un gol de Beto, que no tiene cartel: el de siempre
   contexto.game.lastKickerId = beto.id;
   contexto.game.lastKickerName = "Beto";
