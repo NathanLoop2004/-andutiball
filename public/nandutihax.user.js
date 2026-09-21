@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ÑandutíHax
 // @namespace    https://nandutihax.com/
-// @version      1.0.0
+// @version      1.0.1
 // @description  Un panel de ÑandutíHax arriba del juego: el marcador, quién está en cancha y el ELO de cada uno, en vivo.
 // @author       Jinder
 // @icon         https://nandutihax.com/img/logo-chico.png
@@ -11,6 +11,7 @@
 // @grant        GM.xmlHttpRequest
 // @downloadURL  https://nandutihax.com/nandutihax.user.js
 // @updateURL    https://nandutihax.com/nandutihax.user.js
+// @run-at       document-idle
 // ==/UserScript==
 
 // =============================================================================
@@ -29,7 +30,7 @@
 // tienda de Chrome: se instala con un clic y no hay que esperar ninguna revisión.
 // =============================================================================
 
-(function () {
+function arrancarNandutiHax() {
   "use strict";
 
   const API = "https://nandutihax.com/api/publico/salas";
@@ -119,7 +120,7 @@
 
   const estilo = document.createElement("style");
   estilo.textContent = css;
-  document.documentElement.appendChild(estilo);
+  (document.head || document.documentElement).appendChild(estilo);
 
   const panel = document.createElement("div");
   panel.id = "nh-panel";
@@ -135,7 +136,14 @@
       <div id="nh-contenido"><div class="nh-vacio">Buscando las salas…</div></div>
       <div id="nh-pie"><span id="nh-cuando">—</span><a href="https://nandutihax.com" target="_blank">nandutihax.com</a></div>
     </div>`;
-  document.documentElement.appendChild(panel);
+  // HaxBall rehace su pantalla cuando entrás a una sala, así que el panel se vuelve a poner
+  // si desapareció (y el estilo con él).
+  const montar = () => {
+    if (!document.body) return;
+    if (!estilo.isConnected) (document.head || document.documentElement).appendChild(estilo);
+    if (!panel.isConnected) document.body.appendChild(panel);
+  };
+  montar();
 
   // Se acuerda de dónde lo dejaste
   if (guardado.x !== undefined && guardado.y !== undefined) {
@@ -237,6 +245,7 @@
   }
 
   async function refrescar() {
+    montar();
     const datos = await pedir();
     if (!datos || !datos.ok) {
       $("nh-contenido").innerHTML = '<div class="nh-vacio">No se pudo hablar con ÑandutíHax.</div>';
@@ -255,4 +264,12 @@
   refrescar();
   reloj = setInterval(refrescar, CADA);
   window.addEventListener("beforeunload", () => clearInterval(reloj));
-})();
+}
+
+// Ojo: según el gestor de userscripts, esto puede correr ANTES de que exista el <html>
+// (document-start). Ahí `document.documentElement` es null y el panel no se dibujaba nunca:
+// tiraba "Cannot read properties of null (reading 'appendChild')" y el script moría en silencio.
+if (window.top === window.self) {
+  if (document.body) arrancarNandutiHax();
+  else document.addEventListener("DOMContentLoaded", arrancarNandutiHax, { once: true });
+}
