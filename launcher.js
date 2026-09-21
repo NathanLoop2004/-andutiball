@@ -718,11 +718,14 @@ api.on("error", (error) => {
   // salas. Sin base quedan en null y la sala simplemente no anuncia nada.
   const refrescarInicio = async () => {
     try {
-      const [inicio, victoria] = await Promise.all([
+      const [inicio, victoria, tiempo] = await Promise.all([
         MomentosModel.elPuesto("inicio"),
         MomentosModel.elPuesto("victoria"),
+        MomentosModel.elPuesto("tiempo"),
       ]);
-      await frame.evaluate((i, v) => { window.__INICIO = i; window.__VICTORIA = v; }, inicio, victoria);
+      await frame.evaluate((i, v, t) => {
+        window.__INICIO = i; window.__VICTORIA = v; window.__TIEMPO = t;
+      }, inicio, victoria, tiempo);
     } catch (error) {
       // Sin base no pasa nada: no salen esos carteles
     }

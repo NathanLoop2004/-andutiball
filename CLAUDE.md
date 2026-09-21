@@ -1283,6 +1283,26 @@ dos mundos. **Hay que volver a ponerlo después del `DOMContentLoaded`**, porque
 reemplaza al cargar el juego y la marca se pierde (el panel decía "sigue puesto" con el parche
 andando).
 
+**LO QUE CUESTA LA EXTENSIÓN, MEDIDO** (`scratchpad/medir-trabajo.js` y `medir-dibujos.js`):
+
+| | Antes (1.5.1) | Ahora (1.6.0) |
+|---|---|---|
+| Pedidos a la API en 40 s (fuera de una sala nuestra) | 15 | **4** |
+| Veces que se rehace el panel en 40 s | 10 | **1** |
+| Memoria de JavaScript | 4,6 MB | 4,6 MB |
+| Elementos de un cartel de un color (36 letras) | 44 | **16** |
+
+Qué se hizo: el panel **no se redibuja si nada cambió** (firma de los datos), **no se pide nada
+con la pestaña oculta**, el ritmo baja a 30 s cuando la sala no es nuestra, el atributo
+`data-nh-activo` solo se escribe si cambió, y las **letras seguidas del mismo color van en un
+solo elemento** (se ve idéntico; con arcoíris no hay nada que juntar y queda una por letra).
+
+**Ojo con medir tiempos en esta máquina**: el micro-banco de `fillText` daba 609 ms contra
+125 ms y parecía una mejora enorme; midiéndolo bien —las tres variantes en la misma página,
+alternando y con mediana de 9 rondas— la diferencia quedó **dentro del ruido** (±30 ms sobre
+550). El envoltorio de `fillText` no era un problema de rendimiento. **Antes de decir "mejoró
+X%", alternar variantes en la misma corrida y usar la mediana.**
+
 **Las imágenes de la guía** (`public/img/guia-*.png`, en `/frm/extension/` y en el README) se
 rehacen con `scratchpad/guia-imagenes.js`: saca las capturas **de verdad** (la tienda de Chrome,
 `chrome://extensions` —que Puppeteer sí puede abrir— y nuestra página) y lo único que dibuja

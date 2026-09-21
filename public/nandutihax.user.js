@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ÑandutíHax
 // @namespace    https://nandutihax.com/
-// @version      1.5.1
+// @version      1.6.0
 // @description  Un panel de ÑandutíHax arriba del juego: el marcador, quién está en cancha y el ELO de cada uno, en vivo.
 // @author       Jinder
 // @icon         https://nandutihax.com/img/logo-chico.png
@@ -36,7 +36,7 @@
 // se instala con un clic y no hay que esperar ninguna revisión.
 // =============================================================================
 
-const VERSION_INSTALADA = "1.5.1";
+const VERSION_INSTALADA = "1.6.0";
 const API_SALAS = "https://nandutihax.com/api/publico/salas";
 
 // ── SOLO EN LAS SALAS DE ÑANDUTÍHAX ──────────────────────────────────────────────────
@@ -72,10 +72,16 @@ async function pedirLoNuestro() {
 // El parche del lienzo mira este atributo en cada dibujo, así que la marca es la forma de
 // prenderlo y apagarlo desde acá (el <html> se ve desde los dos mundos)
 function marcarActiva(si) {
-  try { document.documentElement.setAttribute("data-nh-activo", si ? "si" : "no"); } catch (e) {}
+  const valor = si ? "si" : "no";
+  try {
+    // Solo si cambió: escribir un atributo hace trabajar al navegador al pedo
+    if (document.documentElement.getAttribute("data-nh-activo") !== valor) {
+      document.documentElement.setAttribute("data-nh-activo", valor);
+    }
+  } catch (e) {}
 }
 
-let loNuestro = { salas: [], inicio: null, victoria: null, nuestra: false };
+let loNuestro = { salas: [], inicio: null, victoria: null, tiempo: null, nuestra: false };
 
 function vigilarSiEsSalaNuestra() {
   const preguntar = async () => {
@@ -85,13 +91,15 @@ function vigilarSiEsSalaNuestra() {
         salas: datos.salas || [],
         inicio: datos.inicio || null,
         victoria: datos.victoria || null,
+        tiempo: datos.tiempo || null,
         nuestra: esDeNandutihax(datos.salas, codigoDeLaSala()),
       };
     }
     marcarActiva(loNuestro.nuestra);
   };
   preguntar();
-  setInterval(preguntar, 30000);
+  // Si la sala no es nuestra, la extensión no hace nada: con preguntar de vez en cuando alcanza
+  setInterval(() => { if (!document.hidden) preguntar(); }, 60000);
   // El <html> se reemplaza al cargar el juego y la marca se pierde: se vuelve a poner
   setInterval(() => marcarActiva(loNuestro.nuestra), 2000);
 }
@@ -101,7 +109,8 @@ function arrancarNandutiHax() {
 
   const VERSION = VERSION_INSTALADA;
   const API = API_SALAS;
-  const CADA = 4000;          // cada cuánto se refresca
+  const CADA = 4000;          // cada cuánto se refresca mientras se está en una sala nuestra
+  const CADA_LENTO = 30000;   // …y si no es una sala nuestra (el panel ni se muestra)
   const LLAVE = "nandutihax_panel";
 
   // El userscript corre también en iframes; el panel va una sola vez, en la ventana de arriba
@@ -118,6 +127,8 @@ function arrancarNandutiHax() {
   let abierto = guardado.abierto !== false;
   let salas = [];
   let reloj = null;
+  let ultimaFirma = "";          // para no redibujar el panel si nada cambió
+  let enUnaSalaNuestra = false;
 
   // ── El pedido. Un fetch común: la API manda Access-Control-Allow-Origin: * ──
   // Antes iba por GM_xmlhttpRequest y el gestor lo frenaba con "Blocked by @connect CORS
@@ -282,6 +293,7 @@ function arrancarNandutiHax() {
     if (!b) return;
     sala = b.dataset.sala;
     guardar({ sala });
+    ultimaFirma = "";            // cambió de sala a mano: hay que redibujar sí o sí
     pintarSalas();
     pintarSala();
   };
@@ -360,6 +372,8 @@ function arrancarNandutiHax() {
     // no pinta nada (pedido del usuario). Se revisa en cada vuelta porque los códigos de
     // las salas cambian cada vez que se reinician.
     const nuestra = esDeNandutihax(salas, codigoDeLaSala());
+    enUnaSalaNuestra = nuestra;
+    acomodarReloj();
     panel.style.display = nuestra ? "" : "none";
     marcarActiva(nuestra);
     if (!nuestra) return;
@@ -369,12 +383,31 @@ function arrancarNandutiHax() {
       const conGente = salas.slice().sort((a, b) => b.cuantos - a.cuantos)[0];
       sala = conGente ? conGente.clave : null;
     }
+    // Si no cambió nada, no se toca el DOM: rehacer el panel cada 4 segundos genera basura
+    // para el recolector y hace trabajar al navegador sin motivo.
+    const firma = JSON.stringify(salas) + "|" + sala;
+    if (firma === ultimaFirma) return;
+    ultimaFirma = firma;
+
     pintarSalas();
     pintarSala();
   }
 
+  // El reloj se acomoda solo: rápido mientras se está mirando el panel en una sala nuestra,
+  // lento si no es nuestra, y quieto con la pestaña oculta (ahí no hay nada que mirar).
+  let cadaCuanto = 0;
+  const acomodarReloj = () => {
+    const nuevo = enUnaSalaNuestra ? CADA : CADA_LENTO;
+    if (nuevo === cadaCuanto) return;
+    cadaCuanto = nuevo;
+    clearInterval(reloj);
+    reloj = setInterval(() => { if (!document.hidden) refrescar(); }, cadaCuanto);
+  };
+
   refrescar();
-  reloj = setInterval(refrescar, CADA);
+  acomodarReloj();
+  // Al volver a la pestaña se refresca en el acto, así no se ve un marcador viejo
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) refrescar(); });
   window.addEventListener("beforeunload", () => clearInterval(reloj));
 }
 
@@ -430,9 +463,13 @@ function arrancarNandutiHax() {
 function parcheDelLienzo(W) {
   W = W || window;
   // Las palabras de los dos cartelones que reemplazamos: el del gol ("Red"/"Blue" +
-  // "Scores!") y el del final ("Red is"/"Blue is" + "Victorious!"). "Time is Up!" y
-  // "Game Paused" NO se tocan: esos siguen saliendo como siempre.
-  var PALABRAS = { Red: 1, Blue: 1, "Scores!": 1, "Red is": 1, "Blue is": 1, "Victorious!": 1 };
+  // "Scores!"), el del final por goles ("Red is"/"Blue is" + "Victorious!") y el del reloj
+  // ("Time is" + "Up!"). "Game Paused" NO se toca: ese sigue saliendo como siempre.
+  var PALABRAS = {
+    Red: 1, Blue: 1, "Scores!": 1,            // el cartelón del gol
+    "Red is": 1, "Blue is": 1, "Victorious!": 1,  // el del final por goles
+    "Time is": 1, "Up!": 1,                   // el de "se acabó el tiempo"
+  };
   var proto = W.CanvasRenderingContext2D && W.CanvasRenderingContext2D.prototype;
   if (!proto || proto.__nhSinCartel) return;
 
@@ -445,25 +482,41 @@ function parcheDelLienzo(W) {
   // 1. Que las palabras del cartel no se dibujen. Alcanza con mirar que el lienzo NO esté en
   //    la página: los carteles se pre-dibujan en lienzos sueltos, mientras que los nombres de
   //    los jugadores se pintan en el lienzo del juego, que sí está en la página.
-  // ¿Estamos en una sala de ÑandutíHax? Se mira en cada dibujo, porque la respuesta llega
-  // después (hay que preguntarle a la API) y puede cambiar sin recargar.
+  // ¿Estamos en una sala de ÑandutíHax? La respuesta llega después (hay que preguntarle a la
+  // API) y puede cambiar sin recargar, así que se relee… pero NO en cada dibujo: se guarda
+  // medio segundo. Leer un atributo del DOM 60 veces por segundo se nota.
+  var loQueSabemos = false;
+  var cuandoLoMiramos = 0;
   var activa = function () {
-    try { return W.document.documentElement.getAttribute("data-nh-activo") === "si"; }
-    catch (e) { return false; }
+    var ahora = Date.now();
+    if (ahora - cuandoLoMiramos > 500) {
+      cuandoLoMiramos = ahora;
+      try { loQueSabemos = W.document.documentElement.getAttribute("data-nh-activo") === "si"; }
+      catch (e) { loQueSabemos = false; }
+    }
+    return loQueSabemos;
   };
 
+  // OJO CON EL COSTO: esto se llama por CADA texto que dibuja el juego (los nombres de los
+  // jugadores, en cada cuadro). Por eso lo primero es la comparación más barata que hay —
+  // buscar la palabra en un objeto— y recién después se toca el DOM. Antes se hacía
+  // String(texto) y se leía canvas.isConnected siempre, y eso solo costaba 484 ms cada
+  // 60.000 dibujos.
   var fill = proto.fillText;
   proto.fillText = function (texto) {
-    try {
-      var lienzo = this.canvas;
-      if (lienzo && !lienzo.isConnected && PALABRAS[String(texto)]) {
-        lienzo.__nhCartel = true;               // queda marcado para el paso 2
-        if (!activa()) return fill.apply(this, arguments);   // sala ajena: no se toca nada
-        W.__nhBloqueos = (W.__nhBloqueos || 0) + 1;
-        anotar("data-nh-bloqueos", String(W.__nhBloqueos));
-        return;
-      }
-    } catch (e) { /* ante la duda, se dibuja como siempre */ }
+    if (typeof texto === "string" && PALABRAS[texto] === 1) {
+      try {
+        var lienzo = this.canvas;
+        if (lienzo && !lienzo.isConnected) {
+          lienzo.__nhCartel = true;             // queda marcado para el paso 2
+          if (activa()) {
+            W.__nhBloqueos = (W.__nhBloqueos || 0) + 1;
+            anotar("data-nh-bloqueos", String(W.__nhBloqueos));
+            return;
+          }
+        }
+      } catch (e) { /* ante la duda, se dibuja como siempre */ }
+    }
     return fill.apply(this, arguments);
   };
 
@@ -525,7 +578,8 @@ function arrancarCartelDeGol() {
 
   const MARCA = "​​";        // marca invisible del cartel de GOL
   const MARCA_INICIO = "​‌";  // …la del cartel de INICIO (el saque)
-  const MARCA_VICTORIA = "​⁠";// …y la del cartel de VICTORIA (el final)
+  const MARCA_VICTORIA = "​⁠";// …la del cartel de VICTORIA (el final por goles)
+  const MARCA_TIEMPO = "​⁡";  // …y la del "se acabó el tiempo"
   const DURA = 3200;              // cuánto se queda en pantalla
   const ESPERA = 900;             // cuánto se le da al cartel del host antes de usar el nuestro
 
@@ -597,11 +651,19 @@ function arrancarCartelDeGol() {
         if (n > 0) { dentro.appendChild(document.createTextNode(" ")); i++; }
         const grupo = document.createElement("span");
         grupo.className = "nh-palabra";
+
+        // Las letras seguidas DEL MISMO COLOR van en un solo elemento: se ve igual y pesa
+        // mucho menos (un cartel de un color pasa de 40 elementos a uno)
+        let tramo = null, colorDelTramo = null;
         for (const letra of palabra) {
-          const span = document.createElement("span");
-          span.textContent = letra;
-          span.style.color = deColor(i);
-          grupo.appendChild(span);
+          const suyo = deColor(i);
+          if (suyo !== colorDelTramo) {
+            tramo = document.createElement("span");
+            tramo.style.color = suyo;
+            grupo.appendChild(tramo);
+            colorDelTramo = suyo;
+          }
+          tramo.textContent += letra;
           i++;
         }
         dentro.appendChild(grupo);
@@ -634,11 +696,12 @@ function arrancarCartelDeGol() {
           return;
         }
 
-        // El cartel del FINAL, que reemplaza al "Red is Victorious!" de HaxBall
-        if (texto.indexOf(MARCA_VICTORIA) >= 0) {
+        // Los del FINAL: por goles ("Red is Victorious!") o por reloj ("Time is Up!")
+        for (const [marca, cual] of [[MARCA_VICTORIA, "victoria"], [MARCA_TIEMPO, "tiempo"]]) {
+          if (texto.indexOf(marca) < 0) continue;
           clearTimeout(porLasDudas);
-          const limpio = texto.split(MARCA_VICTORIA).join("").trim();
-          mostrar(limpio, n.style && n.style.color, 1.1, coloresPorLetra(limpio, loNuestro.victoria || {}));
+          const limpio = texto.split(marca).join("").trim();
+          mostrar(limpio, n.style && n.style.color, 1.1, coloresPorLetra(limpio, loNuestro[cual] || {}));
           return;
         }
 

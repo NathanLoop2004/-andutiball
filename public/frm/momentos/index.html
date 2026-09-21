@@ -36,6 +36,7 @@
   <div class="pestanas" id="pestanas" role="tablist">
     <button class="pestana" type="button" role="tab" data-momento="inicio">Arranque</button>
     <button class="pestana" type="button" role="tab" data-momento="victoria">Victoria</button>
+    <button class="pestana" type="button" role="tab" data-momento="tiempo">Se acabó el tiempo</button>
   </div>
 
   <div class="aviso" id="aviso"></div>
@@ -151,7 +152,9 @@ if (!(Sesion.usuario() || {}).rangos) {
   throw new Error("sin permiso");
 }
 
-let momento = new URLSearchParams(location.search).get("m") === "victoria" ? "victoria" : "inicio";
+const MOMENTOS = ["inicio", "victoria", "tiempo"];
+let momento = MOMENTOS.includes(new URLSearchParams(location.search).get("m"))
+  ? new URLSearchParams(location.search).get("m") : "inicio";
 let inicios = [];
 let huecos = [];
 let largoMaximo = 240;
@@ -199,16 +202,21 @@ async function cargar() {
 }
 
 // Cada letra con su color, para la tabla
-// Cada letra con su color, agrupadas por palabra para que no se corten al medio
+// Cada letra con su color, agrupadas por palabra para que no se corten al medio. Las letras
+// seguidas del mismo color van en un solo elemento: se ve igual y pesa mucho menos.
 const enColores = (texto, lista, base) => {
   let i = 0;
   return String(texto).split(" ").map((palabra) => {
-    const letras = [...palabra].map((letra) => {
+    const tramos = [];
+    for (const letra of palabra) {
       const color = String(lista[i++] || base || "FFD700").replace("#", "");
-      return `<span style="color:#${esc(color)}">${esc(letra)}</span>`;
-    }).join("");
+      const ultimo = tramos[tramos.length - 1];
+      if (ultimo && ultimo.color === color) ultimo.texto += letra;
+      else tramos.push({ color, texto: letra });
+    }
     i++;                                   // el espacio también ocupa su lugar en los colores
-    return `<span class="palabra">${letras}</span>`;
+    const dentro = tramos.map((t) => `<span style="color:#${esc(t.color)}">${esc(t.texto)}</span>`).join("");
+    return `<span class="palabra">${dentro}</span>`;
   }).join(" ");
 };
 
@@ -412,7 +420,11 @@ const TEXTOS = {
   },
   victoria: {
     titulo: "Cartel de victoria",
-    bajada: "El aviso del final. Con la extensión puesta, <b>reemplaza al “Red is Victorious!”</b> que dibuja HaxBall.",
+    bajada: "El aviso del final cuando alguien llega al límite de goles. Con la extensión puesta, <b>reemplaza al “Red is Victorious!”</b> que dibuja HaxBall.",
+  },
+  tiempo: {
+    titulo: "Cartel de “se acabó el tiempo”",
+    bajada: "Cuando el partido termina <b>por reloj</b> y no por goles. Con la extensión puesta, <b>reemplaza al “Time is Up!”</b> de HaxBall.",
   },
 };
 

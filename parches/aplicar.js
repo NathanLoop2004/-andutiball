@@ -398,7 +398,7 @@ const BLOQUES = [
   { archivo: "scores.txt", marca: "🥅 CARTELES DE GOL", nombre: "🥅 Carteles de gol", siFalta: () => true },
   // Los del arranque y la victoria (no son goles): enganchan onGameStart y onTeamVictory,
   // así que el orden con los de arriba no importa.
-  { archivo: "momentos.txt", marca: "🎬 CARTELES DEL PARTIDO", nombre: "🎬 Carteles del partido (arranque y victoria)", siFalta: () => true },
+  { archivo: "momentos.txt", marca: "🎬 CARTELES DEL PARTIDO", nombre: "🎬 Carteles del partido (arranque, victoria y tiempo)", siFalta: () => true },
   { archivo: "avisos.txt", marca: "🔕 AVISOS SIN SPAM", nombre: "🔕 Avisos sin spam", siFalta: () => true },
   { archivo: "config.txt", marca: "⚙️ CONFIGURACIÓN DESDE LA BASE", nombre: "⚙️ Configuración desde la base", siFalta: () => true },
   { archivo: "sin-webhooks.txt", marca: "🔒 NADA SE VA A DISCORD DESDE LA SALA", nombre: "🔒 Sin webhooks en la sala", siFalta: () => true },

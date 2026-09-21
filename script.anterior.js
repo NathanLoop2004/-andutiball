@@ -157,11 +157,11 @@ var CantidadCambiarTamano = 1;
 // ▇▇▇▇▇▇▇ ⚽👕 CAMISETAS POR DEFECTO ⚽👕 ▇▇▇▇▇▇▇
 
 // CAMISETA EQUIPO RED 🔴
-var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
+var camisetaRed = "/colors red 90 000000 FFFFFF 000000 FFFFFF"; // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA // OLIMPIA
 var NombreEquipoRojo = "OLIMPIA";
 
 // CAMISETA EQUIPO BLUE 🔵
-var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
+var camisetaBlue = "/colors blue 0 FFFFFF 002D72 D71920 002D72"; // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO // CERRO PORTEÑO
 var NombreEquipoAzul = "CERRO PORTEÑO";
 
 
@@ -21464,9 +21464,11 @@ function datosDelGol(equipoQueConvirtio) {
 
 	console.log("🥅 Carteles de gol listos");
 })();
-// ▇▇▇▇▇▇▇▇▇ 🎬 CARTEL DE INICIO — ÑandutíHax ▇▇▇▇▇▇▇▇▇
-// El aviso que sale cuando ARRANCA el partido. No es un gol: nació porque en el saque
-// inicial el marcador se pone en 0-0, y eso se tomaba como gol (salía "¡GOL! 0 - 0").
+// ▇▇▇▇▇▇▇▇▇ 🎬 CARTELES DEL PARTIDO — ÑandutíHax ▇▇▇▇▇▇▇▇▇
+// Dos avisos que NO son goles:
+//   · el del ARRANQUE (nació porque en el saque el marcador se pone en 0-0 y eso se tomaba
+//     como gol: salía "¡GOL! 0 - 0");
+//   · el de la VICTORIA, que reemplaza al "Red is Victorious!" de HaxBall.
 //
 // No se compra: es configuración. El OWNER y el CO-OWNER lo arman en el panel (Inicio) y
 // las 4 salas usan el que esté puesto. El lanzador lo deja en window.__INICIO cada 20 s.
@@ -21479,6 +21481,8 @@ var CartelDeInicioActivo = true;
 // Marca INVISIBLE, distinta de la del cartel de gol (ancho cero + no-unión): así la
 // extensión sabe que este aviso es el del arranque y no el de un gol.
 var MarcaDeInicio = "​‌";
+// …y la de la victoria (ancho cero + juntador): tres marcas distintas, una por cartel
+var MarcaDeVictoria = "​⁠";
 
 // La misma cuenta que hace InicioModel.armar() del lado de la web
 function armarInicio(plantilla, datos) {
@@ -21536,6 +21540,55 @@ room.onGameStart = function (byPlayer) {
 				typeof cartel.sonido === "number" ? cartel.sonido : 2
 			);
 		} catch (e) { /* un cartel roto no puede voltear el arranque del partido */ }
+	}, SegundosParaElCartelDeInicio * 1000);
+};
+
+// ── El cartel de la VICTORIA ──────────────────────────────────────────────────────────
+// Reemplaza al "Red is Victorious!" que HaxBall dibuja en la cancha (eso lo saca la
+// extensión; acá va el aviso con la marca para que lo muestre grande).
+function datosDeLaVictoria(equipoGanador) {
+	var camisetas = camisetasDeAhora();
+	var goles = { red: 0, blue: 0 };
+	try {
+		var m = room.getScores();
+		if (m) { goles.red = m.red; goles.blue = m.blue; }
+	} catch (e) { /* si el partido ya se cerró, quedan en 0 */ }
+	var ganoRojo = equipoGanador === 1;
+	return {
+		ganador: ganoRojo ? camisetas.rojo : camisetas.azul,
+		perdedor: ganoRojo ? camisetas.azul : camisetas.rojo,
+		golesGanador: String(ganoRojo ? goles.red : goles.blue),
+		golesPerdedor: String(ganoRojo ? goles.blue : goles.red),
+		sala: typeof NombreHost === "string" ? NombreHost : "ÑandutíHax",
+	};
+}
+
+var anteriorVictoriaCartel = room.onTeamVictory;
+room.onTeamVictory = function (marcador) {
+	// El marcador se lee ANTES de llamar al handler del autor: después el partido ya no está
+	var datos = datosDeLaVictoria(marcador && marcador.red > marcador.blue ? 1 : 2);
+	if (marcador) {
+		datos.golesGanador = String(Math.max(marcador.red, marcador.blue));
+		datos.golesPerdedor = String(Math.min(marcador.red, marcador.blue));
+	}
+
+	if (typeof anteriorVictoriaCartel === "function") anteriorVictoriaCartel(marcador);
+	if (!CartelDeInicioActivo) return;
+
+	setTimeout(function () {
+		var cartel = window.__VICTORIA;
+		if (!cartel || !cartel.plantilla) return;
+		try {
+			var texto = armarInicio(cartel.plantilla, datos);
+			if (!texto) return;
+			room.sendAnnouncement(
+				texto + MarcaDeVictoria,
+				null,
+				parseInt(cartel.color || "FFD700", 16),
+				cartel.estilo || "bold",
+				typeof cartel.sonido === "number" ? cartel.sonido : 2
+			);
+		} catch (e) { /* un cartel roto no puede voltear el fin del partido */ }
 	}, SegundosParaElCartelDeInicio * 1000);
 };
 

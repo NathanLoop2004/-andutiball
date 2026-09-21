@@ -26,6 +26,9 @@ window.CartelCancha = {
   // secas, el navegador corta el renglón en cualquier lado y queda "OLIMPI / A". Contar por
   // letras de verdad ([...texto]) también importa: un emoji ocupa dos caracteres sueltos y
   // los colores se corrían.
+  // Se ve igual, pero pesa mucho menos: las letras SEGUIDAS DEL MISMO COLOR van juntas en
+  // un solo elemento. Un cartel de un color pasa de 40 elementos a uno; con el arcoíris,
+  // donde cada letra es distinta, no hay nada que juntar y quedan como estaban.
   pintarPorLetra(destino, texto, colores) {
     destino.textContent = "";
     const color = (i) => "#" + String(colores[i] || colores[colores.length - 1] || "FFD700").replace(/^#/, "");
@@ -34,11 +37,17 @@ window.CartelCancha = {
       if (n > 0) { destino.appendChild(document.createTextNode(" ")); i++; }
       const grupo = document.createElement("span");
       grupo.className = "palabra";
+
+      let tramo = null, colorDelTramo = null;
       for (const letra of palabra) {
-        const span = document.createElement("span");
-        span.textContent = letra;
-        span.style.color = color(i);
-        grupo.appendChild(span);
+        const suyo = color(i);
+        if (suyo !== colorDelTramo) {
+          tramo = document.createElement("span");
+          tramo.style.color = suyo;
+          grupo.appendChild(tramo);
+          colorDelTramo = suyo;
+        }
+        tramo.textContent += letra;
         i++;
       }
       destino.appendChild(grupo);

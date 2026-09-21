@@ -3,7 +3,8 @@
 //
 //   · "inicio"    cuando arranca (el saque). Nació porque ahí el marcador se pone en 0-0 y
 //                 eso se tomaba como gol: salía un "¡GOL! 0 - 0" al empezar.
-//   · "victoria"  cuando termina. Reemplaza al "Red is Victorious!" de HaxBall.
+//   · "victoria"  cuando termina por goles. Reemplaza al "Red is Victorious!" de HaxBall.
+//   · "tiempo"    cuando termina porque se acabó el reloj. Reemplaza al "Time is Up!".
 //
 // No se venden: son CONFIGURACIÓN (panel → Inicio y victoria, solo OWNER y CO-OWNER), y
 // queda uno puesto POR MOMENTO.
@@ -24,7 +25,7 @@ const { base } = require("../services/ConexionBase");
 
 const ESTILOS = ["normal", "bold", "small"];
 const LARGO_MAXIMO = 240;
-const MOMENTOS = ["inicio", "victoria"];
+const MOMENTOS = ["inicio", "victoria", "tiempo"];
 
 // Los huecos de cada momento, con un ejemplo para la vista previa
 const HUECOS_POR_MOMENTO = {
@@ -42,11 +43,20 @@ const HUECOS_POR_MOMENTO = {
     { hueco: "{golesPerdedor}", que: "Los goles del otro", ejemplo: "2" },
     { hueco: "{sala}", que: "El nombre de la sala", ejemplo: "ÑandutíHax | Futsal 3v3" },
   ],
+  tiempo: [
+    { hueco: "{rojo}", que: "La camiseta del equipo rojo", ejemplo: "OLIMPIA" },
+    { hueco: "{azul}", que: "La camiseta del equipo azul", ejemplo: "CERRO PORTEÑO" },
+    { hueco: "{golesRojo}", que: "Los goles del rojo", ejemplo: "3" },
+    { hueco: "{golesAzul}", que: "Los goles del azul", ejemplo: "2" },
+    { hueco: "{ganador}", que: "El que quedó arriba", ejemplo: "OLIMPIA" },
+    { hueco: "{sala}", que: "El nombre de la sala", ejemplo: "ÑandutíHax | Futsal 3v3" },
+  ],
 };
 
 const PLANTILLAS_DE_EJEMPLO = {
   inicio: "⚽ ¡ARRANCA EL PARTIDO! {rojo} 🆚 {azul}",
   victoria: "🏆 ¡GANÓ {ganador}! {golesGanador} 🆚 {golesPerdedor} {perdedor}",
+  tiempo: "⏱️ ¡SE ACABÓ EL TIEMPO! {rojo} {golesRojo} 🆚 {golesAzul} {azul}",
 };
 
 const elMomento = (m) => (MOMENTOS.includes(String(m)) ? String(m) : "inicio");

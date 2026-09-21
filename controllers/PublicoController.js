@@ -18,10 +18,11 @@ class PublicoController {
       // Los carteles del arranque y de la victoria viajan acá porque la extensión necesita
       // los colores POR LETRA, y por el chat solo puede llegar un color. Sin base van en
       // null y no pasa nada.
-      let inicio = null, victoria = null;
+      let inicio = null, victoria = null, tiempo = null;
       try {
         inicio = await MomentosModel.elPuesto("inicio");
         victoria = await MomentosModel.elPuesto("victoria");
+        tiempo = await MomentosModel.elPuesto("tiempo");
       } catch (error) { /* sin base, sin carteles */ }
 
       res.json({
@@ -29,6 +30,7 @@ class PublicoController {
         salas: PublicoModel.salas(salas),
         inicio: inicio && { colores: inicio.colores, color: inicio.color, estilo: inicio.estilo },
         victoria: victoria && { colores: victoria.colores, color: victoria.color, estilo: victoria.estilo },
+        tiempo: tiempo && { colores: tiempo.colores, color: tiempo.color, estilo: tiempo.estilo },
         cuando: new Date().toISOString(),
       });
     } catch (error) { next(error); }
