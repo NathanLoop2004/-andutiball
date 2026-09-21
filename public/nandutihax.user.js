@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ÑandutíHax
 // @namespace    https://nandutihax.com/
-// @version      1.1.0
+// @version      1.2.0
 // @description  Un panel de ÑandutíHax arriba del juego: el marcador, quién está en cancha y el ELO de cada uno, en vivo.
 // @author       Jinder
 // @icon         https://nandutihax.com/img/logo-chico.png
@@ -9,9 +9,10 @@
 // @connect      nandutihax.com
 // @grant        GM_xmlhttpRequest
 // @grant        GM.xmlHttpRequest
+// @grant        unsafeWindow
 // @downloadURL  https://nandutihax.com/nandutihax.user.js
 // @updateURL    https://nandutihax.com/nandutihax.user.js
-// @run-at       document-idle
+// @run-at       document-start
 // ==/UserScript==
 
 // =============================================================================
@@ -23,11 +24,9 @@
 //      quién está en cada equipo y el ELO de cada uno. Sale de
 //      https://nandutihax.com/api/publico/salas, que devuelve solo eso.
 //   2. Adentro del juego (el iframe game.html), el CARTEL DE GOL: cuando alguien convierte,
-//      se tapa el "Blue Scores!" de HaxBall con el cartel que el goleador compró en la
-//      tienda. Ver el comentario de arrancarCartelDeGol().
-//
-// Lo único que sigue sin poder tocarse es lo que está pintado adentro del lienzo (la cancha
-// y ese "Scores!"): se puede tapar, no editar. El marcador de arriba, en cambio, SÍ es HTML.
+//      **se saca** el "Blue Scores!" de HaxBall —no se dibuja más, ver
+//      sacarElCartelDeHaxball()— y en su lugar aparece el cartel que el goleador compró en
+//      la tienda. Ver también arrancarCartelDeGol().
 //
 // Se pide con GM_xmlhttpRequest a propósito: un fetch normal desde haxball.com choca con
 // CORS. Por eso es un userscript (Tampermonkey/Violentmonkey) y no una extensión de la
@@ -149,7 +148,7 @@ function arrancarNandutiHax() {
   };
   montar();
   // Para poder comprobar en la consola (F12) que la versión nueva está andando
-  console.log("[NandutiHax] panel listo, version 1.1.0");
+  console.log("[NandutiHax] panel listo, version 1.2.0");
 
   // Se acuerda de dónde lo dejaste
   if (guardado.x !== undefined && guardado.y !== undefined) {
@@ -288,6 +287,52 @@ function arrancarNandutiHax() {
 // El juego vive adentro del iframe game.html, por eso esta parte corre AHÍ y no en la
 // ventana de arriba (donde va el panel del costado).
 // =============================================================================
+// =============================================================================
+// SACARLE A HAXBALL SU "BLUE SCORES!" (no taparlo: que no se dibuje)
+//
+// En game-min.js, esos carteles son una clase que pre-dibuja CADA PALABRA, una sola vez,
+// en un lienzo suelto que nunca entra en la página:
+//
+//   bq(palabra, color){ let c = document.createElement("canvas"), d = c.getContext("2d");
+//     d.font = "900 70px 'Arial Black',…";  c.width = …;  c.height = 90;
+//     d.fillText(palabra, 7, 52);           // la sombra negra
+//     d.fillStyle = color; d.fillText(palabra, 0, 45);   // la letra de color
+//     return c; }                            // después se pega con drawImage
+//
+// O sea que alcanza con no dejar pasar esos dos fillText: la textura queda transparente y
+// el cartel no aparece más. Así se saca de verdad, en vez de superponerle algo encima.
+//
+// Se toca SOLO esa combinación —lienzo fuera de la página, 90 px de alto, letra de 70 px y
+// una de las tres palabras del cartel del gol—, así que no afecta a nada más: los nombres
+// de los jugadores se dibujan en el lienzo del juego (que sí está en la página) y con otra
+// letra, y los otros carteles ("Time is Up!", "Red is Victorious!", "Game Paused") usan
+// palabras distintas y siguen saliendo igual.
+//
+// Tiene que correr ANTES que el juego (@run-at document-start), porque las texturas se
+// arman una sola vez. Y sobre unsafeWindow: el gestor de userscripts corre en un mundo
+// aparte, y si se parchea el prototipo de ese mundo la página no se entera.
+// =============================================================================
+function sacarElCartelDeHaxball() {
+  const PALABRAS = { Red: 1, Blue: 1, "Scores!": 1 };
+  const W = (typeof unsafeWindow !== "undefined" && unsafeWindow) || window;
+  const proto = W.CanvasRenderingContext2D && W.CanvasRenderingContext2D.prototype;
+  if (!proto || proto.__nhSinCartel) return false;
+
+  const original = proto.fillText;
+  proto.fillText = function (texto) {
+    try {
+      const lienzo = this.canvas;
+      if (lienzo && !lienzo.isConnected && lienzo.height === 90 &&
+          PALABRAS[String(texto)] && String(this.font).indexOf("70px") >= 0) {
+        return;                       // este es el cartelón del gol: no se dibuja
+      }
+    } catch (e) { /* ante la duda, se dibuja como siempre */ }
+    return original.apply(this, arguments);
+  };
+  proto.__nhSinCartel = true;
+  return true;
+}
+
 function arrancarCartelDeGol() {
   "use strict";
 
@@ -303,7 +348,7 @@ function arrancarCartelDeGol() {
       position: fixed; z-index: 2147483647; pointer-events: none;
       display: flex; align-items: center; justify-content: center; text-align: center;
       font-family: Inter, system-ui, "Segoe UI", sans-serif; font-weight: 800;
-      background: linear-gradient(180deg, rgba(8,12,16,0) 0%, rgba(8,12,16,.88) 18%, rgba(8,12,16,.88) 82%, rgba(8,12,16,0) 100%);
+      background: linear-gradient(180deg, rgba(8,12,16,0) 0%, rgba(8,12,16,.5) 18%, rgba(8,12,16,.5) 82%, rgba(8,12,16,0) 100%);
       opacity: 0; transition: opacity .18s ease;
     }
     #nh-gol.viendose { opacity: 1; }
@@ -406,6 +451,12 @@ function arrancarTodo() {
   // El panel del costado va en la ventana de arriba; el cartel de gol, adentro del juego
   if (window.top === window.self) arrancarNandutiHax();
   else arrancarCartelDeGol();
+}
+
+// Esto NO toca el DOM y tiene que ser lo primero de todo, antes de que el juego arme sus
+// texturas: por eso va suelto acá y no adentro de arrancarTodo()
+if (window.top !== window.self) {
+  console.log("[NandutiHax] cartel de HaxBall sacado del lienzo:", sacarElCartelDeHaxball());
 }
 
 if (document.body) arrancarTodo();

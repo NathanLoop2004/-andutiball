@@ -715,6 +715,18 @@ el panel no aparece **sin dar ningún error**. La página lo explica con la dire
 copiar (ninguna página puede abrir `chrome://extensions` por su cuenta) y después cuenta qué
 hacer: entrar a una sala, elegir tu cartel de gol en el inventario y hacer un gol.
 
+**Paso 1 — Tampermonkey**, desde la tienda del navegador:
+
+![Añadir Tampermonkey a Chrome](public/img/guia-1-tampermonkey.png)
+
+**Paso 2 — el modo desarrollador**, arriba a la derecha en `chrome://extensions`:
+
+![El interruptor Modo de desarrollador](public/img/guia-2-modo-desarrollador.png)
+
+**Paso 3 — instalar la extensión** desde <https://nandutihax.com/frm/extension/>, y listo:
+
+![El panel y el cartel de gol adentro del juego](public/img/guia-4-en-el-juego.png)
+
 Para encontrarla: hay una **invitación en la portada** (con la foto del panel y el botón) y, si
 tenés sesión, el ítem **La extensión** en el menú de tu cuenta.
 

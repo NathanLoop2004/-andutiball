@@ -1247,6 +1247,13 @@ así lo que dice la pantalla es lo que se va a cobrar.
 navegador de cada jugador: el marcador de la sala que elija, quién está en cada equipo y el ELO
 de cada uno. Se instala desde `/frm/extension/`.
 
+**Las imágenes de la guía** (`public/img/guia-*.png`, en `/frm/extension/` y en el README) se
+rehacen con `scratchpad/guia-imagenes.js`: saca las capturas **de verdad** (la tienda de Chrome,
+`chrome://extensions` —que Puppeteer sí puede abrir— y nuestra página) y lo único que dibuja
+encima es el círculo naranja y el número del paso. **Nunca inventar una pantalla**: si algo no se
+puede capturar, se explica con texto. `guia-4-en-el-juego.png` sale de una sala de verdad
+(`probar-cartel.js`), así que hay que rehacerla cuando cambie la pinta del panel o del cartel.
+
 **Dónde se la encuentra** (si no se la ve, no la instala nadie): una sección en la portada
 (`#seccionExtension`, antes del ranking, para todos con o sin sesión) con la foto del panel y el
 botón, el ítem "La extensión" en el menú de la cuenta (`public/js/sesion.js`) y la URL en
@@ -1299,10 +1306,42 @@ con Ctrl + C".
   colgar del `body` si HaxBall rehace la pantalla. Al depurar: en la consola tiene que salir
   `[NandutiHax] panel listo, version X` y `[NandutiHax] cartel de gol enganchado`.
 
-### El cartel de gol (v1.1.0)
+### El cartel de gol (v1.2.0)
 
-Cuando alguien convierte, **se tapa el "Blue Scores!" de HaxBall con el cartel que el goleador
-compró** en la tienda. El cartel no se inventa: es el aviso que el host ya manda al chat.
+Cuando alguien convierte, **se le saca a HaxBall su "Blue Scores!" y en su lugar aparece el
+cartel que el goleador compró** en la tienda. El cartel no se inventa: es el aviso que el host
+ya manda al chat.
+
+**Cómo se SACA el cartel de HaxBall** (`sacarElCartelDeHaxball()`, v1.2.0). Antes se le ponía el
+nuestro encima y el de HaxBall asomaba igual: quedaba feo. Leyendo `game-min.js` se ve que esos
+carteles son una clase (`class da`) que pre-dibuja **cada palabra una sola vez** en un lienzo
+suelto que nunca entra en la página:
+
+```js
+bq(a,b){ let c=window.document.createElement("canvas"), d=c.getContext("2d",null);
+  d.font="900 70px 'Arial Black',…"; c.width=…; c.height=90;
+  d.fillText(a,7,52); d.fillStyle=this.nc(b); d.fillText(a,0,45); return c; }   // → drawImage
+```
+
+Así que se envuelve `CanvasRenderingContext2D.prototype.fillText` y **no se deja pasar** esa
+combinación exacta: lienzo **fuera** de la página + `height === 90` + letra de `70px` + la
+palabra es `Red`, `Blue` o `Scores!`. La textura queda transparente y el cartel no se dibuja más.
+Los otros carteles del juego ("Time is Up!", "Red is Victorious!", "Game Paused") usan palabras
+distintas y siguen saliendo; los nombres de los jugadores se dibujan en el lienzo **de la
+página** y con otra letra, así que un jugador llamado "Blue" tampoco se ve afectado.
+
+Dos cosas imprescindibles, las dos aprendidas a los golpes:
+
+- **`@run-at document-start`**: las texturas se arman una sola vez al cargar. Si el parche llega
+  después, no sirve. Por eso el parche del lienzo va **suelto al final del archivo** (no toca el
+  DOM) y todo lo que sí toca el DOM espera al `DOMContentLoaded`.
+- **`unsafeWindow`**: el gestor de userscripts corre en un mundo aparte, con sus propios
+  prototipos. Parcheando el `CanvasRenderingContext2D` del mundo del script, la página **no se
+  entera**. Va `(typeof unsafeWindow !== "undefined" && unsafeWindow) || window`.
+
+Se prueba con `scratchpad/probar-sin-cartel.js`, que copia el `bq()` de HaxBall y cuenta los
+píxeles pintados: 0 para "Red", "Blue" y "Scores!", y > 0 para "Paused", "Victorious!" y un
+jugador llamado "Blue".
 
 - El host le pega al final una **marca invisible**, dos espacios de ancho cero
   (`MarcaParaLaExtension = "​​"` en `parches/bloques/scores.txt`). No se ve en el chat
