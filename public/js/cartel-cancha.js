@@ -22,6 +22,29 @@ window.CartelCancha = {
   // Los mismos factores que usa el userscript para el tamaño de la letra
   TAMANO: { bold: 1, normal: 0.85, small: 0.72 },
 
+  // Cada letra con su color, PERO agrupadas por palabra: si se cuelga un <span> por letra a
+  // secas, el navegador corta el renglón en cualquier lado y queda "OLIMPI / A". Contar por
+  // letras de verdad ([...texto]) también importa: un emoji ocupa dos caracteres sueltos y
+  // los colores se corrían.
+  pintarPorLetra(destino, texto, colores) {
+    destino.textContent = "";
+    const color = (i) => "#" + String(colores[i] || colores[colores.length - 1] || "FFD700").replace(/^#/, "");
+    let i = 0;
+    String(texto).split(" ").forEach((palabra, n) => {
+      if (n > 0) { destino.appendChild(document.createTextNode(" ")); i++; }
+      const grupo = document.createElement("span");
+      grupo.className = "palabra";
+      for (const letra of palabra) {
+        const span = document.createElement("span");
+        span.textContent = letra;
+        span.style.color = color(i);
+        grupo.appendChild(span);
+        i++;
+      }
+      destino.appendChild(grupo);
+    });
+  },
+
   crear(caja, opciones) {
     const o = opciones || {};
     const ancho = o.ancho || 520;
@@ -44,17 +67,11 @@ window.CartelCancha = {
       const factor = window.CartelCancha.TAMANO[c.estilo] || 1;
       texto.style.fontSize = Math.max(11, Math.min(26, (ancho / 26) * factor)) + "px";
 
-      // Con colores por letra (el cartel de inicio) se arma letra por letra, igual que en la
-      // extensión; si no, va todo de un color.
+      // Con colores por letra (los carteles de arranque y victoria) se arma letra por letra,
+      // igual que en la extensión; si no, va todo de un color.
       const lista = c.colores || [];
       if (lista.length) {
-        texto.textContent = "";
-        [...String(c.texto || "")].forEach((letra, i) => {
-          const span = document.createElement("span");
-          span.textContent = letra;
-          span.style.color = "#" + String(lista[i] || lista[lista.length - 1] || "FFD700").replace(/^#/, "");
-          texto.appendChild(span);
-        });
+        window.CartelCancha.pintarPorLetra(texto, c.texto || "", lista);
       } else {
         texto.textContent = c.texto || "";
         texto.style.color = c.color || "#FFD700";

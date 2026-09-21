@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ÑandutíHax
 // @namespace    https://nandutihax.com/
-// @version      1.5.0
+// @version      1.5.1
 // @description  Un panel de ÑandutíHax arriba del juego: el marcador, quién está en cancha y el ELO de cada uno, en vivo.
 // @author       Jinder
 // @icon         https://nandutihax.com/img/logo-chico.png
@@ -36,7 +36,7 @@
 // se instala con un clic y no hay que esperar ninguna revisión.
 // =============================================================================
 
-const VERSION_INSTALADA = "1.5.0";
+const VERSION_INSTALADA = "1.5.1";
 const API_SALAS = "https://nandutihax.com/api/publico/salas";
 
 // ── SOLO EN LAS SALAS DE ÑANDUTÍHAX ──────────────────────────────────────────────────
@@ -544,9 +544,9 @@ function arrancarCartelDeGol() {
     #nh-gol .texto {
       padding: 0 16px; line-height: 1.25; text-shadow: 0 3px 14px rgba(0,0,0,.85);
       transform: scale(.86); transition: transform .28s cubic-bezier(.2,1.5,.4,1);
-      word-break: break-word;
     }
     #nh-gol.viendose .texto { transform: scale(1); }
+    #nh-gol .nh-palabra { white-space: nowrap; }
   `;
 
   const armarCapa = () => {
@@ -586,15 +586,26 @@ function arrancarCartelDeGol() {
     const dentro = c.querySelector(".texto");
     dentro.style.fontSize = Math.max(16, Math.min(40, (tamano || 1) * r.width / 26)) + "px";
 
-    // Con colores por letra se arma letra por letra; si no, va todo de un color
+    // Con colores por letra se arma letra por letra, PERO agrupando por palabra: con un
+    // <span> por letra suelto, el navegador corta el renglón en cualquier lado (quedaba
+    // "OLIMPI / A"). Y se cuenta con [...texto] porque un emoji ocupa dos caracteres.
     if (colores && colores.length) {
       dentro.textContent = "";
-      for (let i = 0; i < texto.length; i++) {
-        const letra = document.createElement("span");
-        letra.textContent = texto[i];
-        letra.style.color = "#" + String(colores[i] || colores[colores.length - 1]).replace(/^#/, "");
-        dentro.appendChild(letra);
-      }
+      const deColor = (i) => "#" + String(colores[i] || colores[colores.length - 1]).replace(/^#/, "");
+      let i = 0;
+      texto.split(" ").forEach((palabra, n) => {
+        if (n > 0) { dentro.appendChild(document.createTextNode(" ")); i++; }
+        const grupo = document.createElement("span");
+        grupo.className = "nh-palabra";
+        for (const letra of palabra) {
+          const span = document.createElement("span");
+          span.textContent = letra;
+          span.style.color = deColor(i);
+          grupo.appendChild(span);
+          i++;
+        }
+        dentro.appendChild(grupo);
+      });
     } else {
       dentro.textContent = texto;
       dentro.style.color = color || "#ffffff";

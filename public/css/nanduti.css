@@ -962,12 +962,17 @@ input[type=number]:focus { outline: none; border-color: var(--acento); box-shado
   opacity: 0; transition: opacity .18s ease;
 }
 .cartel-encima.viendose { opacity: 1; }
-.cartel-encima span {
-  padding: 0 14px; font-weight: 800; line-height: 1.25; word-break: break-word;
+.cartel-encima > span {
+  padding: 0 14px; font-weight: 800; line-height: 1.25;
   text-shadow: 0 3px 14px rgba(0,0,0,.85);
   transform: scale(.86); transition: transform .28s cubic-bezier(.2,1.5,.4,1);
 }
-.cartel-encima.viendose span { transform: scale(1); }
+.cartel-encima.viendose > span { transform: scale(1); }
+/* Ojo: con los colores por letra hay un <span> POR LETRA adentro. Sin esto cada letra se
+   comía el relleno del cartel (quedaban separadísimas) y el texto se cortaba a la mitad de
+   una palabra, porque el navegador puede cortar entre span y span. */
+.cartel-encima .palabra { white-space: nowrap; }
+.cartel-encima .palabra span { padding: 0; }
 
 /* La foto del panel: en la página de la extensión y en la portada */
 .foto-extension {

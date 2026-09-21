@@ -66,15 +66,18 @@ function armar(plantilla, datos, momento) {
 const ejemplo = (momento) => Object.fromEntries(huecosDe(momento).map((h) => [h.hueco.slice(1, -1), h.ejemplo]));
 
 // Un color por letra, del largo del texto. Sirve para la sala, la web y la extensión.
+// Ojo: se cuenta por LETRAS, no por caracteres sueltos: un emoji como 🏆 ocupa dos
+// posiciones en un string de JavaScript y los colores se corrían. El panel, la extensión y
+// esto tienen que contar igual, si no cada letra sale del color de otra.
+const enLetras = (texto) => [...String(texto)];
+
 function coloresDeCadaLetra(texto, colores, color) {
   const base = String(color || "FFD700").replace(/^#/, "").toUpperCase();
   const lista = Array.isArray(colores) ? colores : [];
-  const salida = [];
-  for (let i = 0; i < String(texto).length; i++) {
+  return enLetras(texto).map((_, i) => {
     const c = lista[i] || lista[lista.length - 1] || base;
-    salida.push(String(c).replace(/^#/, "").toUpperCase());
-  }
-  return salida;
+    return String(c).replace(/^#/, "").toUpperCase();
+  });
 }
 
 const paraMostrar = (i) => {

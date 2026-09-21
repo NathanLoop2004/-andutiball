@@ -175,12 +175,11 @@ const colorGeneral = () => ($("edColorTexto").value || "#FFD700").replace(/^#?/,
 const textoDeAhora = () => armar($("edPlantilla").value, ejemploDe());
 
 // Los colores acompañan al texto: si se agregan letras, las nuevas salen del color general
+// Ojo: se cuenta con [...texto] (letras de verdad). Un emoji ocupa DOS caracteres sueltos, y
+// contándolos así los colores se corrían de letra. El modelo y la extensión cuentan igual.
 function acomodarColores() {
-  const texto = textoDeAhora();
   const base = colorGeneral().replace("#", "");
-  const nuevos = [];
-  for (let i = 0; i < texto.length; i++) nuevos.push(colores[i] || base);
-  colores = nuevos;
+  colores = [...textoDeAhora()].map((_, i) => colores[i] || base);
 }
 
 async function cargar() {
@@ -200,8 +199,18 @@ async function cargar() {
 }
 
 // Cada letra con su color, para la tabla
-const enColores = (texto, lista, base) => [...String(texto)].map((letra, i) =>
-  `<span style="color:#${esc(String(lista[i] || base || "FFD700").replace("#", ""))}">${esc(letra)}</span>`).join("");
+// Cada letra con su color, agrupadas por palabra para que no se corten al medio
+const enColores = (texto, lista, base) => {
+  let i = 0;
+  return String(texto).split(" ").map((palabra) => {
+    const letras = [...palabra].map((letra) => {
+      const color = String(lista[i++] || base || "FFD700").replace("#", "");
+      return `<span style="color:#${esc(color)}">${esc(letra)}</span>`;
+    }).join("");
+    i++;                                   // el espacio también ocupa su lugar en los colores
+    return `<span class="palabra">${letras}</span>`;
+  }).join(" ");
+};
 
 function pintar() {
   $("cargando").hidden = true;
@@ -245,11 +254,8 @@ $("parejo").onclick = () => {
 
 // Un degradé de colores por las letras, que es lo que más se pide
 $("arcoiris").onclick = () => {
-  const texto = textoDeAhora();
-  colores = [...texto].map((_, i) => {
-    const tono = Math.round((i / Math.max(1, texto.length - 1)) * 320);
-    return tonoAHex(tono);
-  });
+  const letras = [...textoDeAhora()];
+  colores = letras.map((_, i) => tonoAHex(Math.round((i / Math.max(1, letras.length - 1)) * 320)));
   pintarPrevia();
 };
 

@@ -106,11 +106,21 @@ function revisar(titulo, condicion, detalle) {
       revisar("Los colores se normalizan (sin #, en mayúsculas)",
         guardado.colores[0] === "FF0000" && guardado.colores[1] === "00FF00", JSON.stringify(guardado.colores));
       revisar("Un color inventado se cae al general", guardado.colores[2] === "FFD700", guardado.colores[2]);
+      const letras = [...guardado.ejemplo];
       revisar("Hay un color por cada letra del texto",
-        guardado.coloresDelEjemplo.length === guardado.ejemplo.length,
-        guardado.coloresDelEjemplo.length + " colores para " + guardado.ejemplo.length + " letras");
+        guardado.coloresDelEjemplo.length === letras.length,
+        guardado.coloresDelEjemplo.length + " colores para " + letras.length + " letras");
       revisar("Las letras que sobran usan el último color",
-        guardado.coloresDelEjemplo[guardado.ejemplo.length - 1] === "FFD700");
+        guardado.coloresDelEjemplo[letras.length - 1] === "FFD700");
+      // Un emoji ocupa DOS caracteres sueltos: si se contara así, los colores se correrían
+      const conEmoji = await MomentosModel.guardar(clave, {
+        momento: "inicio", nombre: "Prueba de inicio", plantilla: "🏆 {rojo}",
+        colores: ["FF0000", "00FF00", "0000FF"], color: "FFD700",
+      }, "PRUEBA");
+      revisar("El emoji cuenta como UNA letra",
+        conEmoji.coloresDelEjemplo.length === [...conEmoji.ejemplo].length &&
+        conEmoji.coloresDelEjemplo[0] === "FF0000" && conEmoji.coloresDelEjemplo[1] === "00FF00",
+        conEmoji.ejemplo + " → " + conEmoji.coloresDelEjemplo.slice(0, 3).join(","));
 
       let error = null;
       try { await MomentosModel.guardar(clave, { nombre: "", plantilla: "hola" }); }
