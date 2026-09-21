@@ -1241,6 +1241,49 @@ el de ahora — es lo que espera cualquiera. Si ya no tiene precio (lo sacaron d
 a lo que había pagado, que es lo único que se sabe. El `vale` del inventario usa la misma cuenta,
 así lo que dice la pantalla es lo que se va a cobrar.
 
+## La extensión (userscript)
+
+`public/nandutihax.user.js` — un panel de ÑandutíHax que se dibuja **arriba del juego**, en el
+navegador de cada jugador: el marcador de la sala que elija, quién está en cada equipo y el ELO
+de cada uno. Se instala desde `/frm/extension/`.
+
+**POR QUÉ NO CAMBIA EL MARCADOR DE HAXBALL.** Es la pregunta que siempre vuelve. Dos paredes, y
+las dos son definitivas:
+
+1. **El host no puede tocar la pantalla del jugador.** `script.js` corre en *nuestra* página de
+   Puppeteer, que es la del host y no muestra ningún partido. Cada jugador está en su propio
+   navegador, en `haxball.com/play`, conectado por red. Entre los dos solo viaja lo que la API
+   permite: posiciones, colores de equipo, avatares y chat. No hay canal para mandar HTML ni CSS.
+2. **Ese marcador está dibujado adentro del lienzo del juego**, no es un elemento de la página:
+   ni parado en la máquina del jugador se lo puede pisar con CSS.
+
+Por eso la extensión pone un panel **al lado**, que sí es HTML nuestro. Lo único del marcador de
+HaxBall que el host controla son los dos cuadraditos de color (`setTeamColors`), o sea las
+camisetas.
+
+**Es un userscript, no una extensión de la tienda de Chrome**: se instala con un clic desde
+nuestra web, se actualiza solo (`updateURL`) y no hay que esperar ninguna revisión. Corre con
+Tampermonkey o Violentmonkey.
+
+- Usa `GM_xmlhttpRequest` **a propósito**: un `fetch` normal desde haxball.com choca con CORS.
+- Corta si está adentro de un iframe (`window.top !== window.self`), o el panel saldría dos veces.
+- Se acuerda de dónde lo arrastraste y de si lo dejaste plegado (`localStorage`).
+
+**Los datos salen de `GET /api/publico/salas`** (`PublicoModel` + `PublicoController`), que es
+nuevo y **a propósito devuelve un subconjunto chico**: nombre de la sala, si está abierta, el
+link, el mapa, el marcador y quién está en cada equipo con su ELO. Nunca config, rangos, admins,
+bans, mensajes, IPs ni auths. Lleva `Access-Control-Allow-Origin: *` porque lo lee una página de
+otro dominio, y es de solo lectura.
+
+> ⚠️ `GET /api/salas` (la del panel) **sí devuelve todo eso y está abierta en internet**: la
+> configuración de cada sala, la tabla de rangos con los nicks de los admins, los bans y los
+> mensajes. Es el pendiente de "la API no pide sesión" que ya estaba anotado. La extensión no la
+> usa justamente por eso.
+
+Probarlo sin instalar nada: correr el userscript con Puppeteer en una página cualquiera,
+falseando `GM_xmlhttpRequest` con un `fetch` de Node (así se probó: el panel se dibuja, trae las
+4 salas, se cambia de sala, se pliega y no tira errores).
+
 ## Ligas de las camisetas (🏆)
 
 Las camisetas se agrupan en ligas (Primera División, Intermedia, selecciones…) que se crean desde

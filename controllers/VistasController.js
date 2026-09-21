@@ -15,6 +15,7 @@ class VistasController {
   static ajustes = pantalla("frm", "ajustes");       // ajustes de la web (solo OWNER)
   static camiseta = pantalla("frm", "camiseta");         // la ficha de una camiseta (con su URL)
   static animacion = pantalla("frm", "animacion");       // la ficha de una animación (con su URL)
+  static extension = pantalla("frm", "extension");       // cómo instalar la extensión
   static score = pantalla("frm", "score");               // la ficha de un cartel (con su URL)
   static scores = pantalla("frm", "scores");             // armar carteles (OWNER y CO-OWNER)
   static animaciones = pantalla("frm", "animaciones");   // animaciones de gol (OWNER y CO-OWNER)

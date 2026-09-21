@@ -12,6 +12,7 @@ Allow: /frm/registro
 Allow: /frm/camiseta
 Allow: /frm/animacion
 Allow: /frm/score
+Allow: /frm/extension
 Disallow: /api/
 Disallow: /frm/panel
 Disallow: /frm/cuenta

@@ -703,6 +703,18 @@ de ese entorno usa `DATABASE_URL`. La conexión se abre recién cuando alguien l
 Es la primera versión y la vamos a ir cambiando: se toca `prisma/schema.prisma` y se corre
 `npm run base:migrar`.
 
+## 🧩 La extensión de ÑandutíHax
+
+Un panel con el marcador, quién está en cada equipo y el ELO de cada uno, **arriba del juego**,
+para no tener que salir del partido. Se instala desde <https://nandutihax.com/frm/extension/>:
+primero Tampermonkey y después un clic en "Instalar la extensión".
+
+Se puede arrastrar, se pliega y se acuerda de dónde lo dejaste.
+
+**No cambia el marcador que dibuja HaxBall** (los cuadraditos con el resultado y el reloj): eso
+está dibujado adentro del lienzo del juego y no se puede reemplazar desde afuera. Por eso el
+panel va al lado.
+
 ## 🏆 Ligas de las camisetas
 
 Las camisetas se pueden agrupar en ligas: Primera División, Intermedia, selecciones, lo que

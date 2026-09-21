@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>La extensión de ÑandutíHax</title>
+<meta name="description" content="Un panel de ÑandutíHax arriba del juego: el marcador, quién está en cancha y el ELO de cada uno, en vivo.">
+<link rel="canonical" href="https://nandutihax.com/frm/extension/">
+<link rel="icon" href="/img/logo-chico.png" type="image/png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ÑandutíHax">
+<meta property="og:url" content="https://nandutihax.com/frm/extension/">
+<meta property="og:title" content="La extensión de ÑandutíHax">
+<meta property="og:description" content="Mirá el marcador, quién está jugando y el ELO de cada uno sin salir del partido.">
+<meta property="og:image" content="https://nandutihax.com/img/portada.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="/css/nanduti.css">
+<script src="/js/tema.js"></script>
+</head>
+<body>
+
+<header class="barra">
+  <a class="marca" href="/"><img src="/img/logo-chico.png" alt=""><span>ÑandutíHax</span></a>
+  <div class="derecha" id="derecha"></div>
+</header>
+
+<main class="contenido">
+  <div class="cabecera">
+    <div>
+      <h1>La extensión de ÑandutíHax</h1>
+      <p>Un panel arriba del juego con el marcador, quién está en cada equipo y el ELO de cada uno, en vivo. No hace falta salir del partido.</p>
+    </div>
+  </div>
+
+  <div class="tarjeta">
+    <div class="tarjeta-cuerpo">
+      <h2>Cómo se instala</h2>
+      <ol class="pasos-instalar">
+        <li>
+          Instalá <b>Tampermonkey</b> en tu navegador, que es lo que hace andar este tipo de agregados:
+          <div class="botones" style="margin-top:8px">
+            <a class="boton" href="https://chromewebstore.google.com/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo" target="_blank" rel="noopener">Chrome y Edge</a>
+            <a class="boton" href="https://addons.mozilla.org/firefox/addon/tampermonkey/" target="_blank" rel="noopener">Firefox</a>
+          </div>
+        </li>
+        <li style="margin-top:14px">
+          Tocá acá y dale <b>Instalar</b> en la ventana que se abre:
+          <div class="botones" style="margin-top:8px">
+            <a class="boton principal grande" href="/nandutihax.user.js">Instalar la extensión</a>
+          </div>
+        </li>
+        <li style="margin-top:14px">Entrá a jugar. El panel aparece solo, arriba a la derecha.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="tarjeta" style="margin-top:16px">
+    <div class="tarjeta-cuerpo">
+      <h2>Qué hace</h2>
+      <ul class="lista-simple">
+        <li>El <b>marcador</b> de la sala que elijas, de las cuatro.</li>
+        <li><b>Quién está en cada equipo</b>, con su ELO y su división al lado.</li>
+        <li>Cuánta gente está mirando y si hay partido en curso.</li>
+        <li>Se puede <b>arrastrar</b> a donde te quede cómodo y <b>plegar</b> con el botón de arriba. Se acuerda de dónde lo dejaste.</li>
+      </ul>
+
+      <h2 style="margin-top:22px">Qué no hace, y por qué</h2>
+      <p>
+        <b>No cambia el marcador que dibuja HaxBall</b> (los dos cuadraditos con el resultado y el reloj).
+        Eso está dibujado adentro del lienzo del juego, no es una parte de la página que se pueda
+        reemplazar. Por eso la extensión pone un panel <em>al lado</em>, en vez de intentar pisar el de HaxBall.
+      </p>
+      <p class="tenue">
+        Tampoco toca el juego ni te da ninguna ventaja: solo lee y muestra lo mismo que ya se ve entrando
+        a la sala. No manda nada, no guarda nada tuyo y no necesita que inicies sesión.
+      </p>
+    </div>
+  </div>
+</main>
+
+<script src="/js/sesion.js"></script>
+<script>Sesion.pintarBarra("derecha");</script>
+</body>
+</html>
