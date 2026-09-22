@@ -151,10 +151,13 @@ h1, h2, h3 { letter-spacing: -.015em; line-height: 1.25; }
 /* ── Estructura ── */
 .contenido { flex: 1; width: 100%; max-width: 1120px; margin: 0 auto; padding: 32px 16px 56px; }
 .pie { border-top: 1px solid var(--borde); color: var(--tenue); font-size: 13px; padding: 20px 16px; text-align: center; }
-.redes-pie { display: flex; justify-content: center; gap: 16px; margin-bottom: 10px; }
-.redes-pie a { color: var(--tenue); display: inline-flex; transition: color .15s; }
-.redes-pie a:hover { color: var(--acento); }
-.redes-pie svg { width: 20px; height: 20px; }
+.redes-pie, .redes-tapa { display: flex; gap: 16px; }
+.redes-pie { justify-content: center; margin-bottom: 10px; }
+.redes-tapa { margin-top: 22px; }
+.redes-pie a, .redes-tapa a { color: var(--tenue); display: inline-flex; transition: color .15s; }
+.redes-pie a:hover, .redes-tapa a:hover { color: var(--acento); }
+.redes-pie svg, .redes-tapa svg { width: 20px; height: 20px; }
+.redes-tapa svg { width: 22px; height: 22px; }
 
 .cabecera { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
 .cabecera h1 { margin: 0; font-size: 26px; }
