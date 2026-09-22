@@ -747,6 +747,11 @@ izquierda y un botón de **patear** a la derecha: HaxBall escucha el teclado (`A
 para arriba, etc.), así que tocar esos controles dispara los mismos eventos que apretaría un
 teclado de verdad — no hace falta ninguna API especial, y se probó contra una sala en vivo.
 
+**Y no se ve más apretujado.** La página de HaxBall (no la nuestra) reserva una franja fija de
+anuncio al costado del juego que no se achica en una pantalla angosta: en un celular dejaba el
+juego comprimido en una tira chica. La extensión ahora la saca, solo en el celular, así el
+juego usa toda la pantalla.
+
 **Y tu cartel de gol en pantalla.** Cuando convertís, en vez del "Blue Scores!" de siempre sale
 **el cartel que compraste en la tienda**, grande, arriba de la cancha y con tu color. Lo ven los
 que tengan la extensión instalada; en el chat el cartel le sigue saliendo a todos igual. Si el

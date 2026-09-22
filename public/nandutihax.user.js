@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ÑandutíHax
 // @namespace    https://nandutihax.com/
-// @version      1.8.0
+// @version      1.9.0
 // @description  Un panel de ÑandutíHax arriba del juego: el marcador, quién está en cancha y el ELO de cada uno, en vivo.
 // @author       Jinder
 // @icon         https://nandutihax.com/img/logo-chico.png
@@ -36,7 +36,7 @@
 // se instala con un clic y no hay que esperar ninguna revisión.
 // =============================================================================
 
-const VERSION_INSTALADA = "1.8.0";
+const VERSION_INSTALADA = "1.9.0";
 const API_SALAS = "https://nandutihax.com/api/publico/salas";
 
 // ── SOLO EN LAS SALAS DE ÑANDUTÍHAX ──────────────────────────────────────────────────
@@ -46,6 +46,13 @@ const API_SALAS = "https://nandutihax.com/api/publico/salas";
 // cartel de HaxBall queda como estaba.
 function esNuestraWeb() {
   return /(^|\.)nandutihax\.com$/i.test(location.hostname);
+}
+
+// ¿Es un dispositivo táctil? Lo usan el joystick y el arreglo de la franja de anuncios: los
+// dos son cosas que solo hacen falta en el celular, y en desktop no tienen que tocar nada.
+function esTactil() {
+  try { return navigator.maxTouchPoints > 0 || matchMedia("(pointer: coarse)").matches; }
+  catch (e) { return "ontouchstart" in window; }
 }
 
 // Adentro del juego el código no está en la URL del iframe, sino en la ventana de arriba
@@ -109,7 +116,7 @@ let loNuestro = { salas: [], inicio: null, victoria: null, tiempo: null, nuestra
 // Comparar el ?c= de la dirección con los links de la API alcanza cuando se entra por un
 // link nuestro, PERO no cuando se entra desde la lista de salas de HaxBall: ahí la
 // dirección no tiene ningún código y la extensión se quedaba apagada (el cartel de HaxBall
-// salía y el nuestro no). Desde la 1.8.0, un aviso firmado por el host también la prende.
+// salía y el nuestro no). Desde la 1.7.0, un aviso firmado por el host también la prende.
 let confirmadaPorElChat = false;
 
 function confirmarSalaNuestra() {
@@ -202,7 +209,10 @@ function arrancarNandutiHax() {
   const css = `
     #nh-panel {
       position: fixed; top: 44px; right: 12px; z-index: 2147483647;
-      width: 268px; font-family: Inter, system-ui, "Segoe UI", sans-serif; font-size: 13px;
+      /* Nunca más ancho que la pantalla: en un celular angosto se achica solo en vez de
+         desbordar (268px es lo pensado para desktop; los 24px son los 12px de cada lado) */
+      width: min(268px, calc(100vw - 24px));
+      font-family: Inter, system-ui, "Segoe UI", sans-serif; font-size: 13px;
       color: #e8edf2; background: rgba(23, 32, 38, .94); border: 1px solid rgba(255,255,255,.12);
       border-radius: 10px; box-shadow: 0 10px 34px rgba(0,0,0,.45); overflow: hidden;
       backdrop-filter: blur(6px);
@@ -830,10 +840,6 @@ function arrancarCartelDeGol() {
 // parche del lienzo). Se puede ocultar con el botón de la esquina; se acuerda con
 // localStorage.
 function arrancarJoystick() {
-  const esTactil = () => {
-    try { return navigator.maxTouchPoints > 0 || matchMedia("(pointer: coarse)").matches; }
-    catch (e) { return "ontouchstart" in window; }
-  };
   if (!esTactil()) return;
 
   const LLAVE = "nandutihax_joystick";
@@ -1004,6 +1010,36 @@ function avisarLaVersionEnLaWeb() {
   setTimeout(dejarla, 1200);
 }
 
+// =============================================================================
+// EL ANCHO DEL JUEGO EN EL CELULAR — la propia página de HaxBall (no la nuestra) reserva
+// una franja fija de anuncio (`.rightbar`, ~160px, de la red "cpmstar") al lado del juego
+// (`.gameframe`), y esa franja NO se achica en una pantalla angosta. En un celular eso deja
+// el juego comprimido en una tira de apenas ~230px, y nuestro panel —pensado para
+// desktop— no entraba ahí: se veía todo amontonado y superpuesto (reportado con una
+// captura de un iPhone).
+//
+// Se saca esa franja SOLO en un dispositivo táctil: en desktop se deja tal cual, porque ahí
+// sí entra cómodo y no hace falta tocar nada de la página del autor. Al esconder
+// `.rightbar`, el contenedor de al lado (`.flexCol.flexGrow`, que ya tiene flex-grow en un
+// `display:flex`) pasa a ocupar todo el ancho que queda libre, sin que haga falta
+// calcularlo a mano.
+//
+// `.rightbar`/`.gameframe` son clases sueltas de la página del autor (no hay ningún
+// `data-hook` acá, a diferencia de adentro del juego): pueden cambiar el día que rehagan la
+// página. Por eso es un `<style>` con el selector nada más: si esas clases desaparecen, la
+// regla simplemente no encuentra nada y no rompe nada.
+function arreglarAnunciosEnElCelular() {
+  if (!esTactil()) return;
+  try {
+    const estilo = document.createElement("style");
+    estilo.textContent = `
+      .rightbar { display: none !important; }
+      .gameframe { width: 100% !important; }
+    `;
+    (document.head || document.documentElement).appendChild(estilo);
+  } catch (e) {}
+}
+
 // Ojo: según el gestor de userscripts, esto puede correr ANTES de que exista el <html>
 // (document-start). Ahí `document.documentElement` es null y el panel no se dibujaba nunca:
 // tiraba "Cannot read properties of null (reading 'appendChild')" y el script moría en silencio.
@@ -1011,7 +1047,7 @@ function arrancarTodo() {
   if (esNuestraWeb()) return avisarLaVersionEnLaWeb();
   // El panel del costado va en la ventana de arriba; el cartel de gol y los controles
   // táctiles, adentro del juego
-  if (window.top === window.self) arrancarNandutiHax();
+  if (window.top === window.self) { arreglarAnunciosEnElCelular(); arrancarNandutiHax(); }
   else { arrancarCartelDeGol(); arrancarJoystick(); }
 }
 

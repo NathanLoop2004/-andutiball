@@ -1442,6 +1442,31 @@ Ojo con los links de las tiendas de Android: la de Tampermonkey/Violentmonkey ti
 escritorio (`addons.mozilla.org/firefox/addon/...`) — y **tienen que abrirse desde Firefox para
 Android**, no desde el navegador de fábrica, o la tienda dice que no es compatible.
 
+### La franja de anuncio del autor rompía las proporciones en el celular (v1.9.0)
+
+Reportado con una captura de un iPhone: todo se veía amontonado y superpuesto. La causa **no
+era nuestra**: la página de HaxBall (`haxball.com/play`, `.container.flexRow`) reserva una
+franja fija de **160px** para un anuncio (`div.rightbar`, carga scripts de la red "cpmstar") al
+lado del juego (`iframe.gameframe.flexGrow`), y esa franja **no se achica** en una pantalla
+angosta. En un iPhone de 390px eso deja el juego comprimido en ~230px, y nuestro panel —pensado
+para desktop, 268px fijo— no entraba ahí.
+
+`arreglarAnunciosEnElCelular()` (corre en la ventana de arriba, junto con el panel) le agrega un
+`<style>` a la página: `.rightbar{display:none}` y `.gameframe{width:100%}`. Como
+`.flexCol.flexGrow` (el contenedor del juego) ya tiene `flex-grow` en un `display:flex`, apenas
+se esconde el hermano ocupa solo el ancho que le queda libre — no hace falta calcular nada a
+mano. **Solo se aplica en un dispositivo táctil** (`esTactil()`, la misma función que usa el
+joystick, factorizada arriba de todo): en desktop la franja se deja tal cual, porque ahí sí
+entra cómoda y no hay ningún motivo para tocarle nada a la página del autor.
+
+`.rightbar`/`.gameframe` son clases sueltas de esa página (no hay ningún `data-hook`, a
+diferencia de adentro del juego): pueden cambiar el día que la rehagan. Por eso es nomás un
+`<style>` con el selector — si esas clases desaparecen, la regla no encuentra nada y no rompe
+nada; probado contra una sala en vivo con Puppeteer emulando un iPhone, con y sin el arreglo.
+
+De paso, `#nh-panel` pasó a `width: min(268px, calc(100vw - 24px))`: nunca se pasa del ancho de
+la pantalla, aunque algún día la franja vuelva a aparecer o el celular sea más angosto que 292px.
+
 ### Los carteles en pantalla (v1.5.0)
 
 La extensión **le saca a HaxBall sus dos cartelones y pone los nuestros**: el "Blue Scores!" del
