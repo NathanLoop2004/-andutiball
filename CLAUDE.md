@@ -1427,6 +1427,21 @@ gol) dibuja un joystick abajo a la izquierda y un botón de patear abajo a la de
 - El joystick manda **direcciones independientes** (arriba/abajo y izquierda/derecha se activan
   por separado según cuánto se corrió el dedo en cada eje), así que las diagonales salen solas,
   igual que apretando dos flechas del teclado a la vez.
+
+  **HaxBall no tiene movimiento analógico, para nadie** (confirmado en `game-min.js`: el
+  cliente junta Up/Down/Left/Right/Kick en un Set y arma un número de 0 a 31 — no existe
+  ningún ángulo intermedio, ni con teclado ni con un joystick de verdad enchufado a la PC).
+  El máximo son **8 direcciones** (4 rectas + 4 diagonales de combinar dos ejes), así que
+  nuestro joystick ya da toda la precisión que el juego permite; "que se mueva a cualquier
+  ángulo" no se puede pedir, porque esa información nunca llega a viajar por la red.
+
+  Lo que sí se ajustó (v1.12.1, a pedido: "cuesta acertar la diagonal"): `ZONA_MUERTA` bajó de
+  14 a 9 px y `RADIO` subió de 40 a 48 (el círculo de base, de 122 a 136px). Antes, un toque
+  suave cerca de la horizontal (por ejemplo `dx=18, dy=10`) perdía la diagonal —el eje vertical
+  se quedaba corto de los 14px— y salía solo "derecha". Probado con Puppeteer disparando
+  `touchmove` a un ángulo exacto y mirando qué `KeyboardEvent` llegan a `document`: con los
+  valores viejos, `dx=18,dy=10` disparaba solo `ArrowRight`; con los nuevos, `ArrowDown` +
+  `ArrowRight` los dos.
 - El botón de patear tiene **su propio dedo** (`Touch.identifier`): se puede correr y patear al
   mismo tiempo, como con las dos manos en un teclado.
 - Igual que el cartel de gol, si HaxBall rehace la pantalla los controles se cuelgan de un

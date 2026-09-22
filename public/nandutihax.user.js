@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ÑandutíHax
 // @namespace    https://nandutihax.com/
-// @version      1.12.0
+// @version      1.12.1
 // @description  Un panel de ÑandutíHax arriba del juego: el marcador, quién está en cancha y el ELO de cada uno, en vivo.
 // @author       Jinder
 // @icon         https://nandutihax.com/img/logo-chico.png
@@ -36,7 +36,7 @@
 // se instala con un clic y no hay que esperar ninguna revisión.
 // =============================================================================
 
-const VERSION_INSTALADA = "1.12.0";
+const VERSION_INSTALADA = "1.12.1";
 const API_SALAS = "https://nandutihax.com/api/publico/salas";
 
 // ── SOLO EN LAS SALAS DE ÑANDUTÍHAX ──────────────────────────────────────────────────
@@ -969,7 +969,7 @@ function arrancarJoystick() {
       touch-action: none; -webkit-user-select: none; user-select: none;
     }
     #nh-joystick {
-      left: max(18px, env(safe-area-inset-left)); width: 122px; height: 122px; border-radius: 50%;
+      left: max(18px, env(safe-area-inset-left)); width: 136px; height: 136px; border-radius: 50%;
       background: rgba(255,255,255,.14); border: 2px solid rgba(255,255,255,.35);
     }
     #nh-joystick .nh-palito {
@@ -1044,8 +1044,12 @@ function arrancarJoystick() {
 
   const base = capa.querySelector("#nh-joystick");
   const palito = capa.querySelector(".nh-palito");
-  const RADIO = 40;          // hasta dónde se puede mover el palito (px)
-  const ZONA_MUERTA = 14;    // por debajo de esto no se manda ninguna dirección
+  // Ajustado a pedido: costaba acertar la diagonal (HaxBall solo entiende 8 direcciones —
+  // combinar dos ejes a la vez—, así que "acertarla" es lograr que el dedo cruce las DOS
+  // zonas muertas, la del eje horizontal y la del vertical, al mismo tiempo). Con menos
+  // recorrido en cada eje y más círculo para apoyar el dedo, es más fácil.
+  const RADIO = 48;          // hasta dónde se puede mover el palito (px) — antes 40
+  const ZONA_MUERTA = 9;     // por debajo de esto no se manda ninguna dirección — antes 14
 
   // Direcciones activas del joystick (Up/Down/Left/Right). El de patear va aparte.
   let activas = new Set();
