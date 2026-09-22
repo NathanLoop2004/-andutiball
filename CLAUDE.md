@@ -1438,6 +1438,15 @@ pantalla para volver a mostrarlo (había que borrar `localStorage` a mano). Ahor
   ningún mensaje entre ventanas. Probado con Puppeteer: tocar el interruptor del panel oculta
   el joystick del iframe en ≤ 1,6 s.
 
+**v1.11.1**: los dos botones de la esquina (🕹️ y 💬) solo escuchaban `touchstart`, sin
+`touch-action: none`. Con un toque de Puppeteer (perfecto, sin el más mínimo movimiento) eso
+probaba bien igual, pero un dedo de verdad casi nunca se queda exactamente quieto: sin
+`touch-action`, el navegador puede interpretar ese temblor como el arranque de un scroll y
+nunca llega a disparar el `touchstart` — el usuario lo reportó como "si le doy click no sale".
+Arreglado agregando `touch-action: none` a los dos botones y un `click` de respaldo (para
+mouse/trackpad, algún iPad), con una marca de tiempo que evita que el "click fantasma" que
+sigue a un touch en algunos navegadores lo alterne dos veces seguidas.
+
 **No es una "versión aparte para Android"**: es el mismo `nandutihax.user.js` de siempre, que
 ahora además reconoce un dispositivo táctil. Para usarlo desde el celular hace falta un
 navegador que soporte gestores de userscripts — ver "Instalarlo desde el celular" en el README.

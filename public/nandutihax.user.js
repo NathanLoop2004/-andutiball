@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ÑandutíHax
 // @namespace    https://nandutihax.com/
-// @version      1.11.0
+// @version      1.11.1
 // @description  Un panel de ÑandutíHax arriba del juego: el marcador, quién está en cancha y el ELO de cada uno, en vivo.
 // @author       Jinder
 // @icon         https://nandutihax.com/img/logo-chico.png
@@ -36,7 +36,7 @@
 // se instala con un clic y no hay que esperar ninguna revisión.
 // =============================================================================
 
-const VERSION_INSTALADA = "1.11.0";
+const VERSION_INSTALADA = "1.11.1";
 const API_SALAS = "https://nandutihax.com/api/publico/salas";
 
 // ── SOLO EN LAS SALAS DE ÑANDUTÍHAX ──────────────────────────────────────────────────
@@ -862,10 +862,11 @@ function arrancarAlternarChat() {
   estilo.textContent = `
     #nh-alternar-chat {
       position: fixed; top: max(54px, calc(env(safe-area-inset-top) + 54px)); left: 58px;
-      z-index: 2147483001; width: 38px; height: 38px; border-radius: 50%;
+      z-index: 2147483001; width: 38px; height: 38px; border-radius: 50%; pointer-events: auto;
       background: rgba(0,0,0,.45); border: 2px solid rgba(255,255,255,.35); color: #fff;
       font-size: 17px; display: flex; align-items: center; justify-content: center;
-      -webkit-user-select: none; user-select: none;
+      -webkit-user-select: none; user-select: none; touch-action: none;
+      -webkit-tap-highlight-color: transparent;
     }
     #nh-alternar-chat.apagado { opacity: .45; border-color: rgba(255,255,255,.18); }
   `;
@@ -886,12 +887,18 @@ function arrancarAlternarChat() {
     } catch (e) {}
   };
 
-  boton.addEventListener("touchstart", (ev) => {
-    ev.preventDefault();
+  // touchstart (con preventDefault) es lo normal; "click" queda de respaldo para el que
+  // toca con un mouse o trackpad (algunos iPad) o si el touch, por lo que sea, no le llega.
+  // La marca de tiempo evita que un click fantasma después del touch lo alterne dos veces.
+  let ultimoUso = 0;
+  const alternar = () => {
+    ultimoUso = Date.now();
     const nuevo = !estaOculto();
     try { localStorage.setItem(LLAVE, nuevo ? "oculto" : "visible"); } catch (e) {}
     pintar(nuevo);
-  }, { passive: false });
+  };
+  boton.addEventListener("touchstart", (ev) => { ev.preventDefault(); alternar(); }, { passive: false });
+  boton.addEventListener("click", () => { if (Date.now() - ultimoUso > 600) alternar(); });
 
   // La caja del chat la arma HaxBall recién al entrar a una sala (no está en la pantalla de
   // elegir nick) y la rehace en cada sala distinta: hay que volver a pintar el estado cada
@@ -973,7 +980,8 @@ function arrancarJoystick() {
       z-index: 2147483001; width: 38px; height: 38px; border-radius: 50%; pointer-events: auto;
       background: rgba(0,0,0,.45); border: 2px solid rgba(255,255,255,.35); color: #fff;
       font-size: 17px; display: flex; align-items: center; justify-content: center;
-      -webkit-user-select: none; user-select: none;
+      -webkit-user-select: none; user-select: none; touch-action: none;
+      -webkit-tap-highlight-color: transparent;
     }
     #nh-alternar-joystick.apagado { opacity: .45; border-color: rgba(255,255,255,.18); }
   `;
@@ -1009,12 +1017,18 @@ function arrancarJoystick() {
   document.body.appendChild(capa);
   document.body.appendChild(alternar);
 
-  alternar.addEventListener("touchstart", (ev) => {
-    ev.preventDefault();
+  // touchstart (con preventDefault) es lo normal; "click" queda de respaldo para el que
+  // toca con un mouse o trackpad (algunos iPad) o si el touch, por lo que sea, no le llega.
+  // La marca de tiempo evita que un click fantasma después del touch lo alterne dos veces.
+  let ultimoUsoAlternar = 0;
+  const usarAlternar = () => {
+    ultimoUsoAlternar = Date.now();
     const nuevo = !estaOculto();
     guardarOculto(nuevo);
     aplicarOculto(nuevo);
-  }, { passive: false });
+  };
+  alternar.addEventListener("touchstart", (ev) => { ev.preventDefault(); usarAlternar(); }, { passive: false });
+  alternar.addEventListener("click", () => { if (Date.now() - ultimoUsoAlternar > 600) usarAlternar(); });
 
   const base = capa.querySelector("#nh-joystick");
   const palito = capa.querySelector(".nh-palito");
