@@ -1410,10 +1410,20 @@ la cámara sigue al jugador, se mueve igual que con el teclado.
 `arrancarJoystick()` (mismo archivo, corre adentro del iframe del juego, junto al cartel de
 gol) dibuja un joystick abajo a la izquierda y un botón de patear abajo a la derecha:
 
-- **Solo aparece en un dispositivo táctil** (`navigator.maxTouchPoints > 0` o
-  `matchMedia("(pointer: coarse)")`): en desktop no se crea ni un solo elemento, cero costo.
-- **Solo en una sala de ÑandutíHax**: reutiliza `data-nh-activo`, la misma marca que ya usa el
-  parche del lienzo para el cartel de gol — no hace falta otra confirmación aparte.
+- **Solo aparece en un dispositivo táctil** (`esTactil()`, factorizada arriba de todo: mira
+  `navigator.maxTouchPoints > 0` o `matchMedia("(pointer: coarse)")`): en desktop no se crea ni
+  un solo elemento, cero costo.
+- **NO está limitado a una sala de ÑandutíHax** (v1.11.2, corrigiendo un bug real). Al
+  principio sí lo estaba —reutilizaba `data-nh-activo`, la misma marca del parche del
+  lienzo—, pero eso lo hacía depender de una confirmación que puede no llegar nunca: la marca
+  de la bienvenida (que confirma la sala por el chat, sin depender del `?c=` de la URL) recién
+  se nota **al reiniciar la sala**, y mientras tanto, si el jugador entró sin `?c=` en la
+  dirección (por ejemplo desde la lista de salas de HaxBall), no había CÓMO confirmar la sala
+  y el joystick quedaba invisible pasara lo que pasara con el interruptor — reportado
+  exactamente así: "dejé el botón prendido y no me mostró el joystick". A diferencia del panel
+  o el cartel de gol, el joystick no muestra ningún dato ni marca de ÑandutíHax, así que no
+  hay ningún problema en que ande en cualquier sala de HaxBall: se sacó la restricción en vez
+  de perseguir la confirmación.
 - El joystick manda **direcciones independientes** (arriba/abajo y izquierda/derecha se activan
   por separado según cuánto se corrió el dedo en cada eje), así que las diagonales salen solas,
   igual que apretando dos flechas del teclado a la vez.
@@ -1434,9 +1444,11 @@ pantalla para volver a mostrarlo (había que borrar `localStorage` a mano). Ahor
   panel vive en la ventana de arriba y el joystick adentro del iframe del juego, **contextos de
   JavaScript distintos**. Como los dos son el mismo origen (`www.haxball.com`), ya comparten
   `localStorage` solo: el panel escribe la llave `nandutihax_joystick` y el joystick la relee
-  cada 1 s (el mismo intervalo que ya usaba para `data-nh-activo`) y se entera solo, sin
-  ningún mensaje entre ventanas. Probado con Puppeteer: tocar el interruptor del panel oculta
-  el joystick del iframe en ≤ 1,6 s.
+  cada 0,5 s y se entera solo, sin ningún mensaje entre ventanas (antes eran 1000 ms: con la
+  prueba de Puppeteer esperando un margen fijo después del click, un click que caía justo
+  después de un tick del intervalo podía tardar casi un segundo entero en reflejarse —
+  imperceptible jugando, pero hacía la prueba intermitente— así que se bajó a la mitad).
+  Probado con Puppeteer: tocar el interruptor del panel oculta el joystick del iframe.
 
 **v1.11.1**: los dos botones de la esquina (🕹️ y 💬) solo escuchaban `touchstart`, sin
 `touch-action: none`. Con un toque de Puppeteer (perfecto, sin el más mínimo movimiento) eso

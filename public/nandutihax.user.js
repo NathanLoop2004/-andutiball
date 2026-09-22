@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ÑandutíHax
 // @namespace    https://nandutihax.com/
-// @version      1.11.1
+// @version      1.11.2
 // @description  Un panel de ÑandutíHax arriba del juego: el marcador, quién está en cancha y el ELO de cada uno, en vivo.
 // @author       Jinder
 // @icon         https://nandutihax.com/img/logo-chico.png
@@ -36,7 +36,7 @@
 // se instala con un clic y no hay que esperar ninguna revisión.
 // =============================================================================
 
-const VERSION_INSTALADA = "1.11.1";
+const VERSION_INSTALADA = "1.11.2";
 const API_SALAS = "https://nandutihax.com/api/publico/salas";
 
 // ── SOLO EN LAS SALAS DE ÑANDUTÍHAX ──────────────────────────────────────────────────
@@ -826,14 +826,25 @@ function arrancarCartelDeGol() {
     return ojo;
   };
 
-  // HaxBall rehace su pantalla al entrar y al salir de una sala, así que se revisa seguido
+  // HaxBall rehace su pantalla al entrar y al salir de una sala, así que se revisa seguido.
+  //
+  // OJO: "cambiamos de sala" se decide SOLO mirando el chat (log-contents), no el marcador.
+  // El marcador (red-score/blue-score) puede reconstruirse EN MEDIO del mismo partido —por
+  // ejemplo al entrar en tiempo suplementario, que le agrega el cartel "OVERTIME!" al lado—
+  // y antes, con cualquiera de los tres (log, marcador rojo o azul) alcanzaba para llamar a
+  // olvidarLaSala(), apagaba el joystick y el botón de la esquina en pleno partido sin que
+  // el jugador se hubiera ido de la sala. El chat, en cambio, es el mismo objeto durante
+  // todo el partido: si no cambió, seguimos en la misma pantalla.
   setInterval(() => {
     const log = document.querySelector('[data-hook="log-contents"]');
     const r = document.querySelector('[data-hook="red-score"]');
     const a = document.querySelector('[data-hook="blue-score"]');
     if (!log || !r || !a) return;
-    if (log === observando && r === rojo && a === azul) return;
-    if (observando) olvidarLaSala();       // era otra pantalla: se vuelve a empezar
+
+    const mismaPantalla = log === observando;
+    if (!mismaPantalla && observando) olvidarLaSala();   // cambió el chat: ahí sí nos fuimos
+    if (mismaPantalla && r === rojo && a === azul) return;   // nada cambió: no hay que reenganchar
+
     observando = log; rojo = r; azul = a;
     mirarElChat(log);
     mirarElMarcador(r, a);
@@ -921,8 +932,9 @@ function arrancarAlternarChat() {
 // llegaría de un teclado de verdad. Probado contra una sala en vivo: mueve al jugador.
 //
 // Solo aparece en un dispositivo con pantalla táctil (no le agrega nada a quien ya tiene
-// teclado) y solo adentro de una sala de ÑandutíHax (mismo "data-nh-activo" que usa el
-// parche del lienzo).
+// teclado). A diferencia del panel y el cartel de gol, NO está limitado a una sala de
+// ÑandutíHax: no muestra ningún dato ni marca nuestra, así que anda en cualquier sala de
+// HaxBall (ver "ANTES esto solo se mostraba..." más abajo, adentro de la función).
 //
 // SE OCULTA Y SE VUELVE A MOSTRAR desde DOS lados, y los dos escriben la MISMA llave de
 // localStorage ("nandutihax_joystick"): el botón fijo de la esquina (acá, adentro del
@@ -1118,23 +1130,22 @@ function arrancarJoystick() {
   };
   setInterval(reponer, 1500);
 
-  // Solo se muestra adentro de una sala de ÑandutíHax: la misma marca que usa el parche del
-  // lienzo para el cartel de gol ("data-nh-activo"), leída acá cada 1 s. Y de paso, en esa
-  // misma vuelta, se relee si lo ocultaron o lo volvieron a mostrar desde el panel (que
-  // corre en la ventana de arriba y escribe la MISMA llave de localStorage).
+  // ANTES esto solo se mostraba adentro de una sala de ÑandutíHax (mismo "data-nh-activo" que
+  // usa el parche del lienzo). Se sacó esa restricción: el joystick no muestra ningún dato ni
+  // marca de ÑandutíHax —a diferencia del panel o el cartel de gol—, así que no hay ningún
+  // problema en que aparezca en cualquier sala de HaxBall. Y de paso se dejó de depender de
+  // que la sala reconociera la marca de la bienvenida: esa marca recién se nota al reiniciar
+  // la sala, y mientras tanto —sin `?c=` en la dirección— el joystick quedaba invisible SIN
+  // IMPORTAR el interruptor, que es justo lo que se reportó ("dejé el botón prendido y no me
+  // mostró el joystick").
+  //
+  // Lo único que sigue revisando cada 1 s es si lo ocultaron o lo volvieron a mostrar desde el
+  // panel (que corre en la ventana de arriba y escribe la MISMA llave de localStorage).
   let ocultoVisto = estaOculto();
-  const revisarSiEsNuestra = () => {
-    let esNuestra = false;
-    try { esNuestra = document.documentElement.getAttribute("data-nh-activo") === "si"; } catch (e) {}
-    alternar.style.visibility = esNuestra ? "" : "hidden";
-    capa.style.visibility = esNuestra ? "" : "hidden";
-    if (!esNuestra) { soltarTodo(); return; }
-
+  setInterval(() => {
     const oculto = estaOculto();
     if (oculto !== ocultoVisto) { ocultoVisto = oculto; aplicarOculto(oculto); }
-  };
-  revisarSiEsNuestra();
-  setInterval(revisarSiEsNuestra, 1000);
+  }, 500);
 
   console.log("[NandutiHax] controles táctiles listos (joystick + patear)");
 }
