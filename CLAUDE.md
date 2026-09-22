@@ -1517,6 +1517,22 @@ rehace la pantalla.
 Con el chat oculto no se puede escribir (el cuadro de texto está adentro de la misma caja): es
 la idea, para el que quiere la cancha despejada un rato y lo vuelve a abrir para hablar.
 
+### El zoom raro al escribir, en el celular (v1.12.0)
+
+El `<meta name="viewport">` de HaxBall (no el nuestro) trae `width=device-width,
+initial-scale=1, minimum-scale=1` — **sin `maximum-scale` y sin `user-scalable=no`** — y el
+cuadro para el nick/chat (`[data-hook="input"]`) tiene `font-size: 14px`, por debajo de los
+16px que hacen que Safari en iPhone haga zoom solo al tocar un campo de texto ("para que se lea
+mejor"). Sin `maximum-scale` que lo frene, ese zoom se queda pegado y la pantalla se ve
+descuadrada — reportado tal cual: "cuando escribo hace un zoom raro".
+
+`evitarElZoomAlEscribir()` le agrega `maximum-scale=1, user-scalable=no` al viewport que YA
+existe (conserva lo que tenía; solo completa lo que falta), **solo en un dispositivo táctil**.
+Se aplica en LAS DOS ventanas (arriba y adentro del iframe del juego): el campo que dispara el
+zoom vive en el iframe, pero por las dudas se corrige en los dos lados. Probado con Puppeteer
+emulando un iPhone: el viewport de las dos ventanas queda con `maximum-scale=1,
+user-scalable=no` agregado al final.
+
 ### Los carteles en pantalla (v1.5.0)
 
 La extensión **le saca a HaxBall sus dos cartelones y pone los nuestros**: el "Blue Scores!" del

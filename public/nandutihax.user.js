@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ÑandutíHax
 // @namespace    https://nandutihax.com/
-// @version      1.11.2
+// @version      1.12.0
 // @description  Un panel de ÑandutíHax arriba del juego: el marcador, quién está en cancha y el ELO de cada uno, en vivo.
 // @author       Jinder
 // @icon         https://nandutihax.com/img/logo-chico.png
@@ -36,7 +36,7 @@
 // se instala con un clic y no hay que esperar ninguna revisión.
 // =============================================================================
 
-const VERSION_INSTALADA = "1.11.2";
+const VERSION_INSTALADA = "1.12.0";
 const API_SALAS = "https://nandutihax.com/api/publico/salas";
 
 // ── SOLO EN LAS SALAS DE ÑANDUTÍHAX ──────────────────────────────────────────────────
@@ -1196,6 +1196,39 @@ function arreglarAnunciosEnElCelular() {
   } catch (e) {}
 }
 
+// =============================================================================
+// EL ZOOM RARO AL ESCRIBIR, EN EL CELULAR
+//
+// El `<meta name="viewport">` de HaxBall (no el nuestro) trae
+// `width=device-width, initial-scale=1, minimum-scale=1` — SIN `maximum-scale` y sin
+// `user-scalable=no`. Y el cuadro para escribir el nick o el chat (`[data-hook="input"]`)
+// tiene `font-size: 14px`, por debajo de los 16px que hacen que Safari en iPhone haga zoom
+// solo al tocar un campo de texto "para que se lea mejor" — y como no hay `maximum-scale`
+// que lo frene, ese zoom se queda pegado y la pantalla se ve descuadrada (reportado como
+// "cuando escribo hace un zoom raro").
+//
+// Se le agrega `maximum-scale=1, user-scalable=no` al viewport que YA existe (se conserva lo
+// que tenía, por si acaso, y solo se completa lo que falta), SOLO en un dispositivo táctil:
+// en desktop no hay zoom-al-tocar-un-campo que evitar. Se hace en LAS DOS ventanas (la de
+// arriba y adentro del iframe del juego): el campo que dispara el zoom vive adentro del
+// iframe, pero por las dudas —según el navegador, el zoom de toda la pestaña puede regirse
+// por el viewport de la ventana de arriba— se corrige en los dos lados.
+function evitarElZoomAlEscribir() {
+  if (!esTactil()) return;
+  try {
+    let meta = document.querySelector('meta[name="viewport"]');
+    if (!meta) {
+      meta = document.createElement("meta");
+      meta.name = "viewport";
+      (document.head || document.documentElement).appendChild(meta);
+    }
+    const actual = meta.getAttribute("content") || "width=device-width, initial-scale=1";
+    if (!/maximum-scale|user-scalable/.test(actual)) {
+      meta.setAttribute("content", actual + ", maximum-scale=1, user-scalable=no");
+    }
+  } catch (e) {}
+}
+
 // Ojo: según el gestor de userscripts, esto puede correr ANTES de que exista el <html>
 // (document-start). Ahí `document.documentElement` es null y el panel no se dibujaba nunca:
 // tiraba "Cannot read properties of null (reading 'appendChild')" y el script moría en silencio.
@@ -1203,8 +1236,8 @@ function arrancarTodo() {
   if (esNuestraWeb()) return avisarLaVersionEnLaWeb();
   // El panel del costado va en la ventana de arriba; el cartel de gol y los controles
   // táctiles, adentro del juego
-  if (window.top === window.self) { arreglarAnunciosEnElCelular(); arrancarNandutiHax(); }
-  else { arrancarCartelDeGol(); arrancarJoystick(); arrancarAlternarChat(); }
+  if (window.top === window.self) { arreglarAnunciosEnElCelular(); evitarElZoomAlEscribir(); arrancarNandutiHax(); }
+  else { arrancarCartelDeGol(); arrancarJoystick(); arrancarAlternarChat(); evitarElZoomAlEscribir(); }
 }
 
 // El parche del lienzo NO toca el DOM y tiene que ser lo primero de todo, antes de que el
