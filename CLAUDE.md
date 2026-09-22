@@ -1394,6 +1394,54 @@ con Ctrl + C".
   colgar del `body` si HaxBall rehace la pantalla. Al depurar: en la consola tiene que salir
   `[NandutiHax] panel listo, version X` y `[NandutiHax] cartel de gol enganchado`.
 
+### Joystick táctil para jugar desde el celular (v1.8.0)
+
+HaxBall no tiene ningún control por API para mover al jugador propio (`room.setPlayerInput`
+es del HOST, no sirve para el que juega): el cliente escucha `keydown`/`keyup` en `document`
+mirando `event.code` (visto en `game-min.js`: `ArrowUp`/`KeyW` → arriba, `ArrowDown`/`KeyS` →
+abajo, `ArrowLeft`/`KeyA` → izquierda, `ArrowRight`/`KeyD` → derecha, `KeyX`/`Space`/`Control`/
+`Shift`/`Numpad0` → patear; junta eso en un Set y arma un input con banderas Up=1 Down=2
+Left=4 Right=8 Kick=16). Como es un evento del navegador y no de la API del headless, alcanza
+con **disparar un `KeyboardEvent` sintético con el `code` justo** — `document.dispatchEvent(new
+KeyboardEvent("keydown", { code: "ArrowRight", bubbles: true, cancelable: true }))` — tal cual
+llegaría de un teclado de verdad. Probado contra una sala en vivo con Puppeteer emulando touch:
+la cámara sigue al jugador, se mueve igual que con el teclado.
+
+`arrancarJoystick()` (mismo archivo, corre adentro del iframe del juego, junto al cartel de
+gol) dibuja un joystick abajo a la izquierda y un botón de patear abajo a la derecha:
+
+- **Solo aparece en un dispositivo táctil** (`navigator.maxTouchPoints > 0` o
+  `matchMedia("(pointer: coarse)")`): en desktop no se crea ni un solo elemento, cero costo.
+- **Solo en una sala de ÑandutíHax**: reutiliza `data-nh-activo`, la misma marca que ya usa el
+  parche del lienzo para el cartel de gol — no hace falta otra confirmación aparte.
+- El joystick manda **direcciones independientes** (arriba/abajo y izquierda/derecha se activan
+  por separado según cuánto se corrió el dedo en cada eje), así que las diagonales salen solas,
+  igual que apretando dos flechas del teclado a la vez.
+- El botón de patear tiene **su propio dedo** (`Touch.identifier`): se puede correr y patear al
+  mismo tiempo, como con las dos manos en un teclado.
+- Se puede ocultar con un botón (para el que prefiere jugar con teclado en una tablet), y
+  recuerda la elección en `localStorage`.
+- Igual que el cartel de gol, si HaxBall rehace la pantalla los controles se cuelgan de un
+  `<body>` que ya no existe: se repone solo cada 1,5 s.
+
+**No es una "versión aparte para Android"**: es el mismo `nandutihax.user.js` de siempre, que
+ahora además reconoce un dispositivo táctil. Para usarlo desde el celular hace falta un
+navegador que soporte gestores de userscripts — ver "Instalarlo desde el celular" en el README.
+
+**La guía (`/frm/extension/`) tiene una pestaña por plataforma** (Computadora / Android /
+iPhone), con el componente `.pestanas` de siempre (el mismo que `momentos`/`equipos`). Las
+tres apuntan al **mismo** `/nandutihax.user.js` — nunca hay que subir un script aparte para el
+celular, solo cambian los pasos previos (Chrome/Edge + modo desarrollador en PC; Firefox +
+Tampermonkey o Violentmonkey de Android en el celular Android; la app de Tampermonkey +
+activarla en Ajustes → Safari → Extensiones en iPhone, necesita iOS 15+). Se abre sola en la
+pestaña que corresponde mirando el `User-Agent`, y admite un link directo
+(`?para=android` / `?para=iphone`) para mandarle a alguien el paso que necesita.
+
+Ojo con los links de las tiendas de Android: la de Tampermonkey/Violentmonkey tiene una URL
+**aparte** para Android (`addons.mozilla.org/android/addon/...`), distinta de la de Firefox de
+escritorio (`addons.mozilla.org/firefox/addon/...`) — y **tienen que abrirse desde Firefox para
+Android**, no desde el navegador de fábrica, o la tienda dice que no es compatible.
+
 ### Los carteles en pantalla (v1.5.0)
 
 La extensión **le saca a HaxBall sus dos cartelones y pone los nuestros**: el "Blue Scores!" del

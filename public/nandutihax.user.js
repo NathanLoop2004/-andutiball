@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ÑandutíHax
 // @namespace    https://nandutihax.com/
-// @version      1.7.0
+// @version      1.8.0
 // @description  Un panel de ÑandutíHax arriba del juego: el marcador, quién está en cancha y el ELO de cada uno, en vivo.
 // @author       Jinder
 // @icon         https://nandutihax.com/img/logo-chico.png
@@ -36,7 +36,7 @@
 // se instala con un clic y no hay que esperar ninguna revisión.
 // =============================================================================
 
-const VERSION_INSTALADA = "1.7.0";
+const VERSION_INSTALADA = "1.8.0";
 const API_SALAS = "https://nandutihax.com/api/publico/salas";
 
 // ── SOLO EN LAS SALAS DE ÑANDUTÍHAX ──────────────────────────────────────────────────
@@ -109,7 +109,7 @@ let loNuestro = { salas: [], inicio: null, victoria: null, tiempo: null, nuestra
 // Comparar el ?c= de la dirección con los links de la API alcanza cuando se entra por un
 // link nuestro, PERO no cuando se entra desde la lista de salas de HaxBall: ahí la
 // dirección no tiene ningún código y la extensión se quedaba apagada (el cartel de HaxBall
-// salía y el nuestro no). Desde la 1.7.0, un aviso firmado por el host también la prende.
+// salía y el nuestro no). Desde la 1.8.0, un aviso firmado por el host también la prende.
 let confirmadaPorElChat = false;
 
 function confirmarSalaNuestra() {
@@ -815,6 +815,180 @@ function arrancarCartelDeGol() {
 }
 
 // =============================================================================
+// CONTROLES TÁCTILES (joystick + patada) — para jugar desde el celular
+//
+// HaxBall escucha "keydown"/"keyup" en document con event.code: ArrowUp/KeyW = arriba,
+// ArrowDown/KeyS = abajo, ArrowLeft/KeyA = izquierda, ArrowRight/KeyD = derecha, y
+// KeyX/Space/Control/Shift = patear (visto en game-min.js, la clase que junta esos toques
+// en un Set y arma el input con banderas: Up=1, Down=2, Left=4, Right=8, Kick=16). No hay
+// ningún control por API para el jugador propio (room.setPlayerInput es del host, no del
+// jugador), así que se dispara un KeyboardEvent sintético con el código justo, tal cual
+// llegaría de un teclado de verdad. Probado contra una sala en vivo: mueve al jugador.
+//
+// Solo aparece en un dispositivo con pantalla táctil (no le agrega nada a quien ya tiene
+// teclado) y solo adentro de una sala de ÑandutíHax (mismo "data-nh-activo" que usa el
+// parche del lienzo). Se puede ocultar con el botón de la esquina; se acuerda con
+// localStorage.
+function arrancarJoystick() {
+  const esTactil = () => {
+    try { return navigator.maxTouchPoints > 0 || matchMedia("(pointer: coarse)").matches; }
+    catch (e) { return "ontouchstart" in window; }
+  };
+  if (!esTactil()) return;
+
+  const LLAVE = "nandutihax_joystick";
+  let oculto = false;
+  try { oculto = localStorage.getItem(LLAVE) === "oculto"; } catch (e) {}
+
+  const disparar = (tipo, code) => {
+    try { document.dispatchEvent(new KeyboardEvent(tipo, { code, bubbles: true, cancelable: true })); }
+    catch (e) {}
+  };
+
+  const estilo = document.createElement("style");
+  estilo.textContent = `
+    #nh-controles { position: fixed; inset: 0; pointer-events: none; z-index: 2147483000; }
+    #nh-controles.oculto { display: none; }
+    #nh-joystick, #nh-patear {
+      position: absolute; bottom: max(18px, env(safe-area-inset-bottom)); pointer-events: auto;
+      touch-action: none; -webkit-user-select: none; user-select: none;
+    }
+    #nh-joystick {
+      left: max(18px, env(safe-area-inset-left)); width: 122px; height: 122px; border-radius: 50%;
+      background: rgba(255,255,255,.14); border: 2px solid rgba(255,255,255,.35);
+    }
+    #nh-joystick .nh-palito {
+      position: absolute; width: 54px; height: 54px; border-radius: 50%; left: 50%; top: 50%;
+      transform: translate(-50%, -50%); background: rgba(255,255,255,.5); border: 2px solid rgba(255,255,255,.7);
+      transition: background .1s;
+    }
+    #nh-joystick.activo .nh-palito { background: rgba(255,255,255,.85); }
+    #nh-patear {
+      right: max(22px, env(safe-area-inset-right)); width: 92px; height: 92px; border-radius: 50%;
+      background: rgba(229,110,86,.5); border: 2px solid rgba(229,110,86,.8);
+      display: flex; align-items: center; justify-content: center; font-size: 34px;
+      transition: background .1s, transform .1s;
+    }
+    #nh-patear.activo { background: rgba(229,110,86,.85); transform: scale(.94); }
+    #nh-ocultar-controles {
+      position: absolute; bottom: max(18px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%);
+      pointer-events: auto; background: rgba(0,0,0,.4); color: #fff; border: none; border-radius: 20px;
+      padding: 6px 12px; font-size: 11px; font-family: Inter, system-ui, sans-serif;
+    }
+  `;
+  document.head.appendChild(estilo);
+
+  const capa = document.createElement("div");
+  capa.id = "nh-controles";
+  if (oculto) capa.classList.add("oculto");
+  capa.innerHTML = `
+    <div id="nh-joystick"><div class="nh-palito"></div></div>
+    <div id="nh-patear">⚽</div>
+    <button type="button" id="nh-ocultar-controles">Ocultar controles</button>
+  `;
+  document.body.appendChild(capa);
+
+  const base = capa.querySelector("#nh-joystick");
+  const palito = capa.querySelector(".nh-palito");
+  const RADIO = 40;          // hasta dónde se puede mover el palito (px)
+  const ZONA_MUERTA = 14;    // por debajo de esto no se manda ninguna dirección
+
+  // Direcciones activas del joystick (Up/Down/Left/Right). El de patear va aparte.
+  let activas = new Set();
+  let dedoJoystick = null;
+
+  const aplicarDirecciones = (dx, dy) => {
+    const quiero = new Set();
+    if (dy < -ZONA_MUERTA) quiero.add("ArrowUp");
+    if (dy > ZONA_MUERTA) quiero.add("ArrowDown");
+    if (dx < -ZONA_MUERTA) quiero.add("ArrowLeft");
+    if (dx > ZONA_MUERTA) quiero.add("ArrowRight");
+    for (const code of quiero) if (!activas.has(code)) disparar("keydown", code);
+    for (const code of activas) if (!quiero.has(code)) disparar("keyup", code);
+    activas = quiero;
+    base.classList.toggle("activo", quiero.size > 0);
+  };
+
+  const soltarJoystick = () => {
+    dedoJoystick = null;
+    for (const code of activas) disparar("keyup", code);
+    activas = new Set();
+    base.classList.remove("activo");
+    palito.style.transform = "translate(-50%, -50%)";
+  };
+
+  base.addEventListener("touchstart", (ev) => {
+    ev.preventDefault();
+    dedoJoystick = ev.changedTouches[0].identifier;
+  }, { passive: false });
+
+  document.addEventListener("touchmove", (ev) => {
+    if (dedoJoystick === null) return;
+    const toque = [...ev.changedTouches].find((t) => t.identifier === dedoJoystick);
+    if (!toque) return;
+    ev.preventDefault();
+    const r = base.getBoundingClientRect();
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    let dx = toque.clientX - cx, dy = toque.clientY - cy;
+    const d = Math.hypot(dx, dy) || 1;
+    const recorte = Math.min(1, RADIO / d);
+    palito.style.transform = `translate(${dx * recorte - 27}px, ${dy * recorte - 27}px)`;
+    aplicarDirecciones(dx, dy);
+  }, { passive: false });
+
+  const finDeToque = (ev) => {
+    if (dedoJoystick === null) return;
+    if (![...ev.changedTouches].some((t) => t.identifier === dedoJoystick)) return;
+    soltarJoystick();
+  };
+  document.addEventListener("touchend", finDeToque);
+  document.addEventListener("touchcancel", finDeToque);
+
+  // El botón de patear: aparte, con su propio dedo (se puede correr y patear a la vez)
+  const boton = capa.querySelector("#nh-patear");
+  let dedoPatada = null;
+  boton.addEventListener("touchstart", (ev) => {
+    ev.preventDefault();
+    dedoPatada = ev.changedTouches[0].identifier;
+    boton.classList.add("activo");
+    disparar("keydown", "Space");
+  }, { passive: false });
+  const soltarPatada = (ev) => {
+    if (dedoPatada === null) return;
+    if (ev && ![...ev.changedTouches].some((t) => t.identifier === dedoPatada)) return;
+    dedoPatada = null;
+    boton.classList.remove("activo");
+    disparar("keyup", "Space");
+  };
+  document.addEventListener("touchend", soltarPatada);
+  document.addEventListener("touchcancel", soltarPatada);
+
+  capa.querySelector("#nh-ocultar-controles").addEventListener("touchstart", (ev) => {
+    ev.preventDefault();
+    capa.classList.add("oculto");
+    try { localStorage.setItem(LLAVE, "oculto"); } catch (e) {}
+  }, { passive: false });
+
+  // Si HaxBall rehace la pantalla (se entra o se sale de una sala), los controles quedan
+  // colgados de un <body> que ya no está: se los vuelve a poner igual que el cartel de gol.
+  const reponer = () => { if (!capa.isConnected) document.body.appendChild(capa); };
+  setInterval(reponer, 1500);
+
+  // Solo se muestra adentro de una sala de ÑandutíHax: la misma marca que usa el parche
+  // del lienzo para el cartel de gol ("data-nh-activo"), leída acá cada 1 s.
+  const revisarSiEsNuestra = () => {
+    let esNuestra = false;
+    try { esNuestra = document.documentElement.getAttribute("data-nh-activo") === "si"; } catch (e) {}
+    capa.style.visibility = esNuestra ? "" : "hidden";
+    if (!esNuestra) soltarJoystick();
+  };
+  revisarSiEsNuestra();
+  setInterval(revisarSiEsNuestra, 1000);
+
+  console.log("[NandutiHax] controles táctiles listos (joystick + patear)");
+}
+
+// =============================================================================
 // EN NUESTRA WEB: solo decirle qué versión está instalada
 //
 // El script también corre en nandutihax.com, pero ahí no dibuja nada: deja la versión en el
@@ -835,9 +1009,10 @@ function avisarLaVersionEnLaWeb() {
 // tiraba "Cannot read properties of null (reading 'appendChild')" y el script moría en silencio.
 function arrancarTodo() {
   if (esNuestraWeb()) return avisarLaVersionEnLaWeb();
-  // El panel del costado va en la ventana de arriba; el cartel de gol, adentro del juego
+  // El panel del costado va en la ventana de arriba; el cartel de gol y los controles
+  // táctiles, adentro del juego
   if (window.top === window.self) arrancarNandutiHax();
-  else arrancarCartelDeGol();
+  else { arrancarCartelDeGol(); arrancarJoystick(); }
 }
 
 // El parche del lienzo NO toca el DOM y tiene que ser lo primero de todo, antes de que el

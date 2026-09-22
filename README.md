@@ -738,6 +738,15 @@ salía el "Blue Scores!" de siempre y ninguno de nuestros carteles. Ahora se da 
 la sala saluda. Para saber si está trabajando, mirá el renglón de abajo del panel: dice
 **"sin el cartel de HaxBall"** y, entre paréntesis, cuántas veces lo frenó.
 
+**También se juega desde el celular.** Es **el mismo agregado**, no hay una versión aparte para
+Android o iPhone: <https://nandutihax.com/frm/extension/> ahora tiene una pestaña para cada
+plataforma (se abre sola en la que corresponde, o se elige a mano) porque el navegador de
+fábrica del celular no deja correr esto — hace falta Firefox en Android, o Safari con
+Tampermonkey activado en iPhone. Instalado, además del panel aparece un **joystick** abajo a la
+izquierda y un botón de **patear** a la derecha: HaxBall escucha el teclado (`ArrowUp`/`KeyW`
+para arriba, etc.), así que tocar esos controles dispara los mismos eventos que apretaría un
+teclado de verdad — no hace falta ninguna API especial, y se probó contra una sala en vivo.
+
 **Y tu cartel de gol en pantalla.** Cuando convertís, en vez del "Blue Scores!" de siempre sale
 **el cartel que compraste en la tienda**, grande, arriba de la cancha y con tu color. Lo ven los
 que tengan la extensión instalada; en el chat el cartel le sigue saliendo a todos igual. Si el

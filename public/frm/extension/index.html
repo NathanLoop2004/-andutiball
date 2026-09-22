@@ -66,7 +66,17 @@
     </div>
   </div>
 
-  <div class="tarjeta" style="margin-top:16px">
+  <!-- Es EL MISMO agregado en las dos plataformas (/nandutihax.user.js): lo único que
+       cambia es CÓMO se llega hasta instalarlo, porque el navegador de PC y el de Android
+       piden pasos distintos (el celular no tiene "modo desarrollador" ni Chrome/Edge que
+       sirvan; hace falta Firefox). Nunca hay que tocar dos scripts separados. -->
+  <div class="pestanas" id="pestanasPlataforma" role="tablist" style="margin-top:20px">
+    <button class="pestana" type="button" role="tab" data-plataforma="pc" aria-selected="true">💻 Computadora</button>
+    <button class="pestana" type="button" role="tab" data-plataforma="android">📱 Android</button>
+    <button class="pestana" type="button" role="tab" data-plataforma="iphone">🍎 iPhone</button>
+  </div>
+
+  <div class="tarjeta" id="tarjetaPasosPc" style="margin-top:16px">
     <div class="tarjeta-cuerpo">
       <h2>Cómo se instala</h2>
       <ol class="pasos-instalar">
@@ -112,6 +122,94 @@
           </div>
         </li>
         <li style="margin-top:14px">Volvé a HaxBall y <b>recargá la página</b> (Ctrl + F5). El panel aparece solo, arriba a la derecha.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="tarjeta" id="tarjetaPasosAndroid" style="margin-top:16px" hidden>
+    <div class="tarjeta-cuerpo">
+      <h2>Cómo se instala en Android</h2>
+      <p class="tenue">
+        Es <b>el mismo agregado</b> que en la computadora (el mismo <code>nandutihax.user.js</code>),
+        no hay una versión aparte para el celular. Lo único que cambia es el navegador: hace falta
+        uno que deje correr userscripts, y el que trae Android de fábrica no puede.
+      </p>
+      <ol class="pasos-instalar">
+        <li>
+          <b>Chrome, el navegador de Samsung y el resto no sirven</b>: en Android ninguno de esos
+          deja correr agregados como este. Instalá <b>Firefox para Android</b>:
+          <div class="botones" style="margin-top:8px">
+            <a class="boton" href="https://play.google.com/store/apps/details?id=org.mozilla.firefox" target="_blank" rel="noopener">Firefox para Android</a>
+          </div>
+        </li>
+        <li style="margin-top:14px">
+          <b>Adentro de Firefox</b> (importante: tiene que ser desde ahí, no desde el navegador de
+          fábrica), instalá <b>Tampermonkey</b> o <b>Violentmonkey</b> — cualquiera de los dos sirve,
+          alcanza con uno:
+          <div class="botones" style="margin-top:8px">
+            <a class="boton" href="https://addons.mozilla.org/android/addon/tampermonkey/" target="_blank" rel="noopener">Tampermonkey</a>
+            <a class="boton" href="https://addons.mozilla.org/android/addon/violentmonkey/" target="_blank" rel="noopener">Violentmonkey</a>
+          </div>
+        </li>
+        <li style="margin-top:14px">
+          Tocá acá, <b>adentro de Firefox</b>, y confirmá la instalación:
+          <div class="botones" style="margin-top:8px">
+            <a class="boton principal grande" href="/nandutihax.user.js">Instalar la extensión</a>
+          </div>
+        </li>
+        <li style="margin-top:14px">
+          Entrá a HaxBall con Firefox y recargá la página. Además del panel te va a aparecer un
+          <b>joystick</b> abajo a la izquierda y un botón de <b>patear</b> a la derecha: es todo
+          lo que hace falta para jugar sin teclado.
+        </li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="tarjeta" id="tarjetaPasosIphone" style="margin-top:16px" hidden>
+    <div class="tarjeta-cuerpo">
+      <h2>Cómo se instala en iPhone / iPad</h2>
+      <p class="tenue">
+        Es <b>el mismo agregado</b> que en la computadora y en Android (el mismo
+        <code>nandutihax.user.js</code>), no hay una versión aparte para iPhone. Acá el que hace
+        andar los userscripts es <b>Safari</b> mismo, con Tampermonkey activado como extensión suya
+        — necesita <b>iOS 15 o más nuevo</b>.
+      </p>
+      <ol class="pasos-instalar">
+        <li>
+          Instalá <b>Tampermonkey</b> desde el App Store (es una app aparte, no una extensión de
+          Safari suelta):
+          <div class="botones" style="margin-top:8px">
+            <a class="boton" href="https://apps.apple.com/us/app/tampermonkey/id6738342400" target="_blank" rel="noopener">Tampermonkey en el App Store</a>
+          </div>
+        </li>
+        <li style="margin-top:14px">
+          <b>Activala como extensión de Safari</b> — este paso es el que más se salta y sin él no
+          pasa nada:
+          <ol class="pasos-adentro">
+            <li>Abrí <b>Ajustes</b> (la app del engranaje, no Safari).</li>
+            <li>
+              Andá a <b>Safari → Extensiones</b> (en algunos iOS está en
+              <b>Aplicaciones → Safari → Extensiones</b>).
+            </li>
+            <li>Tocá <b>Tampermonkey</b>, prendela, y dejala <b>permitida en todos los sitios web</b>.</li>
+          </ol>
+        </li>
+        <li style="margin-top:14px">
+          Ya adentro de <b>Safari</b> (no de otra app), tocá acá y confirmá la instalación:
+          <div class="botones" style="margin-top:8px">
+            <a class="boton principal grande" href="/nandutihax.user.js">Instalar la extensión</a>
+          </div>
+          <p class="tenue chico" style="margin-top:6px">
+            Si no se abre solo el cartel de instalar, fijate que el paso de arriba haya quedado
+            prendido: es lo único que suele fallar acá.
+          </p>
+        </li>
+        <li style="margin-top:14px">
+          Entrá a HaxBall con Safari y recargá la página. Además del panel te va a aparecer un
+          <b>joystick</b> abajo a la izquierda y un botón de <b>patear</b> a la derecha, para
+          jugar sin teclado.
+        </li>
       </ol>
     </div>
   </div>
@@ -172,6 +270,45 @@
 <script src="/js/sesion.js"></script>
 <script>
 Sesion.pintarBarra("derecha");
+
+// ── Pestañas de plataforma (Computadora / Android / iPhone) ──────────────────────────
+// Las tres instalan EL MISMO agregado (/nandutihax.user.js): esto solo cambia qué pasos se
+// muestran. Admite un link directo con ?para=android o ?para=iphone (para mandarle a
+// alguien el paso que necesita, sin que tenga que buscarlo).
+(function () {
+  const tarjetas = {
+    pc: document.getElementById("tarjetaPasosPc"),
+    android: document.getElementById("tarjetaPasosAndroid"),
+    iphone: document.getElementById("tarjetaPasosIphone"),
+  };
+  const barra = document.getElementById("pestanasPlataforma");
+
+  function elegir(plataforma) {
+    if (!tarjetas[plataforma]) plataforma = "pc";
+    for (const [clave, tarjeta] of Object.entries(tarjetas)) tarjeta.hidden = clave !== plataforma;
+    for (const b of barra.querySelectorAll("[data-plataforma]")) {
+      b.setAttribute("aria-selected", String(b.dataset.plataforma === plataforma));
+    }
+  }
+
+  barra.onclick = (ev) => {
+    const b = ev.target.closest("[data-plataforma]");
+    if (!b) return;
+    history.replaceState(null, "", "?para=" + b.dataset.plataforma);
+    elegir(b.dataset.plataforma);
+  };
+
+  // Si alguien llega con ?para=android o une detección automática por user-agent, arranca
+  // directo en la pestaña que le sirve — sin obligarlo a buscar la suya.
+  const pedida = new URLSearchParams(location.search).get("para");
+  if (pedida) {
+    elegir(pedida);
+  } else {
+    const ua = navigator.userAgent;
+    if (/iPhone|iPad|iPod/.test(ua)) elegir("iphone");
+    else if (/Android/.test(ua)) elegir("android");
+  }
+})();
 
 // ── Qué versión tenés puesta ──────────────────────────────────────────────────────────
 // La extensión también corre en esta página (solo para eso) y deja su versión en el <html>.
