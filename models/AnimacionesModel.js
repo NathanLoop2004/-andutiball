@@ -18,6 +18,12 @@
 //   "tamano"    se hace grande y chico
 //   "ambas"     las dos cosas a la vez
 //
+// ROTACIÓN (cada punto puede girar el emoji, en paralelo a cuadros y tamanos): SOLO se ve en
+// la vista previa de la web (el editor y la página de cada animación). La API de HaxBall no
+// tiene ningún parámetro para girar el avatar de un jugador, así que en la sala de verdad el
+// emoji sale derecho igual. No entra en el "tipo": el tipo describe lo que pasa EN EL
+// PARTIDO, y girar no pasa ahí.
+//
 // CUÁNTO DURA: `cuadros.length * msPorCuadro`, o sea exactamente lo que dura la secuencia.
 // La secuencia NUNCA se repite. Del lado del panel se elige el tiempo del festejo y los puntos
 // se acomodan solos para llenarlo: si se sube la velocidad, el festejo sigue durando lo mismo
@@ -46,6 +52,7 @@ const LIMITES = {
   msPorCuadro: { min: 60, max: 2000 },
   duracionMs: { min: 300, max: 10000 },
   tamano: { min: 0.3, max: 3 },
+  rotacion: { min: -180, max: 180 },
 };
 
 const entre = (valor, { min, max }) => Math.min(max, Math.max(min, valor));
@@ -53,10 +60,11 @@ const entre = (valor, { min, max }) => Math.min(max, Math.max(min, valor));
 // Un cuadro es UN emoji o UNA letra. HaxBall no muestra más de 2 caracteres en el avatar,
 // así que se recorta ahí mismo: más largo no se vería y solo confundiría al que la arma.
 //
-// Los cuadros y los tamaños van EN PARALELO: mismo largo y misma posición, así cada punto
-// puede tener su emoji, su tamaño, o las dos cosas. Un cuadro vacío ("") es un punto que solo
-// cambia el tamaño, y por eso acá NO se filtran los vacíos: se perdería el orden.
-function limpiarPuntos(cuadros, tamanos) {
+// Los cuadros, los tamaños y las rotaciones van EN PARALELO: mismo largo y misma posición,
+// así cada punto puede tener su emoji, su tamaño, su ángulo, o cualquier combinación. Un
+// cuadro vacío ("") es un punto que solo cambia el tamaño o el ángulo, y por eso acá NO se
+// filtran los vacíos: se perdería el orden.
+function limpiarPuntos(cuadros, tamanos, rotaciones) {
   const lista = Array.isArray(cuadros) ? cuadros : String(cuadros || "").split(/\s+/);
   const limpios = lista
     .map((c) => [...String(c == null ? "" : c).trim()].slice(0, 2).join(""))
@@ -68,11 +76,17 @@ function limpiarPuntos(cuadros, tamanos) {
     return Number.isFinite(t) ? Math.round(entre(t, LIMITES.tamano) * 100) / 100 : 1;
   });
 
-  return { cuadros: limpios, tamanos: medidas };
+  const crudosGiro = Array.isArray(rotaciones) ? rotaciones : [];
+  const giros = limpios.map((_, i) => {
+    const g = Number(crudosGiro[i]);
+    return Number.isFinite(g) ? Math.round(entre(g, LIMITES.rotacion)) : 0;
+  });
+
+  return { cuadros: limpios, tamanos: medidas, rotaciones: giros };
 }
 
-// ¿Este punto hace algo? (tiene emoji o cambia el tamaño)
-const puntoSirve = (emoji, tamano) => Boolean(emoji) || Number(tamano) !== 1;
+// ¿Este punto hace algo? (tiene emoji, cambia el tamaño o gira)
+const puntoSirve = (emoji, tamano, rotacion) => Boolean(emoji) || Number(tamano) !== 1 || Number(rotacion) !== 0;
 
 const paraMostrar = (a) => ({
   clave: a.clave,
@@ -82,6 +96,7 @@ const paraMostrar = (a) => ({
   tipo: a.tipo,
   cuadros: a.cuadros,
   tamanos: a.tamanos,
+  rotaciones: a.rotaciones,
   msPorCuadro: a.msPorCuadro,
   tamanoDesde: a.tamanoDesde,
   tamanoHasta: a.tamanoHasta,
@@ -114,10 +129,10 @@ class AnimacionesModel {
     const nombre = String(datos.nombre || "").trim();
     if (!nombre) throw new Error("Ponele un nombre");
 
-    const { cuadros, tamanos } = limpiarPuntos(datos.cuadros, datos.tamanos);
-    const sirveAlguno = cuadros.some((c, i) => puntoSirve(c, tamanos[i]));
+    const { cuadros, tamanos, rotaciones } = limpiarPuntos(datos.cuadros, datos.tamanos, datos.rotaciones);
+    const sirveAlguno = cuadros.some((c, i) => puntoSirve(c, tamanos[i], rotaciones[i]));
     if (!sirveAlguno) {
-      throw new Error("Hace falta al menos un punto con un emoji, una letra o un tamaño distinto");
+      throw new Error("Hace falta al menos un punto con un emoji, una letra, un tamaño o un ángulo distinto");
     }
 
     // El tipo sale de lo que se cargó, no hace falta elegirlo: si hay emojis es "secuencia",
@@ -134,6 +149,7 @@ class AnimacionesModel {
       tipo,
       cuadros,
       tamanos,
+      rotaciones,
       msPorCuadro: msPorCuadro,
       tamanoDesde: entre(Number(datos.tamanoDesde) || 1, LIMITES.tamano),
       tamanoHasta: entre(Number(datos.tamanoHasta) || 1, LIMITES.tamano),
@@ -298,6 +314,8 @@ class AnimacionesModel {
         tipo: a.tipo,
         cuadros: a.cuadros,
         tamanos: a.tamanos,
+        // rotaciones no viaja acá a propósito: la sala no puede girar el avatar, así que le
+        // mandaría un dato que nunca usa.
         msPorCuadro: a.msPorCuadro,
         tamanoDesde: a.tamanoDesde,
         tamanoHasta: a.tamanoHasta,

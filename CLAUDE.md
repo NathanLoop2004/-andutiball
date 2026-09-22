@@ -803,6 +803,21 @@ Handlers ofuscados de esta versión: `0x1cb` onRoomLink · `0x1bc` onStadiumChan
 
 Es idempotente y **condicional**: si el script nuevo ya trae `room.onPlayerChat` o `room.onTeamGoal`, no agrega esos bloques. `--ver` hace una pasada en seco. Guarda `script.anterior.js`.
 
+**"Idempotente" no lo era de verdad hasta el 21/09/2026.** Antes de reescribir los bloques,
+el código los busca por su encabezado para sacar la copia vieja — pero buscaba **dos**
+saltos de línea antes del comentario (`"\n\n// ▇▇▇▇▇▇▇▇▇ " + marca`), y al agregarlos se
+pone **uno solo** (`script.trimEnd() + "\n" + texto`). Nunca encontraba nada, así que cada
+`npm run parchar` sobre un script ya parchado no sacaba los bloques viejos: los dejaba y
+apilaba una copia nueva arriba. Es invisible corriendo la sala (en JS gana la última
+declaración, así que funcionalmente no cambiaba nada) pero cada handler quedaba envuelto el
+doble de veces, y eso fue lo que un día tiró "Maximum call stack size exceeded" en
+`onGameStart` al correr las pruebas. Se ve con
+`node -e 'console.log(require("fs").readFileSync("script.js","utf8").split("▇▇▇▇▇▇▇▇▇ 🎖️ RANGOS").length-1)'`
+(tiene que dar 1). Arreglado buscando el encabezado solo (sin contar los saltos de línea de
+antes) y recortando hacia atrás cualquier espacio en blanco que haya, sea `\n` o `\r\n`.
+**Si algún día vuelve a aparecer una duplicación así**, correr `git checkout -- script.js
+script.anterior.js` para volver a la última versión limpia antes de investigar.
+
 **Al tocar los bloques, editarlos en `parches/bloques/` y correr `npm run parchar`** — no editar el final de `script.js` a mano, porque el parcheador lo reescribe.
 
 
@@ -1213,6 +1228,19 @@ arma decide en qué momento el jugador se hace grande y cuánto.
 
 `tamanoDesde`/`tamanoHasta` quedan **solo para las animaciones viejas**: si `tamanos` viene vacío,
 el bloque usa el vaivén de seno de antes. Las nuevas siempre traen `tamanos`.
+
+**Y cada punto también puede girar** (21/09/2026, migración
+`20260921200000_animaciones_rotacion`): `rotaciones Float[]` va en el mismo paralelo que
+`cuadros` y `tamanos` (mismo largo, misma posición), en grados de -180 a 180. **Esto SOLO se
+ve en la vista previa de la web** (el editor de `/frm/animaciones/`, el modal "Ver" y la
+página pública de cada animación, las tres con `cancha-animacion.js`): la API de HaxBall no
+tiene ningún parámetro para girar el avatar de un jugador, así que en la sala de verdad el
+emoji sale siempre derecho. Por eso `rotaciones` **no viaja** en `paraLaSala()` (le mandaría
+a la sala un dato que nunca usa) y no entra en el cálculo de `tipo`: el tipo describe lo que
+pasa en el partido, y girar no pasa ahí. `cancha-animacion.js` lo dibuja con
+`ctx.translate` + `ctx.rotate` alrededor del centro del disco (el disco en sí nunca gira: es
+un círculo, no se notaría). En la tabla del panel, cada emoji de la columna "Cómo se ve" sale
+ya girado a su ángulo, y una etiqueta dice "gira hasta N°" si algún punto lo usa.
 
 | Tipo | Qué hace |
 |---|---|

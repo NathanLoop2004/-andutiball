@@ -767,7 +767,7 @@ input[type=number]:focus { outline: none; border-color: var(--acento); box-shado
 .punto:hover { border-color: var(--borde-fuerte); }
 .punto.activo { border-color: var(--acento); box-shadow: 0 0 0 3px var(--acento-suave); }
 .punto.arrastrando { opacity: .4; }
-.punto .cara { font-size: 24px; line-height: 1; }
+.punto .cara { font-size: 24px; line-height: 1; display: inline-block; }
 .punto .cara.sin { font-size: 11px; color: var(--tenue); font-weight: 600; }
 .punto small { font-size: 9px; font-weight: 600; color: var(--tenue); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .punto .sacar {
@@ -845,7 +845,7 @@ input[type=number]:focus { outline: none; border-color: var(--acento); box-shado
 .tabla-animaciones .sin-cortar { white-space: nowrap; }
 .tabla-animaciones .sin-cortar .boton + .boton { margin-left: 6px; }
 .celda-puntos { max-width: 260px; line-height: 2; }
-.celda-puntos .cuadro { margin-right: 2px; }
+.celda-puntos .cuadro { margin-right: 2px; display: inline-block; }
 .celda-puntos .etiqueta { margin-left: 4px; }
 @media (max-width: 760px) {
   /* En el teléfono se esconden las columnas que menos importan */

@@ -17,9 +17,13 @@
 //
 // Los discos no se pisan nunca, como en el juego.
 //
+// El ángulo de cada punto (rotacion, en grados) SOLO existe acá, en la vista previa: la API
+// de HaxBall no puede girar el avatar de un jugador adentro del partido, así que en la sala
+// de verdad el emoji sale derecho igual.
+//
 // Uso:
 //   const cancha = CanchaAnimacion.crear(document.getElementById("lienzo"), {
-//     puntos: () => [{ emoji: "⚽", tamano: 1.5 }],   // se lee en cada cuadro
+//     puntos: () => [{ emoji: "⚽", tamano: 1.5, rotacion: 45 }],   // se lee en cada cuadro
 //     msPorCuadro: () => 200,
 //     congelado: () => -1,           // opcional: con >= 0 se queda quieta en ese punto
 //     alMostrarPunto: (i) => {},     // opcional: para mover el cabezal de la línea de tiempo
@@ -105,8 +109,10 @@ window.CanchaAnimacion = {
       }
     }
 
-    // Un jugador, como lo dibuja HaxBall: disco de color, borde oscuro y el avatar ADENTRO
-    function jugadorHax(x, y, radio, color, avatar) {
+    // Un jugador, como lo dibuja HaxBall: disco de color, borde oscuro y el avatar ADENTRO.
+    // El disco nunca gira (es un círculo, no se notaría); lo que gira es SOLO el emoji, y
+    // solo acá en la vista previa: en la sala de verdad sale derecho igual.
+    function jugadorHax(x, y, radio, color, avatar, rotacion) {
       ctx.beginPath();
       ctx.arc(x, y, radio, 0, Math.PI * 2);
       ctx.fillStyle = color;
@@ -115,11 +121,15 @@ window.CanchaAnimacion = {
       ctx.strokeStyle = "#000";
       ctx.stroke();
       if (avatar) {
+        ctx.save();
+        ctx.translate(x, y + radio * 0.04);
+        if (rotacion) ctx.rotate((rotacion * Math.PI) / 180);
         ctx.font = "600 " + Math.round(radio * 1.15) + "px 'Segoe UI Emoji', 'Apple Color Emoji', Inter, sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillStyle = "#fff";
-        ctx.fillText(avatar, x, y + radio * 0.04);
+        ctx.fillText(avatar, 0, 0);
+        ctx.restore();
       }
     }
 
@@ -173,7 +183,7 @@ window.CanchaAnimacion = {
       const arquero = { x: cx(292), y: cy(m(-16, 8, (Math.sin(t / 650) + 1) / 2)) };
       const arco = { x: cx(316), y: cy(-26) };
 
-      let pelota, escala = 1, fase, avatar = null;
+      let pelota, escala = 1, giro = 0, fase, avatar = null;
 
       if (t < AVANCE) {
         fase = "Suben por la cancha";
@@ -196,6 +206,7 @@ window.CanchaAnimacion = {
           if (lista.length) {
             avatar = lista[i].emoji || null;
             escala = Number(lista[i].tamano) || 1;
+            giro = Number(lista[i].rotacion) || 0;
             avisarPunto(i);
           }
           fase = estaCongelada
@@ -221,9 +232,9 @@ window.CanchaAnimacion = {
         }
       }
 
-      jugadorHax(arquero.x, arquero.y, R, "#5689E5", null);
-      jugadorHax(companiero.x, companiero.y, R, "#E56E56", null);
-      jugadorHax(jugador.x, jugador.y, R * escala, "#E56E56", avatar);
+      jugadorHax(arquero.x, arquero.y, R, "#5689E5", null, 0);
+      jugadorHax(companiero.x, companiero.y, R, "#E56E56", null, 0);
+      jugadorHax(jugador.x, jugador.y, R * escala, "#E56E56", avatar, giro);
 
       ctx.beginPath();
       ctx.arc(pelota.x, pelota.y, RB, 0, Math.PI * 2);

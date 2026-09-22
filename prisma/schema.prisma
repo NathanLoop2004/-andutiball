@@ -407,6 +407,9 @@ model Animacion {
   // El tamaño de cada punto, en paralelo a cuadros: mismo largo y misma posición.
   // Vacío = se usa el vaivén viejo entre tamanoDesde y tamanoHasta.
   tamanos     Float[]  @default([])
+  // El ángulo de cada punto (grados, -180 a 180), también en paralelo a cuadros. Solo se ve
+  // en la vista previa de la web: HaxBall no tiene forma de girar el avatar en la sala.
+  rotaciones  Float[]  @default([])
   msPorCuadro Int      @default(200)
   // Multiplicadores del tamaño normal del jugador (1 = como siempre)
   tamanoDesde Float    @default(1)

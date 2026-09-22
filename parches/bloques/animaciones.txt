@@ -19,6 +19,10 @@
 //
 // El que no compró ninguna festeja como siempre (el parpadeo del autor).
 // La lista la deja el lanzador en window.__ANIMACIONES (nick en minúscula → la animación).
+//
+// Cada punto puede tener también un ángulo (rotaciones, para la vista previa de la web): acá
+// no se usa nunca, porque la API de HaxBall no tiene forma de girar el avatar de un jugador.
+// El emoji sale derecho en la sala igual que siempre.
 
 var AnimacionesDeGolActivas = true;
 // El MISMO tope que AnimacionesModel.MAX_CUADROS. Si acá queda más chico, la animación se

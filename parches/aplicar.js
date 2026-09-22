@@ -409,14 +409,22 @@ const BLOQUES = [
   { contenido: bloqueMapas, marca: "🗺️ MAPAS DE FUTSAL", nombre: null, siFalta: () => Boolean(bloqueMapas) },
 ];
 
-// Sacamos nuestros bloques viejos antes de volver a escribirlos
+// Sacamos nuestros bloques viejos antes de volver a escribirlos. Buscamos el encabezado
+// solo (sin contar los saltos de línea de antes: al agregarlos va uno solo —
+// `script.trimEnd() + "\n" + texto`—, pero acá se buscaban DOS, así que nunca los
+// encontraba y cada corrida de `npm run parchar` los iba duplicando en vez de
+// reemplazarlos). Encontrado el encabezado, se recorta para atrás cualquier espacio en
+// blanco (\n o \r\n, uno o varios) y se corta desde ahí hasta el final: como los bloques
+// siempre van en el mismo orden al final del archivo, cortar en el primero que aparece se
+// lleva a todos los que le siguen de una sola vez.
 for (const bloque of BLOQUES) {
-  const i = script.indexOf("\n\n// ▇▇▇▇▇▇▇▇▇ " + bloque.marca);
-  if (i !== -1) script = script.slice(0, i) + script.slice(script.indexOf("\n", script.length - 1) + 1 || script.length);
+  const encabezado = "// ▇▇▇▇▇▇▇▇▇ " + bloque.marca;
+  const i = script.indexOf(encabezado);
+  if (i === -1) continue;
+  let desde = i;
+  while (desde > 0 && /\s/.test(script[desde - 1])) desde--;
+  script = script.slice(0, desde);
 }
-// (el corte anterior solo saca el primero; recortamos desde el primer bloque nuestro)
-const primero = BLOQUES.map((b) => script.indexOf("\n\n// ▇▇▇▇▇▇▇▇▇ " + b.marca)).filter((i) => i !== -1).sort((a, b) => a - b)[0];
-if (primero !== undefined) script = script.slice(0, primero);
 
 for (const bloque of BLOQUES) {
   if (!bloque.siFalta(script)) {

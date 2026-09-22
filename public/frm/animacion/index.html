@@ -84,7 +84,13 @@ function avisar(texto, clase) {
 // el festejo adentro, así se ve tal cual va a salir en la sala. Sin los segundos: al que la
 // compra no le interesa el detalle del tiempo, le interesa cómo queda.
 const cancha = CanchaAnimacion.crear($("lienzo"), {
-  puntos: () => (animacion ? (animacion.cuadros || []).map((c, i) => ({ emoji: c, tamano: (animacion.tamanos || [])[i] || 1 })) : []),
+  puntos: () => (animacion
+    ? (animacion.cuadros || []).map((c, i) => ({
+        emoji: c,
+        tamano: (animacion.tamanos || [])[i] || 1,
+        rotacion: (animacion.rotaciones || [])[i] || 0,
+      }))
+    : []),
   msPorCuadro: () => (animacion ? animacion.msPorCuadro : 200),
   conSegundos: false,
 });
@@ -104,9 +110,10 @@ async function cargar() {
   document.title = animacion.nombre + " · ÑandutíHax";
   $("nombre").textContent = animacion.nombre;
   $("detalle").textContent = animacion.detalle || animacion.descripcion || "Animación de gol.";
-  $("queHace").textContent = animacion.tipo === "tamano" ? "Se hace grande y chico"
+  const giraAca = (animacion.rotaciones || []).some(Number);
+  $("queHace").textContent = (animacion.tipo === "tamano" ? "Se hace grande y chico"
     : animacion.tipo === "ambas" ? "Le pasan emojis y se hace grande y chico"
-    : "Le pasan emojis o letras";
+    : "Le pasan emojis o letras") + (giraAca ? " y gira en algunos puntos (en esta vista previa; en la sala el emoji sale derecho)" : "");
   $("precio").textContent = "🪙 " + monedasTexto(animacion.precio) + " monedas";
 
   $("ficha").hidden = false;

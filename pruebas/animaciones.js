@@ -189,6 +189,7 @@ function revisar(titulo, condicion, detalle) {
       tipo: "ambas",
       cuadros: ["⚽", "🔥", "", "⭐", "💥", "🎉", "🚀", "🏆", "😎", "💪", "🐐", "⚡"],   // 12 puntos
       tamanos: [9, 0.01, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1],   // 9 baja a 3 y 0.01 sube a 0.3
+      rotaciones: [270, -270, 45, 0, 0, 0, 0, 0, 0, 0, 0, 0],   // 270 baja a 180 y -270 sube a -180
       msPorCuadro: 5,        // por debajo del mínimo: sube a 60
       duracionMs: 999999,    // se ignora: la duración sale de la secuencia
     }, "prueba");
@@ -202,6 +203,15 @@ function revisar(titulo, condicion, detalle) {
       creada.tamanos.slice(0, 3).join(" "));
     revisar("Un punto sin emoji se conserva (es solo de tamaño)", creada.cuadros[2] === "", JSON.stringify(creada.cuadros.slice(0, 4)));
     revisar("El tipo sale solo de lo que se cargó", creada.tipo === "ambas", creada.tipo);
+    revisar("Las rotaciones de cada punto se recortan a -180/180",
+      creada.rotaciones.length === 12 && creada.rotaciones[0] === 180 && creada.rotaciones[1] === -180 && creada.rotaciones[2] === 45,
+      creada.rotaciones.slice(0, 3).join(" "));
+
+    const soloGira = await AnimacionesModel.guardar(clave, {
+      nombre: "De prueba", cuadros: ["", ""], tamanos: [1, 1], rotaciones: [90, 0],
+    }, "prueba");
+    revisar("Un punto que solo gira (sin emoji ni tamaño) también cuenta como algo cargado",
+      soloGira.rotaciones[0] === 90, JSON.stringify(soloGira.rotaciones));
 
     const conMasPuntos = await AnimacionesModel.guardar(clave, {
       nombre: "De prueba", cuadros: ["⚽", "🔥", "👑", "⭐"], tamanos: [1, 1, 1, 1], msPorCuadro: 400,
@@ -244,6 +254,9 @@ function revisar(titulo, condicion, detalle) {
     revisar("La sala la recibe con los emojis Y los tamaños de cada punto",
       Boolean(suya) && Array.isArray(suya.cuadros) && Array.isArray(suya.tamanos) && suya.cuadros.length === suya.tamanos.length,
       JSON.stringify(suya));
+    // Girar solo se ve en la vista previa de la web: la API de HaxBall no puede girar el
+    // avatar, así que ni tiene sentido mandárselo a la sala.
+    revisar("Las rotaciones NO viajan a la sala (HaxBall no puede girar el avatar)", suya && suya.rotaciones === undefined);
 
     // Se vende por lo que VALE HOY, no por lo que pagó: se compró a 2 y ahora vale 10,
     // así que tienen que devolverle 7 (el 70% de 10) y no 1,4 (el 70% de 2).
