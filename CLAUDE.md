@@ -1419,10 +1419,24 @@ gol) dibuja un joystick abajo a la izquierda y un botón de patear abajo a la de
   igual que apretando dos flechas del teclado a la vez.
 - El botón de patear tiene **su propio dedo** (`Touch.identifier`): se puede correr y patear al
   mismo tiempo, como con las dos manos en un teclado.
-- Se puede ocultar con un botón (para el que prefiere jugar con teclado en una tablet), y
-  recuerda la elección en `localStorage`.
 - Igual que el cartel de gol, si HaxBall rehace la pantalla los controles se cuelgan de un
   `<body>` que ya no existe: se repone solo cada 1,5 s.
+
+**Se oculta y se vuelve a mostrar desde DOS lados** (v1.10.0, corrigiendo un bug real): la
+primera versión tenía un solo botón de texto ("Ocultar controles") **pegado adentro del propio
+joystick** — al tocarlo, todo el grupo se escondía de una, botón incluido, y no quedaba nada en
+pantalla para volver a mostrarlo (había que borrar `localStorage` a mano). Ahora:
+
+- Un botón fijo en la esquina (🕹️, arriba a la izquierda, `top: 54px` para no chocar con los
+  íconos propios de HaxBall), que **nunca** se esconde — es un elemento aparte, no un hijo del
+  grupo que se oculta.
+- Un interruptor igual (🕹️) en la cabecera del panel de ÑandutíHax, al lado de plegar — pero el
+  panel vive en la ventana de arriba y el joystick adentro del iframe del juego, **contextos de
+  JavaScript distintos**. Como los dos son el mismo origen (`www.haxball.com`), ya comparten
+  `localStorage` solo: el panel escribe la llave `nandutihax_joystick` y el joystick la relee
+  cada 1 s (el mismo intervalo que ya usaba para `data-nh-activo`) y se entera solo, sin
+  ningún mensaje entre ventanas. Probado con Puppeteer: tocar el interruptor del panel oculta
+  el joystick del iframe en ≤ 1,6 s.
 
 **No es una "versión aparte para Android"**: es el mismo `nandutihax.user.js` de siempre, que
 ahora además reconoce un dispositivo táctil. Para usarlo desde el celular hace falta un
@@ -1466,6 +1480,21 @@ nada; probado contra una sala en vivo con Puppeteer emulando un iPhone, con y si
 
 De paso, `#nh-panel` pasó a `width: min(268px, calc(100vw - 24px))`: nunca se pasa del ancho de
 la pantalla, aunque algún día la franja vuelva a aparecer o el celular sea más angosto que 292px.
+
+### Mostrar/ocultar la barra de chat de HaxBall (v1.11.0)
+
+`.chatbox-view` (la caja del chat, de HaxBall, no nuestra) trae 160px de alto de fábrica y tapa
+justo donde va nuestro joystick — visto con Puppeteer, emulando un iPhone. La primera idea fue
+achicarla sola, pero el usuario la rechazó ("yo no quiero que se achique, yo quiero un botón que
+haga desaparecer y aparecer"): así que en vez de tocarle el tamaño, `arrancarAlternarChat()` le
+agrega un botón fijo más (💬, al lado del del joystick, `top: 54px; left: 58px`) que esconde
+**toda** la caja (`.chatbox-view`, mensajes y cuadro de escribir juntos) y la vuelve a mostrar.
+Mismo patrón que el del joystick: llave de `localStorage` aparte (`nandutihax_chat`, para poder
+ocultarlos por separado), botón que nunca se esconde a sí mismo, y se repone solo si HaxBall
+rehace la pantalla.
+
+Con el chat oculto no se puede escribir (el cuadro de texto está adentro de la misma caja): es
+la idea, para el que quiere la cancha despejada un rato y lo vuelve a abrir para hablar.
 
 ### Los carteles en pantalla (v1.5.0)
 

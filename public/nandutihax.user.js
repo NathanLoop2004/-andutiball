@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ÑandutíHax
 // @namespace    https://nandutihax.com/
-// @version      1.9.0
+// @version      1.11.0
 // @description  Un panel de ÑandutíHax arriba del juego: el marcador, quién está en cancha y el ELO de cada uno, en vivo.
 // @author       Jinder
 // @icon         https://nandutihax.com/img/logo-chico.png
@@ -36,7 +36,7 @@
 // se instala con un clic y no hay que esperar ninguna revisión.
 // =============================================================================
 
-const VERSION_INSTALADA = "1.9.0";
+const VERSION_INSTALADA = "1.11.0";
 const API_SALAS = "https://nandutihax.com/api/publico/salas";
 
 // ── SOLO EN LAS SALAS DE ÑANDUTÍHAX ──────────────────────────────────────────────────
@@ -229,6 +229,7 @@ function arrancarNandutiHax() {
       font-size: 15px; line-height: 1; padding: 2px 4px;
     }
     #nh-cabeza button:hover { color: #fff; }
+    #nh-joystick-alternar.apagado { opacity: .45; }
     #nh-cuerpo { padding: 10px; display: grid; gap: 10px; }
     #nh-panel.cerrado #nh-cuerpo { display: none; }
     #nh-salas { display: flex; gap: 4px; flex-wrap: wrap; }
@@ -274,6 +275,7 @@ function arrancarNandutiHax() {
     <div id="nh-cabeza">
       <img src="https://nandutihax.com/img/logo-chico.png" alt="">
       <b>ÑandutíHax</b>
+      <button id="nh-joystick-alternar" title="Mostrar u ocultar el joystick"${esTactil() ? "" : " hidden"}>🕹️</button>
       <button id="nh-plegar" title="Mostrar u ocultar">${abierto ? "–" : "+"}</button>
     </div>
     <div id="nh-cuerpo">
@@ -307,6 +309,21 @@ function arrancarNandutiHax() {
     panel.classList.toggle("cerrado", !abierto);
     $("nh-plegar").textContent = abierto ? "–" : "+";
     guardar({ abierto });
+  };
+
+  // El interruptor del joystick: escribe la MISMA llave de localStorage que lee
+  // arrancarJoystick() adentro del iframe del juego. Panel e iframe son el mismo origen
+  // (www.haxball.com), así que ya comparten localStorage solo — no hace falta mandarle
+  // ningún mensaje al iframe. El joystick relee esa llave cada 1 s y se entera solo.
+  const LLAVE_JOYSTICK = "nandutihax_joystick";
+  const joystickOculto = () => { try { return localStorage.getItem(LLAVE_JOYSTICK) === "oculto"; } catch (e) { return false; } };
+  const pintarJoystickAlternar = () => {
+    $("nh-joystick-alternar").classList.toggle("apagado", joystickOculto());
+  };
+  pintarJoystickAlternar();
+  $("nh-joystick-alternar").onclick = () => {
+    try { localStorage.setItem(LLAVE_JOYSTICK, joystickOculto() ? "visible" : "oculto"); } catch (e) {}
+    pintarJoystickAlternar();
   };
 
   // Arrastrar el panel
@@ -825,6 +842,67 @@ function arrancarCartelDeGol() {
 }
 
 // =============================================================================
+// MOSTRAR/OCULTAR LA BARRA DE CHAT DE HAXBALL, EN EL CELULAR
+//
+// `.chatbox-view` (la caja del chat, de HaxBall, no nuestra) trae 160px de alto de fábrica y
+// tapa justo donde va nuestro joystick: se ve todo amontonado (visto con Puppeteer, emulando
+// un iPhone). En vez de achicarla, un botón fijo —igual que el del joystick— la esconde y la
+// vuelve a mostrar cuando se quiera. Se guarda en localStorage aparte del joystick, así se
+// pueden ocultar por separado.
+//
+// Ocultarla esconde TODA la caja (el registro de mensajes y el cuadro para escribir), así
+// que mientras está oculta no se puede escribir en el chat — es la idea: es para el que
+// quiere la cancha despejada un rato y vuelve a mostrarla para hablar.
+function arrancarAlternarChat() {
+  if (!esTactil()) return;
+  const LLAVE = "nandutihax_chat";
+  const estaOculto = () => { try { return localStorage.getItem(LLAVE) === "oculto"; } catch (e) { return false; } };
+
+  const estilo = document.createElement("style");
+  estilo.textContent = `
+    #nh-alternar-chat {
+      position: fixed; top: max(54px, calc(env(safe-area-inset-top) + 54px)); left: 58px;
+      z-index: 2147483001; width: 38px; height: 38px; border-radius: 50%;
+      background: rgba(0,0,0,.45); border: 2px solid rgba(255,255,255,.35); color: #fff;
+      font-size: 17px; display: flex; align-items: center; justify-content: center;
+      -webkit-user-select: none; user-select: none;
+    }
+    #nh-alternar-chat.apagado { opacity: .45; border-color: rgba(255,255,255,.18); }
+  `;
+  document.head.appendChild(estilo);
+
+  const boton = document.createElement("button");
+  boton.id = "nh-alternar-chat";
+  boton.type = "button";
+  boton.textContent = "💬";
+  document.body.appendChild(boton);
+
+  const pintar = (oculto) => {
+    boton.classList.toggle("apagado", oculto);
+    boton.title = oculto ? "Mostrar el chat" : "Ocultar el chat";
+    try {
+      const caja = document.querySelector(".chatbox-view");
+      if (caja) caja.style.display = oculto ? "none" : "";
+    } catch (e) {}
+  };
+
+  boton.addEventListener("touchstart", (ev) => {
+    ev.preventDefault();
+    const nuevo = !estaOculto();
+    try { localStorage.setItem(LLAVE, nuevo ? "oculto" : "visible"); } catch (e) {}
+    pintar(nuevo);
+  }, { passive: false });
+
+  // La caja del chat la arma HaxBall recién al entrar a una sala (no está en la pantalla de
+  // elegir nick) y la rehace en cada sala distinta: hay que volver a pintar el estado cada
+  // vez que aparece una caja nueva, y volver a poner el botón si HaxBall rehizo la pantalla.
+  setInterval(() => {
+    if (!boton.isConnected) document.body.appendChild(boton);
+    pintar(estaOculto());
+  }, 1500);
+}
+
+// =============================================================================
 // CONTROLES TÁCTILES (joystick + patada) — para jugar desde el celular
 //
 // HaxBall escucha "keydown"/"keyup" en document con event.code: ArrowUp/KeyW = arriba,
@@ -837,14 +915,26 @@ function arrancarCartelDeGol() {
 //
 // Solo aparece en un dispositivo con pantalla táctil (no le agrega nada a quien ya tiene
 // teclado) y solo adentro de una sala de ÑandutíHax (mismo "data-nh-activo" que usa el
-// parche del lienzo). Se puede ocultar con el botón de la esquina; se acuerda con
-// localStorage.
+// parche del lienzo).
+//
+// SE OCULTA Y SE VUELVE A MOSTRAR desde DOS lados, y los dos escriben la MISMA llave de
+// localStorage ("nandutihax_joystick"): el botón fijo de la esquina (acá, adentro del
+// juego) y el interruptor del panel de ÑandutíHax (arrancarNandutiHax(), en la ventana de
+// arriba). Panel e iframe son el mismo origen (www.haxball.com), así que localStorage ya
+// se comparte solo entre los dos — no hace falta ningún mensaje entre ventanas. Por eso acá
+// también se relee cada 1 s: para enterarse si lo apagaron desde el panel.
+//
+// ANTES el único botón para ocultarlo era uno de texto pegado abajo, adentro del propio
+// joystick: al tocarlo, TODO el grupo (joystick + patear + el botón mismo) se escondía de
+// una, y no quedaba nada en pantalla para volver a mostrarlo — había que borrar
+// localStorage a mano. Por eso el botón de alternar ahora es un elemento APARTE, fijo en
+// una esquina, que nunca se esconde.
 function arrancarJoystick() {
   if (!esTactil()) return;
 
   const LLAVE = "nandutihax_joystick";
-  let oculto = false;
-  try { oculto = localStorage.getItem(LLAVE) === "oculto"; } catch (e) {}
+  const estaOculto = () => { try { return localStorage.getItem(LLAVE) === "oculto"; } catch (e) { return false; } };
+  const guardarOculto = (si) => { try { localStorage.setItem(LLAVE, si ? "oculto" : "visible"); } catch (e) {} };
 
   const disparar = (tipo, code) => {
     try { document.dispatchEvent(new KeyboardEvent(tipo, { code, bubbles: true, cancelable: true })); }
@@ -876,23 +966,55 @@ function arrancarJoystick() {
       transition: background .1s, transform .1s;
     }
     #nh-patear.activo { background: rgba(229,110,86,.85); transform: scale(.94); }
-    #nh-ocultar-controles {
-      position: absolute; bottom: max(18px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%);
-      pointer-events: auto; background: rgba(0,0,0,.4); color: #fff; border: none; border-radius: 20px;
-      padding: 6px 12px; font-size: 11px; font-family: Inter, system-ui, sans-serif;
+    /* Fijo en la esquina, SIEMPRE visible (no es hijo de #nh-controles): con el joystick
+       oculto es la única forma de volver a mostrarlo. */
+    #nh-alternar-joystick {
+      position: fixed; top: max(54px, calc(env(safe-area-inset-top) + 54px)); left: 10px;
+      z-index: 2147483001; width: 38px; height: 38px; border-radius: 50%; pointer-events: auto;
+      background: rgba(0,0,0,.45); border: 2px solid rgba(255,255,255,.35); color: #fff;
+      font-size: 17px; display: flex; align-items: center; justify-content: center;
+      -webkit-user-select: none; user-select: none;
     }
+    #nh-alternar-joystick.apagado { opacity: .45; border-color: rgba(255,255,255,.18); }
   `;
   document.head.appendChild(estilo);
 
   const capa = document.createElement("div");
   capa.id = "nh-controles";
-  if (oculto) capa.classList.add("oculto");
   capa.innerHTML = `
     <div id="nh-joystick"><div class="nh-palito"></div></div>
     <div id="nh-patear">⚽</div>
-    <button type="button" id="nh-ocultar-controles">Ocultar controles</button>
   `;
+  const alternar = document.createElement("button");
+  alternar.id = "nh-alternar-joystick";
+  alternar.type = "button";
+  alternar.textContent = "🕹️";
+
+  const pintarAlternar = (oculto) => {
+    alternar.classList.toggle("apagado", oculto);
+    alternar.title = oculto ? "Mostrar el joystick" : "Ocultar el joystick";
+  };
+
+  // Lo que cambia el estado, sea desde este botón o desde el panel: guarda, pinta las dos
+  // partes y —si se acaba de ocultar— suelta lo que estuviera apretado, para no dejar una
+  // dirección clavada. Definida acá arriba (se llama recién más abajo, una vez que
+  // soltarJoystick/soltarPatada ya existen).
+  let soltarTodo = () => {};   // se reemplaza más abajo; placeholder por si se llama antes
+  const aplicarOculto = (oculto) => {
+    capa.classList.toggle("oculto", oculto);
+    pintarAlternar(oculto);
+    if (oculto) soltarTodo();
+  };
+
   document.body.appendChild(capa);
+  document.body.appendChild(alternar);
+
+  alternar.addEventListener("touchstart", (ev) => {
+    ev.preventDefault();
+    const nuevo = !estaOculto();
+    guardarOculto(nuevo);
+    aplicarOculto(nuevo);
+  }, { passive: false });
 
   const base = capa.querySelector("#nh-joystick");
   const palito = capa.querySelector(".nh-palito");
@@ -969,24 +1091,33 @@ function arrancarJoystick() {
   document.addEventListener("touchend", soltarPatada);
   document.addEventListener("touchcancel", soltarPatada);
 
-  capa.querySelector("#nh-ocultar-controles").addEventListener("touchstart", (ev) => {
-    ev.preventDefault();
-    capa.classList.add("oculto");
-    try { localStorage.setItem(LLAVE, "oculto"); } catch (e) {}
-  }, { passive: false });
+  // Ahora sí, con soltarJoystick/soltarPatada ya definidas: se reemplaza el placeholder y
+  // recién acá se pinta el estado inicial (leído de localStorage).
+  soltarTodo = () => { soltarJoystick(); soltarPatada(); };
+  aplicarOculto(estaOculto());
 
   // Si HaxBall rehace la pantalla (se entra o se sale de una sala), los controles quedan
   // colgados de un <body> que ya no está: se los vuelve a poner igual que el cartel de gol.
-  const reponer = () => { if (!capa.isConnected) document.body.appendChild(capa); };
+  const reponer = () => {
+    if (!capa.isConnected) document.body.appendChild(capa);
+    if (!alternar.isConnected) document.body.appendChild(alternar);
+  };
   setInterval(reponer, 1500);
 
-  // Solo se muestra adentro de una sala de ÑandutíHax: la misma marca que usa el parche
-  // del lienzo para el cartel de gol ("data-nh-activo"), leída acá cada 1 s.
+  // Solo se muestra adentro de una sala de ÑandutíHax: la misma marca que usa el parche del
+  // lienzo para el cartel de gol ("data-nh-activo"), leída acá cada 1 s. Y de paso, en esa
+  // misma vuelta, se relee si lo ocultaron o lo volvieron a mostrar desde el panel (que
+  // corre en la ventana de arriba y escribe la MISMA llave de localStorage).
+  let ocultoVisto = estaOculto();
   const revisarSiEsNuestra = () => {
     let esNuestra = false;
     try { esNuestra = document.documentElement.getAttribute("data-nh-activo") === "si"; } catch (e) {}
+    alternar.style.visibility = esNuestra ? "" : "hidden";
     capa.style.visibility = esNuestra ? "" : "hidden";
-    if (!esNuestra) soltarJoystick();
+    if (!esNuestra) { soltarTodo(); return; }
+
+    const oculto = estaOculto();
+    if (oculto !== ocultoVisto) { ocultoVisto = oculto; aplicarOculto(oculto); }
   };
   revisarSiEsNuestra();
   setInterval(revisarSiEsNuestra, 1000);
@@ -1048,7 +1179,7 @@ function arrancarTodo() {
   // El panel del costado va en la ventana de arriba; el cartel de gol y los controles
   // táctiles, adentro del juego
   if (window.top === window.self) { arreglarAnunciosEnElCelular(); arrancarNandutiHax(); }
-  else { arrancarCartelDeGol(); arrancarJoystick(); }
+  else { arrancarCartelDeGol(); arrancarJoystick(); arrancarAlternarChat(); }
 }
 
 // El parche del lienzo NO toca el DOM y tiene que ser lo primero de todo, antes de que el
