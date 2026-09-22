@@ -732,6 +732,12 @@ tenés sesión, el ítem **La extensión** en el menú de tu cuenta.
 
 Se puede arrastrar, se pliega y se acuerda de dónde lo dejaste.
 
+**Funciona entres por donde entres.** Antes, la extensión reconocía la sala por el link
+(`…/play?c=…`), así que al entrar **desde la lista de salas de HaxBall** se quedaba dormida: te
+salía el "Blue Scores!" de siempre y ninguno de nuestros carteles. Ahora se da cuenta sola apenas
+la sala saluda. Para saber si está trabajando, mirá el renglón de abajo del panel: dice
+**"sin el cartel de HaxBall"** y, entre paréntesis, cuántas veces lo frenó.
+
 **Y tu cartel de gol en pantalla.** Cuando convertís, en vez del "Blue Scores!" de siempre sale
 **el cartel que compraste en la tienda**, grande, arriba de la cancha y con tu color. Lo ven los
 que tengan la extensión instalada; en el chat el cartel le sigue saliendo a todos igual. Si el

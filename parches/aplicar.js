@@ -236,7 +236,10 @@ if (iniBienvenida === -1) {
 } else {
   const finBienvenida = script.indexOf("\n];", iniBienvenida) + 3;
   const actual = script.slice(iniBienvenida, finBienvenida);
-  if (actual.includes("ÑandutíHax")) {
+  // Ojo: no alcanza con mirar que ya diga "ÑandutíHax", porque el parcheador corre sobre
+  // un script.js ya parchado: si el bloque cambia (como cuando se le agregó la marca
+  // invisible de sala), hay que volver a ponerlo.
+  if (actual.includes("ÑandutíHax") && actual.includes("​⁢")) {
     saltados.push("🏷️ Mensaje de bienvenida (ya estaba)");
   } else {
     script = script.slice(0, iniBienvenida) + fs.readFileSync(path.join(__dirname, "bloques", "bienvenida.txt"), "utf8").trimEnd() + script.slice(finBienvenida);

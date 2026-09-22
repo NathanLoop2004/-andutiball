@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ÑandutíHax
 // @namespace    https://nandutihax.com/
-// @version      1.6.1
+// @version      1.7.0
 // @description  Un panel de ÑandutíHax arriba del juego: el marcador, quién está en cancha y el ELO de cada uno, en vivo.
 // @author       Jinder
 // @icon         https://nandutihax.com/img/logo-chico.png
@@ -36,7 +36,7 @@
 // se instala con un clic y no hay que esperar ninguna revisión.
 // =============================================================================
 
-const VERSION_INSTALADA = "1.6.1";
+const VERSION_INSTALADA = "1.7.0";
 const API_SALAS = "https://nandutihax.com/api/publico/salas";
 
 // ── SOLO EN LAS SALAS DE ÑANDUTÍHAX ──────────────────────────────────────────────────
@@ -67,6 +67,22 @@ const esDeNandutihax = (salas, codigo) =>
 // con las salas cerradas no había ningún link contra el cual comparar.
 const sePuedeVerElPanel = (salas, codigo) => !codigo || esDeNandutihax(salas, codigo);
 
+// ── LAS MARCAS INVISIBLES DEL HOST ────────────────────────────────────────────────────
+// El host firma sus avisos con dos caracteres de ancho cero (parches/bloques/scores.txt y
+// momentos.txt). No se ven en el chat de nadie, y son lo único que distingue un aviso
+// nuestro de cualquier otro… así que también sirven para reconocer la sala DESDE ADENTRO,
+// sin depender de la dirección: si llega un aviso firmado, estamos en una sala nuestra.
+const MARCAS = {
+  sala:     "​⁢",   // "esto es ÑandutíHax" (va en la bienvenida; no dibuja nada)
+  gol:      "​​",
+  inicio:   "​‌",
+  victoria: "​⁠",
+  tiempo:   "​⁡",
+};
+
+const esUnAvisoNuestro = (texto) =>
+  Object.keys(MARCAS).some((k) => texto.indexOf(MARCAS[k]) >= 0);
+
 // Lo que la extensión necesita saber de afuera: qué salas hay y cómo es el cartel de inicio
 async function pedirLoNuestro() {
   try {
@@ -89,6 +105,29 @@ function marcarActiva(si) {
 
 let loNuestro = { salas: [], inicio: null, victoria: null, tiempo: null, nuestra: false };
 
+// ── RECONOCER LA SALA SIN LA DIRECCIÓN ────────────────────────────────────────────────
+// Comparar el ?c= de la dirección con los links de la API alcanza cuando se entra por un
+// link nuestro, PERO no cuando se entra desde la lista de salas de HaxBall: ahí la
+// dirección no tiene ningún código y la extensión se quedaba apagada (el cartel de HaxBall
+// salía y el nuestro no). Desde la 1.7.0, un aviso firmado por el host también la prende.
+let confirmadaPorElChat = false;
+
+function confirmarSalaNuestra() {
+  if (confirmadaPorElChat) return;
+  confirmadaPorElChat = true;
+  loNuestro.nuestra = true;
+  marcarActiva(true);
+}
+
+// Al salir de la sala (HaxBall rehace la pantalla) se vuelve a empezar: si no, la extensión
+// quedaría prendida adentro de una sala ajena a la que se entre después.
+function olvidarLaSala() {
+  if (!confirmadaPorElChat) return;
+  confirmadaPorElChat = false;
+  loNuestro.nuestra = esDeNandutihax(loNuestro.salas, codigoDeLaSala());
+  marcarActiva(loNuestro.nuestra);
+}
+
 function vigilarSiEsSalaNuestra() {
   const preguntar = async () => {
     const datos = await pedirLoNuestro();
@@ -98,7 +137,7 @@ function vigilarSiEsSalaNuestra() {
         inicio: datos.inicio || null,
         victoria: datos.victoria || null,
         tiempo: datos.tiempo || null,
-        nuestra: esDeNandutihax(datos.salas, codigoDeLaSala()),
+        nuestra: confirmadaPorElChat || esDeNandutihax(datos.salas, codigoDeLaSala()),
       };
     }
     marcarActiva(loNuestro.nuestra);
@@ -586,10 +625,10 @@ function sacarElCartelDeHaxball() {
 function arrancarCartelDeGol() {
   "use strict";
 
-  const MARCA = "​​";        // marca invisible del cartel de GOL
-  const MARCA_INICIO = "​‌";  // …la del cartel de INICIO (el saque)
-  const MARCA_VICTORIA = "​⁠";// …la del cartel de VICTORIA (el final por goles)
-  const MARCA_TIEMPO = "​⁡";  // …y la del "se acabó el tiempo"
+  const MARCA = MARCAS.gol;               // marca invisible del cartel de GOL
+  const MARCA_INICIO = MARCAS.inicio;     // …la del cartel de INICIO (el saque)
+  const MARCA_VICTORIA = MARCAS.victoria; // …la del cartel de VICTORIA (el final por goles)
+  const MARCA_TIEMPO = MARCAS.tiempo;     // …y la del "se acabó el tiempo"
   const DURA = 3200;              // cuánto se queda en pantalla
   const ESPERA = 900;             // cuánto se le da al cartel del host antes de usar el nuestro
 
@@ -693,8 +732,13 @@ function arrancarCartelDeGol() {
   const mirarElChat = (log) => {
     const ojo = new MutationObserver((cambios) => {
       cambios.forEach((c) => c.addedNodes.forEach((n) => {
-        if (n.nodeType !== 1 || !loNuestro.nuestra) return;
+        if (n.nodeType !== 1) return;
         const texto = n.textContent || "";
+
+        // Un aviso firmado por el host es la prueba de que esta sala es nuestra, aunque la
+        // dirección no tenga ningún ?c= (se entró desde la lista de salas de HaxBall).
+        if (esUnAvisoNuestro(texto)) confirmarSalaNuestra();
+        if (!loNuestro.nuestra) return;
 
         // El cartel del ARRANQUE: el host lo marca distinto y acá se pinta con los colores
         // por letra que se cargaron en el panel (el chat solo puede con un color).
@@ -762,6 +806,7 @@ function arrancarCartelDeGol() {
     const a = document.querySelector('[data-hook="blue-score"]');
     if (!log || !r || !a) return;
     if (log === observando && r === rojo && a === azul) return;
+    if (observando) olvidarLaSala();       // era otra pantalla: se vuelve a empezar
     observando = log; rojo = r; azul = a;
     mirarElChat(log);
     mirarElMarcador(r, a);

@@ -1385,6 +1385,30 @@ se muestra **en el acto**, sin esperar la respuesta de la API.
 El parche del lienzo mira `data-nh-activo` **en cada dibujo**, porque la respuesta llega después
 (hay que preguntarle a la API) y puede cambiar sin recargar.
 
+**LA SALA TAMBIÉN SE RECONOCE POR LA MARCA INVISIBLE DEL HOST** (v1.7.0). Reconocerla **solo**
+por el `?c=` de la dirección dejaba la extensión apagada para el que entra **desde la lista de
+salas de HaxBall**: ahí la dirección no tiene ningún código, así que no hay contra qué comparar,
+`data-nh-activo` queda en `"no"` y **el cartel de HaxBall sale y el nuestro no**. Y desde la
+1.6.1 eso quedó **tapado**: el panel se muestra igual sin `?c=`, así que parece que anda todo.
+
+El síntoma exacto, para reconocerlo de un vistazo, es el pie del panel: dice
+`sin el cartel de HaxBall` **sin el número entre paréntesis** — el parche está puesto pero nunca
+frenó nada (`data-nh-bloqueos` vacío).
+
+Ahora, además del `?c=`, alcanza con que llegue al chat **un aviso firmado por el host**:
+`MARCAS` (arriba de todo en el userscript) junta las cinco marcas invisibles y
+`confirmarSalaNuestra()` prende la extensión apenas aparece una. `olvidarLaSala()` la vuelve a
+apagar cuando HaxBall rehace la pantalla (se salió de la sala), así no queda prendida adentro de
+una sala ajena.
+
+Para que se prenda **al entrar** y no recién con el primer gol, el host firma la primera línea
+de la bienvenida con `MarcaDeSala` (`U+200b U+2062`, en `parches/bloques/bienvenida.txt`), que
+no dibuja ningún cartel: solo dice "esta sala es de ÑandutíHax". **Tiene que ser la misma que
+`MARCAS.sala` del userscript.** Ojo: el parcheador salteaba la bienvenida con solo ver que ya
+decía "ÑandutíHax" (corre sobre un `script.js` ya parchado), así que ahora mira también la marca;
+esa parte del host **se nota recién al reiniciar las salas**, pero la extensión anda igual sin
+eso, con la marca del primer gol o del saque.
+
 **Cómo se SACA el cartel de HaxBall** (`sacarElCartelDeHaxball()`, v1.2.0). Antes se le ponía el
 nuestro encima y el de HaxBall asomaba igual: quedaba feo. Leyendo `game-min.js` se ve que esos
 carteles son una clase (`class da`) que pre-dibuja **cada palabra una sola vez** en un lienzo

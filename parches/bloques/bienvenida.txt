@@ -1,5 +1,9 @@
 const MensajeDeBienvenida = [
-  `❋･ﾟ✧ 🕸️ ✧ﾟ･❋ ✺ ❋･ﾟ✧ 🕸️ ✧ﾟ･❋ ✺ ❋･ﾟ✧ 🕸️ ✧ﾟ･❋`,
+  // MARCA INVISIBLE DE SALA (los dos caracteres de ancho cero al final del renglón de acá
+  // abajo). No se ve en el chat de nadie: es lo que le dice a la extensión "esta sala es de
+  // ÑandutíHax" cuando se entró desde la lista de salas de HaxBall y la dirección no tiene
+  // ningún ?c= contra el cual comparar. Es la misma que MARCAS.sala del userscript.
+  `❋･ﾟ✧ 🕸️ ✧ﾟ･❋ ✺ ❋･ﾟ✧ 🕸️ ✧ﾟ･❋ ✺ ❋･ﾟ✧ 🕸️ ✧ﾟ･❋​⁢`,
 
   `
  ▄▀▄▀                                  ▄▀
